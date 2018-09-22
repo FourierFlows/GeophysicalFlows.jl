@@ -1,5 +1,4 @@
-using PyPlot, FourierFlows, FFTW, Printf
-import GeophysicalFlows.TwoDTurb
+using PyPlot, FFTW, Printf, GeophysicalFlows.TwoDTurb
 
 nx = 256        # Resolution
 Lx = 2π         # Domain size

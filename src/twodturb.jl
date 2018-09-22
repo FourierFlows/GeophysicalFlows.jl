@@ -1,8 +1,20 @@
 module TwoDTurb
-using FourierFlows, FFTW
-using Requires
 
-import LinearAlgebra: mul!, ldiv!
+export 
+  Problem
+
+using
+  FFTW,
+  Requires,
+  Reexport
+
+@reexport using FourierFlows
+
+using LinearAlgebra: mul!, ldiv!
+
+const physicalvars = [:q, :U, :V]
+const transformvars = [:qh, :Uh, :Vh]
+const forcedtransformvars = [:qh, :Uh, :Vh, :Fh, :prevsol]
 
 """
     Problem(; parameters...)
@@ -73,10 +85,6 @@ function Equation(p::ForcedParams, g)
 end
 
 # Construct Vars types
-       physicalvars = [:q, :U, :V]
-      transformvars = [:qh, :Uh, :Vh]
-forcedtransformvars = [:qh, :Uh, :Vh, :Fh, :prevsol]
-
 eval(FourierFlows.structvarsexpr(:Vars, physicalvars, transformvars))
 eval(FourierFlows.structvarsexpr(:ForcedVars, physicalvars, forcedtransformvars))
 
@@ -103,11 +111,11 @@ function ForcedVars(g)
 end
 
 
-# ------------------
+# --
 # CUDA functionality
-# ------------------
+# --
 
-@require CuArrays="3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
+@require CuArrays begin
 
 using CuArrays
 
