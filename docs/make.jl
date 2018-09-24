@@ -21,7 +21,7 @@ makedocs(
 )
 
 deploydocs(
-       repo = "github.com/GeophysicalFlows/GeophysicalFlows.jl.git",
+       repo = "github.com/FourierFlows/GeophysicalFlows.jl.git",
      target = "build",
       julia = "0.7",
      osname = "linux",
