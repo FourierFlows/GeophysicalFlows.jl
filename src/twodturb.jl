@@ -1,7 +1,15 @@
 module TwoDTurb
 
 export 
-  Problem
+  Problem,
+  set_q!,
+  updatevars!,
+
+  energy,
+  enstrophy,
+  dissipation,
+  work,
+  drag
 
 using
   FFTW,
