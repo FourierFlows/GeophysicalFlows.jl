@@ -1,0 +1,14 @@
+**/*.swp
+**/*.jld
+**/*.jld2
+**/*.png
+**/*.mp4
+**/*.DS_Store
+**/*.mem
+**/*.pdf
+**/.nfs*
+**/*.cov
+
+docs/build/
+docs/site/
+coverage/
