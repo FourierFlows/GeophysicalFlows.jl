@@ -1,6 +1,7 @@
 name = "GeophysicalFlows"
 uuid = "26314728-b5fa-11e8-0e35-91b531bec86e"
-authors = ["Gregory Wagner <wagner.greg@gmail.com>"]
+license = "MIT"
+authors = ["Gregory L. Wagner <wagner.greg@gmail.com>", "Navid C. Constantinou <navidcy@gmail.com>"]
 version = "0.1.0"
 
 [deps]
