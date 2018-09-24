@@ -114,7 +114,7 @@ end
 # --
 # CUDA functionality
 # --
-
+#=
 @require CuArrays begin
 
 using CuArrays
@@ -142,6 +142,7 @@ CuForcedVars(v::Vars) = CuForcedVars(CuArray.(getfield.(v, fieldnames(v)))...)
 CuForcedVars(g::AbstractGrid) = CuForcedVars(CuArray.(ForcedVars(g)))
 
 end # CUDA stuff
+=#
 
 
 # -------
