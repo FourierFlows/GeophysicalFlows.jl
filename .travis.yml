@@ -22,8 +22,7 @@ before_script:
 #   - julia -e 'using Pkg; Pkg.test("FourierFlows", coverage=true)'
 
 after_success:
-  # - julia -e 'using Pkg; Pkg.add("Documenter")'
-  # - julia -e 'using Pkg; Pkg.add("Documenter"); Pkg.dir("FourierFlows"); include(joinpath("docs", "make.jl"))'
+  - julia -e 'using Pkg; Pkg.add("Documenter"); Pkg.dir("GeophysicalFlows"); include(joinpath("docs", "make.jl"))'
   - julia -e 'using Pkg; Pkg.add("Coverage"); Pkg.dir("GeophysicalFlows"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
 
 notifications:
