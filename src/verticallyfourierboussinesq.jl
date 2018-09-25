@@ -93,7 +93,7 @@ Params(nu0, nnu0, nu1, nnu1, f, N, m) = Params(nu0, nnu0, nu1, nnu1, f, N, m, Ub
 
 function Equation(p::TwoModeParams, g::TwoDGrid)
   LCc, LCr = getlinearcoefficients(p, g)
-  DualEquation(LCc, LCr, calcN!)
+  FourierFlows.DualEquation(LCc, LCr, calcN!)
 end
 
 function getlinearcoefficients(p::TwoModeParams, g::TwoDGrid)
