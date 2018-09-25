@@ -45,13 +45,13 @@ function Problem(;
 
   if calcF == nothing # initial value problem
      g = TwoDGrid(nx, Lx, ny, Ly)
-    pr = Params{T}(nu, nnu, mu, nmu)
+    pr = Params(T(nu), nnu, T(mu), nmu)
     vs = Vars(g)
     eq = Equation(pr, g)
     ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
   else # forced problem
      g = TwoDGrid(nx, Lx, ny, Ly)
-    pr = ForcedParams{T}(nu, nnu, mu, nmu, calcF)
+    pr = ForcedParams(T(nu), nnu, T(mu), nmu, calcF)
     vs = ForcedVars(g)
     eq = Equation(pr, g)
     ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
@@ -70,7 +70,7 @@ struct Params{T} <: AbstractParams
   mu::T      # Bottom drag or hypoviscosity
   nmu::Int   # Order of hypodrag
 end
-Params(nu, nnu) = Params(nu, nnu, 0.0, 0)
+Params(nu, nnu) = Params(nu, nnu, typeof(nu)(0), 0)
 
 """
     ForcedParams(nu, nnu, mu, nmu, calcF!)
