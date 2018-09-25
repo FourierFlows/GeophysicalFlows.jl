@@ -34,25 +34,26 @@ function Problem(;
    Lx = 2π, 
    ny = nx, 
    Ly = Lx, 
-   nu = 0, 
+   nu = 0,
   nnu = 1, 
    mu = 0, 
   nmu = 0, 
    dt = 0.01, 
   stepper = "RK4", 
-    calcF = nothing)
+    calcF = nothing,
+        T = typeof(Lx))
 
   if calcF == nothing # initial value problem
      g = TwoDGrid(nx, Lx, ny, Ly)
-    pr = TwoDTurb.Params(nu, nnu, mu, nmu)
-    vs = TwoDTurb.Vars(g)
-    eq = TwoDTurb.Equation(pr, g)
+    pr = Params{T}(nu, nnu, mu, nmu)
+    vs = Vars(g)
+    eq = Equation(pr, g)
     ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
   else # forced problem
      g = TwoDGrid(nx, Lx, ny, Ly)
-    pr = TwoDTurb.ForcedParams(nu, nnu, mu, nmu, calcF)
-    vs = TwoDTurb.ForcedVars(g)
-    eq = TwoDTurb.Equation(pr, g)
+    pr = ForcedParams{T}(nu, nnu, mu, nmu, calcF)
+    vs = ForcedVars(g)
+    eq = Equation(pr, g)
     ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
   end
   FourierFlows.Problem(g, vs, pr, eq, ts)
