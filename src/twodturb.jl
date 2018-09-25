@@ -27,27 +27,36 @@ const forcedtransformvars = [:qh, :Uh, :Vh, :Fh, :prevsol]
 """
     Problem(; parameters...)
 
-Construct an 2D turbulence problem.
+Construct a 2D turbulence problem.
 """
-function Problem(; nx=256, Lx=2π, ny=nx, Ly=Lx, nu=0.0, nnu=1, mu=0.0, nmu=0, dt=0.01, stepper="RK4", calcF=nothing)
-  if calcF != nothing # the problem is forced
-     g = TwoDGrid(nx, Lx, ny, Ly)
-    pr = TwoDTurb.ForcedParams(nu, nnu, mu, nmu, calcF)
-    vs = TwoDTurb.ForcedVars(g)
-    eq = TwoDTurb.Equation(pr, g)
-    ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
-  else # initial value problem
+function Problem(; 
+   nx = 256, 
+   Lx = 2π, 
+   ny = nx, 
+   Ly = Lx, 
+   nu = 0, 
+  nnu = 1, 
+   mu = 0, 
+  nmu = 0, 
+   dt = 0.01, 
+  stepper = "RK4", 
+    calcF = nothing)
+
+  if calcF == nothing # initial value problem
      g = TwoDGrid(nx, Lx, ny, Ly)
     pr = TwoDTurb.Params(nu, nnu, mu, nmu)
     vs = TwoDTurb.Vars(g)
     eq = TwoDTurb.Equation(pr, g)
     ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
+  else # forced problem
+     g = TwoDGrid(nx, Lx, ny, Ly)
+    pr = TwoDTurb.ForcedParams(nu, nnu, mu, nmu, calcF)
+    vs = TwoDTurb.ForcedVars(g)
+    eq = TwoDTurb.Equation(pr, g)
+    ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
   end
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
-
-InitialValueProblem(; kwargs...) = Problem(; kwargs...)
-ForcedProblem(; kwargs...) = Problem(; kwargs...)
 
 """
     Params(nu, nnu, mu, nmu)
