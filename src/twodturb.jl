@@ -231,7 +231,7 @@ function set_q!(s, v, g, q)
   updatevars!(v, s, g)
   nothing
 end
-set_q!(prob::AbstractProblem, q) = set_q!(prob.state, prob.vars, prob.grid, q)
+set_q!(prob, q) = set_q!(prob.state, prob.vars, prob.grid, q)
 
 """
     energy(prob)
