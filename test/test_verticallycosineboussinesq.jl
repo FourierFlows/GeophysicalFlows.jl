@@ -1,20 +1,15 @@
-import FourierFlows.VerticallyCosineBoussinesq
+import GeophysicalFlows.VerticallyCosineBoussinesq
 
-cfl(prob) = maximum([maximum(abs.(prob.vars.U)), maximum(abs.(prob.vars.V))]*
-              prob.ts.dt/prob.grid.dx)
+cfl(U, V, dt, dx) maximum([maximum(abs.(U)), maximum(abs.(V))]*dt/dx)
+cfl(prob) = cfl(prob.vars.U, prob.vars.V, prob.ts.dt, prob.grid.dx)
 
-function test_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1,
-  ti=L/Ue*0.01, nm=3, message=false, atol=1e-2)
-
+function test_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, ti=L/Ue*0.01, nm=3, message=false, atol=1e-2)
   nt = round(Int, ti/dt)
-
-  prob = VerticallyCosineBoussinesq.Problem(nx=n, Lx=L,
-    nu0=nu0, nnu0=nnu0, dt=dt, stepper="FilteredRK4")
+  prob = VerticallyCosineBoussinesq.Problem(nx=n, Lx=L, nu0=nu0, nnu0=nnu0, dt=dt, stepper="FilteredRK4")
   x, y, Z = prob.grid.X, prob.grid.Y, prob.vars.Z # nicknames
 
   Z0 = FourierFlows.lambdipole(Ue, Re, prob.grid)
   VerticallyCosineBoussinesq.set_Z!(prob, Z0)
-
   xZ = zeros(nm)   # centroid of abs(Z)
   Ue_m = zeros(nm) # measured dipole speed
 
