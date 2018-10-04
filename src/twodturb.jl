@@ -39,23 +39,23 @@ function Problem(;
    mu = 0, 
   nmu = 0, 
    dt = 0.01, 
+    T = Float64,
   stepper = "RK4", 
-    calcF = nothing,
-        T = typeof(Lx))
+    calcF = nothing)
+
+ g = TwoDGrid{T}(nx, Lx, ny, Ly)
 
   if calcF == nothing # initial value problem
-     g = TwoDGrid(nx, Lx, ny, Ly)
-    pr = Params(T(nu), nnu, T(mu), nmu)
+    pr = Params{T}(nu, nnu, mu, nmu)
     vs = Vars(g)
-    eq = Equation(pr, g)
-    ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
   else # forced problem
-     g = TwoDGrid(nx, Lx, ny, Ly)
-    pr = ForcedParams(T(nu), nnu, T(mu), nmu, calcF)
+    pr = ForcedParams{T}(nu, nnu, mu, nmu, calcF)
     vs = ForcedVars(g)
-    eq = Equation(pr, g)
-    ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
   end
+
+  eq = Equation(pr, g)
+  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
+
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
