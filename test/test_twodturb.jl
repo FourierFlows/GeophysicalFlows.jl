@@ -1,11 +1,10 @@
 using 
-  FourierFlows,
   GeophysicalFlows.TwoDTurb,
   Statistics,
   Random,
   FFTW
 
-import GeophysicalFlows.TwoDTurb
+using FourierFlows: lambdipole, parsevalsum
 
 #using Statistics: mean
 
@@ -13,9 +12,9 @@ cfl(prob) = maximum([maximum(abs.(prob.vars.U)), maximum(abs.(prob.vars.V))]*pro
 
 function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01, nm=3)
   nt = round(Int, ti/dt)
-  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, dt=dt, stepper="FilteredRK4")
-  q0 = FourierFlows.lambdipole(Ue, Re, prob.grid)
-  TwoDTurb.set_q!(prob, q0)
+  prob = Problem(nx=n, Lx=L, nu=nu, nnu=nnu, dt=dt, stepper="FilteredRK4")
+  q0 = lambdipole(Ue, Re, prob.grid)
+  set_q!(prob, q0)
 
   xq = zeros(nm)   # centroid of abs(q)
   Ue_m = zeros(nm) # measured dipole speed
@@ -23,7 +22,7 @@ function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01
 
   for i = 1:nm # step forward
     stepforward!(prob, nt)
-    TwoDTurb.updatevars!(prob)
+    updatevars!(prob)
     xq[i] = mean(abs.(q).*x) / mean(abs.(q))
 
     if i > 1
@@ -51,7 +50,7 @@ function stochasticforcingbudgetstest(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, m
   @. force2k[gr.KKrsq .< 2.0^2 ] = 0
   @. force2k[gr.KKrsq .> 20.0^2 ] = 0
   @. force2k[gr.Kr.<2π/L] = 0
-  σ0 = FourierFlows.parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+  σ0 = parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
   force2k .= σ/σ0 * force2k
 
   Random.seed!(1234)
@@ -63,7 +62,7 @@ function stochasticforcingbudgetstest(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, m
     nothing
   end
 
-  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt,
+  prob = Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt,
    stepper="RK4", calcF=calcF!)
 
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
@@ -77,14 +76,10 @@ function stochasticforcingbudgetstest(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, m
 
   # Step forward
   stepforward!(prob, diags, round(Int, nt))
+  updatevars!(prob)
 
-  TwoDTurb.updatevars!(prob)
-
-  cfl = prob.ts.dt*maximum(
-    [maximum(v.V)/g.dx, maximum(v.U)/g.dy])
-
+  cfl = prob.ts.dt*maximum([maximum(v.V)/g.dx, maximum(v.U)/g.dy])
   E, D, W, R = diags
-
   t = round(mu*prob.state.t, digits=2)
 
   i₀ = 1
@@ -144,13 +139,13 @@ function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, n
     nothing
   end
 
-  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!)
+  prob = Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!)
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
-  TwoDTurb.set_q!(prob, qf)
+  set_q!(prob, qf)
 
   # Step forward
   stepforward!(prob, round(Int, nt))
-  TwoDTurb.updatevars!(prob)
+  updatevars!(prob)
   isapprox(v.q, qf, rtol=1e-13)
 end
 
@@ -165,13 +160,13 @@ function testenergyenstrophy()
   psi0 = @. sin(2*k0*x)*cos(2*l0*y) + 2sin(k0*x)*cos(3*l0*y)
     q0 = @. -((2*k0)^2+(2*l0)^2)*sin(2*k0*x)*cos(2*l0*y) - (k0^2+(3*l0)^2)*2sin(k0*x)*cos(3*l0*y)
 
-  prob = TwoDTurb.Problem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
+  prob = Problem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
-  TwoDTurb.set_q!(prob, q0)
-  TwoDTurb.updatevars!(prob)
+  set_q!(prob, q0)
+  updatevars!(prob)
 
-  energyq0 = FourierFlows.TwoDTurb.energy(prob)
-  enstrophyq0 = FourierFlows.TwoDTurb.enstrophy(prob)
+  energyq0 = energy(prob)
+  enstrophyq0 = enstrophy(prob)
 
   isapprox(energyq0, 29.0/9, rtol=1e-13) && isapprox(enstrophyq0, 2701.0/162, rtol=1e-13)
 end
