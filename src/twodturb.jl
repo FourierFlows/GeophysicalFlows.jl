@@ -2,6 +2,8 @@ module TwoDTurb
 
 export 
   Problem,
+  ForcedProblem,
+  InitialValueProblem,
   set_q!,
   updatevars!,
 

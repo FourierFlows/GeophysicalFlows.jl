@@ -1,8 +1,9 @@
 using 
-  GeophysicalFlows.TwoDTurb,
   Statistics,
   Random,
   FFTW
+
+import GeophysicalFlows.TwoDTurb
 
 #using Statistics: mean
 
