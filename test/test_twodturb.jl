@@ -1,4 +1,4 @@
-function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01, nm=3)
+function test_twodturb_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01, nm=3)
   nt = round(Int, ti/dt)
   prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, dt=dt, stepper="FilteredRK4")
   q0 = lambdipole(Ue, Re, prob.grid)
@@ -19,7 +19,7 @@ function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01
   isapprox(Ue, mean(Ue_m[2:end]), rtol=1e-2)
 end
 
-function stochasticforcingbudgetstest(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, nmu=0, message=false)
+function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, nmu=0, message=false)
   n, L  = 256, 2π
   nu, nnu = 1e-7, 2
   mu, nmu = 1e-1, 0
@@ -100,7 +100,7 @@ forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - nuΔζf. One
 to the vorticity equation forced by this Ff is then ζf. (This solution may not
 be realized, at least at long times, if it is unstable.)
 """
-function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, nmu=0, message=false)
+function test_twodturb_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, nmu=0, message=false)
   n, L  = 128, 2π
   nu, nnu = 1e-2, 1
   mu, nmu = 0.0, 0
@@ -137,7 +137,7 @@ function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, n
   isapprox(v.q, qf, rtol=1e-13)
 end
 
-function testenergyenstrophy()
+function test_twodturb_energyenstrophy()
   nx, Lx  = 128, 2π
   ny, Ly  = 128, 3π
   g  = TwoDGrid(nx, Lx, ny, Ly)
@@ -159,7 +159,7 @@ function testenergyenstrophy()
   isapprox(energyq0, 29.0/9, rtol=1e-13) && isapprox(enstrophyq0, 2701.0/162, rtol=1e-13)
 end
 
-@test testnonlinearterms(0.0005, "ForwardEuler")
-@test lambdipoletest(256, 1e-3)
-@test stochasticforcingbudgetstest()
-@test testenergyenstrophy()
+@test test_twodturb_advection(0.0005, "ForwardEuler")
+@test test_twodturb_lambdipole(256, 1e-3)
+@test test_twodturb_stochasticforcingbudgets()
+@test test_twodturb_energyenstrophy()

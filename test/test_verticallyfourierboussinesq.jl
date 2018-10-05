@@ -1,4 +1,4 @@
-function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, ti=L/Ue*0.01, nm=3, message=false)
+function test_fourier_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, ti=L/Ue*0.01, nm=3, message=false)
   nt = round(Int, ti/dt)
   prob = VerticallyFourierBoussinesq.Problem(nx=n, Lx=L, nu0=nu0, nnu0=nnu0, dt=dt, stepper="FilteredRK4")
   x, y, Z = prob.grid.X, prob.grid.Y, prob.vars.Z # nicknames
@@ -30,7 +30,7 @@ function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, ti=L/Ue*0.01
   isapprox(Ue, mean(Ue_m[2:end]), atol=0.02)
 end
 
-function test_groupvelocity(nkw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rtol=1e-3, del=L/10)
+function test_fourier_groupvelocity(nkw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rtol=1e-3, del=L/10)
   kw = nkw*2π/L
    σ = f*sqrt(1 + (N*kw/m)^2)
   tσ = 2π/σ
@@ -53,5 +53,5 @@ function test_groupvelocity(nkw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rto
   isapprox(cga, cgn, rtol=rtol)
 end
 
-@test lambdipoletest(256, 1e-3)
-@test test_groupvelocity(16)
+@test test_fourier_lambdipole(256, 1e-3)
+@test test_fourier_groupvelocity(16)

@@ -1,9 +1,9 @@
 """
-    test_baroQG_RossbyWave(; kwargs...)
+    test_bqg_rossbywave(; kwargs...)
 
 Evolvesa a Rossby wave and compares with the analytic solution.
 """
-function test_baroQG_RossbyWave(stepper, dt, nsteps)
+function test_bqg_rossbywave(stepper, dt, nsteps)
     nx = 64
   beta = 2.0
     Lx = 2π
@@ -45,7 +45,7 @@ end
 
 Tests if the energy budgets are closed for BarotropicQG with stochastic forcing.
 """
-function test_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, message=false)
+function test_bqg_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, message=false)
   n, L  = 256, 2π
   nu, nnu = 1e-7, 2
   mu = 1e-1
@@ -120,7 +120,7 @@ function test_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, 
 end
 
 """
-    testnonlineartermsQGPV(dt, stepper; kwargs...)
+    test_bqg_nonlinearadvection(dt, stepper; kwargs...)
 
 Tests the advection term in the twodturb module by timestepping a
 test problem with timestep dt and timestepper identified by the string stepper.
@@ -130,7 +130,7 @@ forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - nuΔζf. One
 to the vorticity equation forced by this Ff is then ζf. (This solution may not
 be realized, at least at long times, if it is unstable.)
 """
-function testnonlineartermsQGPV(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, message=false)
+function test_bqg_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, message=false)
   n, L  = 128, 2π
   nu, nnu = 1e-2, 1
   mu = 0.0
@@ -167,11 +167,11 @@ function testnonlineartermsQGPV(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.
 end
 
 """
-    testnonlineartermsU(dt, stepper; kwargs...)
+    test_bqg_formstress(dt, stepper; kwargs...)
 
 Tests the form stress term that forces the domain-averaged zonal flow U(t).
 """
-function testnonlineartermsU(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, message=false)
+function test_bqg_formstress(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, message=false)
   n, L  = 128, 2π
   nu, nnu = 1e-2, 1
   mu = 0.0
@@ -199,7 +199,7 @@ function testnonlineartermsU(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, m
   isapprox(prob.ts.N[1, 1], answer, rtol=1e-13)
 end
 
-function testenergyenstrophy()
+function test_bqg_energyenstrophy()
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
   g  = TwoDGrid(nx, Lx, ny, Ly)
@@ -222,7 +222,7 @@ function testenergyenstrophy()
   isapprox(energyzeta0, 29.0/9, rtol=1e-13) && isapprox(enstrophyzeta0, 2701.0/162, rtol=1e-13)
 end
 
-function testenergyenstrophy00()
+function test_bqg_energyenstrophy00()
   nx, Lx  = 64, 2π
   ny, Ly  = 96, 3π
   g  = TwoDGrid(nx, Lx, ny, Ly)
@@ -263,33 +263,33 @@ end
 
 
 dt, nsteps, stepper  = 1e-2, 20, "ETDRK4"
-@test test_baroQG_RossbyWave("ETDRK4", dt, nsteps)
+@test test_bqg_rossbywave("ETDRK4", dt, nsteps)
 
 dt, nsteps  = 1e-2, 20;
-@test test_baroQG_RossbyWave("FilteredETDRK4", dt, nsteps)
+@test test_bqg_rossbywave("FilteredETDRK4", dt, nsteps)
 
 dt, nsteps  = 1e-2, 20
-@test test_baroQG_RossbyWave("RK4", dt, nsteps)
+@test test_bqg_rossbywave("RK4", dt, nsteps)
 
 dt, nsteps  = 1e-2, 20
-@test test_baroQG_RossbyWave("FilteredRK4", dt, nsteps)
+@test test_bqg_rossbywave("FilteredRK4", dt, nsteps)
 
 dt, nsteps  = 1e-3, 200
-@test test_baroQG_RossbyWave("AB3", dt, nsteps)
+@test test_bqg_rossbywave("AB3", dt, nsteps)
 
 dt, nsteps  = 1e-3, 200
-@test test_baroQG_RossbyWave("FilteredAB3", dt, nsteps)
+@test test_bqg_rossbywave("FilteredAB3", dt, nsteps)
 
 dt, nsteps  = 1e-4, 2000
-@test test_baroQG_RossbyWave("ForwardEuler", dt, nsteps)
+@test test_bqg_rossbywave("ForwardEuler", dt, nsteps)
 
 dt, nsteps  = 1e-4, 2000
-@test test_baroQG_RossbyWave("FilteredForwardEuler", dt, nsteps)
+@test test_bqg_rossbywave("FilteredForwardEuler", dt, nsteps)
 
-@test test_stochasticforcingbudgets()
+@test test_bqg_stochasticforcingbudgets()
 
-@test testnonlineartermsQGPV(0.0005, "ForwardEuler")
-@test testnonlineartermsU(0.01, "ForwardEuler")
+@test test_bqg_advection(0.0005, "ForwardEuler")
+@test test_bqg_formstress(0.01, "ForwardEuler")
 
-@test testenergyenstrophy()
-@test testenergyenstrophy00()
+@test test_bqg_energyenstrophy()
+@test test_bqg_energyenstrophy00()

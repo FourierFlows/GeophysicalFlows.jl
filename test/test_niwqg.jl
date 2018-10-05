@@ -1,12 +1,3 @@
-using 
-  FourierFlows, 
-  GeophysicalFlows.NIWQG
-
-#e1(u, v, p, m, N) = @. abs2(u) + abs2(v) + m^2*abs2(p)/N^2
-#e1(prob) = e1(prob.vars.u, prob.vars.v, prob.vars.p, prob.params.m, prob.params.N)
-#wavecentroid(prob) = (FourierFlows.xmoment(e1(prob), prob.grid), FourierFlows.ymoment(e1(prob), prob.grid))
-
-#=
 function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, ti=L/Ue*0.01, nm=3, message=false)
   nt = round(Int, ti/dt)
   prob = NIWQG.Problem(nx=n, Lx=L, nu0=nu0, nnu0=nnu0, dt=dt, stepper="FilteredRK4")
@@ -33,7 +24,6 @@ function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, ti=L/Ue*0.01
 
   isapprox(Ue, mean(Ue_m[2:end]), atol=0.02)
 end
-=#
 
 #=
 function test_groupvelocity(nkw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rtol=1e-3, del=L/10)

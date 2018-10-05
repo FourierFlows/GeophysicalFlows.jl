@@ -1,4 +1,4 @@
-function test_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, ti=L/Ue*0.01, nm=3, message=false, atol=1e-2)
+function test_cosine_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, ti=L/Ue*0.01, nm=3, message=false, atol=1e-2)
   nt = round(Int, ti/dt)
   prob = VerticallyCosineBoussinesq.Problem(nx=n, Lx=L, nu0=nu0, nnu0=nnu0, dt=dt, stepper="FilteredRK4")
   x, y, Z = prob.grid.X, prob.grid.Y, prob.vars.Z # nicknames
@@ -29,7 +29,7 @@ function test_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, ti=L/Ue*0.0
   isapprox(Ue, mean(Ue_m[2:end]), atol=atol)
 end
 
-function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, nmu=0, message=false)
+function test_cosine_nonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, nmu=0, message=false)
   n, L  = 128, 2π
   nu, nnu = 1e-2, 1
   mu, nmu = 0.0, 0
@@ -67,7 +67,7 @@ end
 
 
 
-function test_groupvelocity(kw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rtol=1e-3)
+function test_cosine_groupvelocity(kw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rtol=1e-3)
    σ = f*sqrt(1 + (N*kw/m)^2)
   tσ = 2π/σ
   dt = tσ/100
@@ -89,6 +89,6 @@ function test_groupvelocity(kw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rtol
   isapprox(cga, cgn, rtol=rtol)
 end
 
-@test testnonlinearterms(0.0005, "ForwardEuler")
-@test test_lambdipole(256, 1e-3)
-@test test_groupvelocity(16)
+@test test_cosine_nonlinearterms(0.0005, "ForwardEuler")
+@test test_cosine_lambdipole(256, 1e-3)
+@test test_cosine_groupvelocity(16)

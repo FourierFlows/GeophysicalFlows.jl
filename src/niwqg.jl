@@ -33,17 +33,17 @@ function Problem(;
     Ly = Lx,
     dt = 0.01,
   # Drag and/or hyper-/hypo-viscosity
-    nu = 0,
-   nnu = 1,
-   kap = 0,
-  nkap = 1,
-   muq = 0,
-  nmuq = 0,
-   muw = 0,
-  nmuw = 0,
+    nu = 0, # wave (hyper-)viscosity
+   nnu = 1, # wave (hyper-)viscous order (1=Laplacian)
+   kap = 0, # PV (hyper-)visosity
+  nkap = 1, # PV (hyper-)viscous order
+   muq = 0, # drag/arbitrary-order dissipation for q
+  nmuq = 0, # order of 2nd dissipation term for q
+   muw = 0, # drag/arbitrary-order dissipation for w
+  nmuw = 0, # order of 2nd dissipation term for w
   # Physical parameters
-     f = 1,
-   eta = 0,
+   eta = 0, # dispersivity: eta = N^2 / f m^2
+     f = 1, # inertial frequency
   # Optional uniform and steady background flow
     Ub = 0,
     Vb = 0,
