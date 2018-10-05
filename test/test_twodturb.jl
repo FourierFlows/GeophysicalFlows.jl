@@ -1,4 +1,5 @@
 using 
+  FourierFlows,
   GeophysicalFlows.TwoDTurb,
   Statistics,
   Random,
