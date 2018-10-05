@@ -1,4 +1,5 @@
 using 
+  GeophysicalFlows.TwoDTurb,
   Statistics,
   Random,
   FFTW
@@ -11,7 +12,7 @@ cfl(prob) = maximum([maximum(abs.(prob.vars.U)), maximum(abs.(prob.vars.V))]*pro
 
 function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01, nm=3)
   nt = round(Int, ti/dt)
-  prob = TwoDTurb.InitialValueProblem(nx=n, Lx=L, nu=nu, nnu=nnu, dt=dt, stepper="FilteredRK4")
+  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, dt=dt, stepper="FilteredRK4")
   q0 = FourierFlows.lambdipole(Ue, Re, prob.grid)
   TwoDTurb.set_q!(prob, q0)
 
@@ -61,7 +62,7 @@ function stochasticforcingbudgetstest(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, m
     nothing
   end
 
-  prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt,
+  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt,
    stepper="RK4", calcF=calcF!)
 
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
@@ -142,7 +143,7 @@ function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, n
     nothing
   end
 
-  prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!)
+  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!)
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
   TwoDTurb.set_q!(prob, qf)
 
@@ -163,7 +164,7 @@ function testenergyenstrophy()
   psi0 = @. sin(2*k0*x)*cos(2*l0*y) + 2sin(k0*x)*cos(3*l0*y)
     q0 = @. -((2*k0)^2+(2*l0)^2)*sin(2*k0*x)*cos(2*l0*y) - (k0^2+(3*l0)^2)*2sin(k0*x)*cos(3*l0*y)
 
-  prob = TwoDTurb.InitialValueProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
+  prob = TwoDTurb.Problem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
   TwoDTurb.set_q!(prob, q0)
   TwoDTurb.updatevars!(prob)
