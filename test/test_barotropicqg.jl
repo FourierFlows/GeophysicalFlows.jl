@@ -174,18 +174,16 @@ Tests the form stress term that forces the domain-averaged zonal flow U(t).
 function test_bqg_formstress(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, message=false)
   n, L  = 128, 2π
   nu, nnu = 1e-2, 1
-  mu = 0.0
-  tf = 1.0
+  mu = 0
+  tf = 1
   nt = 1
 
-
-
-  gr  = TwoDGrid(n, L)
+  gr = TwoDGrid(n, L)
   x, y = gr.X, gr.Y
 
   zetai = -20*sin.(10*x).*cos.(10*y)
   topoPV(x, y) = cos.(10x).*cos.(10y)
-  F(t) = 0 #no forcing
+  F(t) = 0 # no forcing
 
   answer = 0.25 # this is what <v*eta> should be
 

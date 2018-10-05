@@ -4,5 +4,6 @@ include("twodturb.jl")
 include("barotropicqg.jl")
 include("verticallycosineboussinesq.jl")
 include("verticallyfourierboussinesq.jl")
+include("niwqg.jl")
 
 end # module
