@@ -1,8 +1,10 @@
-import FourierFlows.BarotropicQG
+using 
+  GeophysicalFlows.BarotropicQG,
+  FFTW,
+  Statistics,
+  Random
 
-using FFTW, Statistics, Random
-import Statistics: mean
-
+#using Statistics: mean
 
 # -----------------------------------------------------------------------------
 # BAROQG's TEST FUNCTIONS

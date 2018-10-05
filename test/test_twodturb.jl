@@ -1,7 +1,10 @@
-import FourierFlows.TwoDTurb
+using 
+  GeophysicalFlows.TwoDTurb,
+  Statistics,
+  Random,
+  FFTW
 
-using Statistics, Random, FFTW
-import Statistics: mean
+#using Statistics: mean
 
 cfl(prob) = maximum([maximum(abs.(prob.vars.U)), maximum(abs.(prob.vars.V))]*prob.ts.dt/prob.grid.dx)
 

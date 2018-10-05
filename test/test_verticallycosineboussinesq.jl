@@ -1,4 +1,4 @@
-import GeophysicalFlows.VerticallyCosineBoussinesq
+using GeophysicalFlows.VerticallyCosineBoussinesq
 
 cfl(U, V, dt, dx) maximum([maximum(abs.(U)), maximum(abs.(V))]*dt/dx)
 cfl(prob) = cfl(prob.vars.U, prob.vars.V, prob.ts.dt, prob.grid.dx)
