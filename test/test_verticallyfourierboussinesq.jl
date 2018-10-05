@@ -1,21 +1,9 @@
-using 
-  FourierFlows, 
-  GeophysicalFlows.VerticallyFourierBoussinesq
-
-using GeophysicalFlows.VerticallyFourierBoussinesq: mode1u
-
-cfl(U, V, dt, dx) = maximum([maximum(abs.(U)), maximum(abs.(V))]*dt/dx)
-cfl(prob) = cfl(prob.vars.U, prob.vars.V, prob.ts.dt, prob.grid.dx)
-e1(u, v, p, m, N) = @. abs2(u) + abs2(v) + m^2*abs2(p)/N^2
-e1(prob) = e1(prob.vars.u, prob.vars.v, prob.vars.p, prob.params.m, prob.params.N)
-wavecentroid(prob) = (FourierFlows.xmoment(e1(prob), prob.grid), FourierFlows.ymoment(e1(prob), prob.grid))
-
 function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, ti=L/Ue*0.01, nm=3, message=false)
   nt = round(Int, ti/dt)
   prob = VerticallyFourierBoussinesq.Problem(nx=n, Lx=L, nu0=nu0, nnu0=nnu0, dt=dt, stepper="FilteredRK4")
   x, y, Z = prob.grid.X, prob.grid.Y, prob.vars.Z # nicknames
 
-  Z0 = FourierFlows.lambdipole(Ue, Re, prob.grid)
+  Z0 = lambdipole(Ue, Re, prob.grid)
   VerticallyFourierBoussinesq.set_Z!(prob, Z0)
 
   xZ = zeros(nm)   # centroid of abs(Z)
@@ -55,11 +43,11 @@ function test_groupvelocity(nkw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rto
   VerticallyFourierBoussinesq.set_planewave!(prob, uw, nkw; envelope=envelope)
 
   t₋₁ = prob.t
-  xw₋₁, yw₋₁ = wavecentroid(prob)
+  xw₋₁, yw₋₁ = wavecentroid_fourier(prob)
 
   stepforward!(prob, nt)
   VerticallyFourierBoussinesq.updatevars!(prob)
-  xw, yw = wavecentroid(prob)
+  xw, yw = wavecentroid_fourier(prob)
   cgn = (xw-xw₋₁) / (prob.t-t₋₁)
 
   isapprox(cga, cgn, rtol=rtol)

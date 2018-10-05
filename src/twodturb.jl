@@ -43,7 +43,7 @@ function Problem(;
   stepper = "RK4", 
     calcF = nothing)
 
- g = TwoDGrid{T}(nx, Lx, ny, Ly)
+ g = TwoDGrid(nx, Lx, ny, Ly)
 
   if calcF == nothing # initial value problem
     pr = Params{T}(nu, nnu, mu, nmu)

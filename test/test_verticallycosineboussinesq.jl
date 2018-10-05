@@ -1,8 +1,3 @@
-using GeophysicalFlows.VerticallyCosineBoussinesq
-
-cfl(U, V, dt, dx) maximum([maximum(abs.(U)), maximum(abs.(V))]*dt/dx)
-cfl(prob) = cfl(prob.vars.U, prob.vars.V, prob.ts.dt, prob.grid.dx)
-
 function test_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, ti=L/Ue*0.01, nm=3, message=false, atol=1e-2)
   nt = round(Int, ti/dt)
   prob = VerticallyCosineBoussinesq.Problem(nx=n, Lx=L, nu0=nu0, nnu0=nnu0, dt=dt, stepper="FilteredRK4")
@@ -71,9 +66,6 @@ function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, n
 end
 
 
-e1(u, v, p, m, N) = @. ( u^2 + v^2 + m^2*p^2/N^2 )/2
-e1(prob) = e1(prob.vars.u, prob.vars.v, prob.vars.p, prob.params.m, prob.params.N)
-wavecentroid(prob) = (FourierFlows.xmoment(e1(prob), prob.grid), FourierFlows.ymoment(e1(prob), prob.grid))
 
 function test_groupvelocity(kw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rtol=1e-3)
    σ = f*sqrt(1 + (N*kw/m)^2)
@@ -88,11 +80,11 @@ function test_groupvelocity(kw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rtol
   VerticallyCosineBoussinesq.set_planewave!(prob, uw, kw; envelope=envelope)
 
   t₋₁ = prob.t
-  xw₋₁, yw₋₁ = wavecentroid(prob)
+  xw₋₁, yw₋₁ = wavecentroid_cosine(prob)
 
   stepforward!(prob, nt)
   VerticallyCosineBoussinesq.updatevars!(prob)
-  xw, yw = wavecentroid(prob)
+  xw, yw = wavecentroid_cosine(prob)
   cgn = (xw-xw₋₁) / (prob.t-t₋₁)
   isapprox(cga, cgn, rtol=rtol)
 end

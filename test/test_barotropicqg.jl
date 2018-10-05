@@ -1,15 +1,3 @@
-using 
-  FourierFlows,
-  GeophysicalFlows.BarotropicQG,
-  FFTW,
-  Statistics,
-  Random
-
-#using Statistics: mean
-
-# -----------------------------------------------------------------------------
-# BAROQG's TEST FUNCTIONS
-
 """
     test_baroQG_RossbyWave(; kwargs...)
 
@@ -75,7 +63,7 @@ function test_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, 
   @. force2k[gr.KKrsq .< 2.0^2 ] = 0
   @. force2k[gr.KKrsq .> 20.0^2 ] = 0
   @. force2k[gr.Kr.<2π/L] = 0
-  σ0 = FourierFlows.parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+  σ0 = parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
   force2k .= σ/σ0 * force2k
 
   Random.seed!(1234)
@@ -93,10 +81,10 @@ function test_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, 
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
 
   BarotropicQG.set_zeta!(prob, 0*g.X)
-  E = Diagnostic(FourierFlows.BarotropicQG.energy,      prob, nsteps=nt)
-  D = Diagnostic(FourierFlows.BarotropicQG.dissipation, prob, nsteps=nt)
-  R = Diagnostic(FourierFlows.BarotropicQG.drag,        prob, nsteps=nt)
-  W = Diagnostic(FourierFlows.BarotropicQG.work,        prob, nsteps=nt)
+  E = Diagnostic(BarotropicQG.energy,      prob, nsteps=nt)
+  D = Diagnostic(BarotropicQG.dissipation, prob, nsteps=nt)
+  R = Diagnostic(BarotropicQG.drag,        prob, nsteps=nt)
+  W = Diagnostic(BarotropicQG.work,        prob, nsteps=nt)
   diags = [E, D, W, R]
 
   # Step forward
@@ -228,8 +216,8 @@ function testenergyenstrophy()
   BarotropicQG.set_zeta!(prob, zeta0)
   BarotropicQG.updatevars!(prob)
 
-  energyzeta0 = FourierFlows.BarotropicQG.energy(prob)
-  enstrophyzeta0 = FourierFlows.BarotropicQG.enstrophy(prob)
+  energyzeta0 = BarotropicQG.energy(prob)
+  enstrophyzeta0 = BarotropicQG.enstrophy(prob)
 
   isapprox(energyzeta0, 29.0/9, rtol=1e-13) && isapprox(enstrophyzeta0, 2701.0/162, rtol=1e-13)
 end
@@ -249,18 +237,19 @@ function testenergyenstrophy00()
   beta = 10.0
   U = 1.2
 
-  prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, beta=beta, eta=eta, calcFU = calcFU, stepper="ForwardEuler")
+  prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, beta=beta, eta=eta, calcFU = calcFU, 
+                                    stepper="ForwardEuler")
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
 
   BarotropicQG.set_zeta!(prob, zeta0)
   BarotropicQG.set_U!(prob, U)
   BarotropicQG.updatevars!(prob)
 
-  energyU = FourierFlows.BarotropicQG.energy00(prob)
-  enstrophyU = FourierFlows.BarotropicQG.enstrophy00(prob)
+  energyU = BarotropicQG.energy00(prob)
+  enstrophyU = BarotropicQG.enstrophy00(prob)
 
-  energyzeta0 = FourierFlows.BarotropicQG.energy(prob)
-  enstrophyzeta0 = FourierFlows.BarotropicQG.enstrophy(prob)
+  energyzeta0 = BarotropicQG.energy(prob)
+  enstrophyzeta0 = BarotropicQG.enstrophy(prob)
 
   (isapprox(energyU, 0.5*U^2, rtol=1e-13) &&
     isapprox(enstrophyU, beta*U, rtol=1e-13) &&
