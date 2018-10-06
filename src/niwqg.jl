@@ -4,6 +4,7 @@ export
   Problem,
   set_q!,
   set_phi!,
+  set_planewave!,
   updatevars!
   
 using 
@@ -26,9 +27,9 @@ const forcedvars = [:Fr, :Fc, :prevsolr, :prevsolc]
 nothingfunction(args...) = nothing
 onefunction(args...) = 1
 
-# -------
+# --
 # Problem
-# -------
+# --
 
 """
     Problem(; parameters...)
@@ -37,7 +38,7 @@ Construct a VerticallyFourierBoussinesq initial value problem.
 """
 function Problem(;
   # Numerical parameters
-    nx = 128,
+    nx = 64,
     Lx = 2π,
     ny = nx,
     Ly = Lx,
@@ -74,9 +75,10 @@ function Problem(;
 end
 
 
-# ------
+# --
 # Params
-# ------
+# --
+
 """
     Params(nu0, nnu0, nu1, nnu1, f, N, m, Ub, Vb)
 
@@ -113,16 +115,16 @@ function Equation(p, g; T=typeof(g.Lx))
 end
 
 function getlinearcoefficients(p, g)
-  LCc = @. -p.nu*g.KKsq^p.nnu - p.muw*g.KKsq^p.nmuw - im*p.eta/2*g.KKsq
+  LCc = @. -p.nu*g.KKsq^p.nnu - p.muw*g.KKsq^p.nmuw - 0.5*im*p.eta*g.KKsq
   LCr = @. -p.kap*g.KKrsq^p.nkap - p.muq*g.KKrsq^p.nmuq
   LCr[1, 1] = 0
   LCc[1 ,1] = 0
   LCc, LCr
 end
 
-# ----
+# --
 # Vars
-# ----
+# --
 
 varspecs = cat(
   getfieldspecs(physicalvarsr, :(Array{T,2})),
@@ -153,72 +155,73 @@ function ForcedVars(g; T=typeof(g.Lx))
   v = Vars(g; T=T)
   @createarrays Complex{T} (g.nkr, g.nl) Fr prevsolr
   @createarrays Complex{T} (g.nk, g.nl) Fc prevsolc
-  ForcedVars{T}(getfield.(v, fieldnames(typeof(v)))..., Fr, Fc, prevsolr, prevsolc)
+  ForcedVars{T}(getfield.(Ref(v), fieldnames(typeof(v)))..., Fr, Fc, prevsolr, prevsolc)
 end
 
-# -------
-# Solvers
-# -------
-function calczetah!(v, p, g, qh, phih)
-  # Calc qw
-  @. v.phixh = -im*g.k*phih
-  @. v.phiyh = -im*g.k*phih
 
-  ldiv!(v.phi, g.fftplan, phih)
+# --
+# Solver routines
+# --
+
+function calczetah!(zetah, qh, phih, phi, v, p, g)
+  # Calc qw
+  @. v.phixh = im*g.k*phih
+  @. v.phiyh = im*g.l*phih
+
   ldiv!(v.phix, g.fftplan, v.phixh)
   ldiv!(v.phiy, g.fftplan, v.phiyh)
 
   @. v.phijac = real(im*(conj(v.phix)*v.phiy - conj(v.phiy)*v.phix))
-  @. v.phisq = abs2(v.phi)
+  @. v.phisq = abs2(phi)
 
   mul!(v.phijach, g.rfftplan, v.phijac)
   mul!(v.phisqh, g.rfftplan, v.phisq)
 
-  @. v.zetah = v.qh - p.invf*(-0.25*g.KKrsq*v.phisqh + 0.5*v.phijach)
+  #   zeta = q  -               *** q^w ***
+  @. zetah = qh - p.invf*(-0.25*g.KKrsq*v.phisqh + 0.5*v.phijach)
   nothing
 end
 
-function calcUhVh!(v, p, g, psih)
-  @. v.Uh = -im*g.l  * psih
-  @. v.Vh =  im*g.kr * psih
-  v.Uh[1, 1] += p.Ub*g.nx*g.ny
-  v.Vh[1, 1] += p.Vb*g.nx*g.ny
+function calcUhVh!(Uh, Vh, psih, Ub, Vb, g)
+  @. Uh = - im * g.l  * psih # U = - ∂y ψ
+  @. Vh =   im * g.kr * psih # V = + ∂x ψ
+  Uh[1, 1] += Ub*g.nx*g.ny
+  Vh[1, 1] += Vb*g.nx*g.ny
   nothing
 end
 
-function calcadvectionterms!(v, phi, q)
-  @. v.Uphi = v.U*phi
-  @. v.Vphi = v.V*phi
-  @. v.Uq = v.U*q
-  @. v.Vq = v.V*q
-  nothing
-end
-
-function calcrefractionterm!(v, zeta, phi)
-  @. v.zetaphi = zeta*phi
+function calcadvectionterms!(Uq, Vq, Uphi, Vphi, U, V, q, phi)
+  @. Uq = U*q
+  @. Vq = V*q
+  @. Uphi = U*phi
+  @. Vphi = V*phi
   nothing
 end
 
 function calcN!(Nc, Nr, solc, solr, t, s, v, p, g)
-  @. v.qh = solr
-  calczetah!(v, p, g, solr, solc)
+  @. v.qh = solr # inverse transforms may destroy solr
+  @. v.phih = solc # this copy may not be necessary, but clarifies code
+
+  ldiv!(v.phi, g.fftplan, solc)
+  calczetah!(v.zetah, solr, solc, v.phi, v, p, g)
+
+  @. v.psih = -g.invKKrsq*v.zetah
+  calcUhVh!(v.Uh, v.Vh, v.psih, p.Ub, p.Vb, g)
+
+  # inverse transforms may destroy v.Uh, v.Vh, v.zetah, v.qh
+  ldiv!(v.U, g.rfftplan, v.Uh)
+  ldiv!(v.V, g.rfftplan, v.Vh)
   ldiv!(v.zeta, g.rfftplan, v.zetah)
   ldiv!(v.q, g.rfftplan, v.qh)
 
-  @. v.psih = -g.invKKrsq*v.zetah
-  calcUhVh!(v, p, g, v.psih)
-  ldiv!(v.U, g.rfftplan, v.Uh)
-  ldiv!(v.V, g.rfftplan, v.Vh)
-
-  calcadvectionterms!(v, v.phi, v.q)
-  calcrefractionterm!(v, v.zeta, v.phi)
+  calcadvectionterms!(v.Uq, v.Vq, v.Uphi, v.Vphi, v.U, v.V, v.q, v.phi)
+  @. v.zetaphi = v.zeta*v.phi
 
   mul!(v.Uphih, g.fftplan, v.Uphi)
   mul!(v.Vphih, g.fftplan, v.Vphi)
-  mul!(v.zetaphih, g.fftplan, v.zetaphi)
-
   mul!(v.Uqh, g.rfftplan, v.Uq)
   mul!(v.Vqh, g.rfftplan, v.Vq)
+  mul!(v.zetaphih, g.fftplan, v.zetaphi)
 
   @. Nc = - im*g.k*v.Uphih - im*g.l*v.Vphih - 0.5*im*v.zetaphih
   @. Nr = - im*g.kr*v.Uqh - im*g.l*v.Vqh
@@ -237,34 +240,39 @@ function addforcing!(Nc, Nr, t, s, v::ForcedVars, p, g)
   nothing
 end
 
-# ----------------
+
+# --
 # Helper functions
-# ----------------
+# --
 
 """
     updatevars!(prob)
 
-Update variables to correspond to the solution in s.sol or prob.state.sol.
+Update variables in `prob.vars` using the solution in `prob.state.solr` and prob.state.solc`.
 """
 function updatevars!(v, s, p, g)
-
   @. v.qh .= s.solr
-  calczetah!(v, p, g, s.solr, s.solc)
-  @. v.psih = -g.invKKrsq*v.zetah
-  calcUhVh!(v, p, g, v.psih)
+  @. v.phih .= s.solc
 
+  ldiv!(v.phi, g.fftplan, v.phih)
+  calczetah!(v.zetah, s.solr, s.solc, v.phi, v, p, g)
+
+  @. v.psih = -g.invKKrsq*v.zetah
+  calcUhVh!(v.Uh, v.Vh, v.psih, p.Ub, p.Vb, g)
+
+  # Copy variables that are destroyed by inverse transforms
   psih1 = deepcopy(v.psih)
-  qh1 = deepcopy(v.qh)
-  Uh1 = deepcopy(v.Uh)
-  Vh1 = deepcopy(v.Vh)
+    qh1 = deepcopy(v.qh)
+    Uh1 = deepcopy(v.Uh)
+    Vh1 = deepcopy(v.Vh)
 
   ldiv!(v.psi, g.rfftplan, psih1)
   ldiv!(v.q, g.rfftplan, qh1)
   ldiv!(v.U, g.rfftplan, Uh1)
   ldiv!(v.V, g.rfftplan, Vh1)
 
-  @. v.phih .= s.solc
   ldiv!(v.phi, g.fftplan, v.phih)
+
   nothing
 end
 updatevars!(prob) = updatevars!(prob.vars, prob.state, prob.params, prob.grid)
@@ -275,7 +283,8 @@ updatevars!(prob) = updatevars!(prob.vars, prob.state, prob.params, prob.grid)
 Set potential vorticity and update variables.
 """
 function set_q!(s, v, p, g, q)
-  mul!(s.solr, g.rfftplan, q)
+  @. v.q = q
+  mul!(s.solr, g.rfftplan, v.q)
   updatevars!(v, s, p, g)
   nothing
 end
@@ -297,9 +306,8 @@ set_phi!(prob, phi) = set_phi!(prob.state, prob.vars, prob.params, prob.grid, ph
 """
     set_planewave!(prob, uw, nkw, θ=0; kwargs...)
 
-Set a plane wave solution with initial speed uw and non-dimensional wave
-number nkw. The dimensional wavenumber will be `2π*nkw/Lx`. The keyword argument 
-`envelope=env(x, y)` will multiply the plane wave by `env(x, y)`
+Set plane wave solution in `prob` with initial speed `uw` and non-dimensional wave
+number `nkw`. Keyword argument `envelope=env(x, y)` multiplies the plane wave by `env(x, y)`
 """
 function set_planewave!(s, vs, pr, g, uw, nkw, θ=0; envelope=onefunction)
   k = 2π/g.Lx*round(Int, nkw*cos(θ))
