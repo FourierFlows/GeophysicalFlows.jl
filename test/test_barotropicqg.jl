@@ -174,7 +174,7 @@ Tests the form stress term that forces the domain-averaged zonal flow U(t).
 function test_bqg_formstress(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, message=false)
   n, L  = 128, 2π
   nu, nnu = 1e-2, 1
-  mu = 0
+  mu = 0.0
   tf = 1
   nt = 1
 
@@ -187,8 +187,8 @@ function test_bqg_formstress(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, m
 
   answer = 0.25 # this is what <v*eta> should be
 
-  prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper, eta=topoPV, calcFU = F, calcFq=nothing)
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+  prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper, eta=topoPV, 
+                                    calcFU=F, calcFq=nothing)
   BarotropicQG.set_zeta!(prob, zetai)
   BarotropicQG.updatevars!(prob)
 

@@ -9,7 +9,7 @@ Grid = TwoDGrid
 
 Construct a BarotropicQG turbulence problem.
 """
-function Problem(; nx=256, Lx=2π, ny=nx, Ly=Lx, f0 = 1.0, beta=0.0, eta=nothing,
+function Problem(; nx=256, Lx=2π, ny=nx, Ly=Lx, f0=1.0, beta=0.0, eta=nothing,
     nu=0.0, nnu=1, mu=0.0, dt=0.01, stepper="RK4", calcFU=nothing, calcFq=nothing)
 
   # the grid
