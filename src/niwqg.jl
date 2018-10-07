@@ -323,30 +323,63 @@ end
 set_planewave!(prob, uw, nkw, args...; kwargs...) = set_planewave!(
   prob.state, prob.vars, prob.params, prob.grid, uw, nkw, args...; kwargs...)
 
-#=
 # -----------
 # Diagnostics
 # -----------
 
 """
-    mode0energy(prob)
+    waveaction(prob)
 
-Returns the domain-averaged energy in the zeroth mode.
+Returns the domain-averaged near-inertial action.
 """
-@inline function mode0energy(s, v, g)
-  @. v.Uh = g.invKKrsq * abs2(s.solr) # qh*Psih
-  1/(2*g.Lx*g.Ly)*parsevalsum(v.Uh, g)
-end
-@inline mode0energy(prob) = mode0energy(prob.state, prob.vars, prob.grid)
+waveaction(prob) = waveaction(prob.state, prob.params, prob.grid)
 
+waveaction(s, p, g) = 0.5*p.invf*parsevalsum2(s.solc, g) / (g.Lx*g.Ly)
+
+"""
+    qgke(prob)
+
+Returns the QG kinetic energy.
+"""
+qgke(prob) = qgke(prob.state, prob.vars, prob.params, prob.grid)
+
+qgke(Uh, Vh, g) = 0.5*(parsevalsum2(Uh, g) + parsevalsum2(Vh, g)) / (g.Lx*g.Ly)
+
+function qgke(s, v, p, g)
+  @. v.qh .= s.solr
+  ldiv!(v.phi, g.fftplan, s.solc)
+  calczetah!(v.zetah, v.qh, s.solc, v.phi, v, p, g)
+  @. v.psih = -g.invKKrsq*v.zetah
+  calcUhVh!(v.Uh, v.Vh, v.psih, p.Ub, p.Vb, g)
+  qgke(v.Uh, v.Vh, g)
+end
+
+"""
+    wavepe(prob)
+
+Returns the potential energ of the near-inertial waves.
+"""
+wavepe(prob) = wavepe(prob.state.solc, prob.vars, prob.params, prob.grid)
+
+function wavepe(phih, v, p, g)
+  @. v.phixh = g.k*phih
+  @. v.phiyh = g.l*phih
+  0.25*p.eta^2*(parsevalsum2(v.phixh, g) + parsevalsum2(v.phiyh, g)) / (g.Lx*g.Ly)
+end
+
+"""
+    energy(prob)
+
+Returns the total energy in the NIW-QG flow.
+"""
+energy(prob) = qgke(prob) + wavepe(prob)
+
+#=
 """
     mode1ke(prob)
 
 Returns the domain-averaged kinetic energy in the first mode.
 """
-@inline mode1ke(uh, vh, g) = parsevalsum2(uh, g) + parsevalsum2(vh, g)/(g.Lx*g.Ly)
-@inline mode1ke(s, g) = @views mode1ke(s.solc[:, :, 1], s.solc[:, :, 2], g)
-@inline mode1ke(prob) = mode1ke(prob.state, prob.grid)
 
 """
     mode1pe(prob)
