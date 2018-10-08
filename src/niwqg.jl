@@ -5,7 +5,12 @@ export
   set_q!,
   set_phi!,
   set_planewave!,
-  updatevars!
+  updatevars!,
+
+  waveaction,
+  qgke,
+  wavepe,
+  coupledenergy
   
 using 
   Reexport,
@@ -343,15 +348,12 @@ Returns the QG kinetic energy.
 """
 qgke(prob) = qgke(prob.state, prob.vars, prob.params, prob.grid)
 
-qgke(Uh, Vh, g) = 0.5*(parsevalsum2(Uh, g) + parsevalsum2(Vh, g)) / (g.Lx*g.Ly)
-
 function qgke(s, v, p, g)
-  @. v.qh .= s.solr
+  @. v.qh = s.solr
   ldiv!(v.phi, g.fftplan, s.solc)
   calczetah!(v.zetah, v.qh, s.solc, v.phi, v, p, g)
-  @. v.psih = -g.invKKrsq*v.zetah
-  calcUhVh!(v.Uh, v.Vh, v.psih, p.Ub, p.Vb, g)
-  qgke(v.Uh, v.Vh, g)
+  @. v.Uh = g.invKKrsq * abs2(v.zetah)
+  1/(g.Lx*g.Ly) * 0.5 * parsevalsum(v.Uh, g)
 end
 
 """
@@ -364,15 +366,15 @@ wavepe(prob) = wavepe(prob.state.solc, prob.vars, prob.params, prob.grid)
 function wavepe(phih, v, p, g)
   @. v.phixh = g.k*phih
   @. v.phiyh = g.l*phih
-  0.25*p.eta^2*(parsevalsum2(v.phixh, g) + parsevalsum2(v.phiyh, g)) / (g.Lx*g.Ly)
+  1/(g.Lx*g.Ly) * 0.25*p.eta^2 * (parsevalsum2(v.phixh, g) + parsevalsum2(v.phiyh, g))
 end
 
 """
-    energy(prob)
+    coupledenergy(prob)
 
-Returns the total energy in the NIW-QG flow.
+Returns the 'coupled energy' in the NIW-QG flow.
 """
-energy(prob) = qgke(prob) + wavepe(prob)
+coupledenergy(prob) = qgke(prob) + wavepe(prob)
 
 #=
 """
