@@ -14,8 +14,8 @@ matrix:
     - julia: 1.0
     - julia: nightly
 
-before_script:
- - julia -e 'using Pkg; Pkg.add("FourierFlows");'
+      #before_script:
+      # - julia -e 'using Pkg; Pkg.add("FourierFlows");'
 
 # script:
 #   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
