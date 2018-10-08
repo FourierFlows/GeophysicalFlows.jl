@@ -17,25 +17,27 @@ using FourierFlows: lambdipole
   f = 1e-4 
   N = 5e-3
   m = 2π/325
-eta = N^2 / (f*m^2)
+lam = N/(f*m)
+eta = f*lam^2
 # Dissipation
   nu = 1e7
  nnu = 2
  kap = 5e7
 nkap = 2
 # Timestepping
-dt = 1e-3 * 2π/f
+dt = 5e-2 * 2π/f
 nsteps = 10
 nsubsteps = 100
 # Some calculated parameters
 ke = 2π/Re
 Ro = Ue*ke/f
 amplitude = Ro*(Uw/Ue)^2
-dispersivity = f*eta^2*ke/Ue
+dispersivity = f*lam^2*ke/Ue
 
-prob = NIWQG.Problem(nx=nx, Lx=Lx, dt=dt, f=f, eta=eta, nu=nu, nnu=nnu, kap=kap, nkap=nkap,
-                     stepper="ETDRK4")
+prob = NIWQG.Problem(nx=nx, Lx=Lx, dt=dt, f=f, eta=eta, nu=nu, nnu=nnu, kap=kap, nkap=nkap, Ub=-Ue,
+                     stepper="FilteredETDRK4")
 x, y = prob.grid.X, prob.grid.Y
+xp, yp = x./Re, y./Re # for plotting
 
 # Initial condition
 q0 = lambdipole(Ue, Re, prob.grid)
@@ -64,21 +66,20 @@ wave dispersivity = $dispersivity
 println(msg) #@printf(msg, nx, Ro, amplitude, dispersivity))
 
 close("all")
-fig, axs = subplots(ncols=2, figsize=(10, 6))
+fig, axs = subplots(ncols=2, figsize=(10, 6), sharey=true, sharex=true)
 function makeplot!(axs, prob)
   sca(axs[1])
-  pcolormesh(x, y, prob.vars.q)
+  pcolormesh(xp, yp, prob.vars.q)
 
-  xlim(-Lx/10, Lx/10)
-  ylim(-Lx/10, Lx/10)
+  xlim(minimum(xp)/10, maximum(xp)/10)
+  ylim(minimum(yp)/10, maximum(yp)/10)
 
   sca(axs[2])
-  pcolormesh(x, y, abs.(prob.vars.phi))
+  pcolormesh(xp, yp, abs.(prob.vars.phi))
 
-  xlim(-Lx/10, Lx/10)
-  ylim(-Lx/10, Lx/10)
+  xlim(minimum(xp)/10, maximum(xp)/10)
+  ylim(minimum(yp)/10, maximum(yp)/10)
 
-  ticksoff(axs)
   makesquare(axs)
   nothing
 end
@@ -87,6 +88,6 @@ for i = 1:nsteps
   stepforward!(prob, nsubsteps)
   updatevars!(prob)
 
-  println("step: $(i*nsubsteps), Δe: $(coupledenergy(prob)/energy0), Δe_w: $(wavepe(prob)/pe0)")
+  println("step: $(i*nsubsteps), Δe: $(coupledenergy(prob)/energy0), Δe_w: $(wavepe(prob)/energy0)")
   makeplot!(axs, prob)
 end
