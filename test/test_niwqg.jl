@@ -15,9 +15,10 @@ function test_set_phi()
 end
 
 "Test nonlinear PV advection terms in NIWQG by measuring the propoagation speed of the Lamb dipole."
-function test_niwqg_lambdipole(; nx=256, dt=1e-3, Lx=2π, Ue=1, Re=Lx/20, ti=Lx/Ue*0.01, nm=3)
+function test_niwqg_lambdipole(; nx=256, dt=1e-3, Lx=2π, Ue=1, Re=Lx/20, ti=Lx/Ue*0.01, nm=3,
+                              stepper="FilteredRK4")
   nt = round(Int, ti/dt)
-  prob = NIWQG.Problem(nx=nx, Lx=Lx, dt=dt, stepper="FilteredRK4")
+  prob = NIWQG.Problem(nx=nx, Lx=Lx, dt=dt, stepper=stepper)
   q0 = lambdipole(Ue, Re, prob.grid)
   NIWQG.set_q!(prob, q0)
 
@@ -37,7 +38,8 @@ function test_niwqg_lambdipole(; nx=256, dt=1e-3, Lx=2π, Ue=1, Re=Lx/20, ti=Lx/
 end
 
 "Test the group velocity of waves in NIWQG. This is essentially a test of the phi-dispersion term."
-function test_niwqg_groupvelocity(; nkw=16, nx=128, Lx=2π, f=1, eta=1/64, uw=1e-2, rtol=1e-3, del=Lx/10)
+function test_niwqg_groupvelocity(; nkw=16, nx=128, Lx=2π, f=1, eta=1/64, uw=1e-2, rtol=1e-3, del=Lx/10,
+                                  stepper="FilteredRK4")
   kw = nkw*2π/Lx
    σ = eta*kw^2/2
   tσ = 2π/(f+σ)
@@ -45,7 +47,7 @@ function test_niwqg_groupvelocity(; nkw=16, nx=128, Lx=2π, f=1, eta=1/64, uw=1e
   nt = round(Int, 3tσ/(2dt)) # 3/2 a wave period
   cga = eta*kw # analytical group velocity
 
-  prob = NIWQG.Problem(nx=nx, Lx=Lx, dt=dt, f=f, eta=eta, stepper="FilteredRK4")
+  prob = NIWQG.Problem(nx=nx, Lx=Lx, dt=dt, f=f, eta=eta, stepper=stepper)
   envelope(x, y) = exp(-x^2/(2*del^2))
   NIWQG.set_planewave!(prob, uw, nkw; envelope=envelope)
 
@@ -200,4 +202,54 @@ function test_niwqg_wavepv(; stepper="RK4", nk=2, nx=32, Lx=2π, f=1, dt=0.1, ns
   NIWQG.updatevars!(prob)
 
   isapprox(prob.vars.phi, phi0, rtol=rtol_niwqg)
+end
+
+"Test wave PV. Will fail if `calczetah!` is wrong."
+function test_niwqg_calczetah(; nk=2, nl=2, nx=32, Lx=2π, f=0.2)
+  k = 2π/Lx * nk
+  l = 2π/Lx * nl
+
+  prob = NIWQG.Problem(nx=nx, Lx=Lx, f=f)
+  x, y = prob.grid.X, prob.grid.Y
+
+  phi = @. cos(k*x) + im*cos(l*y)
+  q = zeros(nx, nx)
+  qw = @. -1/(2f) * (k^2*cos(2k*x) + l^2*cos(2l*y)) - k*l/f * sin(k*x) * sin(l*y)
+  zeta1 = @. q - qw
+
+  phih = fft(phi)
+  qh = rfft(q)
+  zetah1 = rfft(zeta1)
+
+  zetah2 = @. 0*zetah1 # initialize
+  NIWQG.calczetah!(zetah2, qh, phih, phi, prob.vars, prob.params, prob.grid)
+  zeta2 = irfft(zetah2, nx)
+
+  isapprox(zeta1, zeta2)
+end
+
+
+function test_niwqg_energetics(; nk=2, nl=3, nx=256, f=1, eta=0.4)
+  prob = NIWQG.Problem(nx=nx, f=f, eta=eta)
+
+  k = nk * 2π/prob.grid.Lx
+  l = nl * 2π/prob.grid.Ly
+  x, y = prob.grid.X, prob.grid.Y
+
+  phi0 = @. exp(im*k*x) 
+  q0 = @. l*cos(l*y) # U = - q_y = -sin(l*y); ke = U^2/2 = 1/4
+
+  action0 = 1/(2f) 
+  ke0 = 1/4
+  pe0 = eta^2/4 * k^2
+  e0 = ke0 + pe0
+
+  NIWQG.set_phi!(prob, phi0)
+  NIWQG.set_q!(prob, q0)
+
+  ( isapprox(NIWQG.waveaction(prob), action0)
+    && isapprox(NIWQG.qgke(prob), ke0)
+    && isapprox(NIWQG.wavepe(prob), pe0)
+    && isapprox(NIWQG.coupledenergy(prob), e0)
+  )
 end

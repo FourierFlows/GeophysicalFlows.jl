@@ -154,8 +154,3 @@ function test_twodturb_energyenstrophy()
   (isapprox(energyq0, 29.0/9, rtol=rtol_twodturb) && 
    isapprox(enstrophyq0, 2701.0/162, rtol=rtol_twodturb))
 end
-
-@test test_twodturb_advection(0.0005, "ForwardEuler")
-@test test_twodturb_lambdipole(256, 1e-3)
-@test test_twodturb_stochasticforcingbudgets()
-@test test_twodturb_energyenstrophy()

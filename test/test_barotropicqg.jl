@@ -255,39 +255,3 @@ function test_bqg_energyenstrophy00()
     isapprox(enstrophyzeta0, 2701.0/162, rtol=1e-13)
   )
 end
-
-# -----------------------------------------------------------------------------
-# Running the tests
-
-
-dt, nsteps, stepper  = 1e-2, 20, "ETDRK4"
-@test test_bqg_rossbywave("ETDRK4", dt, nsteps)
-
-dt, nsteps  = 1e-2, 20;
-@test test_bqg_rossbywave("FilteredETDRK4", dt, nsteps)
-
-dt, nsteps  = 1e-2, 20
-@test test_bqg_rossbywave("RK4", dt, nsteps)
-
-dt, nsteps  = 1e-2, 20
-@test test_bqg_rossbywave("FilteredRK4", dt, nsteps)
-
-dt, nsteps  = 1e-3, 200
-@test test_bqg_rossbywave("AB3", dt, nsteps)
-
-dt, nsteps  = 1e-3, 200
-@test test_bqg_rossbywave("FilteredAB3", dt, nsteps)
-
-dt, nsteps  = 1e-4, 2000
-@test test_bqg_rossbywave("ForwardEuler", dt, nsteps)
-
-dt, nsteps  = 1e-4, 2000
-@test test_bqg_rossbywave("FilteredForwardEuler", dt, nsteps)
-
-@test test_bqg_stochasticforcingbudgets()
-
-@test test_bqg_advection(0.0005, "ForwardEuler")
-@test test_bqg_formstress(0.01, "ForwardEuler")
-
-@test test_bqg_energyenstrophy()
-@test test_bqg_energyenstrophy00()
