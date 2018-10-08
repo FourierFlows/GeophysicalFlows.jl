@@ -236,12 +236,14 @@ function test_niwqg_energetics(; nk=2, nl=3, nx=256, f=1, eta=0.4)
   l = nl * 2π/prob.grid.Ly
   x, y = prob.grid.X, prob.grid.Y
 
+  lam = sqrt(eta/f) # eta = f*lam^2
+
   phi0 = @. exp(im*k*x) 
   q0 = @. l*cos(l*y) # U = - q_y = -sin(l*y); ke = U^2/2 = 1/4
 
   action0 = 1/(2f) 
   ke0 = 1/4
-  pe0 = eta^2/4 * k^2
+  pe0 = lam^2/4 * k^2
   e0 = ke0 + pe0
 
   NIWQG.set_phi!(prob, phi0)

@@ -366,7 +366,7 @@ wavepe(prob) = wavepe(prob.state.solc, prob.vars, prob.params, prob.grid)
 function wavepe(phih, v, p, g)
   @. v.phixh = g.k*phih
   @. v.phiyh = g.l*phih
-  1/(g.Lx*g.Ly) * 0.25*p.eta^2 * (parsevalsum2(v.phixh, g) + parsevalsum2(v.phiyh, g))
+  1/(g.Lx*g.Ly) * 0.25*p.eta*p.invf * (parsevalsum2(v.phixh, g) + parsevalsum2(v.phiyh, g))
 end
 
 """
