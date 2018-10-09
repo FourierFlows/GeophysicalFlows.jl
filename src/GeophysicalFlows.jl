@@ -1,5 +1,11 @@
 module GeophysicalFlows
 
+using 
+  FourierFlows,
+  Statistics,
+  SpecialFunctions
+
+include("utils.jl")
 include("twodturb.jl")
 include("barotropicqg.jl")
 include("verticallycosineboussinesq.jl")
