@@ -27,7 +27,8 @@ const physicalvarsr = [:q, :U, :V, :zeta, :psi, :Uq, :Vq, :phijac, :phisq]
 const physicalvarsc = [:phi, :Uphi, :Vphi, :zetaphi, :phix, :phiy] 
 const transformvarsr = [ Symbol(var, :h) for var in physicalvarsr ]
 const transformvarsc = [ Symbol(var, :h) for var in physicalvarsc ]
-const forcedvars = [:Fr, :Fc, :prevsolr, :prevsolc]
+const forcedvars = [:Fr, :Fc]
+const stochforcedvars = [:prevsolr, :prevsolc]
 
 nothingfunction(args...) = nothing
 onefunction(args...) = 1
@@ -43,37 +44,39 @@ Construct a VerticallyFourierBoussinesq initial value problem.
 """
 function Problem(;
   # Numerical parameters
-    nx = 64,
-    Lx = 2π,
-    ny = nx,
-    Ly = Lx,
-    dt = 0.01,
+          nx = 64,
+          Lx = 2π,
+          ny = nx,
+          Ly = Lx,
+          dt = 1e-9,
   # Drag and/or hyper-/hypo-viscosity
-    nu = 0, # wave (hyper-)viscosity
-   nnu = 1, # wave (hyper-)viscous order (1=Laplacian)
-   kap = 0, # PV (hyper-)visosity
-  nkap = 1, # PV (hyper-)viscous order
-   muq = 0, # drag/arbitrary-order dissipation for q
-  nmuq = 0, # order of 2nd dissipation term for q
-   muw = 0, # drag/arbitrary-order dissipation for w
-  nmuw = 0, # order of 2nd dissipation term for w
+          nu = 0, # wave (hyper-)viscosity
+         nnu = 1, # wave (hyper-)viscous order (1=Laplacian)
+         kap = 0, # PV (hyper-)visosity
+        nkap = 1, # PV (hyper-)viscous order
+         muq = 0, # drag/arbitrary-order dissipation for q
+        nmuq = 0, # order of 2nd dissipation term for q
+         muw = 0, # drag/arbitrary-order dissipation for w
+        nmuw = 0, # order of 2nd dissipation term for w
   # Physical parameters
-   eta = 0, # dispersivity: eta = N^2 / f m^2
-     f = 1, # inertial frequency
+         eta = 0, # dispersivity: eta = N^2 / f m^2
+           f = 1, # inertial frequency
   # Optional uniform and steady background flow
-    Ub = 0,
-    Vb = 0,
+          Ub = 0,
+          Vb = 0,
   # Timestepper and eqn options
-  stepper = "RK4",
-  calcF = nothingfunction,
-  nthreads = Sys.CPU_THREADS,
-  T = Float64
+     stepper = "RK4",
+       calcF = nothingfunction,
+  stochastic = false,
+    nthreads = Sys.CPU_THREADS,
+           T = Float64,
+     dealias = false
   )
 
   gd = TwoDGrid(nx, Lx, ny, Ly; T=T)
-  pr = Params{T}(nu, nnu, kap, nkap, muq, nmuq, muw, nmuw, eta, f, 1/f, Ub, Vb, calcF)
-  vs = calcF == nothingfunction ? Vars(gd) : ForcedVars(gd)
-  eq = Equation(pr, gd)
+  pr = Params{T}(nu, nnu, kap, nkap, muw, nmuw, muq, nmuq, eta, f, 1/f, Ub, Vb, calcF)
+  vs = calcF == nothingfunction ? Vars(gd) : (stochastic ? StochasticForcedVars(gd) : ForcedVars(gd))
+  eq = Equation(pr, gd; dealias=dealias)
   ts = TimeStepper(stepper, dt, eq.LCc, eq.LCr, gd)
 
   FourierFlows.Problem(gd, vs, pr, eq, ts)
@@ -85,47 +88,43 @@ end
 # --
 
 """
-    Params(nu0, nnu0, nu1, nnu1, f, N, m, Ub, Vb)
+    Params(nu, nnu, kap, nkap, muq, nmuq, muw, nmuw, eta, f, invf, Ub, Vb, calcF!)
 
-Construct parameters for the Two-Fourier-mode Boussinesq problem. Suffix 0
-refers to zeroth mode; 1 to first mode. f, N, m are Coriolis frequency,
-buoyancy frequency, and vertical wavenumber of the first mode, respectively.
-The optional constant background velocity (Ub,Vb) is set to zero by default.
-The viscosity is applied only to the first-mode horizontal velocities.
+Construct parameters for an NIWQG problem.
 """
 struct Params{T} <: AbstractParams
-  nu::T      # Mode-0 viscosity
-  nnu::Int   # Mode-0 hyperviscous order
-  kap::T     # Mode-1 viscosity
-  nkap::Int  # Mode-1 hyperviscous order
-  muq::T     # Mode-0 drag / hypoviscosity
-  nmuq::Int  # Mode-0 drag / hypoviscous order
-  muw::T     # Mode-1 drag / hypoviscosity
-  nmuw::Int  # Mode-1 drag / hypoviscous order
-  eta::T     # Dispersivity
-  f::T       # Planetary vorticity
-  invf::T    # 1/f
-  Ub::T      # Steady barotropic mean x-velocity
-  Vb::T      # Steady barotropic mean y-velocity
-  calcF!::Function
+  nu::T             # Wave viscosity
+  nnu::Int          # Wave hyperviscous order
+  kap::T            # PV 'diffusivity'
+  nkap::Int         # PV hyperdiffusive order
+  muw::T            # Wave drag / hypoviscosityty
+  nmuw::Int         # Wave drag / hypoviscous orderer
+  muq::T            # PV drag / hypoviscosity
+  nmuq::Int         # PV drag / hypoviscous order
+  eta::T            # Dispersivity
+  f::T              # Planetary vorticity
+  invf::T           # 1/f
+  Ub::T             # Steady barotropic background ('mean') x-velocity
+  Vb::T             # Steady barotropic background ('mean') y-velocity
+  calcF!::Function  # Forcing
 end
 
 # ---------
 # Equations
 # ---------
 
-function Equation(p, g; T=typeof(g.Lx))
-  LCc, LCr = getlinearcoefficients(p, g)
-  FourierFlows.DualEquation{Complex{T},2,2}(LCc, LCr, calcN!)
-end
-
-function getlinearcoefficients(p, g)
-  LCc = @. -p.nu*g.KKsq^p.nnu - p.muw*g.KKsq^p.nmuw - 0.5*im*p.eta*g.KKsq
-  LCr = @. -p.kap*g.KKrsq^p.nkap - p.muq*g.KKrsq^p.nmuq
+function Equation(p, g; T=typeof(g.Lx), dealias=false)
+  LCc = @. - p.nu  * g.KKsq  ^ p.nnu   -  p.muw * g.KKsq  ^ p.nmuw  -  0.5*im*p.eta*g.KKsq
+  LCr = @. - p.kap * g.KKrsq ^ p.nkap  -  p.muq * g.KKrsq ^ p.nmuq
   LCr[1, 1] = 0
   LCc[1 ,1] = 0
-  LCc, LCr
+
+  (dealias ? 
+    FourierFlows.DualEquation{Complex{T},2,2}(LCc, LCr, calcN_dealiased!) :
+    FourierFlows.DualEquation{Complex{T},2,2}(LCc, LCr, calcN!)
+   )
 end
+
 
 # --
 # Vars
@@ -139,9 +138,11 @@ varspecs = cat(
   dims=1)
 
 forcedvarspecs = cat(varspecs, getfieldspecs(forcedvars, :(Array{Complex{T},2})), dims=1)
+stochforcedvarspecs = cat(forcedvarspecs, getfieldspecs(stochforcedvars, :(Array{Complex{T},2})), dims=1)
 
 eval(structvarsexpr(:Vars, varspecs; parent=:NIWQGVars))
 eval(structvarsexpr(:ForcedVars, forcedvarspecs; parent=:NIWQGVars))
+eval(structvarsexpr(:StochasticForcedVars, stochforcedvarspecs; parent=:NIWQGVars))
 
 function Vars(g; T=typeof(g.Lx))
   @createarrays T (g.nx, g.ny) q U V zeta psi Uq Vq phijac phisq
@@ -158,9 +159,16 @@ end
 
 function ForcedVars(g; T=typeof(g.Lx))
   v = Vars(g; T=T)
-  @createarrays Complex{T} (g.nkr, g.nl) Fr prevsolr
-  @createarrays Complex{T} (g.nk, g.nl) Fc prevsolc
-  ForcedVars{T}(getfield.(Ref(v), fieldnames(typeof(v)))..., Fr, Fc, prevsolr, prevsolc)
+  Fr = zeros(Complex{T}, (g.nkr, g.nl))
+  Fc = zeros(Complex{T}, (g.nk, g.nl))
+  ForcedVars{T}(getfield.(Ref(v), fieldnames(typeof(v)))..., Fr, Fc)
+end
+
+function StochasticForcedVars(g; T=typeof(g.Lx))
+  v = ForcedVars(g; T=T)
+  prevsolr = zeros(Complex{T}, (g.nkr, g.nl))
+  prevsolc = zeros(Complex{T}, (g.nk, g.nl))
+  ForcedVars{T}(getfield.(Ref(v), fieldnames(typeof(v)))..., prevsolr, prevsolc)
 end
 
 
@@ -236,6 +244,13 @@ function calcN!(Nc, Nr, solc, solr, t, s, v, p, g)
   nothing
 end
 
+function calcN_dealiased!(Nc, Nr, solc, solr, t, s, v, p, g)
+  calcN!(Nc, Nr, solc, solr, t, s, v, p, g)
+  dealias!(Nc, g, g.ialias)
+  dealias!(Nr, g, g.iralias)
+  nothing
+end
+
 addforcing!(Nc, Nr, t, s, v::Vars, p, g) = nothing
 
 function addforcing!(Nc, Nr, t, s, v::ForcedVars, p, g)
@@ -245,6 +260,16 @@ function addforcing!(Nc, Nr, t, s, v::ForcedVars, p, g)
   nothing
 end
 
+function addforcing!(Nc, Nr, t, s, v::StochasticForcedVars, p, g)
+  if t == s.t # not a substep
+    @. v.prevsolc = s.solc
+    @. v.prevsolr = s.solr
+    p.calcF!(v.Fc, v.Fr, t, s, v, p, g)
+  end
+  @. Nc += v.Fc
+  @. Nr += v.Fr
+  nothing
+end
 
 # --
 # Helper functions
