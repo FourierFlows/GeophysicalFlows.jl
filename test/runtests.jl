@@ -96,22 +96,34 @@ end
 
   @test test_set_q()
   @test test_set_phi()
+
   @test test_niwqg_lambdipole(nx=256, dt=1e-3, stepper="FilteredRK4")
   @test test_niwqg_lambdipole(nx=256, dt=1e-3, stepper="FilteredETDRK4")
+
   @test test_niwqg_groupvelocity(nkw=16, stepper="FilteredRK4")
   @test test_niwqg_groupvelocity(nkw=16, stepper="FilteredETDRK4")
+
   @test test_niwqg_forcing_q(dt=0.01, stepper="RK4", nsteps=100)
   @test test_niwqg_forcing_q(dt=0.01, stepper="FilteredRK4", nsteps=100)
   @test test_niwqg_forcing_phi(dt=0.01, stepper="RK4", nsteps=100, muw=0, nu=0.01, nnu=0)
   @test test_niwqg_forcing_phi(dt=0.01, stepper="FilteredRK4", nsteps=100, muw=0, nu=0.01, nnu=0)
   @test test_niwqg_forcing_phi(dt=0.01, stepper="FilteredRK4", nsteps=100, nu=0, muw=0.02, nmuw=1)
+
   @test test_niwqg_nonlinear1(dt=0.01, stepper="FilteredRK4", nsteps=100)
   @test test_niwqg_nonlinear2(dt=0.01, stepper="FilteredRK4", nsteps=100)
   @test test_niwqg_wavepv(dt=0.01, stepper="FilteredRK4", nsteps=100)
+
   @test test_niwqg_calczetah()
   @test test_niwqg_energetics()
+
+  @test   test_niwqg_hyperdissipation_q(nsteps=50, nkap=1, stepper="ETDRK4")
+  @test   test_niwqg_hyperdissipation_q(nsteps=50, nkap=2, stepper="ETDRK4")
+  @test test_niwqg_hyperdissipation_phi(nsteps=50, nnu=1,  stepper="ETDRK4")
+  @test test_niwqg_hyperdissipation_phi(nsteps=50, nnu=2,  stepper="ETDRK4")
+
+  @test test_niwqg_exactnonlinearsolution(nsteps=50)
 end
 
-end
+end # time
 
 println("Total test time: ", testtime)

@@ -228,7 +228,6 @@ function test_niwqg_calczetah(; nk=2, nl=2, nx=32, Lx=2π, f=0.2)
   isapprox(zeta1, zeta2)
 end
 
-
 function test_niwqg_energetics(; nk=2, nl=3, nx=256, f=1, eta=0.4)
   prob = NIWQG.Problem(nx=nx, f=f, eta=eta)
 
@@ -255,3 +254,65 @@ function test_niwqg_energetics(; nk=2, nl=3, nx=256, f=1, eta=0.4)
     && isapprox(NIWQG.coupledenergy(prob), e0)
   )
 end
+
+function test_niwqg_hyperdissipation_q(; kap=0.1, nkap=1, nk=2, nx=32, Lx=2π, nsteps=1, stepper="RK4")
+  k = nk * 2π/Lx
+  τ = 1/(kap*k^2nkap)
+  dt = 0.001*τ
+  tf = dt*nsteps
+
+  prob = NIWQG.Problem(nx=nx, Lx=Lx, kap=kap, nkap=nkap, stepper=stepper, dt=dt)
+
+  q0 = @. cos(k*prob.grid.X)
+  qf = @. exp(-kap*k^2nkap*tf) * q0
+
+  NIWQG.set_q!(prob, q0)
+  stepforward!(prob, nsteps)
+  NIWQG.updatevars!(prob)
+
+  isapprox(qf, prob.vars.q, rtol=1e-15*nx^2*nsteps)
+end
+
+
+function test_niwqg_hyperdissipation_phi(; nu=0.1, nnu=1, nk=2, nx=64, Lx=2π, nsteps=1, stepper="RK4", eta=0.0)
+  k = nk * 2π/Lx
+  τ = 1/(nu*k^2nnu)
+  dt = 0.01*τ
+  tf = dt*nsteps
+
+  prob = NIWQG.Problem(nx=nx, Lx=Lx, nu=nu, nnu=nnu, stepper=stepper, eta=eta, dt=dt)
+
+  phi0 = @. exp(im*k*prob.grid.X)
+  phif = @. exp(-im*0.5*eta*k^2*tf - nu*k^2nnu*tf) * phi0
+
+  NIWQG.set_phi!(prob, phi0)
+  stepforward!(prob, nsteps)
+  NIWQG.updatevars!(prob)
+
+  isapprox(phif, prob.vars.phi, rtol=1e-15*nx^2*nsteps)
+end
+
+function test_niwqg_exactnonlinearsolution(; U=1.1, a=0.9, nu=0.1, nk=2, nx=64, Lx=2π, nsteps=1, f=0.2, 
+                                           stepper="ETDRK4") 
+  k = nk * 2π/Lx
+  τ = 1/(nu*k^2)
+  dt = 0.01*τ
+  tf = dt*nsteps
+  
+  prob = NIWQG.Problem(nx=nx, Lx=Lx, nu=nu, nnu=1, kap=nu, nkap=1, stepper=stepper, eta=0, f=f, dt=dt)
+  x = prob.grid.X
+
+  phi0 = @. U*(1 + a*exp(im*k*x))
+  q0 = @. -U^2*a*k^2/(2f) * cos(k*x)
+
+  phif = @. U*(1 + a*exp(-nu*k^2*tf + im*k*x))
+  qf = @. exp(-nu*k^2*tf)*q0
+
+  NIWQG.set_phi!(prob, phi0)
+  NIWQG.set_q!(prob, q0)
+
+  stepforward!(prob, nsteps)
+  NIWQG.updatevars!(prob)
+
+  isapprox(phif, prob.vars.phi, rtol=1e-15*nx^2*nsteps) && isapprox(qf, prob.vars.q, rtol=1e-15*nx^2*nsteps)
+end 
