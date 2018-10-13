@@ -192,6 +192,8 @@ function calczetah!(zetah, qh, phih, phi, v, p, g)
 
   #   zeta = q  -               *** q^w ***
   @. zetah = qh - p.invf*(-0.25*g.KKrsq*v.phisqh + 0.5*v.phijach)
+  zetah[1, 1] = 0
+
   nothing
 end
 
