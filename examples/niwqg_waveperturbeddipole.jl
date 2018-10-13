@@ -5,6 +5,8 @@ using
   Printf
 
 using GeophysicalFlows: lambdipole
+using FourierFlows: makefilter
+using FourierFlows: dealias!
 
 # *** Parameters from Rocha, Wagner, and Young, JFM (2018) ***
     nx = 512
@@ -27,7 +29,7 @@ using GeophysicalFlows: lambdipole
    kap = 5e7
   nkap = 2
 # Timestepping and jumping
-    dt = 1e-2 * te
+    dt = 0.0025 * te
    nte = round(Int, te/dt)
 njumps = 20
 # Some calculated parameters
@@ -46,6 +48,13 @@ phi0 = (1+im)/sqrt(2) * Uw * ones(nx, nx)
 
 set_q!(prob, q0)
 set_phi!(prob, phi0)
+
+#innerK = 0.4
+#outerK = 0.6
+#filterr = makefilter(prob.grid; innerK=innerK, outerK=outerK) #; innerK=0.1, outerK=0.2)
+#filterc = makefilter(prob.grid; realvars=false, innerK=innerK, outerK=outerK) #; innerK=0.1, outerK=0.2)
+#@. prob.state.solr *= filterr
+#@. prob.state.solc *= filterc
 
 action0 = waveaction(prob)
     ke0 = qgke(prob)
@@ -85,13 +94,13 @@ function makeplot!(axs, prob)
   ylim(minimum(yp)/fraction, maximum(yp)/fraction)
 
   makesquare(axs)
-  pause(0.01)
   nothing
 end
 
-for i = 1:njumps
+for i = 1:njumps*nte
   @time begin
-    stepforward!(prob, nte)
+    stepforward!(prob, 1)
+
     @printf("step: % 6d, t: %.1f, A: %.3f, P: %.3f, K+P: %.3f ", 
             prob.step, prob.t/te, waveaction(prob)/action0,
             wavepe(prob)/energy0, coupledenergy(prob)/energy0)
