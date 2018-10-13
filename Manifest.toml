@@ -177,11 +177,11 @@ version = "0.9.0"
 
 [[FourierFlows]]
 deps = ["ComputationalResources", "Coverage", "CuArrays", "Documenter", "FFTW", "Interpolations", "JLD2", "LinearAlgebra", "Random", "Requires", "SpecialFunctions", "Statistics", "Test"]
-git-tree-sha1 = "c8ef9f60b8f91a8f75340cbd85f69676a19a2626"
-repo-rev = "RemoveGeophysicalFlows"
+git-tree-sha1 = "c27dd28a80e491e439090915724e1f436b7e00fe"
+repo-rev = "master"
 repo-url = "https://github.com/FourierFlows/FourierFlows.jl.git"
 uuid = "2aec4490-903f-5c70-9b11-9bed06a700e1"
-version = "0.2.1"
+version = "0.2.2"
 
 [[GPUArrays]]
 deps = ["FFTW", "FillArrays", "LinearAlgebra", "Pkg", "Printf", "Random", "Serialization", "StaticArrays", "Test"]
