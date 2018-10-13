@@ -168,7 +168,7 @@ function StochasticForcedVars(g; T=typeof(g.Lx))
   v = ForcedVars(g; T=T)
   prevsolr = zeros(Complex{T}, (g.nkr, g.nl))
   prevsolc = zeros(Complex{T}, (g.nk, g.nl))
-  ForcedVars{T}(getfield.(Ref(v), fieldnames(typeof(v)))..., prevsolr, prevsolc)
+  StochasticForcedVars{T}(getfield.(Ref(v), fieldnames(typeof(v)))..., prevsolr, prevsolc)
 end
 
 
