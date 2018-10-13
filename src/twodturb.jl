@@ -63,6 +63,11 @@ function Problem(;
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
+
+# ----------
+# Parameters
+# ----------
+
 """
     Params(nu, nnu, mu, nmu, calcF!)
 
@@ -76,6 +81,7 @@ struct Params{T} <: AbstractParams
   calcF!::Function   # Function that calculates the forcing F
 end
 Params(nu, nnu) = Params(nu, nnu, typeof(nu)(0), 0, nothingfunction)
+
 
 # ---------
 # Equations
@@ -91,6 +97,7 @@ function Equation(p::Params, g; T=typeof(g.Lx))
   LC[1, 1] = 0
   FourierFlows.Equation{T,2}(LC, calcN!)
 end
+
 
 # --
 # Vars
@@ -132,9 +139,10 @@ function ForcedVars(g; T=typeof(g.Lx))
 end
 
 """
-    ForcedVars(g)
+    StochasticForcedVars(g; T)
 
-Returns the vars for forced two-dimensional turbulence with grid g.
+Returns the vars for stochastically forced two-dimensional turbulence with grid
+g.
 """
 function StochasticForcedVars(g; T=typeof(g.Lx))
   v = ForcedVars(g; T=T)
@@ -143,44 +151,15 @@ function StochasticForcedVars(g; T=typeof(g.Lx))
 end
 
 
-# --
-# CUDA functionality
-# --
-#=
-@require CuArrays begin
-
-using CuArrays
-
-function CuProblem(; stepper="RK4", kwargs...)
-  prob = Problem(; kwargs...)
-  dt = prob.ts.dt
-
-   g = CuTwoDGrid(prob.grid)
-  vs = CuVars(prob.vars)
-  eq = CuEquation(prob.eqn)
-  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
-
-  FourierFlows.CuProblem(g, vs, prob.params, eq, ts)
-end
-
-eval(FourierFlows.structvarsexpr(:CuVars, physicalvars, transformvars, arraytype=:CuArray))
-eval(FourierFlows.structvarsexpr(:CuForcedVars, physicalvars, transformvars, arraytype=:CuArray))
-
-CuVars(v::Vars) = CuVars(CuArray.(getfield.(v, fieldnames(v)))...)
-CuVars(v::ForcedVars) = CuForcedVars(CuArray.(getfield.(v, fieldnames(v)))...)
-CuVars(g::AbstractGrid) = CuVars(CuArray.(Vars(g)))
-
-CuForcedVars(v::Vars) = CuForcedVars(CuArray.(getfield.(v, fieldnames(v)))...)
-CuForcedVars(g::AbstractGrid) = CuForcedVars(CuArray.(ForcedVars(g)))
-
-end # CUDA stuff
-=#
-
-
 # -------
 # Solvers
 # -------
 
+"""
+    calcN_advection(N, sol, t, s, v, p, g)
+
+Calculates the advection term: FFT[ -(u\partial_x+v\partial_y)q ].
+"""
 function calcN_advection!(N, sol, t, s, v, p, g)
   @. v.Uh =  im * g.l  * g.invKKrsq * sol
   @. v.Vh = -im * g.kr * g.invKKrsq * sol
@@ -216,7 +195,7 @@ end
 
 function addforcing!(N, t, s, v::StochasticForcedVars, p, g)
   if t == s.t # not a substep
-    @. v.prevsol = s.sol
+    @. v.prevsol = s.sol # sol at previous time-step is needed to compute budgets for stochastic forcing
     p.calcF!(v.Fh, t, s, v, p, g)
   end
   @. N += v.Fh
