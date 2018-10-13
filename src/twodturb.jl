@@ -158,7 +158,7 @@ end
 """
     calcN_advection(N, sol, t, s, v, p, g)
 
-Calculates the advection term: FFT[ -(u\partial_x+v\partial_y)q ].
+Calculates the advection term.
 """
 function calcN_advection!(N, sol, t, s, v, p, g)
   @. v.Uh =  im * g.l  * g.invKKrsq * sol
