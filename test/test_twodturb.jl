@@ -42,15 +42,15 @@ function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7
 
   Random.seed!(1234)
 
-  function calcF!(F, sol, t, s, v, p, g)
-    eta = exp.(2π*im*rand(Float64, size(sol)))/sqrt(s.dt)
+  function calcF!(Fh, t, s, v, p, g)
+    eta = exp.(2π*im*rand(Float64, size(s.sol)))/sqrt(s.dt)
     eta[1, 1] = 0.0
-    @. F = eta * sqrt(force2k)
+    @. Fh = eta * sqrt(force2k)
     nothing
   end
 
   prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt,
-   stepper="RK4", calcF=calcF!)
+   stepper="RK4", calcF=calcF!, stochastic = true)
 
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
 
@@ -89,6 +89,63 @@ function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7
   isapprox(mean(abs.(residual)), 0, atol=1e-4)
 end
 
+
+function test_twodturb_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, nmu=0, message=false)
+  n, L  = 256, 2π
+  nu, nnu = 1e-7, 2
+  mu, nmu = 1e-1, 0
+  dt, tf = 0.005, 0.1/mu
+  nt = round(Int, tf/dt)
+  ns = 1
+
+  gr  = TwoDGrid(n, L)
+
+  # Forcing = 0.01cos(4x)cos(5y)cos(2t)
+
+  f = @. 0.01*cos(4*gr.X)*cos(5*gr.Y)
+  fh = rfft(f)
+  function calcF!(Fh, t, s, v, p, g)
+    @. Fh = fh*cos(2*t)
+    nothing
+  end
+
+  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt,
+   stepper="RK4", calcF=calcF!, stochastic = false)
+
+  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+
+  TwoDTurb.set_q!(prob, 0*g.X)
+  E = Diagnostic(TwoDTurb.energy,      prob, nsteps=nt)
+  D = Diagnostic(TwoDTurb.dissipation, prob, nsteps=nt)
+  R = Diagnostic(TwoDTurb.drag,        prob, nsteps=nt)
+  W = Diagnostic(TwoDTurb.work,        prob, nsteps=nt)
+  diags = [E, D, W, R]
+
+  # Step forward
+  stepforward!(prob, diags, round(Int, nt))
+  TwoDTurb.updatevars!(prob)
+
+  cfl = prob.ts.dt*maximum([maximum(v.V)/g.dx, maximum(v.U)/g.dy])
+  E, D, W, R = diags
+  t = round(mu*prob.state.t, digits=2)
+
+  i₀ = 1
+  dEdt = (E[(i₀+1):E.count] - E[i₀:E.count-1])/prob.ts.dt
+  ii = (i₀):E.count-1
+  ii2 = (i₀+1):E.count
+
+  # dEdt = W - D - R?
+  total = W[ii2] - D[ii] - R[ii]
+
+  residual = dEdt - total
+
+  if message
+    println("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", prob.step, prob.t, cfl, tc)
+  end
+
+  isapprox(mean(abs.(residual)), 0, atol=1e-8)
+end
+
 """
     testnonlinearterms(dt, stepper; kwargs...)
 
@@ -121,12 +178,12 @@ function test_twodturb_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0
   Ffh = rfft(Ff)
 
   # Forcing
-  function calcF!(Fh, sol, t, s, v, p, g)
+  function calcF!(Fh, t, s, v, p, g)
     Fh .= Ffh
     nothing
   end
 
-  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!)
+  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!, stochastic = false)
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
   TwoDTurb.set_q!(prob, qf)
 
@@ -162,4 +219,5 @@ end
 @test test_twodturb_advection(0.0005, "ForwardEuler")
 @test test_twodturb_lambdipole(256, 1e-3)
 @test test_twodturb_stochasticforcingbudgets()
+@test test_twodturb_deterministicforcingbudgets()
 @test test_twodturb_energyenstrophy()
