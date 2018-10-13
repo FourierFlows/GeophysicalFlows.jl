@@ -48,10 +48,10 @@ function Problem(;
           mu = 0,
          nmu = 0,
     # Timestepper and eqn options
-    stepper = "RK4",
-      calcF = nothingfunction,
- stochastic = false,
-          T = Float64
+     stepper = "RK4",
+       calcF = nothingfunction,
+  stochastic = false,
+           T = Float64
 )
 
   g  = TwoDGrid(nx, Lx, ny, Ly)
@@ -93,7 +93,7 @@ Params(nu, nnu) = Params(nu, nnu, typeof(nu)(0), 0, nothingfunction)
 Returns the equation for two-dimensional turbulence with params p and grid g.
 """
 function Equation(p::Params, g; T=typeof(g.Lx))
-  LC = -p.nu*g.KKrsq.^p.nnu .- p.mu*g.KKrsq.^p.nmu
+  LC = @. -p.nu*g.KKrsq^p.nnu - p.mu*g.KKrsq^p.nmu
   LC[1, 1] = 0
   FourierFlows.Equation{T,2}(LC, calcN!)
 end
