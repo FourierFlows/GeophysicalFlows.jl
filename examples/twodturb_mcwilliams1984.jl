@@ -1,7 +1,9 @@
-using FourierFlows, PyPlot, JLD2
+using FourierFlows, PyPlot, JLD2, Printf, Random
 
-import FourierFlows.TwoDTurb
-import FourierFlows.TwoDTurb: energy, enstrophy
+import Random: seed!
+
+import GeophysicalFlows.TwoDTurb
+import GeophysicalFlows.TwoDTurb: energy, enstrophy
 
 # Parameters
   n = 128
@@ -14,9 +16,9 @@ nsubs = 200
 
 # Files
 filepath = "."
-plotpath = "./plots"
-plotname = "testplots"
-filename = joinpath(filepath, "testdata.jld2")
+plotpath = "./plots_McWilliams1984"
+plotname = "snapshots"
+filename = joinpath(filepath, "McWilliams1984.jld2")
 
 # File management
 if isfile(filename); rm(filename); end
@@ -28,7 +30,7 @@ g = prob.grid
 
 # Initial condition closely following pyqg barotropic example
 # that reproduces the results of the paper by McWilliams (1984)
-srand(1234)
+seed!(1234)
 k0, E0 = 6, 0.5
 qi = FourierFlows.peakedisotropicspectrum(g, k0, E0, mask = prob.ts.filter)
 TwoDTurb.set_q!(prob, qi)
@@ -71,11 +73,11 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 end
 
 # Step forward
-startwalltime = time()
 
 fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
 plot_output(prob, fig, axs; drawcolorbar=true)
 
+startwalltime = time()
 while prob.step < nsteps
   stepforward!(prob, diags, nsubs)
 
