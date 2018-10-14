@@ -261,7 +261,7 @@ function calcN_advection!(N, sol, t, s, v, p, g)
   @. v.u = v.u*v.Zeta # u*Ζ
   @. v.v = v.v*v.Zeta # v*Ζ
 
-  mul!(v.uh, g.rfftplan, v.U + v.u) # \hat{U*q}
+  mul!(v.uh, g.rfftplan, v.U + v.u) # \hat{U*ζ + u*Ζ}
   @. v.Nz = -im*g.kr*v.uh # -∂[U*ζ + u*Ζ]/∂x
   mul!(v.vh, g.rfftplan, v.v) # \hat{v*Z}
   @. v.Nz += - im*g.l*v.vh # -∂[v*Z]/∂y
@@ -366,15 +366,6 @@ function enstrophy(prob)
   0.5*parsevalsum2(v.uh, g)/(g.Lx*g.Ly)
 end
 
-"""
-Returns the energy of the domain-averaged U.
-"""
-energy00(prob) = real(0.5*prob.state.sol[1, 1].^2)
-
-"""
-Returns the enstrophy of the domain-averaged U.
-"""
-enstrophy00(prob) = real(prob.params.beta*prob.state.sol[1, 1])
 
 """
     dissipation(prob)
