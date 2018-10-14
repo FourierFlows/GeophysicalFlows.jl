@@ -1,6 +1,9 @@
 using PyPlot, FourierFlows
-import FourierFlows.TwoDTurb
-import FourierFlows.TwoDTurb: energy, enstrophy, dissipation, work, drag
+
+import Random: seed!
+import Printf: @printf
+import GeophysicalFlows.TwoDTurb
+import GeophysicalFlows.TwoDTurb: energy, enstrophy, dissipation, work, drag
 
   n, L  = 256, 2π
 nu, nnu = 1e-7, 2
@@ -15,23 +18,24 @@ kf, dkf = 12.0, 2.0
 
 gr  = TwoDGrid(n, L)
 
-force2k = exp.(-(sqrt.(gr.KKrsq)-kf).^2/(2*dkf^2))
-force2k[gr.KKrsq .< 2.0^2 ] = 0
-force2k[gr.KKrsq .> 20.0^2 ] = 0
-force2k[gr.Kr.<2π/L] = 0
+force2k = @. exp(-(sqrt(gr.KKrsq)-kf)^2/(2*dkf^2))
+force2k[gr.KKrsq .< 2.0^2 ] .= 0
+force2k[gr.KKrsq .> 20.0^2 ] .= 0
+force2k[gr.Kr.<2π/L] .= 0
 σ0 = FourierFlows.parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
 force2k .= σ/σ0 * force2k
 
-srand(1234)
+seed!(1234)
 
-function calcF!(F, sol, t, s, v, p, g)
-  eta = exp.(2π*im*rand(size(sol)))/sqrt(s.dt)
+function calcF!(Fh, t, s, v, p, g)
+  eta = exp.(2π*im*rand(Float64, size(s.sol)))/sqrt(s.dt)
   eta[1, 1] = 0
-  @. F = eta .* sqrt(force2k)
+  @. Fh = eta*sqrt(force2k)
   nothing
 end
 
-prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper="RK4", calcF=calcF!)
+prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper="RK4",
+                        calcF=calcF!, stochastic=true)
 s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
 
 TwoDTurb.set_q!(prob, 0*g.X)
@@ -46,7 +50,7 @@ function makeplot(prob, diags)
   TwoDTurb.updatevars!(prob)
   E, D, W, R = diags
 
-  t = round(mu*prob.state.t, 2)
+  t = round(mu*prob.state.t, digits=2)
   sca(axs[1]); cla()
   pcolormesh(prob.grid.X, prob.grid.Y, prob.vars.q)
   xlabel(L"$x$")
@@ -73,7 +77,7 @@ function makeplot(prob, diags)
   # then we need to add the drift term: I[ii2] + σ
   plot(mu*E.time[ii], W[ii2], label=L"work ($W$)")   # Ito
   # plot(mu*E.time[ii], W[ii2] , label=L"work ($W$)")      # Stratonovich
-  plot(mu*E.time[ii], σ+0*E.time[ii], "--", label=L"ensemble mean  work ($\langle W\rangle $)")
+  plot(mu*E.time[ii], σ .+ 0*E.time[ii], "--", label=L"ensemble mean  work ($\langle W\rangle $)")
   # plot(mu*E.time[ii], -D[ii], label="dissipation (\$D\$)")
   plot(mu*E.time[ii], -R[ii], label=L"drag ($D=2\mu E$)")
   plot(mu*E.time[ii], 0*E.time[ii], "k:", linewidth=0.5)
@@ -98,12 +102,11 @@ end
 
 fig, axs = subplots(ncols=2, nrows=2, figsize=(12, 8))
 
-# Step forward
-for i = 1:ns
-  tic()
 
+# Step forward
+startwalltime = time()
+for i = 1:ns
   stepforward!(prob, diags, round(Int, nt/ns))
-  tc = toq()
 
   TwoDTurb.updatevars!(prob)
   # saveoutput(out)
@@ -112,13 +115,14 @@ for i = 1:ns
   res = makeplot(prob, diags)
   pause(0.01)
 
-  @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", prob.step, prob.t, cfl, tc)
+  @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", prob.step, prob.t,
+        cfl, (time()-startwalltime)/60)
 
-  # savename = @sprintf("./plots/stochastictest_kf%d_%06d.png", kf, prob.step)
+  # savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
   # savefig(savename, dpi=240)
 end
 
-# savename = @sprintf("./plots/stochastictest_kf%d_%06d.png", kf, prob.step)
+# savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
 # savefig(savename, dpi=240)
 
 # savediagnostic(E, "energy", out.filename)

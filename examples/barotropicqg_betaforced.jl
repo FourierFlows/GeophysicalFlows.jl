@@ -1,7 +1,16 @@
-using FourierFlows, PyPlot, JLD2
+using PyPlot,
+  JLD2,
+  Statistics,
+  Printf,
+  Random,
+  FourierFlows
 
-import FourierFlows.BarotropicQG
-import FourierFlows.BarotropicQG: energy, enstrophy
+import FFTW: irfft
+import Random: seed!
+import Statistics: mean
+
+import GeophysicalFlows.BarotropicQG
+import GeophysicalFlows.BarotropicQG: energy, enstrophy
 
 
 # Numerical parameters and time-stepping parameters
@@ -13,9 +22,9 @@ nsubs  = 500   # number of time-steps for plotting
                # (nsteps must be multiple of nsubs)
 
 # Physical parameters
-Lx  = 2π       # domain size
-nu  = 0e-05    # viscosity
-nnu = 1        # viscosity order
+ Lx  = 2π      # domain size
+ nu  = 0e-05   # viscosity
+ nnu = 1       # viscosity order
 beta = 15.0    # planetary PV gradient
 mu   = 0.02    # bottom drag
 
@@ -25,37 +34,37 @@ kf, dkf = 12.0, 2.0     # forcing wavenumber and width of
                         # forcing ring in wavenumber space
 σ = 0.005               # energy input rate by the forcing
 gr  = TwoDGrid(nx, Lx)
-force2k = exp.(-(sqrt.(gr.KKrsq)-kf).^2/(2*dkf^2))
-force2k[gr.KKrsq .< 2.0^2 ] = 0
-force2k[gr.KKrsq .> 20.0^2 ] = 0
-force2k[gr.Kr.<2π/Lx] = 0
+force2k = @. exp(-(sqrt(gr.KKrsq)-kf)^2/(2*dkf^2))
+@. force2k[gr.KKrsq < 2.0^2 ] .= 0
+@. force2k[gr.KKrsq > 20.0^2 ] .= 0
+force2k[gr.Kr.<2π/Lx] .= 0
 σ0 = FourierFlows.parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
 force2k .= σ/σ0 * force2k  # normalization so that forcing injects
                            # energy ε per domain area per unit time
 
 # reset of the random number generator for reproducibility
-srand(1234)
+seed!(1234)
 
 # the function that updates the forcing realization
-function calcFq!(Fh, sol, t, s, v, p, g)
-  ξ = exp.(2π*im*rand(size(sol)))/sqrt(s.dt)
+function calcFq!(Fh, t, s, v, p, g)
+  ξ = exp.(2π*im*rand(Float64, size(sol)))/sqrt(s.dt)
   ξ[1, 1] = 0
   @. Fh = ξ*sqrt(force2k)
-  @. Fh[abs.(g.Kr).==0] = 0
+  Fh[abs.(g.Kr).==0] .= 0
   nothing
 end
 
 # Initialize problem
 prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, beta=beta, nu=nu, nnu=nnu,
-                                  mu=mu, dt=dt, stepper=stepper, calcFq=calcFq!)
-s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
+                                  mu=mu, dt=dt, stepper=stepper, calcFq=calcFq!, stochastic=true)
+s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
 
 
 # Files
 filepath = "."
-plotpath = "./plots"
-plotname = "testplots"
-filename = joinpath(filepath, "decayingbetaturb.jld2")
+plotpath = "./plots_forcedbetaturb"
+plotname = "snapshots"
+filename = joinpath(filepath, "forcedbetaturb.jld2")
 
 # File management
 if isfile(filename); rm(filename); end
@@ -71,8 +80,7 @@ Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will
 # be updated every timestep. They should be efficient to calculate and
 # have a small memory footprint. (For example, the domain-integrated kinetic
-# energy is just a single number for each timestep). See the file in
-# src/diagnostics.jl and the stepforward! function in timesteppers.jl.
+# energy is just a single number for each timestep).
 
 # Create Output
 get_sol(prob) = prob.vars.sol # extracts the Fourier-transformed solution
@@ -112,7 +120,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[3])
   cla()
-  plot(mean(v.zeta, 1).', g.Y[1,:])
+  plot(transpose(mean(v.zeta, dims=1)), g.Y[1,:])
   plot(0*g.Y[1,:], g.Y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
   xlim(-4, 4)
@@ -120,7 +128,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[4])
   cla()
-  plot(mean(v.u, 1).', g.Y[1,:])
+  plot(transpose(mean(v.u, dims=1)), g.Y[1,:])
   plot(0*g.Y[1,:], g.Y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
   xlim(-0.7, 0.7)

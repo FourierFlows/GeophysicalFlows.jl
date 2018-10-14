@@ -1,8 +1,14 @@
-using FourierFlows, PyPlot, JLD2
+using
+  PyPlot,
+  JLD2,
+  Printf,
+  FourierFlows
 
+import FFTW: ifft
 
-import FourierFlows.BarotropicQG
-import FourierFlows.BarotropicQG: energy, energy00, enstrophy, enstrophy00
+import GeophysicalFlows.BarotropicQG
+import GeophysicalFlows.BarotropicQG: energy, energy00, enstrophy, enstrophy00
+
 
 # Numerical parameters and time-stepping parameters
 nx  = 512      # 2D resolution = nx^2
@@ -32,14 +38,14 @@ calcFU(t) = F
 # Initialize problem
 prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, f0=f0, beta=beta, eta=topoPV,
                   calcFU=calcFU, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper)
-s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
+s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
 
 
 # Files
 filepath = "."
-plotpath = "./plots"
-plotname = "testplots"
-filename = joinpath(filepath, "testdata.jld2")
+plotpath = "./plots_acctopo"
+plotname = "snapshots"
+filename = joinpath(filepath, "acctopo.jl.jld2")
 
 # File management
 if isfile(filename); rm(filename); end
