@@ -65,13 +65,8 @@ filename = joinpath(filepath, "forcedbetaturbQL.jld2")
 # File management
 if isfile(filename); rm(filename); end
 
-ξ = exp.(2π*im*rand(Float64, size(s.sol)))
-ζ0h = sqrt.(force2k/(2*mu)).*ξ
-ζ0h[:, 1] .= 0
- ζ0 = irfft(ζ0h, g.nx)
-
 # Zero initial condition
-BarotropicQGQL.set_zeta!(prob, 0*ζ0)
+BarotropicQGQL.set_zeta!(prob, zeros(g.X))
 
 function zetaMean(prob)
     sol = prob.state.sol
