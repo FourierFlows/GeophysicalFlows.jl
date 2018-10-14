@@ -99,9 +99,9 @@ function Equation(p::Params, g; T=typeof(g.Lx))
 end
 
 
-# --
+# ----
 # Vars
-# --
+# ----
 
 varspecs = cat(
   getfieldspecs(physicalvars, :(Array{T,2})),
