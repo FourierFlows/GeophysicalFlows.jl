@@ -417,7 +417,7 @@ Returns the extraction of domain-averaged energy by drag mu.
 """
 @inline function drag(s, v, p, g)
   @. v.uh = g.KKrsq^(-1) * abs2(s.sol)
-  @. v.uh[1, 1] = 0
+  v.uh[1, 1] = 0
   p.mu/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
