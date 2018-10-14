@@ -68,8 +68,7 @@ Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will
 # be updated every timestep. They should be efficient to calculate and
 # have a small memory footprint. (For example, the domain-integrated kinetic
-# energy is just a single number for each timestep). See the file in
-# src/diagnostics.jl and the stepforward! function in timesteppers.jl.
+# energy is just a single number for each timestep).
 
 # Create Output
 get_sol(prob) = prob.vars.sol # extracts the Fourier-transformed solution

@@ -47,7 +47,7 @@ seed!(1234)
 
 # the function that updates the forcing realization
 function calcFq!(Fh, t, s, v, p, g)
-  ξ = exp.(2π*im*rand(Float, size(s.sol)))/sqrt(s.dt)
+  ξ = exp.(2π*im*rand(Float64, size(sol)))/sqrt(s.dt)
   ξ[1, 1] = 0
   @. Fh = ξ*sqrt(force2k)
   Fh[abs.(g.Kr).==0] .= 0
@@ -80,8 +80,7 @@ Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will
 # be updated every timestep. They should be efficient to calculate and
 # have a small memory footprint. (For example, the domain-integrated kinetic
-# energy is just a single number for each timestep). See the file in
-# src/diagnostics.jl and the stepforward! function in timesteppers.jl.
+# energy is just a single number for each timestep).
 
 # Create Output
 get_sol(prob) = prob.vars.sol # extracts the Fourier-transformed solution
