@@ -1,7 +1,15 @@
-using FourierFlows, PyPlot, JLD2
+using
+  PyPlot,
+  JLD2,
+  Printf,
+  Random,
+  FourierFlows
 
-import FourierFlows.BarotropicQG
-import FourierFlows.BarotropicQG: energy, enstrophy
+import Statistics: mean
+import FFTW: irfft
+
+import GeophysicalFlows.BarotropicQG
+import GeophysicalFlows.BarotropicQG: energy, enstrophy
 
 # Numerical parameters and time-stepping parameters
 nx  = 256      # 2D resolution = nx^2
@@ -12,22 +20,22 @@ nsubs  = 500   # number of time-steps for plotting
                # (nsteps must be multiple of nsubs)
 
 # Physical parameters
-Lx  = 2π       # domain size
-nu  = 0e-05    # viscosity
-nnu = 1        # viscosity order
+ Lx  = 2π      # domain size
+ nu  = 0e-05   # viscosity
+ nnu = 1       # viscosity order
 beta = 15.0    # planetary PV gradient
 mu   = 0e-1    # bottom drag
 
 # Initialize problem
 prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, beta=beta, nu=nu,
                                         nnu=nnu, mu=mu, dt=dt, stepper=stepper)
-s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
+s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
 
 
 # Files
 filepath = "."
-plotpath = "./plots"
-plotname = "testplots"
+plotpath = "./plots_decayingbetaturb"
+plotname = "snapshots"
 filename = joinpath(filepath, "decayingbetaturb.jld2")
 
 # File management
@@ -39,14 +47,14 @@ if !isdir(plotpath); mkdir(plotpath); end
 
 # Initial condition that has power only at wavenumbers with
 # 8<L/(2π)*sqrt(kx^2+ky^2)<10 and initial energy E0
-srand(1234)
+Random.seed!(1234)
 E0 = 0.1
 modk = ones(g.nkr, g.nl)
-modk[real(g.KKrsq).<(8*2*pi/g.Lx)^2]=0
-modk[real(g.KKrsq).>(10*2*pi/g.Lx)^2]=0
-modk[1, :]=0
-psih = (randn(g.nkr, g.nl)+im*randn(g.nkr, g.nl)).*modk
-psih = psih.*prob.ts.filter
+modk[real.(g.KKrsq).<(8*2*pi/g.Lx)^2] .= 0
+modk[real.(g.KKrsq).>(10*2*pi/g.Lx)^2] .= 0
+modk[1, :] .= 0
+psih = (randn(Float64, size(s.sol)) .+ im*randn(Float64, size(s.sol))).*modk
+psih = @. psih*prob.ts.filter
 Ein = real(sum(g.KKrsq.*abs2.(psih)/(g.nx*g.ny)^2))
 psih = psih*sqrt(E0/Ein)
 qi = -irfft(g.KKrsq.*psih, g.nx)
@@ -101,7 +109,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[3])
   cla()
-  plot(mean(v.zeta, 1).', g.Y[1,:])
+  plot(transpose(mean(v.zeta, dims=1)), g.Y[1,:])
   plot(0*g.Y[1,:], g.Y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
   xlim(-2, 2)
@@ -109,7 +117,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[4])
   cla()
-  plot(mean(v.u, 1).', g.Y[1,:])
+  plot(transpose(mean(v.u, dims=1)), g.Y[1,:])
   plot(0*g.Y[1,:], g.Y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
   xlim(-0.5, 0.5)
