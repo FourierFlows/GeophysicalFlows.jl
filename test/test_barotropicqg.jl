@@ -69,7 +69,7 @@ function test_bqg_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu
   Random.seed!(1234)
 
   function calcFq!(F, t, s, v, p, g)
-    eta = exp.(2π*im*rand(Float64, size(sol)))/sqrt(s.dt)
+    eta = exp.(2π*im*rand(Float64, size(s.sol)))/sqrt(s.dt)
     eta[1, 1] = 0
     @. F = eta .* sqrt(force2k)
     nothing
@@ -215,7 +215,7 @@ function test_bqg_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, m
   Ffh = rfft(Ff)
 
   # Forcing
-  function calcFq!(Fqh, sol, t, s, v, p, g)
+  function calcFq!(Fqh, t, s, v, p, g)
     Fqh .= Ffh
     nothing
   end
@@ -242,18 +242,16 @@ function test_bqg_formstress(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, m
   tf = 1.0
   nt = 1
 
-
-
   gr  = TwoDGrid(n, L)
   x, y = gr.X, gr.Y
 
-  zetai = -20*sin.(10*x).*cos.(10*y)
-  topoPV(x, y) = cos.(10x).*cos.(10y)
+  zetai = @. -20*sin(10*x)*cos(10*y)
+  topoPV(x, y) = @. cos(10x)*cos(10y)
   F(t) = 0 #no forcing
 
   answer = 0.25 # this is what <v*eta> should be
 
-  prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper, eta=topoPV, calcFU = F, calcFq=nothing)
+  prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper, eta=topoPV, calcFU = F)
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
   BarotropicQG.set_zeta!(prob, zetai)
   BarotropicQG.updatevars!(prob)

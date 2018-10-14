@@ -308,14 +308,10 @@ function updatevars!(s, v, p, g)
   @. v.uh = -im * g.l  * v.psih
   @. v.vh =  im * g.kr * v.psih
 
-  zetah1 = deepcopy(v.zetah)
-  uh1 = deepcopy(v.uh)
-  vh1 = deepcopy(v.vh)
-
-  ldiv!(v.zeta, g.rfftplan, zetah1)
-  ldiv!(v.psi, g.rfftplan, v.psih)
-  ldiv!(v.u, g.rfftplan, uh1)
-  ldiv!(v.v, g.rfftplan, vh1)
+  ldiv!(v.zeta, g.rfftplan, deepcopy(v.zetah))
+  ldiv!(v.psi, g.rfftplan, deepcopy(v.psih))
+  ldiv!(v.u, g.rfftplan, deepcopy(v.uh))
+  ldiv!(v.v, g.rfftplan, deepcopy(v.vh))
 
   @. v.q = v.zeta + p.eta
   nothing
@@ -356,7 +352,7 @@ set_zeta!(prob::AbstractProblem, zeta) = set_zeta!(prob.state, prob.vars, prob.p
     set_U!(prob, U)
     set_U!(s, v, g, U)
 
-Set the (kx,ky)=(0,0) part of solution s.sol as the domain-average zonal flow U.
+Set the (kx, ky)=(0, 0) part of solution s.sol as the domain-average zonal flow U.
 """
 function set_U!(s, v, p, g, U::Float64)
   s.sol[1, 1] = U
