@@ -2,7 +2,7 @@ module BarotropicQG
 
 export
   Problem,
-  set_q!,
+  set_zeta!,
   updatevars!,
 
   energy,
@@ -92,6 +92,11 @@ end
 InitialValueProblem(; kwargs...) = Problem(; kwargs...)
 ForcedProblem(; kwargs...) = Problem(; kwargs...)
 
+
+# ----------
+# Parameters
+# ----------
+
 """
     Params(g::TwoDGrid, f0, beta, FU, eta, mu, nu, nnu, calcFU, calcFq)
 
@@ -109,11 +114,6 @@ struct Params{T} <: AbstractParams
                       # domain-averaged zonal flow U(t)
   calcFq!::Function   # Function that calculates the forcing on QGPV q
 end
-
-
-# ----------
-# Parameters
-# ----------
 
 """
     Params(g::TwoDGrid, f0, beta, eta::Function, mu, nu, nnu, calcFU, calcFq)
@@ -142,10 +142,10 @@ function Equation(p::Params, g; T=typeof(g.Lx))
   FourierFlows.Equation{Complex{T},2}(LC, calcN!)
 end
 
+
 # ----
 # Vars
 # ----
-
 
 # Construct Vars types
 mutable struct Vars{T} <: BarotropicQGVars
