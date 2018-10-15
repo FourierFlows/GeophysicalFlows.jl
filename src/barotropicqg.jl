@@ -7,25 +7,24 @@ export
 
   energy,
   enstrophy,
-  energy00,
-  enstrophy00,
+  meanenergy,
+  meanenstrophy,
   dissipation,
   work,
   drag
 
-using
-  FFTW,
-  Requires,
-  Reexport
+using Reexport
 
 @reexport using FourierFlows
 
+using FFTW: rfft
 using LinearAlgebra: mul!, ldiv!
-using FourierFlows: parsevalsum, parsevalsum2
+using FourierFlows: getfieldspecs, structvarsexpr, parsevalsum, parsevalsum2
 
 abstract type BarotropicQGVars <: AbstractVars end
 abstract type BarotropicQGForcedVars <: BarotropicQGVars end
 
+const realscalarvars = [:U]
 const physicalvars = [:q, :zeta, :psi, :u, :v]
 const transformvars = [ Symbol(var, :h) for var in physicalvars ]
 const forcedvars = [:Fqh]
@@ -147,20 +146,19 @@ end
 # Vars
 # ----
 
+varspecs = cat(
+  getfieldspecs(realscalarvars, :(Array{T,0})),
+  getfieldspecs(physicalvars, :(Array{T,2})),
+  getfieldspecs(transformvars, :(Array{Complex{T},2})),
+  dims=1)
+
+forcedvarspecs = cat(varspecs, getfieldspecs(forcedvars, :(Array{Complex{T},2})), dims=1)
+stochforcedvarspecs = cat(forcedvarspecs, getfieldspecs(stochforcedvars, :(Array{Complex{T},2})), dims=1)
+
 # Construct Vars types
-mutable struct Vars{T} <: BarotropicQGVars
-  q::Array{T,2}
-  U::T
-  u::Array{T,2}
-  v::Array{T,2}
-  psi::Array{T,2}
-  zeta::Array{T,2}
-  qh::Array{Complex{T},2}
-  uh::Array{Complex{T},2}
-  vh::Array{Complex{T},2}
-  psih::Array{Complex{T},2}
-  zetah::Array{Complex{T},2}
-end
+eval(structvarsexpr(:Vars, varspecs; parent=:BarotropicQGVars))
+eval(structvarsexpr(:ForcedVars, forcedvarspecs; parent=:BarotropicQGForcedVars))
+eval(structvarsexpr(:StochasticForcedVars, stochforcedvarspecs; parent=:BarotropicQGForcedVars))
 
 """
     Vars(g)
@@ -168,10 +166,10 @@ end
 Returns the vars for unforced two-dimensional barotropic QG problem with grid g.
 """
 function Vars(g; T=typeof(g.Lx))
-  T = typeof(g.Lx)
+  U = Array{T,0}(undef, ); U[] = 0
   @createarrays T (g.nx, g.ny) q u v psi zeta
   @createarrays Complex{T} (g.nkr, g.nl) qh uh vh psih zetah
-  Vars(q, 0.0, u, v, psi, zeta, qh, uh, vh, psih, zetah)
+  Vars(U, q, zeta, psi, u, v, qh, zetah, psih, uh, vh)
 end
 
 """
@@ -179,44 +177,17 @@ end
 
 Returns the vars for forced two-dimensional barotropic QG problem with grid g.
 """
-mutable struct ForcedVars{T} <: BarotropicQGForcedVars
-  q::Array{T,2}
-  U::T
-  u::Array{T,2}
-  v::Array{T,2}
-  psi::Array{T,2}
-  zeta::Array{T,2}
-  qh::Array{Complex{T},2}
-  uh::Array{Complex{T},2}
-  vh::Array{Complex{T},2}
-  psih::Array{Complex{T},2}
-  zetah::Array{Complex{T},2}
-  Fqh::Array{Complex{T},2}
-end
-
 function ForcedVars(g; T=typeof(g.Lx))
   v = Vars(g; T=T)
   Fqh = zeros(Complex{T}, (g.nkr, g.nl))
   ForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., Fqh)
 end
 
+"""
+    StochasticForcedVars(g)
 
-mutable struct StochasticForcedVars{T} <: BarotropicQGForcedVars
-  q::Array{T,2}
-  U::T
-  u::Array{T,2}
-  v::Array{T,2}
-  psi::Array{T,2}
-  zeta::Array{T,2}
-  qh::Array{Complex{T},2}
-  uh::Array{Complex{T},2}
-  vh::Array{Complex{T},2}
-  psih::Array{Complex{T},2}
-  zetah::Array{Complex{T},2}
-  Fqh::Array{Complex{T},2}
-  prevsol::Array{Complex{T},2}
-end
-
+Returns the vars for stochastically forced two-dimensional barotropic QG problem with grid g.
+"""
 function StochasticForcedVars(g; T=typeof(g.Lx))
   v = ForcedVars(g; T=T)
   prevsol = zeros(Complex{T}, (g.nkr, g.nl))
@@ -230,7 +201,7 @@ end
 
 function calcN_advection!(N, sol, t, s, v, p, g)
   # Note that U = sol[1, 1]. For all other elements ζ = sol
-  v.U = sol[1, 1].re
+  v.U[] = sol[1, 1].re
   @. v.zetah = sol
   v.zetah[1, 1] = 0
 
@@ -239,11 +210,11 @@ function calcN_advection!(N, sol, t, s, v, p, g)
 
   ldiv!(v.zeta, g.rfftplan, v.zetah)
   ldiv!(v.u, g.rfftplan, v.uh)
-  v.psih = deepcopy(v.vh) # FFTW's irfft destroys its input; v.vh is needed for N[1, 1]
+  v.psih .= deepcopy(v.vh) # FFTW's irfft destroys its input; v.vh is needed for N[1, 1]
   ldiv!(v.v, g.rfftplan, v.psih)
 
   @. v.q = v.zeta + p.eta
-  @. v.u = (v.U + v.u)*v.q # (U+u)*q
+  @. v.u = (v.U[] + v.u)*v.q # (U+u)*q
   @. v.v = v.v*v.q # v*q
 
   mul!(v.uh, g.rfftplan, v.u) # \hat{(u+U)*q}
@@ -300,7 +271,7 @@ end
 Update the vars in v on the grid g with the solution in s.sol.
 """
 function updatevars!(s, v, p, g)
-  v.U = s.sol[1, 1].re
+  v.U[] = s.sol[1, 1].re
   @. v.zetah = s.sol
   v.zetah[1, 1] = 0.0
 
@@ -336,11 +307,11 @@ function set_zeta!(s, v::Vars, p, g, zeta)
 end
 
 function set_zeta!(s, v::BarotropicQGForcedVars, p, g, zeta)
-  v.U = deepcopy(s.sol[1, 1])
+  v.U[] = deepcopy(s.sol[1, 1])
   mul!(v.zetah, g.rfftplan, zeta)
   v.zetah[1, 1] = 0.0
   @. s.sol = v.zetah
-  s.sol[1, 1] = v.U
+  s.sol[1, 1] = v.U[]
 
   updatevars!(s, v, p, g)
   nothing
@@ -386,12 +357,12 @@ end
 """
 Returns the energy of the domain-averaged U.
 """
-energy00(prob) = real(0.5*prob.state.sol[1, 1].^2)
+meanenergy(prob) = real(0.5*prob.state.sol[1, 1].^2)
 
 """
 Returns the enstrophy of the domain-averaged U.
 """
-enstrophy00(prob) = real(prob.params.beta*prob.state.sol[1, 1])
+meanenstrophy(prob) = real(prob.params.beta*prob.state.sol[1, 1])
 
 """
     dissipation(prob)
