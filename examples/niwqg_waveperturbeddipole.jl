@@ -1,12 +1,9 @@
 using 
   GeophysicalFlows.NIWQG, 
   PyPlot,
-  PyPlotPlus,
   Printf
 
 using GeophysicalFlows: lambdipole
-using FourierFlows: makefilter
-using FourierFlows: dealias!
 
 # *** Parameters from Rocha, Wagner, and Young, JFM (2018) ***
     nx = 512
@@ -24,22 +21,22 @@ using FourierFlows: dealias!
    lam = N/(f*m)
    eta = f*lam^2
 # Dissipation
-    nu = 1e7
+    nu = 5e8
    nnu = 2
-   kap = 5e7
+   kap = 1e5
   nkap = 2
 # Timestepping and jumping
-    dt = 0.0025 * te
+    dt = 1e-2 * te
    nte = round(Int, te/dt)
-njumps = 20
+njumps = 30
 # Some calculated parameters
     Ro = Ue*ke/f
    amp = Ro*(Uw/Ue)^2
   disp = f*lam^2*ke/Ue
 
 prob = NIWQG.Problem(nx=nx, Lx=Lx, dt=dt, f=f, eta=eta, nu=nu, nnu=nnu, kap=kap, nkap=nkap, 
-                     Ub=-Ue, stepper="FilteredETDRK4")
-x, y = prob.grid.X, prob.grid.Y
+                     Ub=-Ue, stepper="ETDRK4")
+x, y = gridpoints(prob.grid)
 xp, yp = x./Re, y./Re # for plotting
 
 # Initial condition
@@ -48,13 +45,6 @@ phi0 = (1+im)/sqrt(2) * Uw * ones(nx, nx)
 
 set_q!(prob, q0)
 set_phi!(prob, phi0)
-
-#innerK = 0.4
-#outerK = 0.6
-#filterr = makefilter(prob.grid; innerK=innerK, outerK=outerK) #; innerK=0.1, outerK=0.2)
-#filterc = makefilter(prob.grid; realvars=false, innerK=innerK, outerK=outerK) #; innerK=0.1, outerK=0.2)
-#@. prob.state.solr *= filterr
-#@. prob.state.solc *= filterc
 
 action0 = waveaction(prob)
     ke0 = qgke(prob)
@@ -85,6 +75,7 @@ function makeplot!(axs, prob)
   fraction = 2.5
   xlim(minimum(xp)/fraction, maximum(xp)/fraction)
   ylim(minimum(yp)/fraction, maximum(yp)/fraction)
+  axs[1][:set_aspect](1, adjustable="box")
 
   sca(axs[2])
   cla()
@@ -92,14 +83,16 @@ function makeplot!(axs, prob)
 
   xlim(minimum(xp)/fraction, maximum(xp)/fraction)
   ylim(minimum(yp)/fraction, maximum(yp)/fraction)
+  axs[2][:set_aspect](1, adjustable="box")
 
-  makesquare(axs)
+  pause(0.01)
   nothing
 end
 
-for i = 1:njumps*nte
+# Run the model
+for i = 1:njumps
   @time begin
-    stepforward!(prob, 1)
+    stepforward!(prob, nte)
 
     @printf("step: % 6d, t: %.1f, A: %.3f, P: %.3f, K+P: %.3f ", 
             prob.step, prob.t/te, waveaction(prob)/action0,
