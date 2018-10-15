@@ -1,6 +1,6 @@
 #!/usr/bin/env julia
 
-using 
+using
   FourierFlows,
   Test,
   Statistics,
@@ -10,6 +10,7 @@ using
 import # use 'import' rather than 'using' for submodules to keep namespace clean
   GeophysicalFlows.TwoDTurb,
   GeophysicalFlows.BarotropicQG,
+  GeophysicalFlows.BarotropicQGQL,
   GeophysicalFlows.VerticallyCosineBoussinesq,
   GeophysicalFlows.VerticallyFourierBoussinesq,
   GeophysicalFlows.NIWQG
@@ -46,6 +47,7 @@ ke_niwqg(prob::AbstractProblem) = ke_niwqg(prob.vars.phi)
 "Returns the `x,y` centroid of the wave field kinetic energy in NIWQG."
 wavecentroid_niwqg(prob) = (xmoment(ke_niwqg(prob), prob.grid), ymoment(ke_niwqg(prob), prob.grid))
 
+
 # Run tests
 testtime = @elapsed begin
 
@@ -73,7 +75,11 @@ end
   @test test_bqg_advection(0.0005, "ForwardEuler")
   @test test_bqg_formstress(0.01, "ForwardEuler")
   @test test_bqg_energyenstrophy()
-  @test test_bqg_energyenstrophy00()
+  @test test_bqg_meanenergyenstrophy()
+end
+
+@testset "BarotropicQGQL" begin
+  include("test_barotropicqgql.jl")
 end
 
 @testset "Vertically Cosine Boussinesq" begin

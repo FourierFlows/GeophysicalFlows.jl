@@ -1,8 +1,14 @@
-using FourierFlows, PyPlot, JLD2
+using
+  PyPlot,
+  JLD2,
+  Printf,
+  FourierFlows
 
+using FFTW: ifft
 
-import FourierFlows.BarotropicQG
-import FourierFlows.BarotropicQG: energy, energy00, enstrophy, enstrophy00
+import GeophysicalFlows.BarotropicQG
+import GeophysicalFlows.BarotropicQG: energy, meanenergy, enstrophy, meanenstrophy
+
 
 # Numerical parameters and time-stepping parameters
 nx  = 512      # 2D resolution = nx^2
@@ -32,14 +38,14 @@ calcFU(t) = F
 # Initialize problem
 prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, f0=f0, beta=beta, eta=topoPV,
                   calcFU=calcFU, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper)
-s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
+s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
 
 
 # Files
 filepath = "."
-plotpath = "./plots"
-plotname = "testplots"
-filename = joinpath(filepath, "testdata.jld2")
+plotpath = "./plots_acctopo"
+plotname = "snapshots"
+filename = joinpath(filepath, "acctopo.jl.jld2")
 
 # File management
 if isfile(filename); rm(filename); end
@@ -53,9 +59,9 @@ BarotropicQG.set_zeta!(prob, 0*g.X)
 # at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Q = Diagnostic(enstrophy, prob; nsteps=nsteps)
-E00 = Diagnostic(energy00, prob; nsteps=nsteps)
-Q00 = Diagnostic(enstrophy00, prob; nsteps=nsteps)
-diags = [E, E00, Q, Q00]
+Emean = Diagnostic(meanenergy, prob; nsteps=nsteps)
+Qmean = Diagnostic(meanenergy, prob; nsteps=nsteps)
+diags = [E, Emean, Q, Qmean]
 
 # Create Output
 get_sol(prob) = prob.state.sol # extracts the Fourier-transformed solution
@@ -86,7 +92,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   sca(axs[2])
   cla()
   plot(mu*E.time[1:E.prob.step], E.data[1:prob.step], label=L"$E_{\psi}$")
-  plot(mu*E.time[1:E00.prob.step], E00.data[1:prob.step], label=L"$E_U$")
+  plot(mu*E.time[1:Emean.prob.step], Emean.data[1:prob.step], label=L"$E_U$")
 
   xlabel(L"\mu t")
   ylabel(L"E")
@@ -95,7 +101,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   sca(axs[3])
   cla()
   plot(mu*Q.time[1:Q.prob.step], Q.data[1:prob.step], label=L"$Q_{\psi}$")
-  plot(mu*Q00.time[1:Q00.prob.step], Q00.data[1:prob.step], label=L"$Q_U$")
+  plot(mu*Qmean.time[1:Qmean.prob.step], Qmean.data[1:prob.step], label=L"$Q_U$")
   xlabel(L"\mu t")
   ylabel(L"Q")
   legend()
