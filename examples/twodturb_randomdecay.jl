@@ -1,4 +1,12 @@
-using PyPlot, FFTW, Printf, GeophysicalFlows.TwoDTurb
+using
+  PyPlot,
+  Printf,
+  FourierFlows
+
+using FFTW: rfft
+
+import GeophysicalFlows.TwoDTurb
+
 
 nx = 256        # Resolution
 Lx = 2π         # Domain size
@@ -28,7 +36,7 @@ end
 fig1, ax = subplots(figsize=(8, 8))
 
 while prob.step < ntot
-  @time begin 
+  @time begin
     stepforward!(prob, nint)
     @printf("step: %04d, t: %6.1f", prob.step, prob.t)
   end
