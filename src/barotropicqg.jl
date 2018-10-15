@@ -37,6 +37,7 @@ nothingfunction(args...) = nothing
 
 Construct a BarotropicQG turbulence problem.
 """
+
 function Problem(;
     # Numerical parameters
             nx = 256,

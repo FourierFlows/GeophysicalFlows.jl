@@ -239,11 +239,11 @@ function test_bqg_formstress(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, m
   n, L  = 128, 2π
   nu, nnu = 1e-2, 1
   mu = 0.0
-  tf = 1.0
+  tf = 1
   nt = 1
 
   gr  = TwoDGrid(n, L)
-  x, y = gr.X, gr.Y
+  x, y = gridpoints(gr)
 
   zetai = @. -20*sin(10*x)*cos(10*y)
   topoPV(x, y) = @. cos(10x)*cos(10y)
@@ -252,7 +252,6 @@ function test_bqg_formstress(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, m
   answer = 0.25 # this is what <v*eta> should be
 
   prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper, eta=topoPV, calcFU = F)
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
   BarotropicQG.set_zeta!(prob, zetai)
   BarotropicQG.updatevars!(prob)
 
@@ -319,41 +318,3 @@ function test_bqg_meanenergyenstrophy()
     isapprox(enstrophyzeta0, 2701.0/162, rtol=1e-13)
   )
 end
-
-# -----------------------------------------------------------------------------
-# Running the tests
-
-
-dt, nsteps, stepper  = 1e-2, 20, "ETDRK4"
-@test test_bqg_rossbywave("ETDRK4", dt, nsteps)
-
-dt, nsteps  = 1e-2, 20;
-@test test_bqg_rossbywave("FilteredETDRK4", dt, nsteps)
-
-dt, nsteps  = 1e-2, 20
-@test test_bqg_rossbywave("RK4", dt, nsteps)
-
-dt, nsteps  = 1e-2, 20
-@test test_bqg_rossbywave("FilteredRK4", dt, nsteps)
-
-dt, nsteps  = 1e-3, 200
-@test test_bqg_rossbywave("AB3", dt, nsteps)
-
-dt, nsteps  = 1e-3, 200
-@test test_bqg_rossbywave("FilteredAB3", dt, nsteps)
-
-dt, nsteps  = 1e-4, 2000
-@test test_bqg_rossbywave("ForwardEuler", dt, nsteps)
-
-dt, nsteps  = 1e-4, 2000
-@test test_bqg_rossbywave("FilteredForwardEuler", dt, nsteps)
-
-@test test_bqg_deterministicforcingbudgets()
-
-@test test_bqg_stochasticforcingbudgets()
-
-@test test_bqg_advection(0.0005, "ForwardEuler")
-@test test_bqg_formstress(0.01, "ForwardEuler")
-
-@test test_bqg_energyenstrophy()
-@test test_bqg_meanenergyenstrophy()

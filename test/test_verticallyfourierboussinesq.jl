@@ -52,6 +52,3 @@ function test_fourier_groupvelocity(nkw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1
 
   isapprox(cga, cgn, rtol=rtol)
 end
-
-@test test_fourier_lambdipole(256, 1e-3)
-@test test_fourier_groupvelocity(16)

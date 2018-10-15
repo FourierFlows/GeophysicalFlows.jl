@@ -16,10 +16,10 @@ function test_twodturb_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti
       Ue_m[i] = (xq[i]-xq[i-1]) / ((nt-1)*dt)
     end
   end
-  isapprox(Ue, mean(Ue_m[2:end]), rtol=1e-2)
+  isapprox(Ue, mean(Ue_m[2:end]), rtol=rtol_lambdipole)
 end
 
-function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, nmu=0, message=false)
+function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, nmu=0)
   n, L  = 256, 2π
   nu, nnu = 1e-7, 2
   mu, nmu = 1e-1, 0
@@ -81,11 +81,6 @@ function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7
   total = W[ii2] - D[ii] - R[ii]        # Stratonovich
 
   residual = dEdt - total
-
-  if message
-    println("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", prob.step, prob.t, cfl, tc)
-  end
-
   isapprox(mean(abs.(residual)), 0, atol=1e-4)
 end
 
@@ -157,7 +152,7 @@ forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - nuΔζf. One
 to the vorticity equation forced by this Ff is then ζf. (This solution may not
 be realized, at least at long times, if it is unstable.)
 """
-function test_twodturb_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, nmu=0, message=false)
+function test_twodturb_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, nmu=0)
   n, L  = 128, 2π
   nu, nnu = 1e-2, 1
   mu, nmu = 0.0, 0
@@ -191,7 +186,7 @@ function test_twodturb_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0
   stepforward!(prob, round(Int, nt))
   TwoDTurb.updatevars!(prob)
 
-  isapprox(v.q, qf, rtol=1e-13)
+  isapprox(v.q, qf, rtol=rtol_twodturb)
 end
 
 function test_twodturb_energyenstrophy()
@@ -213,11 +208,6 @@ function test_twodturb_energyenstrophy()
   energyq0 = TwoDTurb.energy(prob)
   enstrophyq0 = TwoDTurb.enstrophy(prob)
 
-  isapprox(energyq0, 29.0/9, rtol=1e-13) && isapprox(enstrophyq0, 2701.0/162, rtol=1e-13)
+  (isapprox(energyq0, 29.0/9, rtol=rtol_twodturb) && 
+   isapprox(enstrophyq0, 2701.0/162, rtol=rtol_twodturb))
 end
-
-@test test_twodturb_advection(0.0005, "ForwardEuler")
-@test test_twodturb_lambdipole(256, 1e-3)
-@test test_twodturb_stochasticforcingbudgets()
-@test test_twodturb_deterministicforcingbudgets()
-@test test_twodturb_energyenstrophy()

@@ -88,7 +88,3 @@ function test_cosine_groupvelocity(kw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-
   cgn = (xw-xw₋₁) / (prob.t-t₋₁)
   isapprox(cga, cgn, rtol=rtol)
 end
-
-@test test_cosine_nonlinearterms(0.0005, "ForwardEuler")
-@test test_cosine_lambdipole(256, 1e-3)
-@test test_cosine_groupvelocity(16)

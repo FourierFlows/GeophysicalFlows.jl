@@ -1,24 +1,41 @@
-module VerticallyFourierBoussinesq
+module NIWQG
 
+export
+  Problem,
+  set_q!,
+  set_phi!,
+  set_planewave!,
+  updatevars!,
+
+  waveaction,
+  qgke,
+  wavepe,
+  coupledenergy
+  
 using 
-  FourierFlows, 
+  Reexport,
   FFTW
+
+@reexport using FourierFlows
 
 using LinearAlgebra: mul!, ldiv!
 using FourierFlows: getfieldspecs, structvarsexpr, parsevalsum, parsevalsum2
 
-nothingfunction(args...) = nothing
-
 abstract type NIWQGVars <: AbstractVars end
 
-const physicalvarsr = [:q, :U, :V, :zeta, :Uq, :Vq, :phijac, :phisq]
-const physicalvarsc = [:phi, :Uphi, :Vphi, :zetaphi] 
-const transformvarsr = cat([ Symbol(var, :h) for var in physicalvarsr ], [:Frh, :prevsolr])
-const transformvarsc = cat([ Symbol(var, :h) for var in physicalvarsc ], [:Fch, :prevsolc])
+const physicalvarsr = [:q, :U, :V, :zeta, :psi, :Uq, :Vq, :phijac, :phisq]
+const physicalvarsc = [:phi, :Uphi, :Vphi, :zetaphi, :phix, :phiy] 
+const transformvarsr = [ Symbol(var, :h) for var in physicalvarsr ]
+const transformvarsc = [ Symbol(var, :h) for var in physicalvarsc ]
+const forcedvars = [:Fr, :Fc]
+const stochforcedvars = [:prevsolr, :prevsolc]
 
-# -------
+nothingfunction(args...) = nothing
+onefunction(args...) = 1
+
+# --
 # Problem
-# -------
+# --
 
 """
     Problem(; parameters...)
@@ -27,96 +44,91 @@ Construct a VerticallyFourierBoussinesq initial value problem.
 """
 function Problem(;
   # Numerical parameters
-    nx = 128,
-    Lx = 2π,
-    ny = nx,
-    Ly = Lx,
-    dt = 0.01,
+          nx = 64,
+          Lx = 2π,
+          ny = nx,
+          Ly = Lx,
+          dt = 1e-9,
   # Drag and/or hyper-/hypo-viscosity
-    nu = 0, # wave (hyper-)viscosity
-   nnu = 1, # wave (hyper-)viscous order (1=Laplacian)
-   kap = 0, # PV (hyper-)visosity
-  nkap = 1, # PV (hyper-)viscous order
-   muq = 0, # drag/arbitrary-order dissipation for q
-  nmuq = 0, # order of 2nd dissipation term for q
-   muw = 0, # drag/arbitrary-order dissipation for w
-  nmuw = 0, # order of 2nd dissipation term for w
+          nu = 0, # wave (hyper-)viscosity
+         nnu = 1, # wave (hyper-)viscous order (1=Laplacian)
+         kap = 0, # PV (hyper-)visosity
+        nkap = 1, # PV (hyper-)viscous order
+         muq = 0, # drag/arbitrary-order dissipation for q
+        nmuq = 0, # order of 2nd dissipation term for q
+         muw = 0, # drag/arbitrary-order dissipation for w
+        nmuw = 0, # order of 2nd dissipation term for w
   # Physical parameters
-   eta = 0, # dispersivity: eta = N^2 / f m^2
-     f = 1, # inertial frequency
+         eta = 0, # dispersivity: eta = N^2 / f m^2
+           f = 1, # inertial frequency
   # Optional uniform and steady background flow
-    Ub = 0,
-    Vb = 0,
+          Ub = 0,
+          Vb = 0,
   # Timestepper and eqn options
-  stepper = "RK4",
-  calcF = nothingfunction,
-  nthreads = Sys.CPU_THREADS,
-  T = Float64
+     stepper = "RK4",
+       calcF = nothingfunction,
+  stochastic = false,
+    nthreads = Sys.CPU_THREADS,
+           T = Float64,
+     dealias = false
   )
 
-  g  = TwoDGrid(nx, Lx, ny, Ly)
-  pr = Params{T}(nu, nnu, kap, nnkap, eta, f, 1/f, Ub, Vb)
-  vs = Vars(g)
-  eq = Equation(pr, g)
-  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LCc, eq.LCr, g)
+  gd = TwoDGrid(nx, Lx, ny, Ly; T=T)
+  pr = Params{T}(nu, nnu, kap, nkap, muw, nmuw, muq, nmuq, eta, f, 1/f, Ub, Vb, calcF)
+  vs = calcF == nothingfunction ? Vars(gd) : (stochastic ? StochasticForcedVars(gd) : ForcedVars(gd))
+  eq = Equation(pr, gd; dealias=dealias)
+  ts = TimeStepper(stepper, dt, eq.LCc, eq.LCr, gd)
 
-  FourierFlows.Problem(g, vs, pr, eq, ts)
+  FourierFlows.Problem(gd, vs, pr, eq, ts)
 end
 
 
-# ------
+# --
 # Params
-# ------
-
-abstract type TwoModeParams <: AbstractParams end
+# --
 
 """
-    Params(nu0, nnu0, nu1, nnu1, f, N, m, Ub, Vb)
+    Params(nu, nnu, kap, nkap, muq, nmuq, muw, nmuw, eta, f, invf, Ub, Vb, calcF!)
 
-Construct parameters for the Two-Fourier-mode Boussinesq problem. Suffix 0
-refers to zeroth mode; 1 to first mode. f, N, m are Coriolis frequency,
-buoyancy frequency, and vertical wavenumber of the first mode, respectively.
-The optional constant background velocity (Ub,Vb) is set to zero by default.
-The viscosity is applied only to the first-mode horizontal velocities.
+Construct parameters for an NIWQG problem.
 """
-struct Params{T} <: TwoModeParams
-  nu::T      # Mode-0 viscosity
-  nnu::Int   # Mode-0 hyperviscous order
-  kap::T     # Mode-1 viscosity
-  nkap::Int  # Mode-1 hyperviscous order
-  muq::T      # Mode-0 drag / hypoviscosity
-  nmuq::Int   # Mode-0 drag / hypoviscous order
-  muw::T      # Mode-1 drag / hypoviscosity
-  nmuw::Int   # Mode-1 drag / hypoviscous order
-  f::T        # Planetary vorticity
-  invf::T     # 1/f
-  Ub::T       # Steady mode-0 mean x-velocity
-  Vb::T       # Steady mode-0 mean y-velocity
+struct Params{T} <: AbstractParams
+  nu::T             # Wave viscosity
+  nnu::Int          # Wave hyperviscous order
+  kap::T            # PV 'diffusivity'
+  nkap::Int         # PV hyperdiffusive order
+  muw::T            # Wave drag / hypoviscosityty
+  nmuw::Int         # Wave drag / hypoviscous orderer
+  muq::T            # PV drag / hypoviscosity
+  nmuq::Int         # PV drag / hypoviscous order
+  eta::T            # Dispersivity
+  f::T              # Planetary vorticity
+  invf::T           # 1/f
+  Ub::T             # Steady barotropic background ('mean') x-velocity
+  Vb::T             # Steady barotropic background ('mean') y-velocity
+  calcF!::Function  # Forcing
 end
 
 # ---------
 # Equations
 # ---------
 
-function Equation(p, g)
-  LCc, LCr = getlinearcoefficients(p, g)
-  FourierFlows.DualEquation(LCc, LCr, calcN!)
-end
-
-function getlinearcoefficients(p, g)
-  LCr = @. -p.kap*g.KKrsq^p.nkap - p.muq*g.KKrsq^p.nmuq
-  LCc = @. -p.nu*g.KKsq^p.nnu - p.muw*g.KKsq^p.nmuw - im*p.eta/2*g.KKsq
-
+function Equation(p, g; T=typeof(g.Lx), dealias=false)
+  LCc = @. - p.nu  * g.KKsq  ^ p.nnu   -  p.muw * g.KKsq  ^ p.nmuw  -  0.5*im*p.eta*g.KKsq
+  LCr = @. - p.kap * g.KKrsq ^ p.nkap  -  p.muq * g.KKrsq ^ p.nmuq
   LCr[1, 1] = 0
   LCc[1 ,1] = 0
 
-  LCc, LCr
+  (dealias ? 
+    FourierFlows.DualEquation{Complex{T},2,2}(LCc, LCr, calcN_dealiased!) :
+    FourierFlows.DualEquation{Complex{T},2,2}(LCc, LCr, calcN!)
+   )
 end
 
 
-# ----
+# --
 # Vars
-# ----
+# --
 
 varspecs = cat(
   getfieldspecs(physicalvarsr, :(Array{T,2})),
@@ -125,247 +137,278 @@ varspecs = cat(
   getfieldspecs(transformvarsc, :(Array{Complex{T},2})),
   dims=1)
 
+forcedvarspecs = cat(varspecs, getfieldspecs(forcedvars, :(Array{Complex{T},2})), dims=1)
+stochforcedvarspecs = cat(forcedvarspecs, getfieldspecs(stochforcedvars, :(Array{Complex{T},2})), dims=1)
+
 eval(structvarsexpr(:Vars, varspecs; parent=:NIWQGVars))
+eval(structvarsexpr(:ForcedVars, forcedvarspecs; parent=:NIWQGVars))
+eval(structvarsexpr(:StochasticForcedVars, stochforcedvarspecs; parent=:NIWQGVars))
 
-#=
-function Vars(g)
-  @createarrays typeof(g.Lx) (g.nx, g.ny) Z U V UZuzvw VZvzuw Ux Uy Vx Vy Psi
-  @createarrays Complex{typeof(g.Lx)} (g.nx, g.ny) u v w p zeta Uu Uv Up Vu Vv Vp uUxvUy uVxvVy
-  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) Zh Uh Vh UZuzvwh VZvzuwh Uxh Uyh Vxh Vyh Psih
-  @createarrays Complex{typeof(g.Lx)} (g.nk, g.nl) uh vh wh ph zetah Uuh Uvh Uph Vuh Vvh Vph uUxvUyh uVxvVyh
-  Vars(Z, U, V, UZuzvw, VZvzuw, Ux, Uy, Vx, Vy, Psi, u, v, w, p, zeta, Uu, Uv, Up, Vu, Vv, Vp, uUxvUy, uVxvVy,
-       Zh, Uh, Vh, UZuzvwh, VZvzuwh, Uxh, Uyh, Vxh, Vyh, Psih,
-       uh, vh, wh, ph, zetah, Uuh, Uvh, Uph, Vuh, Vvh, Vph, uUxvUyh, uVxvVyh)
+function Vars(g; T=typeof(g.Lx))
+  @createarrays T (g.nx, g.ny) q U V zeta psi Uq Vq phijac phisq
+  @createarrays Complex{T} (g.nkr, g.nl) qh Uh Vh zetah psih Uqh Vqh phijach phisqh
+  @createarrays Complex{T} (g.nx, g.ny) phi Uphi Vphi zetaphi phix phiy
+  @createarrays Complex{T} (g.nk, g.nl) phih Uphih Vphih zetaphih phixh phiyh
+  Vars{T}(
+    q, U, V, zeta, psi, Uq, Vq, phijac, phisq,
+    phi, Uphi, Vphi, zetaphi, phix, phiy,
+    qh, Uh, Vh, zetah, psih, Uqh, Vqh, phijach, phisqh,
+    phih, Uphih, Vphih, zetaphih, phixh, phiyh
+  )
 end
-=#
+
+function ForcedVars(g; T=typeof(g.Lx))
+  v = Vars(g; T=T)
+  Fr = zeros(Complex{T}, (g.nkr, g.nl))
+  Fc = zeros(Complex{T}, (g.nk, g.nl))
+  ForcedVars{T}(getfield.(Ref(v), fieldnames(typeof(v)))..., Fr, Fc)
+end
+
+function StochasticForcedVars(g; T=typeof(g.Lx))
+  v = ForcedVars(g; T=T)
+  prevsolr = zeros(Complex{T}, (g.nkr, g.nl))
+  prevsolc = zeros(Complex{T}, (g.nk, g.nl))
+  StochasticForcedVars{T}(getfield.(Ref(v), fieldnames(typeof(v)))..., prevsolr, prevsolc)
+end
 
 
-# -------
-# Solvers
-# -------
-function calcN!(Nc, Nr, solc, solr, t, s, v, p, g)
+# --
+# Solver routines
+# --
+
+function calczetah!(zetah, qh, phih, phi, v, p, g)
   # Calc qw
-  @. v.phixh = -im*g.k*solc
-  @. v.phiyh = -im*g.k*solc
+  @. v.phixh = im*g.k*phih
+  @. v.phiyh = im*g.l*phih
 
-  ldiv!(v.phi, g.fftplan, solc)
   ldiv!(v.phix, g.fftplan, v.phixh)
   ldiv!(v.phiy, g.fftplan, v.phiyh)
 
-  @. v.phijac = real(im*(conj(v.phix)*phiy - conj(v.phiy)*v.phix))
-  @. v.phisq = abs2(v.phi)
+  @. v.phijac = real(im*(conj(v.phix)*v.phiy - conj(v.phiy)*v.phix))
+  @. v.phisq = abs2(phi)
 
   mul!(v.phijach, g.rfftplan, v.phijac)
   mul!(v.phisqh, g.rfftplan, v.phisq)
 
-  @. v.zetah = v.qh - p.invf*(-0.25*g.KKrsq*v.phisqh + 0.5*v.phijach)
-  @. v.psih = -g.invKKrsq*v.zetah
+  #   zeta = q  -               *** q^w ***
+  @. zetah = qh - p.invf*(-0.25*g.KKrsq*v.phisqh + 0.5*v.phijach)
+  zetah[1, 1] = 0
 
-  # Calculate advection terms
-  @. v.qh = solr
-  @. v.Uh = -im*g.l  * v.psih
-  @. v.Vh =  im*g.kr * v.psih
-
-  v.Uh[1, 1] += p.Ub*g.nx*g.ny
-  v.Vh[1, 1] += p.Vb*g.nx*g.ny
-
-  ldiv!(v.q, g.rfftplan, v.qh)
-  ldiv!(v.U, g.rfftplan, v.Uh)
-  ldiv!(v.V, g.rfftplan, v.Vh)
-  ldiv!(v.zeta, g.rfftplan, v.zetah)
-
-  @. v.Uphi = v.U*v.phi
-  @. v.Vphi = v.V*v.phi
-  @. v.zetaphi = v.zeta*v.phi
-
-  @. v.Uq = v.U*v.q
-  @. v.Vq = v.V*v.q
-
-  mul!(v.Uphih, g.fftplan, v.Uphi)
-  mul!(v.Vphih, g.fftplan, v.Vphi)
-  mul!(v.zetaphih, g.fftplan, v.zetaphi)
-
-  mul!(v.Uqh, g.rfftplan, v.Uq)
-  mul!(v.Vqh, g.rfftplan, v.Vq)
-
-  @. Nr = - im*g.kr*v.Uq - im*g.l*v.Vq
-  @. Nc = - im*g.kr*v.Uphi - im*g.l*v.Vphi - 0.5*im*v.zetaphih
   nothing
 end
 
-#=
-# ----------------
+function calcUhVh!(Uh, Vh, psih, Ub, Vb, g)
+  @. Uh = - im * g.l  * psih # U = - ∂y ψ
+  @. Vh =   im * g.kr * psih # V = + ∂x ψ
+  Uh[1, 1] += Ub*g.nx*g.ny
+  Vh[1, 1] += Vb*g.nx*g.ny
+  nothing
+end
+
+function calcadvectionterms!(Uq, Vq, Uphi, Vphi, U, V, q, phi)
+  @. Uq = U*q
+  @. Vq = V*q
+  @. Uphi = U*phi
+  @. Vphi = V*phi
+  nothing
+end
+
+function calcN!(Nc, Nr, solc, solr, t, s, v, p, g)
+  @. v.qh = solr # inverse transforms may destroy solr
+  @. v.phih = solc # this copy may not be necessary, but clarifies code
+
+  ldiv!(v.phi, g.fftplan, solc)
+  calczetah!(v.zetah, solr, solc, v.phi, v, p, g)
+
+  @. v.psih = -g.invKKrsq*v.zetah
+  calcUhVh!(v.Uh, v.Vh, v.psih, p.Ub, p.Vb, g)
+
+  # inverse transforms may destroy v.Uh, v.Vh, v.zetah, v.qh
+  ldiv!(v.U, g.rfftplan, v.Uh)
+  ldiv!(v.V, g.rfftplan, v.Vh)
+  ldiv!(v.zeta, g.rfftplan, v.zetah)
+  ldiv!(v.q, g.rfftplan, v.qh)
+
+  calcadvectionterms!(v.Uq, v.Vq, v.Uphi, v.Vphi, v.U, v.V, v.q, v.phi)
+  @. v.zetaphi = v.zeta*v.phi
+
+  mul!(v.Uphih, g.fftplan, v.Uphi)
+  mul!(v.Vphih, g.fftplan, v.Vphi)
+  mul!(v.Uqh, g.rfftplan, v.Uq)
+  mul!(v.Vqh, g.rfftplan, v.Vq)
+  mul!(v.zetaphih, g.fftplan, v.zetaphi)
+
+  @. Nc = - im*g.k*v.Uphih - im*g.l*v.Vphih - 0.5*im*v.zetaphih
+  @. Nr = - im*g.kr*v.Uqh - im*g.l*v.Vqh
+
+  addforcing!(Nc, Nr, t, s, v, p, g)
+
+  nothing
+end
+
+function calcN_dealiased!(Nc, Nr, solc, solr, t, s, v, p, g)
+  calcN!(Nc, Nr, solc, solr, t, s, v, p, g)
+  dealias!(Nc, g, g.ialias)
+  dealias!(Nr, g, g.iralias)
+  nothing
+end
+
+addforcing!(Nc, Nr, t, s, v::Vars, p, g) = nothing
+
+function addforcing!(Nc, Nr, t, s, v::ForcedVars, p, g)
+  p.calcF!(v.Fc, v.Fr, t, s, v, p, g)
+  @. Nc += v.Fc
+  @. Nr += v.Fr
+  nothing
+end
+
+function addforcing!(Nc, Nr, t, s, v::StochasticForcedVars, p, g)
+  if t == s.t # not a substep
+    @. v.prevsolc = s.solc
+    @. v.prevsolr = s.solr
+    p.calcF!(v.Fc, v.Fr, t, s, v, p, g)
+  end
+  @. Nc += v.Fc
+  @. Nr += v.Fr
+  nothing
+end
+
+# --
 # Helper functions
-# ----------------
+# --
 
 """
     updatevars!(prob)
 
-Update variables to correspond to the solution in s.sol or prob.state.sol.
+Update variables in `prob.vars` using the solution in `prob.state.solr` and prob.state.solc`.
 """
 function updatevars!(v, s, p, g)
-  v.Zh .= s.solr
-  @. v.Psih = -g.invKKrsq*v.Zh
-  @. v.Uh   = -im*g.l*v.Psih
-  @. v.Vh   =  im*g.kr*v.Psih
+  @. v.qh .= s.solr
+  @. v.phih .= s.solc
 
-  Psih1 = deepcopy(v.Psih)
-  Zh1 = deepcopy(v.Zh)
-  Uh1 = deepcopy(v.Uh)
-  Vh1 = deepcopy(v.Vh)
+  ldiv!(v.phi, g.fftplan, v.phih)
+  calczetah!(v.zetah, s.solr, s.solc, v.phi, v, p, g)
 
-  ldiv!(v.Psi, g.rfftplan, Psih1)
-  ldiv!(v.Z, g.rfftplan, Zh1)
+  @. v.psih = -g.invKKrsq*v.zetah
+  calcUhVh!(v.Uh, v.Vh, v.psih, p.Ub, p.Vb, g)
+
+  # Copy variables that are destroyed by inverse transforms
+  psih1 = deepcopy(v.psih)
+    qh1 = deepcopy(v.qh)
+    Uh1 = deepcopy(v.Uh)
+    Vh1 = deepcopy(v.Vh)
+
+  ldiv!(v.psi, g.rfftplan, psih1)
+  ldiv!(v.q, g.rfftplan, qh1)
   ldiv!(v.U, g.rfftplan, Uh1)
   ldiv!(v.V, g.rfftplan, Vh1)
 
-  @views v.uh .= s.solc[:, :, 1]
-  @views v.vh .= s.solc[:, :, 2]
-  @views v.ph .= s.solc[:, :, 3]
+  ldiv!(v.phi, g.fftplan, v.phih)
 
-  @. v.wh = -1.0/p.m*(g.k*v.uh + g.l*v.vh)
-
-  ldiv!(v.u, g.fftplan, v.uh)
-  ldiv!(v.v, g.fftplan, v.vh)
-  ldiv!(v.p, g.fftplan, v.ph)
-  ldiv!(v.w, g.fftplan, v.wh)
   nothing
 end
 updatevars!(prob) = updatevars!(prob.vars, prob.state, prob.params, prob.grid)
 
 """
-    set_Z!(prob, Z)
+    set_q!(prob, q)
 
-Set zeroth mode vorticity and update variables.
+Set potential vorticity and update variables.
 """
-function set_Z!(s, v, p, g, Z)
-  mul!(s.solr, g.rfftplan, Z)
+function set_q!(s, v, p, g, q)
+  @. v.q = q
+  mul!(s.solr, g.rfftplan, v.q)
   updatevars!(v, s, p, g)
   nothing
 end
-set_Z!(prob, Z) = set_Z!(prob.state, prob.vars, prob.params, prob.grid, Z)
+set_q!(prob, q) = set_q!(prob.state, prob.vars, prob.params, prob.grid, q)
 
 """
-    set_uvp!(prob, u, v, p)
+    set_phi!(prob, phi)
 
-Set first mode u, v, and p and update variables.
+Set the wave field amplitude, phi.
 """
-function set_uvp!(s, vs, pr, g, u, v, p)
-  uh = fft(u)
-  vh = fft(v)
-  ph = fft(p)
-
-  @. s.solc[:, :, 1] = uh
-  @. s.solc[:, :, 2] = vh
-  @. s.solc[:, :, 3] = ph
-
+function set_phi!(s, vs, pr, g, phi)
+  @. vs.phi = phi
+  mul!(s.solc, g.fftplan, vs.phi)
   updatevars!(vs, s, pr, g)
   nothing
 end
-set_uvp!(prob, u, v, p) = set_uvp!(prob.state, prob.vars, prob.params, prob.grid, u, v, p)
-
+set_phi!(prob, phi) = set_phi!(prob.state, prob.vars, prob.params, prob.grid, phi)
 
 """
-    set_planewave!(prob, uw, nkw)
+    set_planewave!(prob, uw, nkw, θ=0; kwargs...)
 
-Set a plane wave solution with initial speed uw and non-dimensional wave
-number nkw. The dimensional wavenumber will be 2π*nkw/Lx.
+Set plane wave solution in `prob` with initial speed `uw` and non-dimensional wave
+number `nkw`. Keyword argument `envelope=env(x, y)` multiplies the plane wave by `env(x, y)`
 """
-function set_planewave!(s, vs, pr, g, uw, κ, θ=0; envelope=nothing)
-  k = 2π/g.Lx*round(Int, κ*cos(θ))
-  l = 2π/g.Lx*round(Int, κ*sin(θ))
+function set_planewave!(s, vs, pr, g, uw, nkw, θ=0; envelope=onefunction)
+  k = 2π/g.Lx*round(Int, nkw*cos(θ))
+  l = 2π/g.Lx*round(Int, nkw*sin(θ))
   x, y = g.X, g.Y
 
-  # Wave parameters
-  f, N, m = pr.f, pr.N, pr.m
-  σ = sqrt(f^2 + N^2*(k^2 + l^2)/m^2)
-
-  u0 = uw/2
-  v0 = u0 * (σ*l - im*f*k)/(σ*k + im*f*l)
-  p0 = u0 * (σ^2 - f^2)/(σ*k + im*f*l)
-
   Φ = @. k*x + l*y
-  u = u0 * exp.(im*Φ)
-  v = v0 * exp.(im*Φ)
-  p = p0 * exp.(im*Φ)
-
-  if envelope != nothing
-    @. u *= envelope(x, y)
-    @. v *= envelope(x, y)
-    @. p *= envelope(x, y)
-  end
-
-  set_uvp!(s, vs, pr, g, u, v, p)
+  phi = @. uw * exp(im*Φ) * envelope(x, y)
+  set_phi!(s, vs, pr, g, phi)
   nothing
 end
-set_planewave!(prob, uw, nkw; kwargs...) = set_planewave!(
-  prob.state, prob.vars, prob.params, prob.grid, uw::Real, nkw::Int; kwargs...)
 
-"""
-    set_isotropicwavefield!(prob, amplitude; KE=1.0, maxspeed=nothing)
-
-Generate an isotropic spectrum of waves with an envelope given by the function
-amplitude(k, l), and either total kinetic energy KE or maximum speed maxspeed.
-"""
-function set_isotropicwavefield!(s, vs, pr, g, amplitude; KE=1.0, maxspeed=nothing)
-  f, N, m = pr.f, pr.N, pr.m # for clarity
-  @createarrays Complex{Float64} (g.nx, g.ny) phase u0 v0 p0
-
-  # Sum Fourier components
-  for k in real.(g.k), l in real.(g.l)
-    if amplitude(k, l) > 1e-15
-      σ = sqrt(f^2 + N^2/m^2*(k^2 + l^2))   # dispersion relation
-      phase .= k*g.X .+ l*g.Y .+ 2π*rand()  # random phases
-      # Polarization relations
-      u0 .+= amplitude(k, l)*exp.(im*phase)
-      v0 .+= -u0*(im*f/σ - k*l*N^2/(σ*m)^2)/(1 - (l*N)^2/(σ*m)^2)
-      p0 .+= N^2/(σ*m^2) * (k*u0 .+ l*v0)
-    end
-  end
-
-  if maxspeed == nothing # Normalize by kinetic energy
-    uh, vh = fft(u0), fft(v0)
-    ke = mode1ke(uh, vh, g)
-    norm = sqrt(KE)/sqrt(ke/(g.Lx*g.Ly))
-  else
-    norm = maxspeed / maximum(
-      sqrt.(real.(u0+conj.(u0)).^2 + real.(v0+conj.(v0)).^2))
-  end
-
-  u0 .*= norm
-  v0 .*= norm
-  p0 .*= norm
-
-  set_uvp!(s, vs, pr, g, u0, v0, p0)
-  nothing
-end
-set_isotropicwavefield!(prob::AbstractProblem, amplitude; kwargs...) = set_isotropicwavefield!(prob.state, prob.vars,
-  prob.params, prob.grid, amplitude; kwargs...)
-
+set_planewave!(prob, uw, nkw, args...; kwargs...) = set_planewave!(
+  prob.state, prob.vars, prob.params, prob.grid, uw, nkw, args...; kwargs...)
 
 # -----------
 # Diagnostics
 # -----------
 
 """
-    mode0energy(prob)
+    waveaction(prob)
 
-Returns the domain-averaged energy in the zeroth mode.
+Returns the domain-averaged near-inertial action.
 """
-@inline function mode0energy(s, v, g)
-  @. v.Uh = g.invKKrsq * abs2(s.solr) # qh*Psih
-  1/(2*g.Lx*g.Ly)*parsevalsum(v.Uh, g)
-end
-@inline mode0energy(prob) = mode0energy(prob.state, prob.vars, prob.grid)
+waveaction(prob) = waveaction(prob.state, prob.params, prob.grid)
 
+waveaction(s, p, g) = 0.5*p.invf*parsevalsum2(s.solc, g) / (g.Lx*g.Ly)
+
+"""
+    qgke(prob)
+
+Returns the QG kinetic energy.
+"""
+qgke(prob) = qgke(prob.state, prob.vars, prob.params, prob.grid)
+
+function qgke(s, v, p, g)
+  @. v.qh = s.solr
+  ldiv!(v.phi, g.fftplan, s.solc)
+  calczetah!(v.zetah, v.qh, s.solc, v.phi, v, p, g)
+  @. v.Uh = g.invKKrsq * abs2(v.zetah)
+  1/(g.Lx*g.Ly) * 0.5 * parsevalsum(v.Uh, g)
+end
+
+"""
+    wavepe(prob)
+
+Returns the potential energ of the near-inertial waves.
+"""
+wavepe(prob) = wavepe(prob.state.solc, prob.vars, prob.params, prob.grid)
+
+function wavepe(phih, v, p, g)
+  @. v.phixh = g.k*phih
+  @. v.phiyh = g.l*phih
+  1/(g.Lx*g.Ly) * 0.25*p.eta*p.invf * (parsevalsum2(v.phixh, g) + parsevalsum2(v.phiyh, g))
+end
+
+"""
+    coupledenergy(prob)
+
+Returns the 'coupled energy' in the NIW-QG flow.
+"""
+coupledenergy(prob) = qgke(prob) + wavepe(prob)
+
+#=
 """
     mode1ke(prob)
 
 Returns the domain-averaged kinetic energy in the first mode.
 """
-@inline mode1ke(uh, vh, g) = parsevalsum2(uh, g) + parsevalsum2(vh, g)/(g.Lx*g.Ly)
-@inline mode1ke(s, g) = @views mode1ke(s.solc[:, :, 1], s.solc[:, :, 2], g)
-@inline mode1ke(prob) = mode1ke(prob.state, prob.grid)
 
 """
     mode1pe(prob)
