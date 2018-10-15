@@ -1,7 +1,8 @@
 using PyPlot, FourierFlows
 
-import Random: seed!
-import Printf: @printf
+using Random: seed!
+using Printf: @printf
+
 import GeophysicalFlows.TwoDTurb
 import GeophysicalFlows.TwoDTurb: energy, enstrophy, dissipation, work, drag
 

@@ -1,6 +1,6 @@
 using FourierFlows, PyPlot, JLD2, Printf, Random
 
-import Random: seed!
+using Random: seed!
 
 import GeophysicalFlows.TwoDTurb
 import GeophysicalFlows.TwoDTurb: energy, enstrophy

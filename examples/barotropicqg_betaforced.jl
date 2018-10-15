@@ -5,9 +5,9 @@ using PyPlot,
   Random,
   FourierFlows
 
-import FFTW: irfft
-import Random: seed!
-import Statistics: mean
+using FFTW: irfft
+using Random: seed!
+using Statistics: mean
 
 import GeophysicalFlows.BarotropicQG
 import GeophysicalFlows.BarotropicQG: energy, enstrophy

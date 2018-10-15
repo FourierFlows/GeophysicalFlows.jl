@@ -3,7 +3,7 @@ using
   Printf,
   FourierFlows
 
-import FFTW: rfft
+using FFTW: rfft
 
 import GeophysicalFlows.TwoDTurb
 

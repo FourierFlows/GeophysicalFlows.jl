@@ -5,8 +5,8 @@ using
   Random,
   FourierFlows
 
-import Statistics: mean
-import FFTW: irfft
+using Statistics: mean
+using FFTW: irfft
 
 import GeophysicalFlows.BarotropicQG
 import GeophysicalFlows.BarotropicQG: energy, enstrophy
