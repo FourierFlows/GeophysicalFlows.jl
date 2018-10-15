@@ -1,7 +1,7 @@
 """
     test_bqg_rossbywave(; kwargs...)
 
-Evolvesa a Rossby wave and compares with the analytic solution.
+Evolves a Rossby wave and compares with the analytic solution.
 """
 function test_bqg_rossbywave(stepper, dt, nsteps)
     nx = 64
@@ -284,7 +284,7 @@ function test_bqg_energyenstrophy()
   isapprox(energyzeta0, 29.0/9, rtol=1e-13) && isapprox(enstrophyzeta0, 2701.0/162, rtol=1e-13)
 end
 
-function test_bqg_energyenstrophy00()
+function test_bqg_meanenergyenstrophy()
   nx, Lx  = 64, 2π
   ny, Ly  = 96, 3π
   g  = TwoDGrid(nx, Lx, ny, Ly)
@@ -307,8 +307,8 @@ function test_bqg_energyenstrophy00()
   BarotropicQG.set_U!(prob, U)
   BarotropicQG.updatevars!(prob)
 
-  energyU = BarotropicQG.energy00(prob)
-  enstrophyU = BarotropicQG.enstrophy00(prob)
+  energyU = BarotropicQG.meanenergy(prob)
+  enstrophyU = BarotropicQG.meanenstrophy(prob)
 
   energyzeta0 = BarotropicQG.energy(prob)
   enstrophyzeta0 = BarotropicQG.enstrophy(prob)
@@ -356,4 +356,4 @@ dt, nsteps  = 1e-4, 2000
 @test test_bqg_formstress(0.01, "ForwardEuler")
 
 @test test_bqg_energyenstrophy()
-@test test_bqg_energyenstrophy00()
+@test test_bqg_meanenergyenstrophy()
