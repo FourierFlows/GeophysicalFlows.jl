@@ -9,7 +9,7 @@
     </tr>
  </table>
 
-This module uses FourierFlows.jl to provide solvers for problems in Geophysical Fluid Dynamics in
+This module uses [FourierFlows.jl]() to provide solvers for problems in Geophysical Fluid Dynamics in
 periodic domains using Fourier-based pseudospectral methods.
 
 # Installation
@@ -30,6 +30,8 @@ The solvers we currently support are
     - `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
     - `NIWQG`: a solver for [a two-mode truncation]() of the [NIW-QG model]().
 
+
+[FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
 [two-mode truncation]: https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/stimulated-generation-extraction-of-energy-from-balanced-flow-by-nearinertial-waves/900227E2C12AA98ECEBBE64F4FF21C43
 [XV15]: https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/generalisedlagrangianmean-model-of-the-interactions-between-nearinertial-waves-and-mean-flow/C4FB1C5ABFBAC3A39B52DDC10F4C723F
 [WY16]: https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/threecomponent-model-for-the-coupled-evolution-of-nearinertial-waves-quasigeostrophic-flow-and-the-nearinertial-second-harmonic/4F2E61BDD531DEA02D24FBE9A2617DAB 
