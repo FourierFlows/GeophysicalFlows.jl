@@ -16,8 +16,7 @@ Geophysical Fluid Dynamics on periodic domains using Fourier-based pseudospectra
 
 To install, do
 ```julia
-using Pkg
-Pkg.add("https://github.com/FourierFlows/GeophysicalFlows.jl.git")
+] add GeophysicalFlows
 ```
 
 See `examples/` for example scripts.
@@ -29,7 +28,7 @@ All modules provide solvers on two-dimensional domains. We currently provide
 * `TwoDTurb`: the two-dimensional vorticity equation.
 * `BarotropicQG`: the barotropic quasi-geostrophic equation, which generalizes `TwoDTurb` to cases with topography and Coriolis parameters of the form `f = f₀ + βy`.
 * `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
-* `NIWQG`: [a two-mode truncation]() of the [NIW-QG model]().
+* `NIWQG`: [a two-mode truncation][WY16] of the [NIW-QG model][XV15].
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
