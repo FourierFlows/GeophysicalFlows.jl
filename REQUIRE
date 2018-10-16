@@ -1,15 +1,10 @@
 julia 0.7
 
-Documenter
 FFTW
 FourierFlows
 JLD2
-LinearAlgebra
 Printf
 PyPlot
-Random
 Reexport
 Requires
 SpecialFunctions
-Statistics
-Test
