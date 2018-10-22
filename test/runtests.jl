@@ -44,7 +44,7 @@ wavecentroid_cosine(prob) = (xmoment(e1_cosine(prob), prob.grid), ymoment(e1_cos
 
 "Returns the wave kinetic energy in NIWQG."
 ke_niwqg(phi) = @. abs2(phi)
-ke_niwqg(prob::AbstractProblem) = ke_niwqg(prob.vars.phi)
+ke_niwqg(prob::FourierFlows.Problem) = ke_niwqg(prob.vars.phi)
 
 "Returns the `x,y` centroid of the wave field kinetic energy in NIWQG."
 wavecentroid_niwqg(prob) = (xmoment(ke_niwqg(prob), prob.grid), ymoment(ke_niwqg(prob), prob.grid))

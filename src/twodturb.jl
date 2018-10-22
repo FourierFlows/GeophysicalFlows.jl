@@ -2,7 +2,7 @@ module TwoDTurb
 
 export
   Problem,
-  set_q!,
+  set_zeta!,
   updatevars!,
 
   energy,
@@ -13,7 +13,6 @@ export
 
 using
   FFTW,
-  Requires,
   Reexport
 
 @reexport using FourierFlows
@@ -23,8 +22,8 @@ using FourierFlows: getfieldspecs, varsexpression, parsevalsum, parsevalsum2
 
 abstract type TwoDTurbVars <: AbstractVars end
 
-const physicalvars = [:q, :u, :v]
-const fouriervars = [:qh, :uh, :vh]
+const physicalvars = [:zeta, :u, :v]
+const fouriervars = [:zetah, :uh, :vh]
 const forcedfouriervars = cat(fouriervars, [:F], dims=1)
 const stochfouriervars = cat(forcedfouriervars, [:prevsol], dims=1)
 
@@ -57,6 +56,7 @@ function Problem(;
   params = Params{T}(nu, nnu, mu, nmu, calcF)
     vars = calcF == nothingfunction ? Vars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
      eqn = Equation(params, grid)
+
   FourierFlows.Problem(eqn, stepper, dt, grid, vars, params)
 end
 
@@ -97,9 +97,9 @@ eval(varsexpression(:StochasticForcedVars, physicalvars, stochfouriervars))
 Returns the vars for unforced two-dimensional turbulence with grid g.
 """
 function Vars(g::AbstractGrid{T}) where T
-  @zeros T (g.nx, g.ny) q u v
-  @zeros Complex{T} (g.nkr, g.nl) qh uh vh
-  Vars(q, u, v, qh, uh, vh)
+  @zeros T (g.nx, g.ny) zeta u v
+  @zeros Complex{T} (g.nkr, g.nl) zetah uh vh
+  Vars(zeta, u, v, zetah, uh, vh)
 end
 
 """
@@ -109,8 +109,8 @@ Returns the vars for forced two-dimensional turbulence with grid g.
 """
 function ForcedVars(g::AbstractGrid{T}) where T
   v = Vars(g)
-  Fh = zeros(Complex{T}, (g.nkr, g.nl))
-  ForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., Fh)
+  F = zeros(Complex{T}, (g.nkr, g.nl))
+  ForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., F)
 end
 
 """
@@ -131,31 +131,31 @@ end
 # -------
 
 """
-    calcN_advection(N, sol, t, s, v, p, g)
+    calcN_advection(N, sol, t, cl, v, p, g)
 
 Calculates the advection term.
 """
 function calcN_advection!(N, sol, t, cl, v, p, g)
   @. v.uh =  im * g.l  * g.invKrsq * sol
   @. v.vh = -im * g.kr * g.invKrsq * sol
-  @. v.qh = sol
+  @. v.zetah = sol
 
   ldiv!(v.u, g.rfftplan, v.uh)
   ldiv!(v.v, g.rfftplan, v.vh)
-  ldiv!(v.q, g.rfftplan, v.qh)
+  ldiv!(v.zeta, g.rfftplan, v.zetah)
 
-  @. v.u *= v.q # u*q
-  @. v.v *= v.q # v*q
+  @. v.u *= v.zeta # u*zeta
+  @. v.v *= v.zeta # v*zeta
 
-  mul!(v.uh, g.rfftplan, v.u) # \hat{u*q}
-  mul!(v.vh, g.rfftplan, v.v) # \hat{v*q}
+  mul!(v.uh, g.rfftplan, v.u) # \hat{u*zeta}
+  mul!(v.vh, g.rfftplan, v.v) # \hat{v*zeta}
 
   @. N = -im*g.kr*v.uh - im*g.l*v.vh
   nothing
 end
 
 function calcN!(N, sol, t, cl, v, p, g)
-  calcN_advection!(N, sol, t, s, v, p, g)
+  calcN_advection!(N, sol, t, cl, v, p, g)
   addforcing!(N, sol, t, cl, v, p, g)
   nothing
 end
@@ -163,17 +163,17 @@ end
 addforcing!(N, sol, t, cl, v::Vars, p, g) = nothing
 
 function addforcing!(N, sol, t, cl, v::ForcedVars, p, g)
-  p.calcF!(v.Fh, sol, t, cl, v, p, g)
-  @. N += v.Fh
+  p.calcF!(v.F, sol, t, cl, v, p, g)
+  @. N += v.F
   nothing
 end
 
 function addforcing!(N, sol, t, cl, v::StochasticForcedVars, p, g)
   if t == cl.t # not a substep
     @. v.prevsol = sol # sol at previous time-step is needed to compute budgets for stochastic forcing
-    p.calcF!(v.Fh, sol, t, cl, v, p, g)
+    p.calcF!(v.F, sol, t, cl, v, p, g)
   end
-  @. N += v.Fh
+  @. N += v.F
   nothing
 end
 
@@ -183,29 +183,29 @@ end
 # ----------------
 
 """
-    updatevars!(v, g, sol)
+    updatevars!(prob)
 
-Update the vars in v on the grid g with the solution in s.sol.
+Update `prob.vars` using `prob.sol`.
 """
 function updatevars!(v, g, sol)
-  v.qh .= sol
+  v.zetah .= sol
   @. v.uh =  im * g.l  * g.invKrsq * sol
   @. v.vh = -im * g.kr * g.invKrsq * sol
-  ldiv!(v.q, g.rfftplan, deepcopy(v.qh))
+  ldiv!(v.zeta, g.rfftplan, deepcopy(v.zetah))
   ldiv!(v.u, g.rfftplan, deepcopy(v.uh))
   ldiv!(v.v, g.rfftplan, deepcopy(v.vh))
   nothing
 end
 
-updatevars!(prob::AbstractProblem) = updatevars!(prob.vars, prob.grid, prob.sol)
+updatevars!(prob) = updatevars!(prob.vars, prob.grid, prob.sol)
 
 """
-    set_q!(prob, q)
+    set_zeta!(prob, zeta)
 
-Set the `prob.sol` as the transform of q and update variables.
+Set the `prob.sol` as the transform of `zeta` and update variables.
 """
-function set_q!(prob, q)
-  mul!(prob.sol, prob.grid.rfftplan, q)
+function set_zeta!(prob, zeta)
+  mul!(prob.sol, prob.grid.rfftplan, zeta)
   prob.sol[1, 1] = 0 # zero domain average
   updatevars!(prob)
   nothing
@@ -220,8 +220,7 @@ Returns the domain-averaged kinetic energy in `sol`.
   @. v.uh = g.invKrsq * abs2(sol)
   1/(2*g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
-
-@inline energy(prob) = energy(prob.sol, prob.vars, prob.grid)
+energy(prob) = energy(prob.sol, prob.vars, prob.grid)
 
 """
     enstrophy(prob)
@@ -229,8 +228,7 @@ end
 Returns the domain-averaged enstrophy in `sol`.
 """
 @inline enstrophy(sol, g) = 1/(2*g.Lx*g.Ly)*parsevalsum2(sol, g)
-
-@inline enstrophy(prob) = enstrophy(prob.sol, prob.grid)
+enstrophy(prob) = enstrophy(prob.sol, prob.grid)
 
 """
     dissipation(prob)
@@ -243,13 +241,12 @@ Returns the domain-averaged dissipation rate. nnu must be >= 1.
   p.nu/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
-@inline dissipation(prob::AbstractProblem) = dissipation(prob.sol, prob.vars, prob.params, prob.grid)
+dissipation(prob) = dissipation(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
     work(prob)
-    work(s, v, p, g)
 
-Returns the domain-averaged rate of work of energy by the forcing Fh.
+Returns the domain-averaged rate of work of energy by the forcing `F`.
 """
 @inline function work(sol, v::ForcedVars, g)
   @. v.uh = g.invKrsq * sol * conj(v.F)
@@ -258,24 +255,21 @@ end
 
 @inline function work(sol, v::StochasticForcedVars, g)
   @. v.uh = 0.5 * g.invKrsq * (v.prevsol + sol) * conj(v.F) # Stratonovich
-  # @. v.uh = g.invKrsq * v.prevsol * conj(v.Fh)             # Ito
+  # @. v.uh = g.invKrsq * v.prevsol * conj(v.Fh)            # Ito
   1/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
-
-@inline work(prob::AbstractProblem) = work(prob.sol, prob.vars, prob.grid)
+work(prob) = work(prob.sol, prob.vars, prob.grid)
 
 """
     drag(prob)
-    drag(s, v, p, g)
 
-Returns the extraction of domain-averaged energy by drag/hypodrag mu.
+Returns the extraction of domain-averaged energy by drag/hypodrag `mu`.
 """
 @inline function drag(sol, v, p, g)
   @. v.uh = g.Krsq^(p.nmu-1) * abs2(sol)
   v.uh[1, 1] = 0
   p.mu/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
-
-@inline drag(prob::AbstractProblem) = drag(prob.sol, prob.vars, prob.params, prob.grid)
+drag(prob) = drag(prob.sol, prob.vars, prob.params, prob.grid)
 
 end # module

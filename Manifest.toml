@@ -117,7 +117,7 @@ version = "0.5.3"
 
 [[FourierFlows]]
 deps = ["ComputationalResources", "Coverage", "Documenter", "FFTW", "Interpolations", "JLD2", "LinearAlgebra", "Printf", "Random", "Reexport", "Statistics", "Test"]
-git-tree-sha1 = "9d4173c9370f9426ee16d354b0de15db04c745d2"
+git-tree-sha1 = "c4149ae69572e0b172c8f548cdcb80274044fe0f"
 repo-rev = "ClockReplacesState"
 repo-url = "https://github.com/FourierFlows/FourierFlows.jl.git"
 uuid = "2aec4490-903f-5c70-9b11-9bed06a700e1"
