@@ -32,29 +32,29 @@ function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7
   σ = 0.1
   gr  = TwoDGrid(n, L)
 
-  force2k = zero(gr.Kr)
-  @. force2k = exp(-(sqrt(gr.KKrsq)-kf)^2/(2*dkf^2))
-  @. force2k[gr.KKrsq .< 2.0^2 ] = 0
-  @. force2k[gr.KKrsq .> 20.0^2 ] = 0
-  @. force2k[gr.Kr.<2π/L] = 0
-  σ0 = parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
-  force2k .= σ/σ0 * force2k
+  force2k = @. exp( -(sqrt(gr.Krsq)-kf)^2 / (2dkf^2) )
+  @. force2k[gr.Krsq < 2^2] = 0
+  @. force2k[gr.Krsq > 20^2] = 0
+  @. force2k[gr.kr < 2π/L] = 0
+
+  σ0 = parsevalsum(force2k.*gr.invKrsq/2, gr)/(gr.Lx*gr.Ly)
+  @. force2k *= σ/σ0
 
   Random.seed!(1234)
 
-  function calcF!(Fh, t, s, v, p, g)
-    eta = exp.(2π*im*rand(Float64, size(s.sol)))/sqrt(s.dt)
+  function calcF!(F, sol, t, cl, v, p, g)
+    eta = exp.(2π*im*rand(Float64, size(sol))) / sqrt(cl.dt)
     eta[1, 1] = 0.0
-    @. Fh = eta * sqrt(force2k)
+    @. F = eta * sqrt(force2k)
     nothing
   end
 
-  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt,
-   stepper="RK4", calcF=calcF!, stochastic = true)
+  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, 
+                          stepper="RK4", calcF=calcF!, stochastic=true)
 
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
+  v, p, g, eq, ts = prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
 
-  TwoDTurb.set_q!(prob, 0*g.X)
+  TwoDTurb.set_q!(prob, zeros(g.nx, g.ny))
   E = Diagnostic(TwoDTurb.energy,      prob, nsteps=nt)
   D = Diagnostic(TwoDTurb.dissipation, prob, nsteps=nt)
   R = Diagnostic(TwoDTurb.drag,        prob, nsteps=nt)
@@ -62,10 +62,10 @@ function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7
   diags = [E, D, W, R]
 
   # Step forward
-  stepforward!(prob, diags, round(Int, nt))
+  stepforward!(prob, diags, nt)
   TwoDTurb.updatevars!(prob)
 
-  cfl = prob.ts.dt*maximum([maximum(v.V)/g.dx, maximum(v.U)/g.dy])
+  cfl = prob.ts.dt*maximum([maximum(v.v)/g.dx, maximum(v.u)/g.dy])
   E, D, W, R = diags
   t = round(mu*prob.state.t, digits=2)
 
@@ -160,7 +160,7 @@ function test_twodturb_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0
   nt = round(Int, tf/dt)
 
   gr  = TwoDGrid(n, L)
-  x, y = gr.X, gr.Y
+  x, y = gridpoints(gr)
 
   psif = @. sin(2x)*cos(2y) + 2sin(x)*cos(3y)
   qf = @. -8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
@@ -173,20 +173,18 @@ function test_twodturb_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0
   Ffh = rfft(Ff)
 
   # Forcing
-  function calcF!(Fh, t, s, v, p, g)
-    Fh .= Ffh
+  function calcF!(Fh, sol, t, cl, v, p, g)
+    F .= Ffh
     nothing
   end
 
-  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!, stochastic = false)
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!) 
   TwoDTurb.set_q!(prob, qf)
 
-  # Step forward
-  stepforward!(prob, round(Int, nt))
+  stepforward!(prob, nt)
   TwoDTurb.updatevars!(prob)
 
-  isapprox(v.q, qf, rtol=rtol_twodturb)
+  isapprox(prob.vars.q, qf, rtol=rtol_twodturb)
 end
 
 function test_twodturb_energyenstrophy()

@@ -8,15 +8,17 @@ using
   FFTW
 
 import # use 'import' rather than 'using' for submodules to keep namespace clean
-  GeophysicalFlows.TwoDTurb,
-  GeophysicalFlows.BarotropicQG,
-  GeophysicalFlows.BarotropicQGQL,
-  GeophysicalFlows.VerticallyCosineBoussinesq,
-  GeophysicalFlows.VerticallyFourierBoussinesq,
-  GeophysicalFlows.NIWQG
+  GeophysicalFlows.TwoDTurb
+  #GeophysicalFlows.BarotropicQG,
+  #GeophysicalFlows.BarotropicQGQL,
+  #GeophysicalFlows.VerticallyCosineBoussinesq,
+  #GeophysicalFlows.VerticallyFourierBoussinesq,
+  #GeophysicalFlows.NIWQG
 
-using FourierFlows: lambdipole, parsevalsum, xmoment, ymoment
-using GeophysicalFlows.VerticallyFourierBoussinesq: mode1u
+using GeophysicalFlows: lambdipole
+using FourierFlows: parsevalsum, xmoment, ymoment
+
+#using GeophysicalFlows.VerticallyFourierBoussinesq: mode1u
 
 const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
 const rtol_niwqg = 1e-13 # tolerance for niwqg forcing tests
@@ -60,6 +62,7 @@ testtime = @elapsed begin
   @test test_twodturb_energyenstrophy()
 end
 
+#=
 @testset "BarotropicQG" begin
   include("test_barotropicqg.jl")
 
@@ -129,6 +132,7 @@ end
 
   @test test_niwqg_exactnonlinearsolution(nsteps=50)
 end
+=#
 
 end # time
 
