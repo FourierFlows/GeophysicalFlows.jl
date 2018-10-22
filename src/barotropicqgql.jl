@@ -27,7 +27,7 @@ import FFTW: rfft
 abstract type BarotropicQGQLVars <: AbstractVars end
 abstract type BarotropicQGQLForcedVars <: BarotropicQGQLVars end
 
-const physicalvars = [:zeta, :psi, :u, :v, :uzeta, :vzeta, :U, :Zeta]
+const physicalvars = [:zeta, :psi, :u, :v, :uzeta, :vzeta, :U, :Zeta, :Psi]
 const transformvars = [ Symbol(var, :h) for var in physicalvars ]
 const forcedvars = [:Fh]
 const stochforcedvars = [:prevsol]
@@ -150,6 +150,7 @@ mutable struct Vars{T} <: BarotropicQGQLVars
   zeta::Array{T,2}
   Zeta::Array{T,2}
   psi::Array{T,2}
+  Psi::Array{T,2}
   Nz::Array{Complex{T},2}
   NZ::Array{Complex{T},2}
   uh::Array{Complex{T},2}
@@ -158,12 +159,13 @@ mutable struct Vars{T} <: BarotropicQGQLVars
   zetah::Array{Complex{T},2}
   Zetah::Array{Complex{T},2}
   psih::Array{Complex{T},2}
+  Psih::Array{Complex{T},2}
 end
 
 function Vars(g; T=typeof(g.Lx))
-  @createarrays T (g.nx, g.ny) u v U uzeta vzeta zeta Zeta psi
-  @createarrays Complex{T} (g.nkr, g.nl) N NZ uh vh Uh zetah Zetah psih
-  Vars(u, v, U, uzeta, vzeta, zeta, Zeta, psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih)
+  @createarrays T (g.nx, g.ny) u v U uzeta vzeta zeta Zeta psi Psi
+  @createarrays Complex{T} (g.nkr, g.nl) N NZ uh vh Uh zetah Zetah psih Psih
+  Vars(u, v, U, uzeta, vzeta, zeta, Zeta, psi, Psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih, Psih)
 end
 
 """
@@ -180,6 +182,7 @@ mutable struct ForcedVars{T} <: BarotropicQGQLForcedVars
   zeta::Array{T,2}
   Zeta::Array{T,2}
   psi::Array{T,2}
+  Psi::Array{T,2}
   Nz::Array{Complex{T},2}
   NZ::Array{Complex{T},2}
   uh::Array{Complex{T},2}
@@ -188,6 +191,7 @@ mutable struct ForcedVars{T} <: BarotropicQGQLForcedVars
   zetah::Array{Complex{T},2}
   Zetah::Array{Complex{T},2}
   psih::Array{Complex{T},2}
+  Psih::Array{Complex{T},2}
   Fh::Array{Complex{T},2}
 end
 
@@ -207,6 +211,7 @@ mutable struct StochasticForcedVars{T} <: BarotropicQGQLForcedVars
   zeta::Array{T,2}
   Zeta::Array{T,2}
   psi::Array{T,2}
+  Psi::Array{T,2}
   Nz::Array{Complex{T},2}
   NZ::Array{Complex{T},2}
   uh::Array{Complex{T},2}
@@ -215,6 +220,7 @@ mutable struct StochasticForcedVars{T} <: BarotropicQGQLForcedVars
   zetah::Array{Complex{T},2}
   Zetah::Array{Complex{T},2}
   psih::Array{Complex{T},2}
+  Psih::Array{Complex{T},2}
   Fh::Array{Complex{T},2}
   prevsol::Array{Complex{T},2}
 end
@@ -310,6 +316,7 @@ function updatevars!(s, v, p, g)
   @. v.Zetah = s.sol
   @. v.Zetah[abs.(g.Kr).>0] = 0
 
+  @. v.Psih = -v.Zetah * g.invKKrsq
   @. v.psih = -v.zetah * g.invKKrsq
   @. v.uh = -im * g.l  * v.psih
   @. v.vh =  im * g.kr * v.psih
@@ -318,6 +325,7 @@ function updatevars!(s, v, p, g)
   ldiv!(v.zeta, g.rfftplan, deepcopy(v.zetah))
   ldiv!(v.Zeta, g.rfftplan, deepcopy(v.Zetah))
   ldiv!(v.psi, g.rfftplan, v.psih)
+  ldiv!(v.Psi, g.rfftplan, v.Psih)
   ldiv!(v.u, g.rfftplan, deepcopy(v.uh))
   ldiv!(v.v, g.rfftplan, deepcopy(v.vh))
   ldiv!(v.U, g.rfftplan, deepcopy(v.Uh))
