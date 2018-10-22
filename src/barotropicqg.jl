@@ -37,6 +37,7 @@ nothingfunction(args...) = nothing
 
 Construct a BarotropicQG turbulence problem.
 """
+
 function Problem(;
     # Numerical parameters
             nx = 256,
@@ -210,7 +211,7 @@ function calcN_advection!(N, sol, t, s, v, p, g)
 
   ldiv!(v.zeta, g.rfftplan, v.zetah)
   ldiv!(v.u, g.rfftplan, v.uh)
-  v.psih .= v.vh # FFTW's irfft destroys its input; v.vh is needed for N[1, 1]
+  v.psih .= deepcopy(v.vh) # FFTW's irfft destroys its input; v.vh is needed for N[1, 1]
   ldiv!(v.v, g.rfftplan, v.psih)
 
   @. v.q = v.zeta + p.eta
@@ -227,6 +228,14 @@ end
 function calcN!(N, sol, t, s, v, p, g)
   calcN_advection!(N, sol, t, s, v, p, g)
   addforcing!(N, t, s, v, p, g)
+  nothing
+end
+
+addforcing!(N, t, s, v::Vars, p, g) = nothing
+
+function addforcing!(N, t, s, v::ForcedVars, p, g)
+  p.calcFq!(v.Fqh, t, s, v, p, g)
+  @. N += v.Fqh
   if p.calcFU != nothingfunction
     # 'Nonlinear' term for U with topographic correlation.
     # Note: < v*eta > = sum( conj(vh)*eta ) / (nx^2*ny^2) if fft is used
@@ -236,20 +245,19 @@ function calcN!(N, sol, t, s, v, p, g)
   nothing
 end
 
-addforcing!(N, t, s, v::Vars, p, g) = nothing
-
-function addforcing!(N, t, s, v::ForcedVars, p, g)
-  p.calcFq!(v.Fqh, t, s, v, p, g)
-  @. N .= v.Fqh
-  nothing
-end
-
 function addforcing!(N, t, s, v::StochasticForcedVars, p, g)
   if t == s.t # not a substep
     @. v.prevsol = s.sol # sol at previous time-step is needed to compute budgets for stochastic forcing
     p.calcFq!(v.Fqh, t, s, v, p, g)
   end
   @. N += v.Fqh
+
+  if p.calcFU != nothingfunction
+    # 'Nonlinear' term for U with topographic correlation.
+    # Note: < v*eta > = sum( conj(vh)*eta ) / (nx^2*ny^2) if fft is used
+    # while < v*eta > = 2*sum( conj(vh)*eta ) / (nx^2*ny^2) if rfft is used
+    N[1, 1] = p.calcFU(t) + 2*sum(conj(v.vh).*p.etah).re / (g.nx^2.0*g.ny^2.0)
+  end
   nothing
 end
 
