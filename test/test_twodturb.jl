@@ -39,13 +39,13 @@ function test_twodturb_stochasticforcingbudgets(; n=256, L=2π, dt=0.005, nu=1e-
   Random.seed!(1234)
 
   function calcF!(F, sol, t, cl, v, p, g)
-    eta = exp.(2π*im*rand(size(sol))) / sqrt(cl.dt)
+    eta = exp.(2π*im*rand(Float64, size(sol))) / sqrt(cl.dt)
     eta[1, 1] = 0
     @. F = eta * sqrt(force2k)
     nothing
   end
 
-  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, 
+  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt,
                           stepper="RK4", calcF=calcF!, stochastic=true)
 
   TwoDTurb.set_zeta!(prob, zeros(g.nx, g.ny))
@@ -59,9 +59,9 @@ function test_twodturb_stochasticforcingbudgets(; n=256, L=2π, dt=0.005, nu=1e-
   TwoDTurb.updatevars!(prob)
 
   i₀ = 1
-  dEdt = (E[(i₀+1):E.count] - E[i₀:E.count-1])/prob.ts.dt
-  ii = (i₀):E.count-1
-  ii2 = (i₀+1):E.count
+  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/prob.clock.dt
+  ii = (i₀):E.i-1
+  ii2 = (i₀+1):E.i
 
   # dEdt = W - D - R?
   # If the Ito interpretation was used for the work
@@ -99,7 +99,7 @@ function test_twodturb_deterministicforcingbudgets(; n=256, L=2π, dt=0.005, nu=
   TwoDTurb.updatevars!(prob)
 
   i₀ = 1
-  dEdt = (E[i₀+1:E.i] - E[i₀:E.i-1])/prob.ts.dt
+  dEdt = (E[i₀+1:E.i] - E[i₀:E.i-1])/prob.clock.dt
   ii = i₀:(E.i-1)
   ii2 = (i₀+1):E.i
 
@@ -145,7 +145,7 @@ function test_twodturb_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0
     nothing
   end
 
-  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!) 
+  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!)
   TwoDTurb.set_zeta!(prob, zetaf)
 
   stepforward!(prob, nt)
