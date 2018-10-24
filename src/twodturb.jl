@@ -114,7 +114,7 @@ function ForcedVars(g::AbstractGrid{T}) where T
 end
 
 """
-    StochasticForcedVars(g; T)
+    StochasticForcedVars(g)
 
 Returns the vars for stochastically forced two-dimensional turbulence with grid
 g.
