@@ -8,8 +8,8 @@ using
   FFTW
 
 import # use 'import' rather than 'using' for submodules to keep namespace clean
-  GeophysicalFlows.TwoDTurb
-  #GeophysicalFlows.BarotropicQG,
+  # GeophysicalFlows.TwoDTurb
+  GeophysicalFlows.BarotropicQG
   #GeophysicalFlows.BarotropicQGQL,
   #GeophysicalFlows.VerticallyCosineBoussinesq,
   #GeophysicalFlows.VerticallyFourierBoussinesq,
@@ -26,7 +26,7 @@ const rtol_twodturb = 1e-13 # tolerance for niwqg forcing tests
 
 "Get the CFL number, assuming a uniform grid with `dx=dy`."
 cfl(U, V, dt, dx) = maximum([maximum(abs.(U)), maximum(abs.(V))]*dt/dx)
-cfl(prob) = cfl(prob.vars.U, prob.vars.V, prob.ts.dt, prob.grid.dx)
+cfl(prob) = cfl(prob.vars.u, prob.vars.v, prob.cl.dt, prob.grid.dx)
 
 "Returns the energy in vertically Fourier mode 1 in the Boussinesq equations."
 e1_fourier(u, v, p, m, N) = @. abs2(u) + abs2(v) + m^2*abs2(p)/N^2
@@ -34,19 +34,19 @@ e1_fourier(prob) = e1_fourier(prob.vars.u, prob.vars.v, prob.vars.p, prob.params
 
 "Returns the `x,y` centroid of a cosine mode 1 internal wave in the Boussinesq equations."
 wavecentroid_fourier(prob) = (xmoment(e1_fourier(prob), prob.grid), ymoment(e1_fourier(prob), prob.grid))
-                             
+
 "Returns the energy in vertically cosine mode 1 in the Boussinesq equations."
 e1_cosine(u, v, p, m, N) = @. ( u^2 + v^2 + m^2*p^2/N^2 )/2
 e1_cosine(prob) = e1_cosine(prob.vars.u, prob.vars.v, prob.vars.p, prob.params.m, prob.params.N)
 
-"Returns the x,y centroid of a cosine mode 1 internal wave in the Boussinesq equations."
+"Returns the `x, y` centroid of a cosine mode 1 internal wave in the Boussinesq equations."
 wavecentroid_cosine(prob) = (xmoment(e1_cosine(prob), prob.grid), ymoment(e1_cosine(prob), prob.grid))
 
 "Returns the wave kinetic energy in NIWQG."
 ke_niwqg(phi) = @. abs2(phi)
 ke_niwqg(prob::FourierFlows.Problem) = ke_niwqg(prob.vars.phi)
 
-"Returns the `x,y` centroid of the wave field kinetic energy in NIWQG."
+"Returns the `x, y` centroid of the wave field kinetic energy in NIWQG."
 wavecentroid_niwqg(prob) = (xmoment(ke_niwqg(prob), prob.grid), ymoment(ke_niwqg(prob), prob.grid))
 
 
@@ -62,7 +62,6 @@ testtime = @elapsed begin
   @test test_twodturb_energyenstrophy()
 end
 
-#=
 @testset "BarotropicQG" begin
   include("test_barotropicqg.jl")
 
@@ -75,12 +74,15 @@ end
   @test test_bqg_rossbywave("ForwardEuler", 1e-4, 2000)
   @test test_bqg_rossbywave("FilteredForwardEuler", 1e-4, 2000)
   @test test_bqg_stochasticforcingbudgets()
+  @test test_bqg_deterministicforcingbudgets()
   @test test_bqg_advection(0.0005, "ForwardEuler")
   @test test_bqg_formstress(0.01, "ForwardEuler")
   @test test_bqg_energyenstrophy()
   @test test_bqg_meanenergyenstrophy()
 end
 
+
+#=
 @testset "BarotropicQGQL" begin
   include("test_barotropicqgql.jl")
 end

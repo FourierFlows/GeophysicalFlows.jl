@@ -19,16 +19,16 @@ using Reexport
 
 using FFTW: rfft
 using LinearAlgebra: mul!, ldiv!
-using FourierFlows: getfieldspecs, structvarsexpr, parsevalsum, parsevalsum2
+using FourierFlows: getfieldspecs, varsexpression, parsevalsum, parsevalsum2
 
 abstract type BarotropicQGVars <: AbstractVars end
 abstract type BarotropicQGForcedVars <: BarotropicQGVars end
 
 const realscalarvars = [:U]
 const physicalvars = [:q, :zeta, :psi, :u, :v]
-const transformvars = [ Symbol(var, :h) for var in physicalvars ]
-const forcedvars = [:Fqh]
-const stochforcedvars = [:prevsol]
+const fouriervars = [ Symbol(var, :h) for var in physicalvars ]
+const forcedfouriervars = cat(fouriervars, [:Fqh], dims=1)
+const stochfouriervars = cat(forcedfouriervars, [:prevsol], dims=1)
 
 nothingfunction(args...) = nothing
 
@@ -37,7 +37,6 @@ nothingfunction(args...) = nothing
 
 Construct a BarotropicQG turbulence problem.
 """
-
 function Problem(;
     # Numerical parameters
             nx = 256,
@@ -61,32 +60,31 @@ function Problem(;
              T = Float64)
 
   # the grid
-  g  = BarotropicQG.TwoDGrid(nx, Lx, ny, Ly)
+  grid  = TwoDGrid(nx, Lx, ny, Ly; T=T)
 
   # topographic PV
   if eta==nothing
-    eta = 0*g.X
-    etah = rfft(eta)
+    eta = zeros(grid.nx, grid.ny)
+    etah = zeros(grid.nkr, grid.nl)
   end
 
   if typeof(eta)!=Array{Float64,2} #this is true if eta was passes in Problem as a function
-    pr = Params(g, f0, beta, eta, mu, nu, nnu, calcFU, calcFq)
+    params = Params(grid, f0, beta, eta, mu, nu, nnu, calcFU, calcFq; T=T)
   else
-    pr = Params(f0, beta, eta, rfft(eta), mu, nu, nnu, calcFU, calcFq)
+    params = Params{T}(f0, beta, eta, rfft(eta), mu, nu, nnu, calcFU, calcFq)
   end
 
   if calcFq == nothingfunction && calcFU == nothingfunction
-      vs = Vars(g)
+      vars = Vars(grid)
   else
       if stochastic ==  false
-          vs = ForcedVars(g)
+          vars = ForcedVars(grid)
       elseif stochastic == true
-          vs = StochasticForcedVars(g)
+          vars = StochasticForcedVars(grid)
       end
   end
-  eq = BarotropicQG.Equation(pr, g)
-  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
-  FourierFlows.Problem(g, vs, pr, eq, ts)
+  eqn = Equation(params, grid)
+  FourierFlows.Problem(eqn, stepper, dt, grid, vars, params)
 end
 
 InitialValueProblem(; kwargs...) = Problem(; kwargs...)
@@ -120,10 +118,11 @@ end
 
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function Params(g::TwoDGrid, f0, beta, eta::Function, mu, nu, nnu, calcFU, calcFq)
-  etagrid = eta(g.X, g.Y)
+function Params(g::TwoDGrid, f0, beta, eta::Function, mu, nu, nnu, calcFU, calcFq; T=Float64)
+  x, y = gridpoints(g)
+  etagrid = eta(x, y)
   etah = rfft(etagrid)
-  Params(f0, beta, etagrid, etah, mu, nu, nnu, calcFU, calcFq)
+  Params{T}(f0, beta, etagrid, etah, mu, nu, nnu, calcFU, calcFq)
 end
 
 
@@ -136,10 +135,10 @@ end
 
 Returns the equation for two-dimensional barotropic QG problem with params p and grid g.
 """
-function Equation(p::Params, g; T=typeof(g.Lx))
-  LC = @. -p.mu - p.nu*g.KKrsq^p.nnu + im*p.beta*g.kr*g.invKKrsq
-  LC[1, 1] = 0
-  FourierFlows.Equation{Complex{T},2}(LC, calcN!)
+function Equation(p, g)
+  L = @. -p.mu - p.nu*g.Krsq^p.nnu + im*p.beta*g.kr*g.invKrsq
+  L[1, 1] = 0
+  FourierFlows.Equation(L, calcN!, g)
 end
 
 
@@ -150,26 +149,36 @@ end
 varspecs = cat(
   getfieldspecs(realscalarvars, :(Array{T,0})),
   getfieldspecs(physicalvars, :(Array{T,2})),
-  getfieldspecs(transformvars, :(Array{Complex{T},2})),
+  getfieldspecs(fouriervars, :(Array{Complex{T},2})),
   dims=1)
 
-forcedvarspecs = cat(varspecs, getfieldspecs(forcedvars, :(Array{Complex{T},2})), dims=1)
-stochforcedvarspecs = cat(forcedvarspecs, getfieldspecs(stochforcedvars, :(Array{Complex{T},2})), dims=1)
+forcedvarspecs = cat(
+  getfieldspecs(realscalarvars, :(Array{T,0})),
+  getfieldspecs(physicalvars, :(Array{T,2})),
+  getfieldspecs(forcedfouriervars, :(Array{Complex{T},2})),
+  dims=1)
+
+stochforcedvarspecs = cat(
+  getfieldspecs(realscalarvars, :(Array{T,0})),
+  getfieldspecs(physicalvars, :(Array{T,2})),
+  getfieldspecs(stochfouriervars, :(Array{Complex{T},2})),
+  dims=1)
 
 # Construct Vars types
-eval(structvarsexpr(:Vars, varspecs; parent=:BarotropicQGVars))
-eval(structvarsexpr(:ForcedVars, forcedvarspecs; parent=:BarotropicQGForcedVars))
-eval(structvarsexpr(:StochasticForcedVars, stochforcedvarspecs; parent=:BarotropicQGForcedVars))
+eval(varsexpression(:Vars, varspecs; parent=:BarotropicQGVars, typeparams=:T))
+eval(varsexpression(:ForcedVars, forcedvarspecs; parent=:BarotropicQGForcedVars, typeparams=:T))
+eval(varsexpression(:StochasticForcedVars, stochforcedvarspecs; parent=:BarotropicQGForcedVars, typeparams=:T))
+
 
 """
     Vars(g)
 
 Returns the vars for unforced two-dimensional barotropic QG problem with grid g.
 """
-function Vars(g; T=typeof(g.Lx))
+function Vars(g::AbstractGrid{T}) where T
   U = Array{T,0}(undef, ); U[] = 0
-  @createarrays T (g.nx, g.ny) q u v psi zeta
-  @createarrays Complex{T} (g.nkr, g.nl) qh uh vh psih zetah
+  @zeros T (g.nx, g.ny) q zeta psi u v
+  @zeros Complex{T} (g.nkr, g.nl) qh zetah psih uh vh
   Vars(U, q, zeta, psi, u, v, qh, zetah, psih, uh, vh)
 end
 
@@ -178,8 +187,8 @@ end
 
 Returns the vars for forced two-dimensional barotropic QG problem with grid g.
 """
-function ForcedVars(g; T=typeof(g.Lx))
-  v = Vars(g; T=T)
+function ForcedVars(g::AbstractGrid{T}) where T
+  v = Vars(g)
   Fqh = zeros(Complex{T}, (g.nkr, g.nl))
   ForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., Fqh)
 end
@@ -189,8 +198,8 @@ end
 
 Returns the vars for stochastically forced two-dimensional barotropic QG problem with grid g.
 """
-function StochasticForcedVars(g; T=typeof(g.Lx))
-  v = ForcedVars(g; T=T)
+function StochasticForcedVars(g::AbstractGrid{T}) where T
+  v = ForcedVars(g)
   prevsol = zeros(Complex{T}, (g.nkr, g.nl))
   StochasticForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., prevsol)
 end
@@ -200,14 +209,14 @@ end
 # Solvers
 # -------
 
-function calcN_advection!(N, sol, t, s, v, p, g)
+function calcN_advection!(N, sol, v, p, g)
   # Note that U = sol[1, 1]. For all other elements ζ = sol
   v.U[] = sol[1, 1].re
   @. v.zetah = sol
   v.zetah[1, 1] = 0
 
-  @. v.uh =  im * g.l  * g.invKKrsq * v.zetah
-  @. v.vh = -im * g.kr * g.invKKrsq * v.zetah
+  @. v.uh =  im * g.l  * g.invKrsq * v.zetah
+  @. v.vh = -im * g.kr * g.invKrsq * v.zetah
 
   ldiv!(v.zeta, g.rfftplan, v.zetah)
   ldiv!(v.u, g.rfftplan, v.uh)
@@ -225,39 +234,32 @@ function calcN_advection!(N, sol, t, s, v, p, g)
   @. N += - im*g.l*v.uh # -∂[vq]/∂y
 end
 
-function calcN!(N, sol, t, s, v, p, g)
-  calcN_advection!(N, sol, t, s, v, p, g)
-  addforcing!(N, t, s, v, p, g)
-  nothing
-end
-
-addforcing!(N, t, s, v::Vars, p, g) = nothing
-
-function addforcing!(N, t, s, v::ForcedVars, p, g)
-  p.calcFq!(v.Fqh, t, s, v, p, g)
-  @. N += v.Fqh
+function calcN!(N, sol, t, cl, v, p, g)
+  calcN_advection!(N, sol, v, p, g)
+  addforcing!(N, sol, t, cl, v, p, g)
   if p.calcFU != nothingfunction
     # 'Nonlinear' term for U with topographic correlation.
     # Note: < v*eta > = sum( conj(vh)*eta ) / (nx^2*ny^2) if fft is used
     # while < v*eta > = 2*sum( conj(vh)*eta ) / (nx^2*ny^2) if rfft is used
-    N[1, 1] = p.calcFU(t) + 2*sum(conj(v.vh).*p.etah).re / (g.nx^2.0*g.ny^2.0)
+    N[1, 1] = p.calcFU(t) + 2*sum(conj(v.vh).*p.etah).re / (g.nx^2*g.ny^2)
   end
   nothing
 end
 
-function addforcing!(N, t, s, v::StochasticForcedVars, p, g)
-  if t == s.t # not a substep
-    @. v.prevsol = s.sol # sol at previous time-step is needed to compute budgets for stochastic forcing
-    p.calcFq!(v.Fqh, t, s, v, p, g)
+addforcing!(N, sol, t, cl, p, v::Vars, g) = nothing
+
+function addforcing!(N, sol, t, cl, v::ForcedVars, p, g)
+  p.calcFq!(v.Fqh, sol, t, cl, v, p, g)
+  @. N += v.Fqh
+  nothing
+end
+
+function addforcing!(N, sol, t, cl, v::StochasticForcedVars, p, g)
+  if t == cl.t # not a substep
+    @. v.prevsol = sol # sol at previous time-step is needed to compute budgets for stochastic forcing
+    p.calcFq!(v.Fqh, sol, t, cl, v, p, g)
   end
   @. N += v.Fqh
-
-  if p.calcFU != nothingfunction
-    # 'Nonlinear' term for U with topographic correlation.
-    # Note: < v*eta > = sum( conj(vh)*eta ) / (nx^2*ny^2) if fft is used
-    # while < v*eta > = 2*sum( conj(vh)*eta ) / (nx^2*ny^2) if rfft is used
-    N[1, 1] = p.calcFU(t) + 2*sum(conj(v.vh).*p.etah).re / (g.nx^2.0*g.ny^2.0)
-  end
   nothing
 end
 
@@ -267,16 +269,16 @@ end
 # ----------------
 
 """
-    updatevars!(v, s, g)
+    updatevars!(p, v, g, sol)
 
-Update the vars in v on the grid g with the solution in s.sol.
+Update the vars in v on the grid g with the solution in sol.
 """
-function updatevars!(s, v, p, g)
-  v.U[] = s.sol[1, 1].re
-  @. v.zetah = s.sol
+function updatevars!(p, v, g, sol)
+  v.U[] = sol[1, 1].re
+  @. v.zetah = sol
   v.zetah[1, 1] = 0.0
 
-  @. v.psih = -v.zetah * g.invKKrsq
+  @. v.psih = -v.zetah * g.invKrsq
   @. v.uh = -im * g.l  * v.psih
   @. v.vh =  im * g.kr * v.psih
 
@@ -289,68 +291,68 @@ function updatevars!(s, v, p, g)
   nothing
 end
 
-updatevars!(prob) = updatevars!(prob.state, prob.vars, prob.params, prob.grid)
+updatevars!(prob) = updatevars!(prob.params, prob.vars, prob.grid, prob.sol)
 
 """
     set_zeta!(prob, zeta)
-    set_zeta!(s, v, g, zeta)
+    set_zeta!(p, v, g, sol, zeta)
 
-Set the solution s.sol as the transform of zeta and update variables v
+Set the solution sol as the transform of zeta and update variables v
 on the grid g.
 """
-function set_zeta!(s, v::Vars, p, g, zeta)
+function set_zeta!(p, v::Vars, g, sol, zeta)
   mul!(v.zetah, g.rfftplan, zeta)
   v.zetah[1, 1] = 0.0
-  @. s.sol = v.zetah
+  @. sol = v.zetah
 
-  updatevars!(s, v, p, g)
+  updatevars!(p, v, g, sol)
   nothing
 end
 
-function set_zeta!(s, v::BarotropicQGForcedVars, p, g, zeta)
-  v.U[] = deepcopy(s.sol[1, 1])
+function set_zeta!(p, v::BarotropicQGForcedVars, g, sol, zeta)
+  v.U[] = deepcopy(sol[1, 1])
   mul!(v.zetah, g.rfftplan, zeta)
   v.zetah[1, 1] = 0.0
-  @. s.sol = v.zetah
-  s.sol[1, 1] = v.U[]
+  @. sol = v.zetah
+  sol[1, 1] = v.U[]
 
-  updatevars!(s, v, p, g)
+  updatevars!(p, v, g, sol)
   nothing
 end
 
-set_zeta!(prob::AbstractProblem, zeta) = set_zeta!(prob.state, prob.vars, prob.params, prob.grid, zeta)
+set_zeta!(prob, zeta) = set_zeta!(prob.params, prob.vars, prob.grid, prob.sol, zeta)
 
 """
     set_U!(prob, U)
-    set_U!(s, v, g, U)
+    set_U!(p, v, g, sol, U)
 
 Set the (kx, ky)=(0, 0) part of solution s.sol as the domain-average zonal flow U.
 """
-function set_U!(s, v, p, g, U::Float64)
-  s.sol[1, 1] = U
-  updatevars!(s, v, p, g)
+function set_U!(p, v, g, sol, U::Float64)
+  sol[1, 1] = U
+  updatevars!(p, v, g, sol)
   nothing
 end
 
-set_U!(prob::AbstractProblem, U::Float64) = set_U!(prob.state, prob.vars, prob.params, prob.grid, U)
+set_U!(prob, U::Float64) = set_U!(prob.params, prob.vars, prob.grid, prob.sol, U)
 
 
 """
 Calculate the domain-averaged kinetic energy.
 """
-function energy(prob::AbstractProblem)
-  s, g = prob.state, prob.grid
-  0.5*(parsevalsum2(g.Kr.*g.invKKrsq.*s.sol, g)
-        + parsevalsum2(g.Lr.*g.invKKrsq.*s.sol, g))/(g.Lx*g.Ly)
+@inline function energy(prob)
+  v, g, sol = prob.vars, prob.grid, prob.sol
+  @. v.uh = g.invKrsq * abs2(sol) # |\hat{q}|^2/k^2
+  1/(2*g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
 
 """
 Returns the domain-averaged enstrophy.
 """
-function enstrophy(prob)
-  s, v, g = prob.state, prob.vars, prob.grid
-  @. v.uh = s.sol
+@inline function enstrophy(prob)
+  v, g, sol = prob.vars, prob.grid, prob.sol
+  @. v.uh = sol # \hat{q}
   v.uh[1, 1] = 0
   0.5*parsevalsum2(v.uh, g)/(g.Lx*g.Ly)
 end
@@ -358,12 +360,12 @@ end
 """
 Returns the energy of the domain-averaged U.
 """
-meanenergy(prob) = real(0.5*prob.state.sol[1, 1].^2)
+@inline meanenergy(prob) = real(0.5*prob.sol[1, 1]^2)
 
 """
 Returns the enstrophy of the domain-averaged U.
 """
-meanenstrophy(prob) = real(prob.params.beta*prob.state.sol[1, 1])
+@inline meanenstrophy(prob) = real(prob.params.beta*prob.sol[1, 1])
 
 """
     dissipation(prob)
@@ -371,13 +373,13 @@ meanenstrophy(prob) = real(prob.params.beta*prob.state.sol[1, 1])
 
 Returns the domain-averaged dissipation rate. nnu must be >= 1.
 """
-@inline function dissipation(s, v, p, g)
-  @. v.uh = g.KKrsq^(p.nnu-1) * abs2(s.sol)
+@inline function dissipation(p, v, g, sol)
+  @. v.uh = g.Krsq^(p.nnu-1) * abs2(sol)
   v.uh[1, 1] = 0
   p.nu/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
-@inline dissipation(prob::AbstractProblem) = dissipation(prob.state, prob.vars, prob.params, prob.grid)
+@inline dissipation(prob) = dissipation(prob.params, prob.vars, prob.grid, prob.sol)
 
 """
     work(prob)
@@ -385,18 +387,18 @@ end
 
 Returns the domain-averaged rate of work of energy by the forcing Fqh.
 """
-@inline function work(s, v::ForcedVars, g)
-  @. v.uh = g.invKKrsq * s.sol * conj(v.Fqh)
+@inline function work(sol, v::ForcedVars, g)
+  @. v.uh = g.invKrsq * sol * conj(v.Fqh)
   1/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
-@inline function work(s, v::StochasticForcedVars, g)
-  @. v.uh = g.invKKrsq * (v.prevsol + s.sol)/2.0 * conj(v.Fqh) # Stratonovich
-  # @. v.uh = g.invKKrsq * v.prevsol * conj(v.Fqh)             # Ito
+@inline function work(sol, v::StochasticForcedVars, g)
+  @. v.uh = g.invKrsq * (v.prevsol + sol)/2.0 * conj(v.Fqh) # Stratonovich
+  # @. v.uh = g.invKrsq * v.prevsol * conj(v.Fqh)             # Ito
   1/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
-@inline work(prob::AbstractProblem) = work(prob.state, prob.vars, prob.grid)
+@inline work(prob) = work(prob.sol, prob.vars, prob.grid)
 
 """
     drag(prob)
@@ -404,13 +406,13 @@ end
 
 Returns the extraction of domain-averaged energy by drag mu.
 """
-@inline function drag(s, v, p, g)
-  @. v.uh = g.KKrsq^(-1) * abs2(s.sol)
+@inline function drag(p, v, g, sol)
+  @. v.uh = g.Krsq^(-1) * abs2(sol)
   v.uh[1, 1] = 0
   p.mu/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.uh, g)
 end
 
-@inline drag(prob::AbstractProblem) = drag(prob.state, prob.vars, prob.params, prob.grid)
+@inline drag(prob) = drag(prob.params, prob.vars, prob.grid, prob.sol)
 
 
 end # module
