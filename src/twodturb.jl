@@ -217,7 +217,7 @@ end
 Returns the domain-averaged kinetic energy in `sol`.
 """
 @inline function energy(sol, v, g)
-  @. v.uh = g.invKrsq * abs2(sol)
+  @. v.uh = g.invKrsq * abs2(sol) # |\hat{zeta}|^2/k^2
   1/(2*g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 energy(prob) = energy(prob.sol, prob.vars, prob.grid)
