@@ -8,7 +8,7 @@ using
   FFTW
 
 import # use 'import' rather than 'using' for submodules to keep namespace clean
-  # GeophysicalFlows.TwoDTurb
+  GeophysicalFlows.TwoDTurb,
   GeophysicalFlows.BarotropicQG
   #GeophysicalFlows.BarotropicQGQL,
   #GeophysicalFlows.VerticallyCosineBoussinesq,
