@@ -146,7 +146,7 @@ function test_bqg_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, 
   fh = rfft(f)
 
   function calcFq!(Fqh, sol, t, cl, v, p, g)
-    @. Fqh = fh*cos(2*t)
+    @. Fqh = fh*cos(2t)
     nothing
   end
 
