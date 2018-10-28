@@ -262,6 +262,7 @@ function test_bqg_formstress(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, m
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
   BarotropicQG.set_zeta!(prob, zetai)
+  BarotropicQG.set_U!(prob, 0.0)
   BarotropicQG.updatevars!(prob)
 
   @superzeros (Complex{Float64}, Float64) supersize(prob.eqn.L) N
