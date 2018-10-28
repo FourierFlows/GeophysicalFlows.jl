@@ -177,7 +177,8 @@ function Equation(p::ParamsWithU, g)
   Lq = @. -p.mu - p.nu*g.Krsq^p.nnu + im*p.beta*g.kr*g.invKrsq
   Lq[1, 1] = 0
   L = [Lq, LU]
-  FourierFlows.Equation(L, calcN!, g)
+  T = (Complex{Float64}, Float64)
+  FourierFlows.Equation(L, calcN!, g; T=T)
 end
 
 
