@@ -18,8 +18,8 @@ function test_bqg_rossbywave(stepper, dt, nsteps)
     eta(x, y) = 0*x
   end
 
-  prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, eta=eta, beta=beta, mu=mu, nu=nu, stepper=stepper, dt=dt)
-  cl, v, p, g, sol= prob.clock, prob.vars, prob.params, prob.grid, prob.sol
+  prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, beta=beta, mu=mu, nu=nu, stepper=stepper, dt=dt)
+  cl, v, p, g, sol = prob.clock, prob.vars, prob.params, prob.grid, prob.sol
 
   x, y = gridpoints(prob.grid)
 
@@ -32,6 +32,8 @@ function test_bqg_rossbywave(stepper, dt, nsteps)
     ζ0h = rfft(ζ0)
 
   BarotropicQG.set_zeta!(prob, ζ0)
+
+  isapprox(ζ0, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
 
   stepforward!(prob, nsteps)
   dealias!(sol, g)
@@ -262,13 +264,11 @@ function test_bqg_formstress(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, m
   BarotropicQG.set_zeta!(prob, zetai)
   BarotropicQG.updatevars!(prob)
 
-  N = zeros(Complex{Float64}, gr.nkr, gr.nl)
+  @superzeros (Complex{Float64}, Float64) supersize(prob.eqn.L) N
 
   prob.eqn.calcN!(N, sol, cl.t, cl, v, p, g)
 
-  # Step forward
-  stepforward!(prob, nt)
-  isapprox(N[1, 1], 1/4, rtol=1e-13)
+  isapprox(N[2][1], 1/4, rtol=1e-13)
 end
 
 function test_bqg_energyenstrophy()

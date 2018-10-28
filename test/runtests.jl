@@ -32,7 +32,7 @@ cfl(prob) = cfl(prob.vars.u, prob.vars.v, prob.cl.dt, prob.grid.dx)
 e1_fourier(u, v, p, m, N) = @. abs2(u) + abs2(v) + m^2*abs2(p)/N^2
 e1_fourier(prob) = e1_fourier(prob.vars.u, prob.vars.v, prob.vars.p, prob.params.m, prob.params.N)
 
-"Returns the `x,y` centroid of a cosine mode 1 internal wave in the Boussinesq equations."
+"Returns the `x, y` centroid of a cosine mode 1 internal wave in the Boussinesq equations."
 wavecentroid_fourier(prob) = (xmoment(e1_fourier(prob), prob.grid), ymoment(e1_fourier(prob), prob.grid))
 
 "Returns the energy in vertically cosine mode 1 in the Boussinesq equations."
@@ -73,12 +73,12 @@ end
   @test test_bqg_rossbywave("FilteredAB3", 1e-3, 200)
   @test test_bqg_rossbywave("ForwardEuler", 1e-4, 2000)
   @test test_bqg_rossbywave("FilteredForwardEuler", 1e-4, 2000)
-  @test test_bqg_stochasticforcingbudgets()
-  @test test_bqg_deterministicforcingbudgets()
   @test test_bqg_advection(0.0005, "ForwardEuler")
   @test test_bqg_formstress(0.01, "ForwardEuler")
   @test test_bqg_energyenstrophy()
   @test test_bqg_meanenergyenstrophy()
+  @test test_bqg_deterministicforcingbudgets()
+  @test test_bqg_stochasticforcingbudgets()
 end
 
 
