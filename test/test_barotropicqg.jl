@@ -22,11 +22,11 @@ function test_bqg_rossbywave(stepper, dt, nsteps)
   cl, v, p, g, sol = prob.clock, prob.vars, prob.params, prob.grid, prob.sol
 
   x, y = gridpoints(prob.grid)
+  k0, l0 = prob.grid.k[2], prob.grid.l[2] # fundamental wavenumbers
 
   # the Rossby wave initial condition
    ampl = 1e-2
-  kwave = 3*2π/g.Lx
-  lwave = 2*2π/g.Ly
+  kwave, lwave = 3k0, 2l0
       ω = -p.beta*kwave/(kwave^2 + lwave^2)
      ζ0 = @. ampl*cos(kwave*x)*cos(lwave*y)
     ζ0h = rfft(ζ0)
@@ -57,7 +57,7 @@ function test_bqg_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu
   nt = round(Int, tf/dt)
   ns = 1
 
-  # Forcing
+  # Forcing parameters
   kf, dkf = 12.0, 2.0
   ε = 0.1 # energy input rate
   gr  = TwoDGrid(n, L)
@@ -140,9 +140,8 @@ function test_bqg_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
   g  = TwoDGrid(n, L)
   x, y = gridpoints(g)
-  k0 = g.k[2] # fundamental wavenumber
-  l0 = g.l[2] # fundamental wavenumber
-  f = @. 0.01*cos(4*k0*x)*cos(5*l0*y)
+  k0, l0 = g.k[2], g.l[2] # fundamental wavenumbers
+  f = @. 0.01cos(4k0*x)*cos(5l0*y)
   fh = rfft(f)
 
   function calcFq!(Fqh, sol, t, cl, v, p, g)
@@ -262,7 +261,7 @@ function test_bqg_formstress(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, m
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
   BarotropicQG.set_zeta!(prob, zetai)
-  BarotropicQG.set_U!(prob, 0.0)
+  BarotropicQG.set_U!(sol, prob, 0.0)
   BarotropicQG.updatevars!(prob)
 
   @superzeros (Complex{Float64}, Float64) supersize(prob.eqn.L) N
@@ -276,8 +275,7 @@ function test_bqg_energyenstrophy()
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
   g  = TwoDGrid(nx, Lx, ny, Ly)
-  k0 = g.k[2] # fundamental wavenumber
-  l0 = g.l[2] # fundamental wavenumber
+  k0, l0 = g.k[2], g.l[2] # fundamental wavenumbers
   x, y = gridpoints(g)
 
     eta = @. cos(10*k0*x)*cos(10*l0*y)
@@ -299,14 +297,13 @@ function test_bqg_meanenergyenstrophy()
   nx, Lx  = 64, 2π
   ny, Ly  = 96, 3π
   g  = TwoDGrid(nx, Lx, ny, Ly)
-  k0 = g.k[2] # fundamental wavenumber
-  l0 = g.l[2] # fundamental wavenumber
+  k0, l0 = g.k[2], g.l[2] # fundamental wavenumbers
   x, y = gridpoints(g)
 
   calcFU(t) = 0.0
-  eta(x, y) = @. cos(10*k0*x)*cos(10*k0*y)
-  psi0 = @. sin(2*k0*x)*cos(2*l0*y) + 2sin(k0*x)*cos(3*l0*y)
- zeta0 = @. -((2*k0)^2+(2*l0)^2)*sin(2*k0*x)*cos(2*l0*y) - (k0^2+(3*l0)^2)*2sin(k0*x)*cos(3*l0*y)
+  eta(x, y) = @. cos(10k0*x)*cos(10k0*y)
+  psi0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
+ zeta0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
   beta = 10.0
   U = 1.2
 
@@ -314,7 +311,7 @@ function test_bqg_meanenergyenstrophy()
                                     stepper="ForwardEuler")
 
   BarotropicQG.set_zeta!(prob, zeta0)
-  BarotropicQG.set_U!(prob, U)
+  BarotropicQG.set_U!(prob.sol, prob, U)
   BarotropicQG.updatevars!(prob)
 
   energyU = BarotropicQG.meanenergy(prob)

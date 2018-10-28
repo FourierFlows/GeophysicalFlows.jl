@@ -65,7 +65,7 @@ function Problem(;
   if eta==nothing
     params = Params{T}(beta, mu, nu, nnu, calcFq)
   else
-    if typeof(eta)!=Array{T,2} #this is true if eta was passes in Problem as a function
+    if typeof(eta) != Array{T,2} #this is true if eta was passes in Problem as a function
       eta = eta.(grid.x, grid.y)
     end
     if calcFU == nothingfunction
@@ -289,7 +289,7 @@ function calcN!(N, sol, t, cl, v, p::ParamsWithU, g)
 end
 
 function calcuvq(sol, v, p, g)
-  getzetah(sol, v, p, g)
+  getzetah!(v.zetah, sol, p)
   @. v.uh =  im * g.l  * g.invKrsq * v.zetah
   @. v.vh = -im * g.kr * g.invKrsq * v.zetah
   ldiv!(v.u, g.rfftplan, v.uh)
@@ -298,14 +298,14 @@ function calcuvq(sol, v, p, g)
   calcq(v, p)
 end
 
-@inline function getzetah(sol, v, p, g)
-  @. v.zetah = sol
-  v.zetah[1, 1] = 0.0
+@inline function getzetah!(zetah, sol, p)
+  @. zetah = sol
+  zetah[1, 1] = 0.0
 end
 
-@inline function getzetah(sol, v, p::ParamsWithU, g)
-  @. v.zetah = sol[1]
-  v.zetah[1, 1] = 0.0
+@inline function getzetah!(zetah, sol, p::ParamsWithU)
+  @. zetah = sol[1]
+  zetah[1, 1] = 0.0
 end
 
 @inline function calcq(v, p)
@@ -367,7 +367,7 @@ end
 Update the vars in v on the grid g with the solution in sol.
 """
 function updatevars!(p, v, g, sol)
-  getzetah(sol, v, p, g)
+  getzetah!(v.zetah, sol, p)
   updatezetapsiuv(v, g)
   calcq(v, p)
   nothing
@@ -375,7 +375,7 @@ end
 
 function updatevars!(p::ParamsWithU, v, g, sol)
   @. v.U = real(sol[2])
-  getzetah(sol, v, p, g)
+  getzetah!(v.zetah, sol, p)
   updatezetapsiuv(v, g)
   calcq(v, p)
   nothing
@@ -423,18 +423,16 @@ end
 set_zeta!(prob, zeta) = set_zeta!(prob.params, prob.vars, prob.grid, prob.sol, zeta)
 
 """
-    set_U!(prob, U)
-    set_U!(p, v, g, sol, U)
+    set_U!(sol, prob, U)
 
-Set the (kx, ky)=(0, 0) part of solution s.sol as the domain-average zonal flow U.
+Sets a value for U(t) in the relevantpart of the solution `sol`.
 """
-function set_U!(p, v, g::AbstractGrid{T}, sol, U::T) where T
-  sol[2] = [U + 0im]
+function set_U!(sol, prob, U)
+  p, v, g = prob.params, prob.vars, prob.grid
+  sol[2] .= [U]
   updatevars!(p, v, g, sol)
   nothing
 end
-
-set_U!(prob, U) = set_U!(prob.params, prob.vars, prob.grid, prob.sol, U)
 
 
 """
@@ -442,7 +440,7 @@ Calculate the domain-averaged kinetic energy.
 """
 function energy(prob)
   v, p, g, sol = prob.vars, prob.params, prob.grid, prob.sol
-  getzetah(sol, v, p, g)
+  getzetah!(v.zetah, sol, p)
   v.zetah[1, 1] = 0
   @. v.uh = g.invKrsq * abs2(v.zetah) # |\hat{q}|^2/k^2
   1/(2*g.Lx*g.Ly)*parsevalsum(v.uh, g)
@@ -454,7 +452,7 @@ Returns the domain-averaged enstrophy.
 """
 @inline function enstrophy(prob)
   v, p, g, sol = prob.vars, prob.params, prob.grid, prob.sol
-  getzetah(sol, v, p, g)
+  getzetah!(v.zetah, sol, p)
   v.zetah[1, 1] = 0
   0.5*parsevalsum2(v.zetah, g)/(g.Lx*g.Ly)
 end
