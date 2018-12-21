@@ -23,11 +23,13 @@ using FourierFlows: getfieldspecs, varsexpression, parsevalsum, parsevalsum2, su
 
 const physicalvars = [:q, :psi, :u, :v]
 const fouriervars = [ Symbol(var, :h) for var in physicalvars ]
+const forcedfouriervars = cat(fouriervars, [:Fqh], dims=1)
 
-
-abstract type BarotropicParams <: AbstractParams end
+nothingfunction(args...) = nothing
 
 #TODO split given params and computed params, check line 73
+
+abstract type BarotropicParams <: AbstractParams end
 
 struct Params{T} <: AbstractParams
   # prescribed params
@@ -51,6 +53,7 @@ struct Params{T} <: AbstractParams
   S::Array{T,4}              # Array containing coeffients for getting PV from  streamfunction
   invS::Array{T,4}           # Array containing coeffients for inverting PV to streamfunction
   rfftplan::FFTW.rFFTWPlan{Float64,-1,false,3}  # rfft plan for FFTs
+  calcFq!::Function          # Function that calculates the forcing on QGPV q
 end
 
 struct SinglelayerParams{T} <: BarotropicParams
@@ -72,9 +75,10 @@ struct SinglelayerParams{T} <: BarotropicParams
   Qx::Array{T,3}             # Array containing zonal PV gradient due to beta, U, and eta in each fluid layer
   Qy::Array{T,3}             # Array containing meridional PV gradient due to beta, U, and eta in each fluid layer
   rfftplan::FFTW.rFFTWPlan{Float64,-1,false,2}  # rfft plan for FFTs
+  calcFq!::Function          # Function that calculates the forcing on QGPV q
 end
 
-function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::AbstractGrid{T}; effort=FFTW.MEASURE) where T
+function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
 
   nkr, nl, ny, nx = grid.nkr, grid.nl,  grid.ny, grid.nx
   kr, l = grid.kr, grid.l
@@ -103,9 +107,6 @@ function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::Abstr
   etax = irfft(im*kr.*etah, nx)
   etay = irfft(im*l .*etah, nx)
 
-  # uyy = zeros(1, grid.ny, nlayers)
-  # @views @. uyy[:, :, 1] = -(2/0.2^2)*(-2 + cosh(2*grid.y/0.2))*sech(grid.y/0.2)^4
-
   Qx = zeros(nx, ny, nlayers)
   @views @. Qx[:, :, nlayers] += etax
 
@@ -128,7 +129,7 @@ function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::Abstr
   if nlayers == 1
     SinglelayerParams{T}(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, Qx, Qy, grid.rfftplan)
   else
-    Params{T}(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, gprime, Qx, Qy, S, invS, rfftplanlayered)
+    Params{T}(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, gprime, Qx, Qy, S, invS, rfftplanlayered, calcFq)
   end
 end
 
@@ -167,6 +168,11 @@ varspecs = cat(
   getfieldspecs(fouriervars, :(Array{Complex{T},3})),
   dims=1)
 
+forcedvarspecs = cat(
+  getfieldspecs(physicalvars, :(Array{T,3})),
+  getfieldspecs(forcedfouriervars, :(Array{Complex{T},3})),
+  dims=1)
+
 singlelayervarsspecs = cat(
   getfieldspecs(physicalvars, :(Array{T,2})),
   getfieldspecs(fouriervars, :(Array{Complex{T},2})),
@@ -174,13 +180,14 @@ singlelayervarsspecs = cat(
 
 # Construct Vars types
 eval(varsexpression(:Vars, varspecs; parent=:AbstractVars, typeparams=:T))
+eval(varsexpression(:ForcedVars, forcedvarspecs; parent=:AbstractVars, typeparams=:T))
 eval(varsexpression(:SinglelayerVars, singlelayervarsspecs; parent=:BarotropicVars, typeparams=:T))
 
 
 """
     Vars(g)
 
-Returns the vars for unforced two-dimensional barotropic QG problem with grid g.
+Returns the vars for unforced multi-layer QG problem with grid g.
 """
 function Vars(g::AbstractGrid{T}, p) where T
   @zeros T (g.nx, g.ny, p.nlayers) q psi u v
@@ -188,7 +195,18 @@ function Vars(g::AbstractGrid{T}, p) where T
   Vars(q, psi, u, v, qh, psih, uh, vh)
 end
 
-function SinglelayerParams(g::AbstractGrid{T}) where T
+"""
+    ForcedVars(g)
+
+Returns the vars for forced multi-layer QG problem with grid g.
+"""
+function ForcedVars(g::AbstractGrid{T}, p) where T
+  v = Vars(g, p)
+  Fqh = zeros(Complex{T}, (g.nkr, g.nl, p.nlayers))
+  ForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., Fqh)
+end
+
+function SinglelayerVars(g::AbstractGrid{T}) where T
   @zeros T (g.nx, g.ny) q psi u v
   @zeros Complex{T} (g.nkr, g.nl) qh psih uh vh
   SinglelayerParams(q, psi, u, v, qh, psih, uh, vh)
@@ -253,13 +271,13 @@ end
 
 function calcN!(N, sol, t, cl, v, p, g)
   calcN_advection!(N, sol, v, p, g)
-  # addforcing!(N, sol, t, cl, v, p, g)
+  addforcing!(N, sol, t, cl, v, p, g)
   nothing
 end
 
 function calcNlinear!(N, sol, t, cl, v, p, g)
   calcN_linearadvection!(N, sol, v, p, g)
-  # addforcing!(N, sol, t, cl, v, p, g)
+  addforcing!(N, sol, t, cl, v, p, g)
   nothing
 end
 
@@ -272,16 +290,15 @@ function calcN_advection!(N, sol, v, p, g)
   @. v.vh =  im*g.kr*v.psih
 
   invtransform!(v.u, v.uh, p)
+  @. v.u += p.U + p.u                           # add the imposed zonal flow
   @. v.q = v.u*p.Qx
   fwdtransform!(v.uh, v.q, p)
-  @. N = -v.uh                                   # -u*∂Q/∂x
+  @. N = -v.uh                                   # -(U+u)*∂Q/∂x
 
   invtransform!(v.v, v.vh, p)
   @. v.q = v.v*p.Qy
   fwdtransform!(v.vh, v.q, p)
   @. N -= v.vh                                  # -v*∂Q/∂y
-
-  @. v.u += p.U + p.u                           # add the imposed zonal flow
 
   invtransform!(v.q, v.qh, p)
 
@@ -293,7 +310,7 @@ function calcN_advection!(N, sol, v, p, g)
 
   @. N -= im*g.kr*v.uh + im*g.l*v.vh  # -∂[(U+u)q]/∂x-∂[vq]/∂y
 
-  @views @. N[:, :, p.nlayers] -= p.mu*g.Krsq*v.psih[:, :, p.nlayers]   # bottom linear drag
+  @views @. N[:, :, p.nlayers] += p.mu*g.Krsq*v.psih[:, :, p.nlayers]   # bottom linear drag
 end
 
 
@@ -332,9 +349,14 @@ function calcN_linearadvection!(N, sol, v, p, g)
   fwdtransform!(v.vh, v.v, p)
 
   @. N -= v.vh                         # -v*∂Q/∂y
-  @views @. N[:, :, p.nlayers] -= p.mu*g.Krsq*v.psih[:, :, p.nlayers]   # bottom linear drag
+  @views @. N[:, :, p.nlayers] += p.mu*g.Krsq*v.psih[:, :, p.nlayers]   # bottom linear drag
 end
 
+function addforcing!(N, sol, t, cl, v::ForcedVars, p, g)
+  p.calcFq!(v.Fqh, sol, t, cl, v, p, g)
+  @. N += v.Fqh
+  nothing
+end
 
 function updatevars!(prob)
   p, v, g, sol = prob.params, prob.vars, prob.grid, prob.sol
@@ -344,7 +366,7 @@ function updatevars!(prob)
   @. v.vh =  im*g.kr*v.psih
 
   invtransform!(v.q, deepcopy(v.qh), p)
-  @views @. v.q[:, :, p.nlayers] += p.eta
+  # @views @. v.q[:, :, p.nlayers] += p.eta
   invtransform!(v.psi, deepcopy(v.psih), p)
   invtransform!(v.u, deepcopy(v.uh), p)
   invtransform!(v.v, deepcopy(v.vh), p)

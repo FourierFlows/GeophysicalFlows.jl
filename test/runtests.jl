@@ -87,6 +87,7 @@ testtime = @elapsed begin
   include("test_multilayerqg.jl")
 
   @test test_pvtofromstreamfunction()
+  @test test_bqg_advection(0.001, "ForwardEuler")
 end
 
 
