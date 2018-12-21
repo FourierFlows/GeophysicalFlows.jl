@@ -193,13 +193,13 @@ end
 """
     test_bqg_nonlinearadvection(dt, stepper; kwargs...)
 
-Tests the advection term in the twodturb module by timestepping a
-test problem with timestep dt and timestepper identified by the string stepper.
-The test problem is derived by picking a solution ζf (with associated
-streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
-forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - nuΔζf. One solution
-to the vorticity equation forced by this Ff is then ζf. (This solution may not
-be realized, at least at long times, if it is unstable.)
+Tests the advection term by timestepping a test problem with timestep dt and
+timestepper identified by the string stepper. The test problem is derived by
+picking a solution ζf (with associated streamfunction ψf) for which the
+advection term J(ψf, ζf) is non-zero. Next, a forcing Ff is derived according
+to Ff = ∂ζf/∂t + J(ψf, ζf) - nuΔζf. One solution to the vorticity equation
+forced by this Ff is then ζf. (This solution may not be realized, at least at
+long times, if it is unstable.)
 """
 function test_bqg_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, message=false)
   n, L  = 128, 2π
