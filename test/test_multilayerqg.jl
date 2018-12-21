@@ -1,5 +1,3 @@
-using PyPlot
-
 """
     constructtestfields()
 
@@ -49,8 +47,8 @@ function test_pvtofromstreamfunction()
    n, L = 128, 2π
    gr = TwoDGrid(n, L)
 
-   nlayers = 2       # these choice of params
-   f0, g = 1, 1      # gives the desired
+   nlayers = 2       # these choice of parameters give the
+   f0, g = 1, 1      # desired PV-streamfunction relations
     H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
   rho = [5.0, 6.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
@@ -72,24 +70,24 @@ function test_pvtofromstreamfunction()
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
 
-  vs.ψh[:, :, 1] .= rfft(ψ1)
-  vs.ψh[:, :, 2] .= rfft(ψ2)
+  vs.psih[:, :, 1] .= rfft(ψ1)
+  vs.psih[:, :, 2] .= rfft(ψ2)
 
-  MultilayerQG.pvfromstreamfunction!(vs.qh, vs.ψh, pr.S, gr)
+  MultilayerQG.pvfromstreamfunction!(vs.qh, vs.psih, pr.S, gr)
   MultilayerQG.invtransform!(vs.q, vs.qh, pr)
 
   vs.qh[:, :, 1] .= rfft(q1)
   vs.qh[:, :, 2] .= rfft(q2)
 
-  MultilayerQG.streamfunctionfrompv!(vs.ψh, vs.qh, pr.invS, gr)
-  MultilayerQG.invtransform!(vs.ψ, vs.ψh, pr)
+  MultilayerQG.streamfunctionfrompv!(vs.psih, vs.qh, pr.invS, gr)
+  MultilayerQG.invtransform!(vs.psi, vs.psih, pr)
 
-  isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) && isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) && isapprox(ψ1, vs.ψ[:, :, 1], rtol=rtol_multilayerqg) && isapprox(ψ2, vs.ψ[:, :, 2], rtol=rtol_multilayerqg)
+  isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) && isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) && isapprox(ψ1, vs.psi[:, :, 1], rtol=rtol_multilayerqg) && isapprox(ψ2, vs.psi[:, :, 2], rtol=rtol_multilayerqg)
 end
 
 
 """
-    test_bqg_nonlinearadvection(dt, stepper; kwargs...)
+    test_mqg_nonlinearadvection(dt, stepper; kwargs...)
 
 Tests the advection term by timestepping a test problem with timestep dt and
 timestepper identified by the string stepper. The test 2-layer problem is
@@ -98,38 +96,32 @@ the advection terms J(ψj, qj) are non-zero. Next, a forcing Ff is derived such
 that a solution to the problem forced by this Ff is then qf.
 (This solution may not be realized, at least at long times, if it is unstable.)
 """
-function test_bqg_advection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1, message=false)
+function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1, message=false)
 
   tf = 1*dt
   nt = round(Int, tf/dt)
 
-  nlayers = 2
   n, L = 64, 2π
   gr = TwoDGrid(n, L)
 
   x, y = gridpoints(gr)
   k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
 
+    nlayers = 2       # these choice of parameters give the
+    f0, g = 1, 1      # desired PV-streamfunction relations
+     H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
+   rho = [5.0, 6.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+
   beta = 0.35
-    f0 = 1
-     g = 1
      U = [0.1, 0.05]
      u = zeros(gr.ny, nlayers)
-     ampl = 1.0
-     # u[:, 1] = ampl*0.10sin.(2l0*gr.y)
-     # u[:, 2] = ampl*0.02cos.(3l0*gr.y)
-     # u[:, 1] = 0.4*exp.(0*gr.y)
-     # u[:, 2] = 0.3*exp.(0*gr.y)
-     H = [0.2, 0.8]
-   rho = [5.0, 6.0]
+  ampl = 1.0
+  # u[:, 1] = ampl*0.10sin.(2l0*gr.y)
+  # u[:, 2] = ampl*0.02cos.(3l0*gr.y)
 
-  mu, nu, nnu = 0.1, 0.0, 1
+  mu, nu, nnu = 0.1, 0.05, 1
 
   uyy = zeros(gr.ny, nlayers)
-  # uyy[:, 1] = 4*exp.(0*gr.y)
-  # uyy[:, 2] = 2*exp.(0*gr.y)
-  # uyy[:, 1] = -ampl*(2l0)^2*u[:, 1]
-  # uyy[:, 2] = -ampl*(3l0)^2*u[:, 2]
   uyy[:, 1] = real.(ifft( -transpose(gr.l.^2) .* fft(u[:, 1]) ))
   uyy[:, 2] = real.(ifft( -transpose(gr.l.^2) .* fft(u[:, 2]) ))
 
@@ -178,13 +170,13 @@ function test_bqg_advection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0
   stepforward!(prob, round(Int, nt))
   MultilayerQG.updatevars!(prob)
 
-  figure(1)
-  pcolormesh(vs.q[:, :, 1] - qf[:, :, 1])
-  colorbar()
-  figure(2)
-  pcolormesh(vs.q[:, :, 2] - qf[:, :, 2])
-  colorbar()
-  println(vs.q[1:4, 1:4, 2])
-  println(qf[1:4, 1:4, 2])
+  # figure(1)
+  # pcolormesh(vs.q[:, :, 1] - qf[:, :, 1])
+  # colorbar()
+  # figure(2)
+  # pcolormesh(vs.q[:, :, 2] - qf[:, :, 2])
+  # colorbar()
+  # println(vs.q[1:4, 1:4, 2])
+  # println(qf[1:4, 1:4, 2])
   isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.psi, ψf, rtol=rtol_multilayerqg)
 end
