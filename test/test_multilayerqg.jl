@@ -25,8 +25,8 @@ function constructtestfields(gr)
   q1x = @. 1e-3 * ( 1/6 *( -4k0*75sin(4k0*x)*cos(2l0*y) - 3k0*2sin(3k0*x)*( -43cos(3l0*y) + 75cos(4l0*y) ) + 2k0*81sin(2k0*x)*cos(5l0*y) ) )
   q2x = @. 1e-3 * ( 1/48*( 4k0*630sin(4k0*x)*cos(2l0*y) - 3k0*100sin(3k0*x)*(    cos(3l0*y) - 15cos(4l0*y) ) - 2k0*75sin(2k0*x)*cos(5l0*y) ) )
 
-  Δq1 = @. 1e-3 *(k0*l0)*( 1/6 *( -20* 75cos(4k0*x)*cos(2l0*y) +   2cos(3k0*x)*( +18*43cos(3l0*y) - 25*75cos(4l0*y) ) +29*81cos(2k0*x)*cos(5l0*y) ) )
-  Δq2 = @. 1e-3 *(k0*l0)*( 1/48*( +20*630cos(4k0*x)*cos(2l0*y) + 100cos(3k0*x)*(    -18cos(3l0*y) + 25*15cos(4l0*y) ) -29*75cos(2k0*x)*cos(5l0*y) ) )
+  Δq1 = @. 1e-3 * (k0*l0)*( 1/6 *( -20* 75cos(4k0*x)*cos(2l0*y) +   2cos(3k0*x)*( +18*43cos(3l0*y) - 25*75cos(4l0*y) ) +29*81cos(2k0*x)*cos(5l0*y) ) )
+  Δq2 = @. 1e-3 * (k0*l0)*( 1/48*( +20*630cos(4k0*x)*cos(2l0*y) + 100cos(3k0*x)*(    -18cos(3l0*y) + 25*15cos(4l0*y) ) -29*75cos(2k0*x)*cos(5l0*y) ) )
 
   return ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2
 end
@@ -92,17 +92,18 @@ end
 Tests the advection term by timestepping a test problem with timestep dt and
 timestepper identified by the string stepper. The test 2-layer problem is
 derived by picking a solution q1f, q2f (with streamfunctions ψ1f, ψ2f) for which
-the advection terms J(ψj, qj) are non-zero. Next, a forcing Ff is derived such
+the advection terms J(ψn, qn) are non-zero. Next, a forcing Ff is derived such
 that a solution to the problem forced by this Ff is then qf.
 (This solution may not be realized, at least at long times, if it is unstable.)
 """
 function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1, message=false)
 
-  tf = 1*dt
+  tf = 0.5
   nt = round(Int, tf/dt)
 
-  n, L = 64, 2π
-  gr = TwoDGrid(n, L)
+  nx, ny = 64, 66
+  Lx, Ly = 2π, 2π
+  gr = TwoDGrid(nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
   k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
@@ -113,30 +114,33 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.
    rho = [5.0, 6.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
   beta = 0.35
-     U = [0.1, 0.05]
-     u = zeros(gr.ny, nlayers)
-  ampl = 1.0
-  # u[:, 1] = ampl*0.10sin.(2l0*gr.y)
-  # u[:, 2] = ampl*0.02cos.(3l0*gr.y)
+
+  U1, U2 = 0.1, 0.05
+  U = zeros(ny, nlayers)
+  U = [U1, U2]
+
+  u1 = @. 0.5sech(gr.y/(Ly/15))^2
+  u2 = @. 0.02cos(3l0*gr.y)
+
+  u = zeros(ny, nlayers)
+  u[:, 1] = u1
+  u[:, 2] = u2
 
   mu, nu, nnu = 0.1, 0.05, 1
 
-  uyy = zeros(gr.ny, nlayers)
-  uyy[:, 1] = real.(ifft( -transpose(gr.l.^2) .* fft(u[:, 1]) ))
-  uyy[:, 2] = real.(ifft( -transpose(gr.l.^2) .* fft(u[:, 2]) ))
+  uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
+  uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
 
-  η0, σx, σy = 1.0, L/25, L/20
-  η = @. η0*exp( -(x+L/8)^2/(2σx^2) -(y-L/8)^2/(2σy^2) )
-  ηx = @. -(x+L/8)/(σx^2) * η
+  η0, σx, σy = 1.0, Lx/25, Ly/20
+  η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
+  ηx = @. -(x+Lx/8)/(σx^2) * η
   η = @. η0*sin(2k0*x)*sin(2l0*y) + 2*η0*sin(2k0*x) + η0
   ηx = @. 2k0*η0*cos(2k0*x)*sin(2l0*y) + 2k0*2η0*cos(2k0*x)
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
 
-  #Ff = J(ψ, q)
-
-  Ff1 = FourierFlows.jacobian(ψ1, q1, gr)     + beta*ψ1x + ( -uyy[:, 1] .-   25*(U[2].+u[:, 2].-U[1].-u[:, 1]) ).*ψ1x + (U[1].+u[:, 1]).*q1x - nu*Δq1
-  Ff2 = FourierFlows.jacobian(ψ2, q2 + η, gr) + beta*ψ2x + ( -uyy[:, 2] .- 25/4*(U[1].+u[:, 1].-U[2].-u[:, 2]) ).*ψ2x + (U[2].+u[:, 2]).*(q2x + ηx) + mu*Δψ2 - nu*Δq2
+  Ff1 = FourierFlows.jacobian(ψ1, q1, gr)     + (beta .- uyy1 .-   25*(U2.+u2.-U1.-u1) ).*ψ1x + (U1.+u1).*q1x - nu*Δq1
+  Ff2 = FourierFlows.jacobian(ψ2, q2 + η, gr) + (beta .- uyy2 .- 25/4*(U1.+u1.-U2.-u2) ).*ψ2x + (U2.+u2).*(q2x + ηx) + mu*Δψ2 - nu*Δq2
 
   Ff = zeros(gr.nx, gr.ny, nlayers)
   Ff[:, :, 1] .= Ff1
@@ -170,13 +174,5 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.
   stepforward!(prob, round(Int, nt))
   MultilayerQG.updatevars!(prob)
 
-  # figure(1)
-  # pcolormesh(vs.q[:, :, 1] - qf[:, :, 1])
-  # colorbar()
-  # figure(2)
-  # pcolormesh(vs.q[:, :, 2] - qf[:, :, 2])
-  # colorbar()
-  # println(vs.q[1:4, 1:4, 2])
-  # println(qf[1:4, 1:4, 2])
   isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.psi, ψf, rtol=rtol_multilayerqg)
 end

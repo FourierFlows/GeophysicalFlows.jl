@@ -90,6 +90,7 @@ function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::Abstr
 
   U = reshape(U, (1,  1, nlayers))
   u = reshape(u, (1, ny, nlayers))
+
   H = reshape(H, (1,  1, nlayers))
   ρ = reshape(ρ, (1,  1, nlayers))
 
@@ -101,8 +102,11 @@ function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::Abstr
   end
   Qy[nlayers] = beta - Fm[nlayers-1]*(U[nlayers-1]-U[nlayers])
   =#
+  uyy = repeat(irfft( -l.^2 .* rfft(u, [1, 2]),  1, [1, 2]), outer=(1, 1, 1))
 
-  uyy = repeat( irfft( -l.^2 .* rfft(u, [1, 2]),  1, [1, 2]), outer=(nx, 1, 1))
+
+  uyy = repeat(uyy, outer=(nx, 1, 1))
+
   etah = rfft(eta)
   etax = irfft(im*kr.*etah, nx)
   etay = irfft(im*l .*etah, nx)
