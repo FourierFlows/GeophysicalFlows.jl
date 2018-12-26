@@ -97,7 +97,7 @@ function Equation(p::TwoModeParams, g::TwoDGrid)
 end
 
 function getlinearcoefficients(p::TwoModeParams, g::TwoDGrid)
-  LCr = @. -p.nu0*g.KKrsq^p.nnu0 - p.mu0*g.KKrsq^p.nmu0
+  LCr = @. -p.nu0*g.Krsq^p.nnu0 - p.mu0*g.Krsq^p.nmu0
 
   LCc = zeros(g.nk, g.nl, 3)
   LCc[:, :, 1] = @. -p.nu1*g.KKsq^p.nnu1 - p.mu1*g.KKsq^p.nmu1
@@ -154,7 +154,7 @@ end
 
 function calcN!(Nc, Nr, solc, solr, t, s, v, p, g)
   v.Zh .= solr
-  @. v.Psih = -g.invKKrsq*v.Zh
+  @. v.Psih = -g.invKrsq*v.Zh
 
   @. v.Uh  = -im*g.l  * v.Psih
   @. v.Vh  =  im*g.kr * v.Psih
@@ -238,7 +238,7 @@ Update variables to correspond to the solution in s.sol or prob.state.sol.
 """
 function updatevars!(v, s, p, g)
   v.Zh .= s.solr
-  @. v.Psih = -g.invKKrsq*v.Zh
+  @. v.Psih = -g.invKrsq*v.Zh
   @. v.Uh   = -im*g.l*v.Psih
   @. v.Vh   =  im*g.kr*v.Psih
 
@@ -386,7 +386,7 @@ set_isotropicwavefield!(prob, amplitude; kwargs...) = set_isotropicwavefield!(pr
 Returns the domain-averaged energy in the zeroth mode.
 """
 @inline function mode0energy(s, v, g)
-  @. v.Uh = g.invKKrsq * abs2(s.solr) # qh*Psih
+  @. v.Uh = g.invKrsq * abs2(s.solr) # qh*Psih
   1/(2*g.Lx*g.Ly)*parsevalsum(v.Uh, g)
 end
 @inline mode0energy(prob) = mode0energy(prob.state, prob.vars, prob.grid)
@@ -422,7 +422,7 @@ mode1energy(prob) = mode1energy(prob.state, prob.params, prob.grid)
 Returns the domain-averaged kinetic energy dissipation of the zeroth mode.
 """
 @inline function mode0dissipation(s, v, p, g)
-  @. v.Uh = g.KKrsq^(p.nnu0-1) * abs2(s.solr)
+  @. v.Uh = g.Krsq^(p.nnu0-1) * abs2(s.solr)
   p.nu0/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
 end
 @inline mode0dissipation(prob) = mode0dissipation(prob.state, prob.vars, prob.params, prob.grid)
@@ -433,7 +433,7 @@ end
 Returns the extraction of domain-averaged energy extraction by the drag μ.
 """
 @inline function mode0drag(s, v, p, g)
-  @. v.Uh = g.KKrsq^(p.nmu0-1) * abs2(s.solr)
+  @. v.Uh = g.Krsq^(p.nmu0-1) * abs2(s.solr)
   @. v.Uh[1, 1] = 0
   p.mu0/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
 end
@@ -485,7 +485,7 @@ Returns the domain-integrated shear production.
 """
 function shearp(s, v, p, g)
   v.Zh .= s.solr
-  @. v.Psih = -g.invKKrsq*v.Zh
+  @. v.Psih = -g.invKrsq*v.Zh
   @. v.Uh  = -im*g.l  * v.Psih
   @. v.Vh  =  im*g.kr * v.Psih
   @. v.Uxh =  im*g.kr * v.Uh

@@ -93,7 +93,7 @@ Params(nu, nnu) = Params(nu, nnu, typeof(nu)(0), 0, nothingfunction)
 Returns the equation for two-dimensional turbulence with params p and grid g.
 """
 function Equation(p::Params, g; T=typeof(g.Lx))
-  LC = @. -p.nu*g.KKrsq^p.nnu - p.mu*g.KKrsq^p.nmu
+  LC = @. -p.nu*g.Krsq^p.nnu - p.mu*g.Krsq^p.nmu
   LC[1, 1] = 0
   FourierFlows.Equation{T,2}(LC, calcN!)
 end
@@ -161,8 +161,8 @@ end
 Calculates the advection term.
 """
 function calcN_advection!(N, sol, t, s, v, p, g)
-  @. v.Uh =  im * g.l  * g.invKKrsq * sol
-  @. v.Vh = -im * g.kr * g.invKKrsq * sol
+  @. v.Uh =  im * g.l  * g.invKrsq * sol
+  @. v.Vh = -im * g.kr * g.invKrsq * sol
   @. v.qh = sol
 
   ldiv!(v.U, g.rfftplan, v.Uh)
@@ -214,8 +214,8 @@ Update the vars in v on the grid g with the solution in s.sol.
 """
 function updatevars!(v, s, g)
   v.qh .= s.sol
-  @. v.Uh =  im * g.l  * g.invKKrsq * s.sol
-  @. v.Vh = -im * g.kr * g.invKKrsq * s.sol
+  @. v.Uh =  im * g.l  * g.invKrsq * s.sol
+  @. v.Vh = -im * g.kr * g.invKrsq * s.sol
   ldiv!(v.q, g.rfftplan, deepcopy(v.qh))
   ldiv!(v.U, g.rfftplan, deepcopy(v.Uh))
   ldiv!(v.V, g.rfftplan, deepcopy(v.Vh))
@@ -247,7 +247,7 @@ Returns the domain-averaged kinetic energy in the Fourier-transformed vorticity
 solution s.sol.
 """
 @inline function energy(s, v, g)
-  @. v.Uh = g.invKKrsq * abs2(s.sol)
+  @. v.Uh = g.invKrsq * abs2(s.sol)
   1/(2*g.Lx*g.Ly)*parsevalsum(v.Uh, g)
 end
 
@@ -270,7 +270,7 @@ solution `s.sol`.
 Returns the domain-averaged dissipation rate. nnu must be >= 1.
 """
 @inline function dissipation(s, v, p, g)
-  @. v.Uh = g.KKrsq^(p.nnu-1) * abs2(s.sol)
+  @. v.Uh = g.Krsq^(p.nnu-1) * abs2(s.sol)
   v.Uh[1, 1] = 0
   p.nu/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
 end
@@ -284,13 +284,13 @@ end
 Returns the domain-averaged rate of work of energy by the forcing Fh.
 """
 @inline function work(s, v::ForcedVars, g)
-  @. v.Uh = g.invKKrsq * s.sol * conj(v.Fh)
+  @. v.Uh = g.invKrsq * s.sol * conj(v.Fh)
   1/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
 end
 
 @inline function work(s, v::StochasticForcedVars, g)
-  @. v.Uh = g.invKKrsq * (v.prevsol + s.sol)/2.0 * conj(v.Fh) # Stratonovich
-  # @. v.Uh = g.invKKrsq * v.prevsol * conj(v.Fh)             # Ito
+  @. v.Uh = g.invKrsq * (v.prevsol + s.sol)/2.0 * conj(v.Fh) # Stratonovich
+  # @. v.Uh = g.invKrsq * v.prevsol * conj(v.Fh)             # Ito
   1/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
 end
 
@@ -303,7 +303,7 @@ end
 Returns the extraction of domain-averaged energy by drag/hypodrag mu.
 """
 @inline function drag(s, v, p, g)
-  @. v.Uh = g.KKrsq^(p.nmu-1) * abs2(s.sol)
+  @. v.Uh = g.Krsq^(p.nmu-1) * abs2(s.sol)
   v.Uh[1, 1] = 0
   p.mu/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
 end

@@ -126,7 +126,7 @@ end
 Returns the equation for two-dimensional barotropic QG problem with params p and grid g.
 """
 function Equation(p::Params, g; T=typeof(g.Lx))
-  LC = @. -p.mu - p.nu*g.KKrsq^p.nnu + im*p.beta*g.kr*g.invKKrsq
+  LC = @. -p.mu - p.nu*g.Krsq^p.nnu + im*p.beta*g.kr*g.invKrsq
   LC[1, 1] = 0
   FourierFlows.Equation{Complex{T},2}(LC, calcN!)
 end
@@ -243,9 +243,9 @@ function calcN_advection!(N, sol, t, s, v, p, g)
   @. v.Zetah = sol
   @. v.Zetah[abs.(g.Kr).>0] = 0
 
-  @. v.uh =  im * g.l  * g.invKKrsq * v.zetah
-  @. v.vh = -im * g.kr * g.invKKrsq * v.zetah
-  @. v.Uh =  im * g.l  * g.invKKrsq * v.Zetah
+  @. v.uh =  im * g.l  * g.invKrsq * v.zetah
+  @. v.vh = -im * g.kr * g.invKrsq * v.zetah
+  @. v.Uh =  im * g.l  * g.invKrsq * v.Zetah
 
   ldiv!(v.zeta, g.rfftplan, v.zetah)
   ldiv!(v.u, g.rfftplan, v.uh)
@@ -316,11 +316,11 @@ function updatevars!(s, v, p, g)
   @. v.Zetah = s.sol
   @. v.Zetah[abs.(g.Kr).>0] = 0
 
-  @. v.Psih = -v.Zetah * g.invKKrsq
-  @. v.psih = -v.zetah * g.invKKrsq
+  @. v.Psih = -v.Zetah * g.invKrsq
+  @. v.psih = -v.zetah * g.invKrsq
   @. v.uh = -im * g.l  * v.psih
   @. v.vh =  im * g.kr * v.psih
-  @. v.Uh =  im * g.l  * v.Zetah * g.invKKrsq
+  @. v.Uh =  im * g.l  * v.Zetah * g.invKrsq
 
   ldiv!(v.zeta, g.rfftplan, deepcopy(v.zetah))
   ldiv!(v.Zeta, g.rfftplan, deepcopy(v.Zetah))
@@ -359,8 +359,8 @@ Calculate the domain-averaged kinetic energy.
 """
 function energy(prob)
   s, g = prob.state, prob.grid
-  0.5*(parsevalsum2(g.Kr.*g.invKKrsq.*s.sol, g)
-        + parsevalsum2(g.Lr.*g.invKKrsq.*s.sol, g))/(g.Lx*g.Ly)
+  0.5*(parsevalsum2(g.Kr.*g.invKrsq.*s.sol, g)
+        + parsevalsum2(g.Lr.*g.invKrsq.*s.sol, g))/(g.Lx*g.Ly)
 end
 
 
@@ -382,7 +382,7 @@ end
 Returns the domain-averaged dissipation rate. nnu must be >= 1.
 """
 @inline function dissipation(s, v, p, g)
-  @. v.uh = g.KKrsq^(p.nnu-1) * abs2(s.sol)
+  @. v.uh = g.Krsq^(p.nnu-1) * abs2(s.sol)
   v.uh[1, 1] = 0
   p.nu/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
@@ -396,13 +396,13 @@ end
 Returns the domain-averaged rate of work of energy by the forcing Fh.
 """
 @inline function work(s, v::ForcedVars, g)
-  @. v.uh = g.invKKrsq * s.sol * conj(v.Fh)
+  @. v.uh = g.invKrsq * s.sol * conj(v.Fh)
   1/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
 @inline function work(s, v::StochasticForcedVars, g)
-  @. v.uh = g.invKKrsq * (v.prevsol + s.sol)/2.0 * conj(v.Fh) # Stratonovich
-  # @. v.uh = g.invKKrsq * v.prevsol * conj(v.Fh)             # Ito
+  @. v.uh = g.invKrsq * (v.prevsol + s.sol)/2.0 * conj(v.Fh) # Stratonovich
+  # @. v.uh = g.invKrsq * v.prevsol * conj(v.Fh)             # Ito
   1/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
@@ -415,7 +415,7 @@ end
 Returns the extraction of domain-averaged energy by drag mu.
 """
 @inline function drag(s, v, p, g)
-  @. v.uh = g.KKrsq^(-1) * abs2(s.sol)
+  @. v.uh = g.Krsq^(-1) * abs2(s.sol)
   v.uh[1, 1] = 0
   p.mu/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end

@@ -115,7 +115,7 @@ end
 
 function Equation(p, g; T=typeof(g.Lx), dealias=false)
   LCc = @. - p.nu  * g.KKsq  ^ p.nnu   -  p.muw * g.KKsq  ^ p.nmuw  -  0.5*im*p.eta*g.KKsq
-  LCr = @. - p.kap * g.KKrsq ^ p.nkap  -  p.muq * g.KKrsq ^ p.nmuq
+  LCr = @. - p.kap * g.Krsq ^ p.nkap  -  p.muq * g.Krsq ^ p.nmuq
   LCr[1, 1] = 0
   LCc[1 ,1] = 0
 
@@ -191,7 +191,7 @@ function calczetah!(zetah, qh, phih, phi, v, p, g)
   mul!(v.phisqh, g.rfftplan, v.phisq)
 
   #   zeta = q  -               *** q^w ***
-  @. zetah = qh - p.invf*(-0.25*g.KKrsq*v.phisqh + 0.5*v.phijach)
+  @. zetah = qh - p.invf*(-0.25*g.Krsq*v.phisqh + 0.5*v.phijach)
   zetah[1, 1] = 0
 
   nothing
@@ -220,7 +220,7 @@ function calcN!(Nc, Nr, solc, solr, t, s, v, p, g)
   ldiv!(v.phi, g.fftplan, solc)
   calczetah!(v.zetah, solr, solc, v.phi, v, p, g)
 
-  @. v.psih = -g.invKKrsq*v.zetah
+  @. v.psih = -g.invKrsq*v.zetah
   calcUhVh!(v.Uh, v.Vh, v.psih, p.Ub, p.Vb, g)
 
   # inverse transforms may destroy v.Uh, v.Vh, v.zetah, v.qh
@@ -289,7 +289,7 @@ function updatevars!(v, s, p, g)
   ldiv!(v.phi, g.fftplan, v.phih)
   calczetah!(v.zetah, s.solr, s.solc, v.phi, v, p, g)
 
-  @. v.psih = -g.invKKrsq*v.zetah
+  @. v.psih = -g.invKrsq*v.zetah
   calcUhVh!(v.Uh, v.Vh, v.psih, p.Ub, p.Vb, g)
 
   # Copy variables that are destroyed by inverse transforms
@@ -379,7 +379,7 @@ function qgke(s, v, p, g)
   @. v.qh = s.solr
   ldiv!(v.phi, g.fftplan, s.solc)
   calczetah!(v.zetah, v.qh, s.solc, v.phi, v, p, g)
-  @. v.Uh = g.invKKrsq * abs2(v.zetah)
+  @. v.Uh = g.invKrsq * abs2(v.zetah)
   1/(g.Lx*g.Ly) * 0.5 * parsevalsum(v.Uh, g)
 end
 
@@ -432,7 +432,7 @@ mode1energy(prob) = mode1energy(prob.state, prob.params, prob.grid)
 Returns the domain-averaged kinetic energy dissipation of the zeroth mode.
 """
 @inline function mode0dissipation(s, v, p, g)
-  @. v.Uh = g.KKrsq^(p.nnu0-1) * abs2(s.solr)
+  @. v.Uh = g.Krsq^(p.nnu0-1) * abs2(s.solr)
   p.nu0/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
 end
 @inline mode0dissipation(prob) = mode0dissipation(prob.state, prob.vars, prob.params, prob.grid)
@@ -443,7 +443,7 @@ end
 Returns the extraction of domain-averaged energy extraction by the drag μ.
 """
 @inline function mode0drag(s, v, p, g)
-  @. v.Uh = g.KKrsq^(p.nmu0-1) * abs2(s.solr)
+  @. v.Uh = g.Krsq^(p.nmu0-1) * abs2(s.solr)
   @. v.Uh[1, 1] = 0
   p.mu0/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
 end
@@ -495,7 +495,7 @@ Returns the domain-integrated shear production.
 """
 function shearp(s, v, p, g)
   v.Zh .= s.solr
-  @. v.Psih = -g.invKKrsq*v.Zh
+  @. v.Psih = -g.invKrsq*v.Zh
   @. v.Uh  = -im*g.l  * v.Psih
   @. v.Vh  =  im*g.kr * v.Psih
   @. v.Uxh =  im*g.kr * v.Uh

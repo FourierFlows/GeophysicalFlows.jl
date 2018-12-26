@@ -32,11 +32,11 @@ kf, dkf = 12.0, 2.0     # forcing wavenumber and width of
                         # forcing ring in wavenumber space
 σ = 0.005               # energy input rate by the forcing
 gr  = TwoDGrid(nx, Lx)
-force2k = @. exp(-(sqrt(gr.KKrsq)-kf)^2/(2*dkf^2))
-force2k[gr.KKrsq .< 2.0^2 ] .= 0
-force2k[gr.KKrsq .> 20.0^2 ] .= 0
+force2k = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
+force2k[gr.Krsq .< 2.0^2 ] .= 0
+force2k[gr.Krsq .> 20.0^2 ] .= 0
 force2k[gr.Kr.<2π/Lx] .= 0
-σ0 = FourierFlows.parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+σ0 = FourierFlows.parsevalsum(force2k.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
 force2k .= σ/σ0 * force2k  # normalization so that forcing injects
                            # energy ε per domain area per unit time
 
@@ -84,7 +84,7 @@ diags = [E, Z, zMean] # A list of Diagnostics types passed to "stepforward!" wil
 
 # Create Output
 get_sol(prob) = prob.vars.sol # extracts the Fourier-transformed solution
-get_u(prob) = irfft(im*g.Lr.*g.invKKrsq.*prob.vars.sol, g.nx)
+get_u(prob) = irfft(im*g.Lr.*g.invKrsq.*prob.vars.sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 
 
@@ -180,7 +180,7 @@ plot_output(prob, fig, axs; drawcolorbar=false)
 
 UM = zeros(g.ny, length(zMean.time))
 for in = 1:length(zMean.time)
-    UM[:, in] = real(ifft(im*g.Lr[1, :].*zMean[in].*g.invKKrsq[1, :]))
+    UM[:, in] = real(ifft(im*g.Lr[1, :].*zMean[in].*g.invKrsq[1, :]))
 end
 figure(2); pcolormesh(zMean.time, g.y.', UM)
 

@@ -19,11 +19,11 @@ kf, dkf = 12.0, 2.0
 
 gr  = TwoDGrid(n, L)
 
-force2k = @. exp(-(sqrt(gr.KKrsq)-kf)^2/(2*dkf^2))
-force2k[gr.KKrsq .< 2.0^2 ] .= 0
-force2k[gr.KKrsq .> 20.0^2 ] .= 0
+force2k = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
+force2k[gr.Krsq .< 2.0^2 ] .= 0
+force2k[gr.Krsq .> 20.0^2 ] .= 0
 force2k[gr.Kr.<2π/L] .= 0
-σ0 = FourierFlows.parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+σ0 = FourierFlows.parsevalsum(force2k.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
 force2k .= σ/σ0 * force2k
 
 seed!(1234)

@@ -156,9 +156,9 @@ TracerForcedParams(nu0, nnu0, nu1, nnu1, mu0, nmu0, mu1, nmu1, kap, nkap, f, N, 
 # Equations
 function Equation(p, g)
   LC = zeros(Complex{typeof(g.Lx)}, g.nkr, g.nl, 4)
-  @views @. LC[:, :, 1] = -p.nu0*g.KKrsq^p.nnu0 - p.mu0*g.KKrsq^p.nmu0
-  @views @. LC[:, :, 2] = -p.nu1*g.KKrsq^p.nnu1 - p.mu1*g.KKrsq^p.nmu1
-  @views @. LC[:, :, 3] = -p.nu1*g.KKrsq^p.nnu1 - p.mu1*g.KKrsq^p.nmu1
+  @views @. LC[:, :, 1] = -p.nu0*g.Krsq^p.nnu0 - p.mu0*g.Krsq^p.nmu0
+  @views @. LC[:, :, 2] = -p.nu1*g.Krsq^p.nnu1 - p.mu1*g.Krsq^p.nmu1
+  @views @. LC[:, :, 3] = -p.nu1*g.Krsq^p.nnu1 - p.mu1*g.Krsq^p.nmu1
   FourierFlows.Equation(LC, calcN!)
 end
 
@@ -171,8 +171,8 @@ function TracerForcedEquation(p, g)
   eq1 = Equation(p, g)
   LC = zeros(Complex{typeof(g.Lx)}, g.nkr, g.nl, 6)
   @views @. LC[:, :, 1:4] = eq1.LC
-  @views @. LC[:, :, 5] = -p.kap*g.KKrsq^p.nkap
-  @views @. LC[:, :, 6] = -p.kap*g.KKrsq^p.nkap
+  @views @. LC[:, :, 5] = -p.kap*g.Krsq^p.nkap
+  @views @. LC[:, :, 6] = -p.kap*g.Krsq^p.nkap
   FourierFlows.Equation(LC, calcN_tracer!)
 end
 
@@ -289,7 +289,7 @@ function calcN!(N, sol, t, s, v, p, g)
   @. v.wh = -im/p.m*(g.kr*v.uh + g.l*v.vh)
 
   # Spectral-space calculations
-  @. v.Psih = -g.invKKrsq*v.Zh
+  @. v.Psih = -g.invKrsq*v.Zh
 
   @. v.Uh = -im*g.l*v.Psih
   @. v.Vh =  im*g.kr*v.Psih
@@ -413,7 +413,7 @@ function updatevars!(v, sol, s, p, g)
   @views @. v.vh = s.sol[:, :, 3]
   @views @. v.ph = s.sol[:, :, 4]
 
-  @. v.Psih = -g.invKKrsq*v.Zh
+  @. v.Psih = -g.invKrsq*v.Zh
   @. v.Uh   = -im*g.l*v.Psih
   @. v.Vh   =  im*g.kr*v.Psih
   @. v.wh   = -im/p.m*(g.kr*v.uh + g.l*v.vh)
@@ -536,7 +536,7 @@ set_planewave!(prob, uw, nkw, θ=0; kwargs...) = set_planewave!(
 Returns the domain-averaged energy in the zeroth mode.
 """
 @inline function mode0energy(s, v, g)
-  @views @. v.Uh = g.invKKrsq * abs2(s.sol[:, :, 1])
+  @views @. v.Uh = g.invKrsq * abs2(s.sol[:, :, 1])
   1/(2*g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uh, g)
 end
 
@@ -556,7 +556,7 @@ end
 Returns the domain-averaged barotropic dissipation rate. nnu0 must be >= 1.
 """
 @inline function mode0dissipation(s, v, p, g)
-  @views @. v.Uh = g.KKrsq^(p.nnu-1) * abs2(s.sol[:, :, 1])
+  @views @. v.Uh = g.Krsq^(p.nnu-1) * abs2(s.sol[:, :, 1])
   p.nu/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uh, g)
 end
 
@@ -566,7 +566,7 @@ end
 Returns the extraction of domain-averaged barotropic energy by drag μ.
 """
 @inline function mode0drag(s, v, p, g)
-  @. v.Uh = g.KKrsq^(p.nmu-1) * abs2(s.sol)
+  @. v.Uh = g.Krsq^(p.nmu-1) * abs2(s.sol)
   @. v.Uh[1, 1] = 0
   p.mu/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uh, g)
 end

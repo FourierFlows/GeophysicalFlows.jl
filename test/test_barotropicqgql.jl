@@ -59,11 +59,11 @@ function test_bqgql_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, n
   gr  = TwoDGrid(n, L)
 
   force2k = zero(gr.Kr)
-  @. force2k = exp.(-(sqrt(gr.KKrsq)-kf)^2/(2*dkf^2))
-  @. force2k[gr.KKrsq .< 2.0^2 ] = 0
-  @. force2k[gr.KKrsq .> 20.0^2 ] = 0
+  @. force2k = exp.(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
+  @. force2k[gr.Krsq .< 2.0^2 ] = 0
+  @. force2k[gr.Krsq .> 20.0^2 ] = 0
   @. force2k[gr.Kr .< 2π/L] = 0
-  σ0 = parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+  σ0 = parsevalsum(force2k.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
   force2k .= σ/σ0 * force2k
 
   Random.seed!(1234)

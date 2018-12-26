@@ -50,15 +50,15 @@ if !isdir(plotpath); mkdir(plotpath); end
 Random.seed!(1234)
 E0 = 0.1
 modk = ones(g.nkr, g.nl)
-modk[real.(g.KKrsq).<(8*2*pi/g.Lx)^2] .= 0
-modk[real.(g.KKrsq).>(10*2*pi/g.Lx)^2] .= 0
+modk[real.(g.Krsq).<(8*2*pi/g.Lx)^2] .= 0
+modk[real.(g.Krsq).>(10*2*pi/g.Lx)^2] .= 0
 modk[1, :] .= 0
 psih = (randn(Float64, size(s.sol)) .+ im*randn(Float64, size(s.sol))).*modk
 psih = @. psih*prob.ts.filter
-Ein = real(sum(g.KKrsq.*abs2.(psih)/(g.nx*g.ny)^2))
+Ein = real(sum(g.Krsq.*abs2.(psih)/(g.nx*g.ny)^2))
 psih = psih*sqrt(E0/Ein)
-qi = -irfft(g.KKrsq.*psih, g.nx)
-E0 = FourierFlows.parsevalsum(g.KKrsq.*abs2.(psih), g)
+qi = -irfft(g.Krsq.*psih, g.nx)
+E0 = FourierFlows.parsevalsum(g.Krsq.*abs2.(psih), g)
 
 BarotropicQG.set_zeta!(prob, qi)
 
@@ -73,7 +73,7 @@ diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will
 
 # Create Output
 get_sol(prob) = prob.vars.sol # extracts the Fourier-transformed solution
-get_u(prob) = irfft(im*g.Lr.*g.invKKrsq.*prob.vars.sol, g.nx)
+get_u(prob) = irfft(im*g.Lr.*g.invKrsq.*prob.vars.sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 
 

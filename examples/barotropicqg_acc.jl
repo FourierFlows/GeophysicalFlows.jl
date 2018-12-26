@@ -65,7 +65,7 @@ diags = [E, Emean, Q, Qmean]
 
 # Create Output
 get_sol(prob) = prob.state.sol # extracts the Fourier-transformed solution
-get_u(prob) = irfft(im*g.Lr.*g.invKKrsq.*prob.state.sol, g.nx)
+get_u(prob) = irfft(im*g.Lr.*g.invKrsq.*prob.state.sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 
 
