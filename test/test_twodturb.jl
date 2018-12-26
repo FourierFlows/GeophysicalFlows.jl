@@ -6,7 +6,8 @@ function test_twodturb_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti
 
   xq = zeros(nm)   # centroid of abs(q)
   Ue_m = zeros(nm) # measured dipole speed
-  x, y, q = prob.grid.X, prob.grid.Y, prob.vars.q # nicknames
+  x, y = gridpoints(prob.grid)
+  q = prob.vars.q
 
   for i = 1:nm # step forward
     stepforward!(prob, nt)
@@ -30,31 +31,35 @@ function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7
   # Forcing
   kf, dkf = 12.0, 2.0
   σ = 0.1
-  gr  = TwoDGrid(n, L)
 
-  force2k = zero(gr.Kr)
+  gr  = TwoDGrid(n, L)
+  x, y = gridpoints(gr)
+
+  Kr = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl]
+
+  force2k = zero(gr.Krsq)
   @. force2k = exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
   @. force2k[gr.Krsq .< 2.0^2 ] = 0
   @. force2k[gr.Krsq .> 20.0^2 ] = 0
-  @. force2k[gr.Kr.<2π/L] = 0
+  @. force2k[Kr .< 2π/L] = 0
   σ0 = parsevalsum(force2k.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
   force2k .= σ/σ0 * force2k
 
   Random.seed!(1234)
 
-  function calcF!(Fh, t, s, v, p, g)
-    eta = exp.(2π*im*rand(Float64, size(s.sol)))/sqrt(s.dt)
+  function calcF!(Fh, sol, t, cl, v, p, g)
+    eta = exp.(2π*im*rand(Float64, size(sol)))/sqrt(cl.dt)
     eta[1, 1] = 0.0
     @. Fh = eta * sqrt(force2k)
     nothing
   end
 
   prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt,
-   stepper="RK4", calcF=calcF!, stochastic = true)
+   stepper="RK4", calcF=calcF!, stochastic=true)
 
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
+  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
 
-  TwoDTurb.set_q!(prob, 0*g.X)
+  TwoDTurb.set_q!(prob, 0*x)
   E = Diagnostic(TwoDTurb.energy,      prob, nsteps=nt)
   D = Diagnostic(TwoDTurb.dissipation, prob, nsteps=nt)
   R = Diagnostic(TwoDTurb.drag,        prob, nsteps=nt)
@@ -65,14 +70,14 @@ function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7
   stepforward!(prob, diags, round(Int, nt))
   TwoDTurb.updatevars!(prob)
 
-  cfl = prob.ts.dt*maximum([maximum(v.V)/g.dx, maximum(v.U)/g.dy])
+  cfl = cl.dt*maximum([maximum(v.V)/g.dx, maximum(v.U)/g.dy])
   E, D, W, R = diags
-  t = round(mu*prob.state.t, digits=2)
+  t = round(mu*cl.t, digits=2)
 
   i₀ = 1
-  dEdt = (E[(i₀+1):E.count] - E[i₀:E.count-1])/prob.ts.dt
-  ii = (i₀):E.count-1
-  ii2 = (i₀+1):E.count
+  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
+  ii = (i₀):E.i-1
+  ii2 = (i₀+1):E.i
 
   # dEdt = W - D - R?
   # If the Ito interpretation was used for the work
@@ -94,22 +99,23 @@ function test_twodturb_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1
   ns = 1
 
   gr  = TwoDGrid(n, L)
+  x, y = gridpoints(gr)
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
 
-  f = @. 0.01*cos(4*gr.X)*cos(5*gr.Y)
+  f = @. 0.01*cos(4*x)*cos(5*y)
   fh = rfft(f)
-  function calcF!(Fh, t, s, v, p, g)
+  function calcF!(Fh, sol, t, cl, v, p, g)
     @. Fh = fh*cos(2*t)
     nothing
   end
 
   prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt,
-   stepper="RK4", calcF=calcF!, stochastic = false)
+   stepper="RK4", calcF=calcF!, stochastic=false)
 
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
-  TwoDTurb.set_q!(prob, 0*g.X)
+  TwoDTurb.set_q!(prob, 0*x)
   E = Diagnostic(TwoDTurb.energy,      prob, nsteps=nt)
   D = Diagnostic(TwoDTurb.dissipation, prob, nsteps=nt)
   R = Diagnostic(TwoDTurb.drag,        prob, nsteps=nt)
@@ -120,14 +126,14 @@ function test_twodturb_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1
   stepforward!(prob, diags, round(Int, nt))
   TwoDTurb.updatevars!(prob)
 
-  cfl = prob.ts.dt*maximum([maximum(v.V)/g.dx, maximum(v.U)/g.dy])
+  cfl = cl.dt*maximum([maximum(v.V)/g.dx, maximum(v.U)/g.dy])
   E, D, W, R = diags
-  t = round(mu*prob.state.t, digits=2)
+  t = round(mu*cl.t, digits=2)
 
   i₀ = 1
-  dEdt = (E[(i₀+1):E.count] - E[i₀:E.count-1])/prob.ts.dt
-  ii = (i₀):E.count-1
-  ii2 = (i₀+1):E.count
+  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
+  ii = (i₀):E.i-1
+  ii2 = (i₀+1):E.i
 
   # dEdt = W - D - R?
   total = W[ii2] - D[ii] - R[ii]
@@ -135,7 +141,7 @@ function test_twodturb_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1
   residual = dEdt - total
 
   if message
-    println("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", prob.step, prob.t, cfl, tc)
+    println("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", cl.step, cl.t, cfl, tc)
   end
 
   isapprox(mean(abs.(residual)), 0, atol=1e-8)
@@ -160,7 +166,7 @@ function test_twodturb_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0
   nt = round(Int, tf/dt)
 
   gr  = TwoDGrid(n, L)
-  x, y = gr.X, gr.Y
+  x, y = gridpoints(gr)
 
   psif = @. sin(2x)*cos(2y) + 2sin(x)*cos(3y)
   qf = @. -8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
@@ -173,13 +179,13 @@ function test_twodturb_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0
   Ffh = rfft(Ff)
 
   # Forcing
-  function calcF!(Fh, t, s, v, p, g)
+  function calcF!(Fh, sol, t, cl, v, p, g)
     Fh .= Ffh
     nothing
   end
 
-  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!, stochastic = false)
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!, stochastic=false)
+  sol, cl, p, v, g = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
   TwoDTurb.set_q!(prob, qf)
 
   # Step forward
@@ -192,16 +198,16 @@ end
 function test_twodturb_energyenstrophy()
   nx, Lx  = 128, 2π
   ny, Ly  = 128, 3π
-  g  = TwoDGrid(nx, Lx, ny, Ly)
-  k0 = g.k[2] # fundamental wavenumber
-  l0 = g.l[2] # fundamental wavenumber
-  x, y = g.X, g.Y
+  gr = TwoDGrid(nx, Lx, ny, Ly)
+  k0 = gr.k[2] # fundamental wavenumber
+  l0 = gr.l[2] # fundamental wavenumber
+  x, y = gridpoints(gr)
 
   psi0 = @. sin(2*k0*x)*cos(2*l0*y) + 2sin(k0*x)*cos(3*l0*y)
     q0 = @. -((2*k0)^2+(2*l0)^2)*sin(2*k0*x)*cos(2*l0*y) - (k0^2+(3*l0)^2)*2sin(k0*x)*cos(3*l0*y)
 
   prob = TwoDTurb.Problem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+
   TwoDTurb.set_q!(prob, q0)
   TwoDTurb.updatevars!(prob)
 
