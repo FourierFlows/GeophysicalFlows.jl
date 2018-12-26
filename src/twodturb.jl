@@ -222,7 +222,7 @@ function updatevars!(v, s, g)
   nothing
 end
 
-updatevars!(prob::AbstractProblem) = updatevars!(prob.vars, prob.state, prob.grid)
+updatevars!(prob) = updatevars!(prob.vars, prob.state, prob.grid)
 
 """
     set_q!(prob, q)
@@ -275,7 +275,7 @@ Returns the domain-averaged dissipation rate. nnu must be >= 1.
   p.nu/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
 end
 
-@inline dissipation(prob::AbstractProblem) = dissipation(prob.state, prob.vars, prob.params, prob.grid)
+@inline dissipation(prob) = dissipation(prob.state, prob.vars, prob.params, prob.grid)
 
 """
     work(prob)
@@ -294,7 +294,7 @@ end
   1/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
 end
 
-@inline work(prob::AbstractProblem) = work(prob.state, prob.vars, prob.grid)
+@inline work(prob) = work(prob.state, prob.vars, prob.grid)
 
 """
     drag(prob)
@@ -308,6 +308,6 @@ Returns the extraction of domain-averaged energy by drag/hypodrag mu.
   p.mu/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
 end
 
-@inline drag(prob::AbstractProblem) = drag(prob.state, prob.vars, prob.params, prob.grid)
+@inline drag(prob) = drag(prob.state, prob.vars, prob.params, prob.grid)
 
 end # module

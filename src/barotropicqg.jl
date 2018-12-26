@@ -311,7 +311,7 @@ function set_zeta!(s, v::BarotropicQGForcedVars, p, g, zeta)
   nothing
 end
 
-set_zeta!(prob::AbstractProblem, zeta) = set_zeta!(prob.state, prob.vars, prob.params, prob.grid, zeta)
+set_zeta!(prob, zeta) = set_zeta!(prob.state, prob.vars, prob.params, prob.grid, zeta)
 
 """
     set_U!(prob, U)
@@ -325,13 +325,13 @@ function set_U!(s, v, p, g, U::Float64)
   nothing
 end
 
-set_U!(prob::AbstractProblem, U::Float64) = set_U!(prob.state, prob.vars, prob.params, prob.grid, U)
+set_U!(prob, U::Float64) = set_U!(prob.state, prob.vars, prob.params, prob.grid, U)
 
 
 """
 Calculate the domain-averaged kinetic energy.
 """
-function energy(prob::AbstractProblem)
+function energy(prob)
   s, g = prob.state, prob.grid
   0.5*(parsevalsum2(g.Kr.*g.invKKrsq.*s.sol, g)
         + parsevalsum2(g.Lr.*g.invKKrsq.*s.sol, g))/(g.Lx*g.Ly)
@@ -370,7 +370,7 @@ Returns the domain-averaged dissipation rate. nnu must be >= 1.
   p.nu/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
-@inline dissipation(prob::AbstractProblem) = dissipation(prob.state, prob.vars, prob.params, prob.grid)
+@inline dissipation(prob) = dissipation(prob.state, prob.vars, prob.params, prob.grid)
 
 """
     work(prob)
@@ -389,7 +389,7 @@ end
   1/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
-@inline work(prob::AbstractProblem) = work(prob.state, prob.vars, prob.grid)
+@inline work(prob) = work(prob.state, prob.vars, prob.grid)
 
 """
     drag(prob)
@@ -403,7 +403,7 @@ Returns the extraction of domain-averaged energy by drag mu.
   p.mu/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.uh, g)
 end
 
-@inline drag(prob::AbstractProblem) = drag(prob.state, prob.vars, prob.params, prob.grid)
+@inline drag(prob) = drag(prob.state, prob.vars, prob.params, prob.grid)
 
 
 end # module

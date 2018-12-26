@@ -32,7 +32,7 @@ e1_fourier(prob) = e1_fourier(prob.vars.u, prob.vars.v, prob.vars.p, prob.params
 
 "Returns the `x,y` centroid of a cosine mode 1 internal wave in the Boussinesq equations."
 wavecentroid_fourier(prob) = (xmoment(e1_fourier(prob), prob.grid), ymoment(e1_fourier(prob), prob.grid))
-                             
+
 "Returns the energy in vertically cosine mode 1 in the Boussinesq equations."
 e1_cosine(u, v, p, m, N) = @. ( u^2 + v^2 + m^2*p^2/N^2 )/2
 e1_cosine(prob) = e1_cosine(prob.vars.u, prob.vars.v, prob.vars.p, prob.params.m, prob.params.N)
@@ -42,7 +42,7 @@ wavecentroid_cosine(prob) = (xmoment(e1_cosine(prob), prob.grid), ymoment(e1_cos
 
 "Returns the wave kinetic energy in NIWQG."
 ke_niwqg(phi) = @. abs2(phi)
-ke_niwqg(prob::AbstractProblem) = ke_niwqg(prob.vars.phi)
+ke_niwqg(prob) = ke_niwqg(prob.vars.phi)
 
 "Returns the `x,y` centroid of the wave field kinetic energy in NIWQG."
 wavecentroid_niwqg(prob) = (xmoment(ke_niwqg(prob), prob.grid), ymoment(ke_niwqg(prob), prob.grid))

@@ -372,7 +372,7 @@ function set_isotropicwavefield!(s, vs, pr, g, amplitude; KE=1.0, maxspeed=nothi
   set_uvp!(s, vs, pr, g, u0, v0, p0)
   nothing
 end
-set_isotropicwavefield!(prob::AbstractProblem, amplitude; kwargs...) = set_isotropicwavefield!(prob.state, prob.vars,
+set_isotropicwavefield!(prob, amplitude; kwargs...) = set_isotropicwavefield!(prob.state, prob.vars,
   prob.params, prob.grid, amplitude; kwargs...)
 
 
@@ -578,7 +578,7 @@ mode1apv(prob) = mode1apv(prob.state, prob.vars, prob.params, prob.grid)
 Return the x-velocity associated with mode-1 at z=0.
 """
 mode1u(v) = @. real(v.u + conj.(v.u))
-mode1u(prob::AbstractProblem) = mode1u(prob.vars)
+mode1u(prob) = mode1u(prob.vars)
 
 """
     mode1v(prob)
@@ -586,7 +586,7 @@ mode1u(prob::AbstractProblem) = mode1u(prob.vars)
 Return the y-velocity associated with mode-1 at z=0.
 """
 mode1v(v) = @. real(v.v + conj(v.v))
-mode1v(prob::AbstractProblem) = mode1v(prob.vars)
+mode1v(prob) = mode1v(prob.vars)
 
 """
     mode1w(prob)
@@ -594,7 +594,7 @@ mode1v(prob::AbstractProblem) = mode1v(prob.vars)
 Return the z-velocity associated with mode-1 at z=0.
 """
 mode1w(v) = @. real(v.w + conj(v.w))
-mode1w(prob::AbstractProblem) = mode1w(prob.vars)
+mode1w(prob) = mode1w(prob.vars)
 
 """
     mode1p(prob)
@@ -602,7 +602,7 @@ mode1w(prob::AbstractProblem) = mode1w(prob.vars)
 Return the pressure associated with mode-1 at z=0.
 """
 mode1p(v) = @. real(v.p + conj(v.p))
-mode1p(prob::AbstractProblem) = mode1p(prob.vars)
+mode1p(prob) = mode1p(prob.vars)
 
 """
     mode1buoyancy(prob)
@@ -617,7 +617,7 @@ mode1buoyancy(prob) = mode1buoyancy(prob.vars, prob.params)
 Return the speed associated with mode-1 at z=0.
 """
 mode1speed(v) = @. sqrt($mode1u(v)^2 + $mode1v(v)^2)
-mode1speed(prob::AbstractProblem) = mode1speed(prob.vars)
+mode1speed(prob) = mode1speed(prob.vars)
 
 """
     mode0speed(prob)
