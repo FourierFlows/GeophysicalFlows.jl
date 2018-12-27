@@ -29,8 +29,7 @@ mu   = 0e-1    # bottom drag
 # Initialize problem
 prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, beta=beta, nu=nu,
                                         nnu=nnu, mu=mu, dt=dt, stepper=stepper)
-s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
-
+sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
 # Files
 filepath = "."
@@ -53,8 +52,8 @@ modk = ones(g.nkr, g.nl)
 modk[real.(g.Krsq).<(8*2*pi/g.Lx)^2] .= 0
 modk[real.(g.Krsq).>(10*2*pi/g.Lx)^2] .= 0
 modk[1, :] .= 0
-psih = (randn(Float64, size(s.sol)) .+ im*randn(Float64, size(s.sol))).*modk
-psih = @. psih*prob.ts.filter
+psih = (randn(Float64, size(sol)) .+ im*randn(Float64, size(sol))).*modk
+psih = @. psih*prob.timestepper.filter
 Ein = real(sum(g.Krsq.*abs2.(psih)/(g.nx*g.ny)^2))
 psih = psih*sqrt(E0/Ein)
 qi = -irfft(g.Krsq.*psih, g.nx)
@@ -72,22 +71,22 @@ diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will
 # src/diagnostics.jl and the stepforward! function in timesteppers.jl.
 
 # Create Output
-get_sol(prob) = prob.vars.sol # extracts the Fourier-transformed solution
-get_u(prob) = irfft(im*g.Lr.*g.invKrsq.*prob.vars.sol, g.nx)
+get_sol(prob) = sol # extracts the Fourier-transformed solution
+get_u(prob) = irfft(im*g.l.*g.invKrsq.*sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 
-
+x, y = gridpoints(g)
 
 function plot_output(prob, fig, axs; drawcolorbar=false)
   # Plot the vorticity and streamfunction fields as well as the zonal mean
   # vorticity and the zonal mean zonal velocity.
 
-  s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
+  sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid
   BarotropicQG.updatevars!(prob)
 
   sca(axs[1])
   cla()
-  pcolormesh(g.X, g.Y, v.q)
+  pcolormesh(x, y, v.q)
   axis("square")
   xticks(-2:2:2)
   yticks(-2:2:2)
@@ -98,7 +97,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[2])
   cla()
-  pcolormesh(g.X, g.Y, v.psi)
+  pcolormesh(x, y, v.psi)
   axis("square")
   xticks(-2:2:2)
   yticks(-2:2:2)
@@ -109,16 +108,16 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[3])
   cla()
-  plot(transpose(mean(v.zeta, dims=1)), g.Y[1,:])
-  plot(0*g.Y[1,:], g.Y[1,:], "k--")
+  plot(Array(transpose(mean(v.zeta, dims=1))), y[1,:])
+  plot(0*y[1,:], y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
   xlim(-2, 2)
   title(L"zonal mean $\zeta$")
 
   sca(axs[4])
   cla()
-  plot(transpose(mean(v.u, dims=1)), g.Y[1,:])
-  plot(0*g.Y[1,:], g.Y[1,:], "k--")
+  plot(Array(transpose(mean(v.u, dims=1))), y[1,:])
+  plot(0*y[1,:], y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
   xlim(-0.5, 0.5)
   title(L"zonal mean $u$")
@@ -134,12 +133,12 @@ plot_output(prob, fig, axs; drawcolorbar=false)
 # Step forward
 startwalltime = time()
 
-while prob.step < nsteps
+while cl.step < nsteps
   stepforward!(prob, diags, nsubs)
 
   # Message
   log = @sprintf("step: %04d, t: %d, E: %.4f, Q: %.4f, τ: %.2f min",
-    prob.step, prob.t, E.value, Z.value,
+    cl.step, cl.t, E.data[E.i], Z.data[Z.i],
     (time()-startwalltime)/60)
 
   println(log)

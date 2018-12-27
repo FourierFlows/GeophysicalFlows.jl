@@ -45,7 +45,7 @@ Random.seed!(1234)
 
 # the function that updates the forcing realization
 function calcF!(Fh, t, s, v, p, g)
-  ξ = exp.(2π*im*rand(Float64, size(s.sol)))/sqrt(s.dt)
+  ξ = exp.(2π*im*rand(Float64, size(s.sol)))/sqrt(cl.dt)
   ξ[1, 1] = 0
   @. Fh = ξ*sqrt(force2k)
   Fh[abs.(g.Kr).==0] .= 0
@@ -162,7 +162,7 @@ while prob.step < nsteps
   BarotropicQGQL.updatevars!(prob)
 
   # Message
-  cfl = prob.ts.dt*maximum([maximum(v.v)/g.dy, maximum(v.u+v.U)/g.dx])
+  cfl = prob.tcl.dt*maximum([maximum(v.v)/g.dy, maximum(v.u+v.U)/g.dx])
   log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, τ: %.2f min",
     prob.step, prob.t, cfl, E.value, Z.value,
     (time()-startwalltime)/60)
