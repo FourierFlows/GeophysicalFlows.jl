@@ -7,13 +7,13 @@ import GeophysicalFlows.TwoDTurb: energy, enstrophy
 import GeophysicalFlows: peakedisotropicspectrum
 
 # Parameters
-  n = 256
+  n = 128
   L = 2π
 nnu = 2
  nu = 0.0
- dt = 1e-3
-nsteps = 40000
-nsubs = 1000
+ dt = 5e-3
+nsteps = 8000
+nsubs = 200
 
 # Files
 filepath = "."
