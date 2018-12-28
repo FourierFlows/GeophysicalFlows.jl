@@ -49,12 +49,6 @@ git-tree-sha1 = "ec61a16eed883ad0cfa002d7489b3ce6d039bb9a"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
 version = "1.4.0"
 
-[[ComputationalResources]]
-deps = ["Test"]
-git-tree-sha1 = "89e7e7ed20af73d9f78877d2b8d1194e7b6ff13d"
-uuid = "ed09eef8-17a6-5b46-8889-db040fac31e3"
-version = "0.3.0"
-
 [[Conda]]
 deps = ["Compat", "JSON", "VersionParsing"]
 git-tree-sha1 = "fb86fe40cb5b35990e368709bfdc1b46dbb99dac"
@@ -116,10 +110,10 @@ uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.5.3"
 
 [[FourierFlows]]
-deps = ["ComputationalResources", "Coverage", "Documenter", "FFTW", "Interpolations", "JLD2", "LinearAlgebra", "Printf", "Random", "Reexport", "Statistics", "Test"]
-git-tree-sha1 = "6fc10e1aacd42a2c09d086cb6fe63442317c2cec"
-repo-rev = "ClockReplacesState"
-repo-url = "https://github.com/FourierFlows/FourierFlows.jl.git"
+deps = ["Coverage", "Documenter", "FFTW", "Interpolations", "JLD2", "LinearAlgebra", "Printf", "Random", "Reexport", "Statistics", "Test"]
+git-tree-sha1 = "a7531b490c024aa9d6be487eb8dcf548d3be98ef"
+repo-rev = "master"
+repo-url = "/Users/navid/Research/FourierFlows/FourierFlows.jl"
 uuid = "2aec4490-903f-5c70-9b11-9bed06a700e1"
 version = "0.2.2"
 
