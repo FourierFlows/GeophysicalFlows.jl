@@ -9,7 +9,6 @@ export
   set_q!,
   energies
 
-
 using
   FFTW,
   LinearAlgebra,
@@ -61,12 +60,12 @@ struct SinglelayerParams{T} <: BarotropicParams
   nlayers::Int               # Number of fluid layers
   g::T                       # Gravitational constat
   f0::T                      # Constant planetary vorticity
-  beta::T                       # Planetary vorticity y-gradient
+  beta::T                    # Planetary vorticity y-gradient
   ρ::Array{T,3}              # Array with density of each fluid layer
   H::Array{T,3}              # Array with rest heigh of each fluid layer
   U::Array{T,3}              # Array with imposed constant zonal flow U in each fluid layer
   u::Array{T,3}              # Array with imposed zonal flow u(y) in each fluid layer
-  eta::Array{T,2}              # Array containing topographic PV
+  eta::Array{T,2}            # Array containing topographic PV
   mu::T                      # Linear bottom drag
   nu::T                      # Viscosity coefficient
   nnu::Int                   # Hyperviscous order (nnu=1 is plain old viscosity)
@@ -77,6 +76,9 @@ struct SinglelayerParams{T} <: BarotropicParams
   rfftplan::FFTW.rFFTWPlan{Float64,-1,false,2}  # rfft plan for FFTs
   calcFq!::Function          # Function that calculates the forcing on QGPV q
 end
+
+
+# TODO make sure that setting nlayers=1 works
 
 function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
 
@@ -103,8 +105,6 @@ function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::Abstr
   Qy[nlayers] = beta - Fm[nlayers-1]*(U[nlayers-1]-U[nlayers])
   =#
   uyy = repeat(irfft( -l.^2 .* rfft(u, [1, 2]),  1, [1, 2]), outer=(1, 1, 1))
-
-
   uyy = repeat(uyy, outer=(nx, 1, 1))
 
   etah = rfft(eta)
@@ -131,7 +131,7 @@ function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::Abstr
   rfftplanlayered = plan_rfft(Array{T,3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
 
   if nlayers == 1
-    SinglelayerParams{T}(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, Qx, Qy, grid.rfftplan)
+    SinglelayerParams{T}(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, Qx, Qy, grid.rfftplan, calcFq)
   else
     Params{T}(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, gprime, Qx, Qy, S, invS, rfftplanlayered, calcFq)
   end
@@ -145,8 +145,6 @@ end
 function Equation(p, g::AbstractGrid{T}; linear=false) where T
   L = Array{Complex{T}}(undef, (g.nkr, g.nl, p.nlayers))
   @. L = - p.nu*g.Krsq^p.nnu
-  # [ @views L[:, :, j] = @. - p.nu*g.Krsq^p.nnu + im*p.Qy[j]*g.kr*g.invKrsq for j=1:p.nlayers]
-  # @views L[:, :, p.nlayers] .= -p.mu   # bottom linear drag
   @views L[1, 1, :] .= 0
   if linear==true
     FourierFlows.Equation(L, calcNlinear!, g)
@@ -272,7 +270,6 @@ function calcinvS!(invS, Fp, Fm, g)
   nothing
 end
 
-
 function calcN!(N, sol, t, cl, v, p, g)
   calcN_advection!(N, sol, v, p, g)
   addforcing!(N, sol, t, cl, v, p, g)
@@ -320,41 +317,35 @@ end
 
 function calcN_linearadvection!(N, sol, v, p, g)
   @. v.qh = sol
+
   streamfunctionfrompv!(v.psih, v.qh, p.invS, g)
 
   @. v.uh = -im*g.l *v.psih
   @. v.vh =  im*g.kr*v.psih
 
   invtransform!(v.u, v.uh, p)
+  @. v.u += p.U + p.u                           # add the imposed zonal flow
+  @. v.q = v.u*p.Qx
+  fwdtransform!(v.uh, v.q, p)
+  @. N = -v.uh                                   # -(U+u)*∂Q/∂x
+
   invtransform!(v.v, v.vh, p)
-
-  @. v.q = 0
-  @views @. v.q[:, :, p.nlayers] = p.eta       # add the topographic PV
-
-  @. v.u *= v.q # u*q
-  @. v.v *= v.q # v*q
-
-  fwdtransform!(v.uh, v.u, p)
-  fwdtransform!(v.vh, v.v, p)
-
-  @. N = - im*g.kr*v.uh - im*g.l*v.vh   # -∂[ueta]/∂x-∂[veta]/∂y
+  @. v.q = v.v*p.Qy
+  fwdtransform!(v.vh, v.q, p)
+  @. N -= v.vh                                  # -v*∂Q/∂y
 
   invtransform!(v.q, v.qh, p)
-  @views @. v.q[:, :, p.nlayers] = p.eta       # add the topographic PV
-  @. v.u = p.U + p.u                           # the imposed zonal flow
-  @. v.u *= v.q # U*q
+  @. v.u = p.U + p.u
+  @. v.u *= v.q # u*q
 
   fwdtransform!(v.uh, v.u, p)
-  @. N += - im*g.kr*v.uh  # -∂[Uq]/∂x, advection by imposed zonal flow
 
-  @. v.vh =  im*g.kr*v.psih
-  invtransform!(v.v, v.vh, p)
-  @. v.v *= p.Qy
-  fwdtransform!(v.vh, v.v, p)
+  @. N -= im*g.kr*v.uh  # -∂[U*q]/∂x
 
-  @. N -= v.vh                         # -v*∂Q/∂y
   @views @. N[:, :, p.nlayers] += p.mu*g.Krsq*v.psih[:, :, p.nlayers]   # bottom linear drag
 end
+
+addforcing!(N, sol, t, cl, v::Vars, p, g) = nothing
 
 function addforcing!(N, sol, t, cl, v::ForcedVars, p, g)
   p.calcFq!(v.Fqh, sol, t, cl, v, p, g)
@@ -370,7 +361,6 @@ function updatevars!(prob)
   @. v.vh =  im*g.kr*v.psih
 
   invtransform!(v.q, deepcopy(v.qh), p)
-  # @views @. v.q[:, :, p.nlayers] += p.eta
   invtransform!(v.psi, deepcopy(v.psih), p)
   invtransform!(v.u, deepcopy(v.uh), p)
   invtransform!(v.v, deepcopy(v.vh), p)
@@ -379,7 +369,7 @@ end
 
 
 function set_q!(prob, q)
-  p, v, g, sol = prob.params, prob.vars, prob.grid, prob.sol
+  p, v, sol = prob.params, prob.vars, prob.sol
   fwdtransform!(v.qh, q, p)
   @. v.qh[1, 1, :] = 0
   @. sol = v.qh
@@ -404,8 +394,8 @@ function energies(prob)
   for j=1:p.nlayers-1
     PE[j] = 1/(2*g.Lx*g.Ly)*p.f0^2/p.gprime[j]*parsevalsum(abs2.(v.psih[:, :, j+1].-v.psih[:, :, j]), g)
   end
-  # KE, PE
-  KE[1]
+  KE, PE
+  # KE[1]
 end
 
 end # module
