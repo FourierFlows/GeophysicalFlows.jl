@@ -89,7 +89,7 @@ testtime = @elapsed begin
   @test test_pvtofromstreamfunction()
   @test test_mqg_nonlinearadvection(0.001, "ForwardEuler")
   @test test_mqg_linearadvection(0.001, "ForwardEuler")
-  @test test_mqg_energies(0.001, "ForwardEuler")
+  @test test_mqg_energies()
 end
 
 

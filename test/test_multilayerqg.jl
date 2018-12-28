@@ -96,7 +96,7 @@ the advection terms J(ψn, qn) are non-zero. Next, a forcing Ff is derived such
 that a solution to the problem forced by this Ff is then qf.
 (This solution may not be realized, at least at long times, if it is unstable.)
 """
-function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1, message=false)
+function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
 
   tf = 0.5
   nt = round(Int, tf/dt)
@@ -179,7 +179,7 @@ end
 
 
 
-function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1, message=false)
+function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
 
   tf = 0.5
   nt = round(Int, tf/dt)
@@ -261,7 +261,7 @@ end
 
 
 
-function test_mqg_energies(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1, message=false)
+function test_mqg_energies(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
 
   nx, ny = 64, 66
   Lx, Ly = 2π, 2π
