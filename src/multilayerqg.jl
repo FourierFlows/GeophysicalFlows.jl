@@ -85,8 +85,9 @@ function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::Abstr
   nkr, nl, ny, nx = grid.nkr, grid.nl,  grid.ny, grid.nx
   kr, l = grid.kr, grid.l
 
-  gprime = g*(ρ[2:nlayers]-ρ[1:nlayers-1]) ./ ρ[1:nlayers-1] # definition to match PYQG
-  # gprime = g*(ρ[2:nlayers]-ρ[1:nlayers-1])./ρ[2:nlayers]; #CORRECT DEFINITION
+  # gprime = g*(ρ[2:nlayers]-ρ[1:nlayers-1]) ./ ρ[1:nlayers-1] # definition to match PYQG
+  gprime = g*(ρ[2:nlayers]-ρ[1:nlayers-1])./ρ[2:nlayers]; #CORRECT DEFINITION
+
   Fm = @. f0^2 ./ ( gprime*H[2:nlayers  ] ) # m^(-2)
   Fp = @. f0^2 ./ ( gprime*H[1:nlayers-1] ) # m^(-2)
 
@@ -159,6 +160,7 @@ function Equation(p::SinglelayerParams, g::AbstractGrid{T}) where T
   FourierFlows.Equation(L, calcN!, g)
 end
 
+
 # ----
 # Vars
 # ----
@@ -215,24 +217,9 @@ function SinglelayerVars(g::AbstractGrid{T}) where T
 end
 
 
-
 fwdtransform!(varh, var, p::AbstractParams) = mul!(varh, p.rfftplan, var)
 
 invtransform!(var, varh, p::AbstractParams) = ldiv!(var, p.rfftplan, varh)
-
-#=
-Array2DOrSubarray = Union{Array{T,2}, SubArray{T,2,Array{T,3},Tuple{Base.Slice{Base.OneTo{Int64}},Base.Slice{Base.OneTo{Int64}},Int64},true}} where T
-
-function fwdtransform!(varh::Array{Complex{T},3}, var::Array{T,3}, g::AbstractGrid{T}) where T
-  [ @views fwdtransform!(varh[:, :, j], var[:, :, j], g) for j=1:size(varh, 3) ]
-end
-
-invtransform!(var, varh, g::AbstractGrid) = ldiv!(var, g.rfftplan, varh)
-
-function invtransform!(var::Array{T,3}, varh::Array{Complex{T},3}, g::AbstractGrid{T}) where T
-  [ @views invtransform!(var[:, :, j], varh[:, :, j], g) for j=1:size(varh, 3) ]
-end
-=#
 
 function streamfunctionfrompv!(psih, qh, invS, g)
   for j=1:g.nl, i=1:g.nkr
@@ -270,6 +257,11 @@ function calcinvS!(invS, Fp, Fm, g)
   nothing
 end
 
+
+# -------
+# Solvers
+# -------
+
 function calcN!(N, sol, t, cl, v, p, g)
   calcN_advection!(N, sol, v, p, g)
   addforcing!(N, sol, t, cl, v, p, g)
@@ -282,6 +274,11 @@ function calcNlinear!(N, sol, t, cl, v, p, g)
   nothing
 end
 
+"""
+    calcN_advection!(N, sol, v, p, g)
+
+Calculates the advection term.
+"""
 function calcN_advection!(N, sol, v, p, g)
   @. v.qh = sol
 
@@ -315,6 +312,11 @@ function calcN_advection!(N, sol, v, p, g)
 end
 
 
+"""
+    calcN_linearadvection!(N, sol, v, p, g)
+
+Calculates the advection term of the linearized equations.
+"""
 function calcN_linearadvection!(N, sol, v, p, g)
   @. v.qh = sol
 
@@ -353,6 +355,16 @@ function addforcing!(N, sol, t, cl, v::ForcedVars, p, g)
   nothing
 end
 
+
+# ----------------
+# Helper functions
+# ----------------
+
+"""
+    updatevars!(prob)
+
+Update `prob.vars` using `prob.sol`.
+"""
 function updatevars!(prob)
   p, v, g, sol = prob.params, prob.vars, prob.grid, prob.sol
   @. v.qh = sol
@@ -367,7 +379,11 @@ function updatevars!(prob)
   nothing
 end
 
+"""
+    energies(prob)
 
+Set the solution `prob.sol` as the transform of `q` and updates variables.
+"""
 function set_q!(prob, q)
   p, v, sol = prob.params, prob.vars, prob.sol
   fwdtransform!(v.qh, q, p)
@@ -378,7 +394,12 @@ function set_q!(prob, q)
   nothing
 end
 
+"""
+    energies(prob)
 
+Returns the kinetic energy of each fluid layer KE_1,...,KE_nlayers, and the
+potential energy of each fluid interface PE_{3/2},...,PE_{nlayers-1/2}.
+"""
 function energies(prob)
   v, p, g, sol = prob.vars, prob.params, prob.grid, prob.sol
   @. v.qh = sol
@@ -395,7 +416,6 @@ function energies(prob)
     PE[j] = 1/(2*g.Lx*g.Ly)*p.f0^2/p.gprime[j]*parsevalsum(abs2.(v.psih[:, :, j+1].-v.psih[:, :, j]), g)
   end
   KE, PE
-  # KE[1]
 end
 
 end # module
