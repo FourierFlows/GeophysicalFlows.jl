@@ -85,8 +85,8 @@ function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::Abstr
   nkr, nl, ny, nx = grid.nkr, grid.nl,  grid.ny, grid.nx
   kr, l = grid.kr, grid.l
 
-  # gprime = g*(ρ[2:nlayers]-ρ[1:nlayers-1]) ./ ρ[1:nlayers-1] # definition to match PYQG
-  gprime = g*(ρ[2:nlayers]-ρ[1:nlayers-1])./ρ[2:nlayers]; #CORRECT DEFINITION
+  gprime = g*(ρ[2:nlayers]-ρ[1:nlayers-1]) ./ ρ[1:nlayers-1] # definition to match PYQG
+  # gprime = g*(ρ[2:nlayers]-ρ[1:nlayers-1])./ρ[2:nlayers]; #CORRECT DEFINITION
 
   Fm = @. f0^2 ./ ( gprime*H[2:nlayers  ] ) # m^(-2)
   Fp = @. f0^2 ./ ( gprime*H[1:nlayers-1] ) # m^(-2)
