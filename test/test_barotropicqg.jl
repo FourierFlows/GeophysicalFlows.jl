@@ -116,7 +116,7 @@ function test_bqg_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu
   # dEdt = W - D - R?
   # If the Ito interpretation was used for the work
   # then we need to add the drift term
-  # total = W[ii2]+σ - D[ii] - R[ii]      # Ito
+  # total = W[ii2]+ε - D[ii] - R[ii]      # Ito
   total = W[ii2] - D[ii] - R[ii]        # Stratonovich
 
   residual = dEdt - total
