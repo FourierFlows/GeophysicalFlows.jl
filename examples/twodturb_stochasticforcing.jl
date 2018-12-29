@@ -57,7 +57,7 @@ function makeplot(prob, diags)
 
   t = round(mu*cl.t, digits=2)
   sca(axs[1]); cla()
-  pcolormesh(x, y, prob.vars.q)
+  pcolormesh(x, y, v.q)
   xlabel(L"$x$")
   ylabel(L"$y$")
   title("\$\\nabla^2\\psi(x,y,\\mu t= $t )\$")
@@ -74,15 +74,15 @@ function makeplot(prob, diags)
 
   # If the Ito interpretation was used for the work
   # then we need to add the drift term
-  # total = W[ii2]+σ - D[ii] - R[ii]      # Ito
+  # total = W[ii2]+ε - D[ii] - R[ii]      # Ito
   total = W[ii2] - D[ii] - R[ii]        # Stratonovich
   residual = dEdt - total
 
   # If the Ito interpretation was used for the work
-  # then we need to add the drift term: I[ii2] + σ
+  # then we need to add the drift term: I[ii2] + ε
   plot(mu*E.t[ii], W[ii2], label=L"work ($W$)")   # Ito
   # plot(mu*E.t[ii], W[ii2] , label=L"work ($W$)")      # Stratonovich
-  plot(mu*E.t[ii], σ .+ 0*E.t[ii], "--", label=L"ensemble mean  work ($\langle W\rangle $)")
+  plot(mu*E.t[ii], ε .+ 0*E.t[ii], "--", label=L"ensemble mean  work ($\langle W\rangle $)")
   # plot(mu*E.t[ii], -D[ii], label="dissipation (\$D\$)")
   plot(mu*E.t[ii], -R[ii], label=L"drag ($D=2\mu E$)")
   plot(mu*E.t[ii], 0*E.t[ii], "k:", linewidth=0.5)
@@ -116,14 +116,14 @@ for i = 1:ns
   TwoDTurb.updatevars!(prob)
   # saveoutput(out)
 
-  cfl = cl.dt*maximum([maximum(v.U)/g.dx, maximum(v.V)/g.dy])
+  cfl = cl.dt*maximum([maximum(v.u)/g.dx, maximum(v.v)/g.dy])
   res = makeplot(prob, diags)
   pause(0.01)
 
   @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", cl.step, cl.t,
         cfl, (time()-startwalltime)/60)
 
-  # savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
+  # savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
   # savefig(savename, dpi=240)
 end
 

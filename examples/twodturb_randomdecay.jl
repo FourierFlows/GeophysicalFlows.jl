@@ -49,7 +49,7 @@ while cl.step < ntot
 end
 
 # Plot the radial energy spectrum
-E = @. 0.5*(vs.U^2 + vs.V^2) # energy density
+E = @. 0.5*(vs.u^2 + vs.v^2) # energy density
 Eh = rfft(E)
 kr, Ehr = FourierFlows.radialspectrum(Eh, gr, refinement=1)
 

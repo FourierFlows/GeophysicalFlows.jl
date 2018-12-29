@@ -23,7 +23,7 @@ using FourierFlows: getfieldspecs, structvarsexpr, parsevalsum, parsevalsum2
 
 abstract type TwoDTurbVars <: AbstractVars end
 
-const physicalvars = [:q, :U, :V]
+const physicalvars = [:q, :u, :v]
 const transformvars = [ Symbol(var, :h) for var in physicalvars ]
 const forcedvars = [:Fh]
 const stochforcedvars = [:prevsol]
@@ -120,9 +120,9 @@ eval(structvarsexpr(:StochasticForcedVars, stochforcedvarspecs; parent=:TwoDTurb
 Returns the vars for unforced two-dimensional turbulence with grid g.
 """
 function Vars(g; T=typeof(g.Lx))
-  @createarrays T (g.nx, g.ny) q U V
-  @createarrays Complex{T} (g.nkr, g.nl) sol qh Uh Vh
-  Vars(q, U, V, qh, Uh, Vh)
+  @createarrays T (g.nx, g.ny) q u v
+  @createarrays Complex{T} (g.nkr, g.nl) sol qh uh vh
+  Vars(q, u, v, qh, uh, vh)
 end
 
 """
@@ -159,21 +159,21 @@ end
 Calculates the advection term.
 """
 function calcN_advection!(N, sol, t, cl, v, p, g)
-  @. v.Uh =  im * g.l  * g.invKrsq * sol
-  @. v.Vh = -im * g.kr * g.invKrsq * sol
+  @. v.uh =  im * g.l  * g.invKrsq * sol
+  @. v.vh = -im * g.kr * g.invKrsq * sol
   @. v.qh = sol
 
-  ldiv!(v.U, g.rfftplan, v.Uh)
-  ldiv!(v.V, g.rfftplan, v.Vh)
+  ldiv!(v.u, g.rfftplan, v.uh)
+  ldiv!(v.v, g.rfftplan, v.vh)
   ldiv!(v.q, g.rfftplan, v.qh)
 
-  @. v.U *= v.q # U*q
-  @. v.V *= v.q # V*q
+  @. v.u *= v.q # U*q
+  @. v.v *= v.q # V*q
 
-  mul!(v.Uh, g.rfftplan, v.U) # \hat{U*q}
-  mul!(v.Vh, g.rfftplan, v.V) # \hat{U*q}
+  mul!(v.uh, g.rfftplan, v.u) # \hat{U*q}
+  mul!(v.vh, g.rfftplan, v.v) # \hat{U*q}
 
-  @. N = -im*g.kr*v.Uh - im*g.l*v.Vh
+  @. N = -im*g.kr*v.uh - im*g.l*v.vh
   nothing
 end
 
@@ -213,11 +213,11 @@ Update the vars in v on the grid g with the solution in sol.
 function updatevars!(prob)
   v, g, sol = prob.vars, prob.grid, prob.sol
   v.qh .= sol
-  @. v.Uh =  im * g.l  * g.invKrsq * sol
-  @. v.Vh = -im * g.kr * g.invKrsq * sol
+  @. v.uh =  im * g.l  * g.invKrsq * sol
+  @. v.vh = -im * g.kr * g.invKrsq * sol
   ldiv!(v.q, g.rfftplan, deepcopy(v.qh))
-  ldiv!(v.U, g.rfftplan, deepcopy(v.Uh))
-  ldiv!(v.V, g.rfftplan, deepcopy(v.Vh))
+  ldiv!(v.u, g.rfftplan, deepcopy(v.uh))
+  ldiv!(v.v, g.rfftplan, deepcopy(v.vh))
   nothing
 end
 
@@ -243,8 +243,8 @@ solution `sol`.
 """
 @inline function energy(prob)
   sol, v, g = prob.sol, prob.vars, prob.grid
-  @. v.Uh = g.invKrsq * abs2(sol)
-  1/(2*g.Lx*g.Ly)*parsevalsum(v.Uh, g)
+  @. v.uh = g.invKrsq * abs2(sol)
+  1/(2*g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
 """
@@ -265,9 +265,9 @@ Returns the domain-averaged dissipation rate. nnu must be >= 1.
 """
 @inline function dissipation(prob)
   sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid
-  @. v.Uh = g.Krsq^(p.nnu-1) * abs2(sol)
-  v.Uh[1, 1] = 0
-  p.nu/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
+  @. v.uh = g.Krsq^(p.nnu-1) * abs2(sol)
+  v.uh[1, 1] = 0
+  p.nu/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
 """
@@ -277,14 +277,14 @@ end
 Returns the domain-averaged rate of work of energy by the forcing Fh.
 """
 @inline function work(sol, v::ForcedVars, g)
-  @. v.Uh = g.invKrsq * sol * conj(v.Fh)
-  1/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
+  @. v.uh = g.invKrsq * sol * conj(v.Fh)
+  1/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
 @inline function work(sol, v::StochasticForcedVars, g)
-  @. v.Uh = g.invKrsq * (v.prevsol + sol)/2.0 * conj(v.Fh) # Stratonovich
-  # @. v.Uh = g.invKrsq * v.prevsol * conj(v.Fh)           # Ito
-  1/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
+  @. v.uh = g.invKrsq * (v.prevsol + sol)/2.0 * conj(v.Fh) # Stratonovich
+  # @. v.uh = g.invKrsq * v.prevsol * conj(v.Fh)           # Ito
+  1/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
 @inline work(prob) = work(prob.sol, prob.vars, prob.grid)
@@ -296,9 +296,9 @@ Returns the extraction of domain-averaged energy by drag/hypodrag mu.
 """
 @inline function drag(prob)
   sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid
-  @. v.Uh = g.Krsq^(p.nmu-1) * abs2(sol)
-  v.Uh[1, 1] = 0
-  p.mu/(g.Lx*g.Ly)*parsevalsum(v.Uh, g)
+  @. v.uh = g.Krsq^(p.nmu-1) * abs2(sol)
+  v.uh[1, 1] = 0
+  p.mu/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
 end # module

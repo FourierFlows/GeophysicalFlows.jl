@@ -24,8 +24,8 @@ const rtol_niwqg = 1e-13 # tolerance for niwqg forcing tests
 const rtol_twodturb = 1e-13 # tolerance for niwqg forcing tests
 
 "Get the CFL number, assuming a uniform grid with `dx=dy`."
-cfl(U, V, dt, dx) = maximum([maximum(abs.(U)), maximum(abs.(V))]*dt/dx)
-cfl(prob) = cfl(prob.vars.U, prob.vars.V, prob.clock.dt, prob.grid.dx)
+cfl(u, v, dt, dx) = maximum([maximum(abs.(u)), maximum(abs.(v))]*dt/dx)
+cfl(prob) = cfl(prob.vars.u, prob.vars.v, prob.clock.dt, prob.grid.dx)
 
 "Returns the energy in vertically Fourier mode 1 in the Boussinesq equations."
 e1_fourier(u, v, p, m, N) = @. abs2(u) + abs2(v) + m^2*abs2(p)/N^2

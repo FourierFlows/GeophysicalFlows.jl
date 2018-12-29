@@ -30,7 +30,7 @@ function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7
 
   # Forcing
   kf, dkf = 12.0, 2.0
-  σ = 0.1
+  ε = 0.1
 
   gr  = TwoDGrid(n, L)
   x, y = gridpoints(gr)
@@ -42,8 +42,8 @@ function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7
   @. force2k[gr.Krsq .< 2.0^2 ] = 0
   @. force2k[gr.Krsq .> 20.0^2 ] = 0
   @. force2k[Kr .< 2π/L] = 0
-  σ0 = parsevalsum(force2k.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
-  force2k .= σ/σ0 * force2k
+  ε0 = parsevalsum(force2k.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+  force2k .= ε/ε0 * force2k
 
   Random.seed!(1234)
 
@@ -70,7 +70,6 @@ function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7
   stepforward!(prob, diags, round(Int, nt))
   TwoDTurb.updatevars!(prob)
 
-  cfl = cl.dt*maximum([maximum(v.V)/g.dx, maximum(v.U)/g.dy])
   E, D, W, R = diags
   t = round(mu*cl.t, digits=2)
 
@@ -82,7 +81,7 @@ function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7
   # dEdt = W - D - R?
   # If the Ito interpretation was used for the work
   # then we need to add the drift term
-  # total = W[ii2]+σ - D[ii] - R[ii]      # Ito
+  # total = W[ii2]+ε - D[ii] - R[ii]      # Ito
   total = W[ii2] - D[ii] - R[ii]        # Stratonovich
 
   residual = dEdt - total
@@ -90,7 +89,7 @@ function test_twodturb_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7
 end
 
 
-function test_twodturb_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, nmu=0, message=false)
+function test_twodturb_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, nmu=0)
   n, L  = 256, 2π
   nu, nnu = 1e-7, 2
   mu, nmu = 1e-1, 0
@@ -126,7 +125,6 @@ function test_twodturb_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1
   stepforward!(prob, diags, round(Int, nt))
   TwoDTurb.updatevars!(prob)
 
-  cfl = cl.dt*maximum([maximum(v.V)/g.dx, maximum(v.U)/g.dy])
   E, D, W, R = diags
   t = round(mu*cl.t, digits=2)
 
@@ -139,10 +137,6 @@ function test_twodturb_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1
   total = W[ii2] - D[ii] - R[ii]
 
   residual = dEdt - total
-
-  if message
-    println("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", cl.step, cl.t, cfl, tc)
-  end
 
   isapprox(mean(abs.(residual)), 0, atol=1e-8)
 end
