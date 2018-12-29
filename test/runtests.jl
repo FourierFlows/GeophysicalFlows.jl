@@ -11,12 +11,13 @@ import # use 'import' rather than 'using' for submodules to keep namespace clean
   GeophysicalFlows.TwoDTurb,
   GeophysicalFlows.BarotropicQG,
   GeophysicalFlows.BarotropicQGQL,
-  GeophysicalFlows.VerticallyCosineBoussinesq,
-  GeophysicalFlows.VerticallyFourierBoussinesq,
+  # GeophysicalFlows.VerticallyCosineBoussinesq,
+  # GeophysicalFlows.VerticallyFourierBoussinesq,
   GeophysicalFlows.NIWQG
 
-using FourierFlows: lambdipole, parsevalsum, xmoment, ymoment
-using GeophysicalFlows.VerticallyFourierBoussinesq: mode1u
+using FourierFlows: parsevalsum, xmoment, ymoment
+using GeophysicalFlows: lambdipole, peakedisotropicspectrum
+# using GeophysicalFlows.VerticallyFourierBoussinesq: mode1u
 
 const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
 const rtol_niwqg = 1e-13 # tolerance for niwqg forcing tests
@@ -24,7 +25,7 @@ const rtol_twodturb = 1e-13 # tolerance for niwqg forcing tests
 
 "Get the CFL number, assuming a uniform grid with `dx=dy`."
 cfl(U, V, dt, dx) = maximum([maximum(abs.(U)), maximum(abs.(V))]*dt/dx)
-cfl(prob) = cfl(prob.vars.U, prob.vars.V, prob.ts.dt, prob.grid.dx)
+cfl(prob) = cfl(prob.vars.U, prob.vars.V, prob.clock.dt, prob.grid.dx)
 
 "Returns the energy in vertically Fourier mode 1 in the Boussinesq equations."
 e1_fourier(u, v, p, m, N) = @. abs2(u) + abs2(v) + m^2*abs2(p)/N^2
@@ -51,12 +52,19 @@ wavecentroid_niwqg(prob) = (xmoment(ke_niwqg(prob), prob.grid), ymoment(ke_niwqg
 # Run tests
 testtime = @elapsed begin
 
+@testset "Utils" begin
+  include("test_utils.jl")
+
+  @test testpeakedisotropicspectrum()
+end
+
 @testset "TwoDTurb" begin
   include("test_twodturb.jl")
 
   @test test_twodturb_advection(0.0005, "ForwardEuler")
   @test test_twodturb_lambdipole(256, 1e-3)
   @test test_twodturb_stochasticforcingbudgets()
+  @test test_twodturb_deterministicforcingbudgets()
   @test test_twodturb_energyenstrophy()
 end
 
@@ -72,6 +80,7 @@ end
   @test test_bqg_rossbywave("ForwardEuler", 1e-4, 2000)
   @test test_bqg_rossbywave("FilteredForwardEuler", 1e-4, 2000)
   @test test_bqg_stochasticforcingbudgets()
+  @test test_bqg_deterministicforcingbudgets()
   @test test_bqg_advection(0.0005, "ForwardEuler")
   @test test_bqg_formstress(0.01, "ForwardEuler")
   @test test_bqg_energyenstrophy()
@@ -80,8 +89,22 @@ end
 
 @testset "BarotropicQGQL" begin
   include("test_barotropicqgql.jl")
+
+  @test test_bqgql_rossbywave("ETDRK4", 1e-2, 20)
+  @test test_bqgql_rossbywave("FilteredETDRK4", 1e-2, 20)
+  @test test_bqgql_rossbywave("RK4", 1e-2, 20)
+  @test test_bqgql_rossbywave("FilteredRK4", 1e-2, 20)
+  @test test_bqgql_rossbywave("AB3", 1e-3, 200)
+  @test test_bqgql_rossbywave("FilteredAB3", 1e-3, 200)
+  @test test_bqgql_rossbywave("ForwardEuler", 1e-4, 2000)
+  @test test_bqgql_rossbywave("FilteredForwardEuler", 1e-4, 2000)
+  @test test_bqgql_deterministicforcingbudgets()
+  @test test_bqgql_stochasticforcingbudgets()
+  @test test_bqgql_advection(0.0005, "ForwardEuler")
+  @test test_bqgql_energyenstrophy()
 end
 
+#=
 @testset "Vertically Cosine Boussinesq" begin
   include("test_verticallycosineboussinesq.jl")
 
@@ -129,6 +152,7 @@ end
 
   @test test_niwqg_exactnonlinearsolution(nsteps=50)
 end
+=#
 
 end # time
 
