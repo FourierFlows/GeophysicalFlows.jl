@@ -10,6 +10,9 @@ function test_bqg_rossbywave(stepper, dt, nsteps)
     mu = 0.0
     nu = 0.0
 
+  gr  = TwoDGrid(nx, Lx)
+  x, y = gridpoints(gr)
+
   # the following if statement is called so that all the cases of
   # Problem() fuction are tested
   if stepper=="ForwardEuler"
@@ -19,23 +22,25 @@ function test_bqg_rossbywave(stepper, dt, nsteps)
   end
 
   prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, eta=eta, beta=beta, mu=mu, nu=nu, stepper=stepper, dt=dt)
-  s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
+  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+
+  x, y = gridpoints(g)
 
   # the Rossby wave initial condition
    ampl = 1e-2
   kwave = 3.0*2π/g.Lx
   lwave = 2.0*2π/g.Ly
       ω = -p.beta*kwave/(kwave^2.0 + lwave^2.0)
-     ζ0 = ampl*cos.(kwave*g.X).*cos.(lwave*g.Y)
+     ζ0 = @. ampl*cos(kwave*x)*cos(lwave*y)
     ζ0h = rfft(ζ0)
 
   BarotropicQG.set_zeta!(prob, ζ0)
 
   stepforward!(prob, nsteps)
-  dealias!(s.sol, g)
+  dealias!(sol, g)
   BarotropicQG.updatevars!(prob)
 
-  ζ_theory = ampl*cos.(kwave*(g.X .- ω/kwave*s.t)) .* cos.(lwave*g.Y)
+  ζ_theory = @. ampl*cos(kwave*(x - ω/kwave*cl.t)) * cos(lwave*y)
 
   isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
 end
@@ -55,32 +60,36 @@ function test_bqg_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu
 
   # Forcing
   kf, dkf = 12.0, 2.0
-  σ = 0.1
-  gr  = TwoDGrid(n, L)
+  ε = 0.1
 
-  force2k = zero(gr.Kr)
-  @. force2k = exp.(-(sqrt(gr.KKrsq)-kf)^2/(2*dkf^2))
-  @. force2k[gr.KKrsq .< 2.0^2 ] = 0
-  @. force2k[gr.KKrsq .> 20.0^2 ] = 0
-  @. force2k[gr.Kr.<2π/L] = 0
-  σ0 = parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
-  force2k .= σ/σ0 * force2k
+  gr  = TwoDGrid(n, L)
+  x, y = gridpoints(gr)
+
+  Kr = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl]
+
+  force2k = zero(gr.Krsq)
+  @. force2k = exp.(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
+  @. force2k[gr.Krsq .< 2.0^2 ] = 0
+  @. force2k[gr.Krsq .> 20.0^2 ] = 0
+  @. force2k[Kr .< 2π/L] = 0
+  ε0 = parsevalsum(force2k.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+  force2k .= ε/ε0 * force2k
 
   Random.seed!(1234)
 
-  function calcFq!(F, t, s, v, p, g)
-    eta = exp.(2π*im*rand(Float64, size(s.sol)))/sqrt(s.dt)
+  function calcFq!(Fqh, sol, t, cl, v, p, g)
+    eta = exp.(2π*im*rand(Float64, size(sol)))/sqrt(cl.dt)
     eta[1, 1] = 0
-    @. F = eta .* sqrt(force2k)
+    @. Fqh = eta * sqrt(force2k)
     nothing
   end
 
   prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt,
    stepper="RK4", calcFq=calcFq!, stochastic=true)
 
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
+  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
-  BarotropicQG.set_zeta!(prob, 0*g.X)
+  BarotropicQG.set_zeta!(prob, 0*x)
   E = Diagnostic(BarotropicQG.energy,      prob, nsteps=nt)
   D = Diagnostic(BarotropicQG.dissipation, prob, nsteps=nt)
   R = Diagnostic(BarotropicQG.drag,        prob, nsteps=nt)
@@ -93,27 +102,27 @@ function test_bqg_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu
 
   BarotropicQG.updatevars!(prob)
 
-  cfl = prob.ts.dt*maximum([maximum(v.v)/g.dx, maximum(v.u)/g.dy])
+  cfl = cl.dt*maximum([maximum(v.v)/g.dx, maximum(v.u)/g.dy])
 
   E, D, W, R = diags
 
-  t = round(mu*prob.state.t, digits=2)
+  t = round(mu*cl.t, digits=2)
 
   i₀ = 1
-  dEdt = (E[(i₀+1):E.count] - E[i₀:E.count-1])/prob.ts.dt
-  ii = (i₀):E.count-1
-  ii2 = (i₀+1):E.count
+  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
+  ii = (i₀):E.i-1
+  ii2 = (i₀+1):E.i
 
   # dEdt = W - D - R?
   # If the Ito interpretation was used for the work
   # then we need to add the drift term
-  # total = W[ii2]+σ - D[ii] - R[ii]      # Ito
+  # total = W[ii2]+ε - D[ii] - R[ii]      # Ito
   total = W[ii2] - D[ii] - R[ii]        # Stratonovich
 
   residual = dEdt - total
 
   if message
-    println("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", prob.step, prob.t, cfl, tc)
+    println("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", cl.step, cl.t, cfl, t)
   end
   # println(mean(abs.(residual)))
   isapprox(mean(abs.(residual)), 0, atol=1e-4)
@@ -135,9 +144,12 @@ function test_bqg_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, 
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
   gr  = TwoDGrid(n, L)
-  f = @. 0.01*cos(4*gr.kr[2]*gr.X)*cos(5*gr.l[2]*gr.Y)
+  x, y = gridpoints(gr)
+  k0, l0 = gr.kr[2], gr.l[2]
+
+  f = @. 0.01*cos(4*k0*x)*cos(5*l0*y)
   fh = rfft(f)
-  function calcFq!(Fqh, t, s, v, p, g)
+  function calcFq!(Fqh, sol, t, cl, v, p, g)
     @. Fqh = fh*cos(2*t)
     nothing
   end
@@ -145,9 +157,9 @@ function test_bqg_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, 
   prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt,
    stepper="RK4", calcFq=calcFq!, stochastic=false)
 
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
+  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
-  BarotropicQG.set_zeta!(prob, 0*g.X)
+  BarotropicQG.set_zeta!(prob, 0*x)
   E = Diagnostic(BarotropicQG.energy,      prob, nsteps=nt)
   D = Diagnostic(BarotropicQG.dissipation, prob, nsteps=nt)
   R = Diagnostic(BarotropicQG.drag,        prob, nsteps=nt)
@@ -160,16 +172,16 @@ function test_bqg_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, 
 
   BarotropicQG.updatevars!(prob)
 
-  cfl = prob.ts.dt*maximum([maximum(v.v)/g.dx, maximum(v.u)/g.dy])
+  cfl = cl.dt*maximum([maximum(v.v)/g.dx, maximum(v.u)/g.dy])
 
   E, D, W, R = diags
 
-  t = round(mu*prob.state.t, digits=2)
+  t = round(mu*cl.t, digits=2)
 
   i₀ = 1
-  dEdt = (E[(i₀+1):E.count] - E[i₀:E.count-1])/prob.ts.dt
-  ii = (i₀):E.count-1
-  ii2 = (i₀+1):E.count
+  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
+  ii = (i₀):E.i-1
+  ii2 = (i₀+1):E.i
 
   # dEdt = W - D - R?
   total = W[ii2] - D[ii] - R[ii]
@@ -177,7 +189,7 @@ function test_bqg_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, 
   residual = dEdt - total
 
   if message
-    println("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", prob.step, prob.t, cfl, tc)
+    println("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", prob.step, cl.t, cfl, tc)
   end
   # println(mean(abs.(residual)))
   isapprox(mean(abs.(residual)), 0, atol=1e-8)
@@ -202,7 +214,7 @@ function test_bqg_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, m
   nt = round(Int, tf/dt)
 
   gr  = TwoDGrid(n, L)
-  x, y = gr.X, gr.Y
+  x, y = gridpoints(gr)
 
   psif = @. sin(2x)*cos(2y) + 2sin(x)*cos(3y)
   qf = @. -8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
@@ -215,13 +227,13 @@ function test_bqg_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, m
   Ffh = rfft(Ff)
 
   # Forcing
-  function calcFq!(Fqh, t, s, v, p, g)
+  function calcFq!(Fqh, sol, t, cl, v, p, g)
     Fqh .= Ffh
     nothing
   end
 
   prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper, calcFq=calcFq!)
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
   BarotropicQG.set_zeta!(prob, qf)
 
   # Step forward
@@ -257,7 +269,7 @@ function test_bqg_formstress(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, m
 
   # Step forward
   stepforward!(prob, nt)
-  isapprox(prob.ts.N[1, 1], answer, rtol=1e-13)
+  isapprox(prob.timestepper.N[1, 1], answer, rtol=1e-13)
 end
 
 function test_bqg_energyenstrophy()
@@ -266,14 +278,14 @@ function test_bqg_energyenstrophy()
   g  = TwoDGrid(nx, Lx, ny, Ly)
   k0 = g.k[2] # fundamental wavenumber
   l0 = g.l[2] # fundamental wavenumber
-  x, y = g.X, g.Y
+  x, y = gridpoints(g)
 
     eta = @. cos(10*k0*x)*cos(10*l0*y)
    psi0 = @. sin(2*k0*x)*cos(2*l0*y) + 2sin(k0*x)*cos(3*l0*y)
   zeta0 = @. -((2*k0)^2+(2*l0)^2)*sin(2*k0*x)*cos(2*l0*y) - (k0^2+(3*l0)^2)*2sin(k0*x)*cos(3*l0*y)
 
   prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta = eta, stepper="ForwardEuler")
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
   BarotropicQG.set_zeta!(prob, zeta0)
   BarotropicQG.updatevars!(prob)
 
@@ -287,20 +299,18 @@ function test_bqg_meanenergyenstrophy()
   nx, Lx  = 64, 2π
   ny, Ly  = 96, 3π
   g  = TwoDGrid(nx, Lx, ny, Ly)
-  k0 = g.k[2] # fundamental wavenumber
-  l0 = g.l[2] # fundamental wavenumber
-  x, y = g.X, g.Y
+  k0, l0 = g.k[2], g.l[2] # fundamental wavenumbers
+  x, y = gridpoints(g)
 
   calcFU(t) = 0.0
-  eta(x, y) = cos.(10x).*cos.(10y)
+  eta(x, y) = @. cos(10x)*cos(10y)
   psi0 = @. sin(2*k0*x)*cos(2*l0*y) + 2sin(k0*x)*cos(3*l0*y)
- zeta0 = @. -((2*k0)^2+(2*l0)^2)*sin(2*k0*x)*cos(2*l0*y) - (k0^2+(3*l0)^2)*2sin(k0*x)*cos(3*l0*y)
+ zeta0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
   beta = 10.0
   U = 1.2
 
   prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, beta=beta, eta=eta, calcFU = calcFU,
                                     stepper="ForwardEuler")
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
 
   BarotropicQG.set_zeta!(prob, zeta0)
   BarotropicQG.set_U!(prob, U)

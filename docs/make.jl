@@ -11,8 +11,7 @@ makedocs(
               "Home" => "index.md",
               "Modules" => Any[
                 "modules/twodturb.md",
-                "modules/barotropicqg.md",
-                "modules/boussinesq.md"
+                "modules/barotropicqg.md"
               ],
               "DocStrings" => Any[
               "man/types.md",
@@ -23,7 +22,7 @@ makedocs(
 deploydocs(
        repo = "github.com/FourierFlows/GeophysicalFlows.jl.git",
      target = "build",
-      julia = "0.7",
+      julia = "1.0",
      osname = "linux",
        deps = nothing,
        make = nothing
