@@ -2,7 +2,7 @@ name = "GeophysicalFlows"
 uuid = "26314728-b5fa-11e8-0e35-91b531bec86e"
 license = "MIT"
 authors = ["Gregory L. Wagner <wagner.greg@gmail.com>", "Navid C. Constantinou <navidcy@gmail.com>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
