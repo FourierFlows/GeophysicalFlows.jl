@@ -113,7 +113,7 @@ version = "0.5.3"
 deps = ["Coverage", "Documenter", "FFTW", "Interpolations", "JLD2", "LinearAlgebra", "Printf", "Random", "Reexport", "Statistics", "Test"]
 git-tree-sha1 = "a7531b490c024aa9d6be487eb8dcf548d3be98ef"
 repo-rev = "master"
-repo-url = "/Users/navid/Research/FourierFlows/FourierFlows.jl"
+repo-url = "https://github.com/FourierFlows/FourierFlows.jl"
 uuid = "2aec4490-903f-5c70-9b11-9bed06a700e1"
 version = "0.2.2"
 
