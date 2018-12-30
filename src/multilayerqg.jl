@@ -59,22 +59,25 @@ function Problem(;
          nnu = 1,
     # Timestepper and eqn options
      stepper = "RK4",
-       calcF = nothingfunction,
+      calcFq = nothingfunction,
+      linear = false,
            T = Float64)
 
      grid = TwoDGrid(nx, Lx, ny, Ly; T=T)
-
-     x, y = gridpoints(grid)
-     h = @. 0*x
-     eta = +f0*h/H[nlayers]
-
-   params = Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid)
-      eqn = Equation(params, grid)
+   if calcFq == nothingfunction
+     params = Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid)
      vars = Vars(grid, params)
+   else
+     params = Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid, calcFq=calcFq)
+     vars = ForcedVars(grid, params)
+   end
+   eqn = Equation(params, grid; linear=linear)
 
   FourierFlows.Problem(eqn, stepper, dt, grid, vars, params)
 end
 
+InitialValueProblem(; kwargs...) = Problem(; kwargs...)
+ForcedProblem(; kwargs...) = Problem(; kwargs...)
 
 abstract type BarotropicParams <: AbstractParams end
 
@@ -229,8 +232,8 @@ singlelayervarsspecs = cat(
   dims=1)
 
 # Construct Vars types
-eval(varsexpression(:Vars, varspecs; parent=:AbstractVars, typeparams=:T))
-eval(varsexpression(:ForcedVars, forcedvarspecs; parent=:AbstractVars, typeparams=:T))
+eval(varsexpression(:Vars, physicalvars, fouriervars))
+eval(varsexpression(:ForcedVars, physicalvars, forcedfouriervars))
 eval(varsexpression(:SinglelayerVars, singlelayervarsspecs; parent=:BarotropicVars, typeparams=:T))
 
 

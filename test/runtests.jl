@@ -10,11 +10,9 @@ using
 import # use 'import' rather than 'using' for submodules to keep namespace clean
   # GeophysicalFlows.TwoDTurb,
   # GeophysicalFlows.BarotropicQG,
+  # GeophysicalFlows.BarotropicQGQL,
   GeophysicalFlows.MultilayerQG
-  #GeophysicalFlows.BarotropicQGQL,
-  #GeophysicalFlows.VerticallyCosineBoussinesq,
-  #GeophysicalFlows.VerticallyFourierBoussinesq,
-  #GeophysicalFlows.NIWQG
+
 
 using GeophysicalFlows: lambdipole
 using FourierFlows: parsevalsum, xmoment, ymoment

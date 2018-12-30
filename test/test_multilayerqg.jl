@@ -32,8 +32,6 @@ function constructtestfields(gr)
 end
 
 
-
-
 """
     test_pvtofromstreamfunction()
 
@@ -50,23 +48,10 @@ function test_pvtofromstreamfunction()
    nlayers = 2       # these choice of parameters give the
    f0, g = 1, 1      # desired PV-streamfunction relations
     H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
-  rho = [5.0, 6.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+  rho = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  beta = 0.0
-
-   U = zeros(nlayers)
-   u = zeros(gr.ny, nlayers)
-
-  mu, nu, nnu = 0.0, 0.0, 1
-
-  x, y = gridpoints(gr)
-  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
-
-  η = @. 0*x
-
-  pr = MultilayerQG.Params(nlayers, g, f0, beta, rho, H, U, u, η, mu, nu, nnu, gr)
-  eq = MultilayerQG.Equation(pr, gr)
-  vs = MultilayerQG.Vars(gr, pr)
+  prob = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=n, Lx=L, f0=f0, g=g, H=H, rho=rho)
+  sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
 
@@ -97,7 +82,6 @@ that a solution to the problem forced by this Ff is then qf.
 (This solution may not be realized, at least at long times, if it is unstable.)
 """
 function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
-
   tf = 0.5
   nt = round(Int, tf/dt)
 
@@ -111,7 +95,7 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.
     nlayers = 2       # these choice of parameters give the
     f0, g = 1, 1      # desired PV-streamfunction relations
      H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
-   rho = [5.0, 6.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+   rho = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
   beta = 0.35
 
@@ -121,21 +105,17 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.
 
   u1 = @. 0.5sech(gr.y/(Ly/15))^2
   u2 = @. 0.02cos(3l0*gr.y)
-
+  uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
+  uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
   u = zeros(ny, nlayers)
   u[:, 1] = u1
   u[:, 2] = u2
 
   mu, nu, nnu = 0.1, 0.05, 1
 
-  uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
-  uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
-
   η0, σx, σy = 1.0, Lx/25, Ly/20
   η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
   ηx = @. -(x+Lx/8)/(σx^2) * η
-  # η = @. η0*sin(2k0*x)*sin(2l0*y) + 2*η0*sin(2k0*x) + η0
-  # ηx = @. 2k0*η0*cos(2k0*x)*sin(2l0*y) + 2k0*2η0*cos(2k0*x)
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
 
@@ -155,11 +135,9 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.
     nothing
   end
 
-  pr = MultilayerQG.Params(nlayers, g, f0, beta, rho, H, U, u, η, mu, nu, nnu, gr; calcFq=calcFq!)
-  eq = MultilayerQG.Equation(pr, gr)
-  vs = MultilayerQG.ForcedVars(gr, pr)
-
-  prob = FourierFlows.Problem(eq, stepper, dt, gr, vs, pr)
+  prob = MultilayerQG.ForcedProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0,
+          g=g, H=H, rho=rho, U=U, u=u, eta=η, beta=beta, mu=mu, nu=nu, nnu=nnu, calcFq=calcFq!)
+  sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   qf = zeros(gr.nx, gr.ny, nlayers)
   qf[:, :, 1] .= q1
@@ -180,7 +158,6 @@ end
 
 
 function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
-
   tf = 0.5
   nt = round(Int, tf/dt)
 
@@ -194,30 +171,27 @@ function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, 
     nlayers = 2       # these choice of parameters give the
     f0, g = 1, 1      # desired PV-streamfunction relations
      H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
-   rho = [5.0, 6.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+   rho = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
   beta = 0.35
 
   U1, U2 = 0.1, 0.05
+  U = zeros(ny, nlayers)
   U = [U1, U2]
 
   u1 = @. 0.5sech(gr.y/(Ly/15))^2
   u2 = @. 0.02cos(3l0*gr.y)
-
+  uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
+  uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
   u = zeros(ny, nlayers)
   u[:, 1] = u1
   u[:, 2] = u2
 
   mu, nu, nnu = 0.1, 0.05, 1
 
-  uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
-  uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
-
   η0, σx, σy = 1.0, Lx/25, Ly/20
   η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
   ηx = @. -(x+Lx/8)/(σx^2) * η
-  η = @. η0*sin(2k0*x)*sin(2l0*y) + 2*η0*sin(2k0*x) + η0
-  ηx = @. 2k0*η0*cos(2k0*x)*sin(2l0*y) + 2k0*2η0*cos(2k0*x)
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
 
@@ -237,11 +211,10 @@ function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, 
     nothing
   end
 
-  pr = MultilayerQG.Params(nlayers, g, f0, beta, rho, H, U, u, η, mu, nu, nnu, gr; calcFq=calcFq!)
-  eq = MultilayerQG.Equation(pr, gr; linear=true)
-  vs = MultilayerQG.ForcedVars(gr, pr)
+  prob = MultilayerQG.ForcedProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0,
+          g=g, H=H, rho=rho, U=U, u=u, eta=η, beta=beta, mu=mu, nu=nu, nnu=nnu, calcFq=calcFq!, linear=true)
+  sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
-  prob = FourierFlows.Problem(eq, stepper, dt, gr, vs, pr)
 
   qf = zeros(gr.nx, gr.ny, nlayers)
   qf[:, :, 1] .= q1
@@ -262,7 +235,6 @@ end
 
 
 function test_mqg_energies(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
-
   nx, ny = 64, 66
   Lx, Ly = 2π, 2π
   gr = TwoDGrid(nx, Lx, ny, Ly)
@@ -273,34 +245,16 @@ function test_mqg_energies(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlay
     nlayers = 2       # these choice of parameters give the
     f0, g = 1, 1      # desired PV-streamfunction relations
      H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
-   rho = [5.0, 6.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+   rho = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  beta = 0.35
-
-  U = zeros(nlayers)
-  u = zeros(ny, nlayers)
-
-  mu, nu, nnu = 0.1, 0.05, 1
-
-  η0, σx, σy = 1.0, Lx/25, Ly/20
-  η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
-  ηx = @. -(x+Lx/8)/(σx^2) * η
+  prob = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=n, Lx=L, f0=f0, g=g, H=H, rho=rho)
+  sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
-
-  pr = MultilayerQG.Params(nlayers, g, f0, beta, rho, H, U, u, η, mu, nu, nnu, gr)
-  eq = MultilayerQG.Equation(pr, gr)
-  vs = MultilayerQG.Vars(gr, pr)
-
-  prob = FourierFlows.Problem(eq, stepper, dt, gr, vs, pr)
 
   qf = zeros(gr.nx, gr.ny, nlayers)
   qf[:, :, 1] .= q1
   qf[:, :, 2] .= q2
-
-  ψf = zeros(gr.nx, gr.ny, nlayers)
-  ψf[:, :, 1] .= ψ1
-  ψf[:, :, 2] .= ψ2
 
   MultilayerQG.set_q!(prob, qf)
 
