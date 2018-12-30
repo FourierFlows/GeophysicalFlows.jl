@@ -1,3 +1,7 @@
+# TODO split given params and computed paramss
+# TODO change the tests to work with the correct gprime definition rather than that used in PyQG
+# TODO make sure that setting nlayers=1 works
+
 module MultilayerQG
 
 export
@@ -26,7 +30,51 @@ const forcedfouriervars = cat(fouriervars, [:Fqh], dims=1)
 
 nothingfunction(args...) = nothing
 
-#TODO split given params and computed params, check line 73
+
+"""
+    Problem(; parameters...)
+
+Construct a multi-layer QG problem.
+"""
+function Problem(;
+    # Numerical parameters
+          nx = 128,
+          Lx = 2π,
+          ny = nx,
+          Ly = Lx,
+          dt = 0.01,
+    # Physical parameters
+     nlayers = 2,                       # number of fluid layers
+          f0 = 1.0,                     # Coriolis parameter
+        beta = 0.0,                     # Coriolis parameter y-gradient
+           g = 1.0,                     # gravitational constant
+           U = zeros(nlayers),          # imposed zonal flow U in each layer
+           u = zeros(ny, nlayers),      # imposed zonal flow u(y) in each layer
+           H = [0.2, 0.8],              # rest fluid height of each layer
+         rho = [4.0, 5.0],              # density of each layer
+         eta = zeros(nx, ny),           # topographic PV
+    # Bottom Drag and/or (hyper)-viscosity
+          mu = 0.0,
+          nu = 0.0,
+         nnu = 1,
+    # Timestepper and eqn options
+     stepper = "RK4",
+       calcF = nothingfunction,
+           T = Float64)
+
+     grid = TwoDGrid(nx, Lx, ny, Ly; T=T)
+
+     x, y = gridpoints(grid)
+     h = @. 0*x
+     eta = +f0*h/H[nlayers]
+
+   params = Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid)
+      eqn = Equation(params, grid)
+     vars = Vars(grid, params)
+
+  FourierFlows.Problem(eqn, stepper, dt, grid, vars, params)
+end
+
 
 abstract type BarotropicParams <: AbstractParams end
 
@@ -36,7 +84,7 @@ struct Params{T} <: AbstractParams
   g::T                       # Gravitational constat
   f0::T                      # Constant planetary vorticity
   beta::T                    # Planetary vorticity y-gradient
-  ρ::Array{T,3}              # Array with density of each fluid layer
+  rho::Array{T,3}            # Array with density of each fluid layer
   H::Array{T,3}              # Array with rest heigh of each fluid layer
   U::Array{T,3}              # Array with imposed constant zonal flow U in each fluid layer
   u::Array{T,3}              # Array with imposed zonal flow u(y) in each fluid layer
@@ -61,7 +109,7 @@ struct SinglelayerParams{T} <: BarotropicParams
   g::T                       # Gravitational constat
   f0::T                      # Constant planetary vorticity
   beta::T                    # Planetary vorticity y-gradient
-  ρ::Array{T,3}              # Array with density of each fluid layer
+  rho::Array{T,3}            # Array with density of each fluid layer
   H::Array{T,3}              # Array with rest heigh of each fluid layer
   U::Array{T,3}              # Array with imposed constant zonal flow U in each fluid layer
   u::Array{T,3}              # Array with imposed zonal flow u(y) in each fluid layer
@@ -77,16 +125,13 @@ struct SinglelayerParams{T} <: BarotropicParams
   calcFq!::Function          # Function that calculates the forcing on QGPV q
 end
 
-
-# TODO make sure that setting nlayers=1 works
-
-function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
+function Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
 
   nkr, nl, ny, nx = grid.nkr, grid.nl,  grid.ny, grid.nx
   kr, l = grid.kr, grid.l
 
-  gprime = g*(ρ[2:nlayers]-ρ[1:nlayers-1]) ./ ρ[1:nlayers-1] # definition to match PYQG
-  # gprime = g*(ρ[2:nlayers]-ρ[1:nlayers-1])./ρ[2:nlayers]; #CORRECT DEFINITION
+  # gprime = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[1:nlayers-1] # definition match PYQG
+  gprime = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[2:nlayers] # correct definition
 
   Fm = @. f0^2 ./ ( gprime*H[2:nlayers  ] ) # m^(-2)
   Fp = @. f0^2 ./ ( gprime*H[1:nlayers-1] ) # m^(-2)
@@ -94,8 +139,8 @@ function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::Abstr
   U = reshape(U, (1,  1, nlayers))
   u = reshape(u, (1, ny, nlayers))
 
+  rho = reshape(rho, (1,  1, nlayers))
   H = reshape(H, (1,  1, nlayers))
-  ρ = reshape(ρ, (1,  1, nlayers))
 
   #=
   Qy = zeros(1, 1, nlayers)
@@ -105,6 +150,7 @@ function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::Abstr
   end
   Qy[nlayers] = beta - Fm[nlayers-1]*(U[nlayers-1]-U[nlayers])
   =#
+
   uyy = repeat(irfft( -l.^2 .* rfft(u, [1, 2]),  1, [1, 2]), outer=(1, 1, 1))
   uyy = repeat(uyy, outer=(nx, 1, 1))
 
@@ -132,9 +178,9 @@ function Params(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, grid::Abstr
   rfftplanlayered = plan_rfft(Array{T,3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
 
   if nlayers == 1
-    SinglelayerParams{T}(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, Qx, Qy, grid.rfftplan, calcFq)
+    SinglelayerParams{T}(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, Qx, Qy, grid.rfftplan, calcFq)
   else
-    Params{T}(nlayers, g, f0, beta, ρ, H, U, u, eta, mu, nu, nnu, gprime, Qx, Qy, S, invS, rfftplanlayered, calcFq)
+    Params{T}(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, gprime, Qx, Qy, S, invS, rfftplanlayered, calcFq)
   end
 end
 
@@ -233,6 +279,11 @@ function pvfromstreamfunction!(qh, psih, S, g)
   end
 end
 
+"""
+    calcS!(S, Fp, Fm, g)
+
+Constructs the stretching matrix S that connects q and ψ: q_{k,l} = S * ψ_{k,l}.
+"""
 function calcS!(S, Fp, Fm, g)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   for n=1:g.nl, m=1:g.nkr
@@ -243,6 +294,12 @@ function calcS!(S, Fp, Fm, g)
   nothing
 end
 
+"""
+    calcinvS!(S, Fp, Fm, g)
+
+Constructs the inverse of the stretching matrix S that connects q and ψ:
+ψ_{k,l} = invS * q_{k,l}.
+"""
 function calcinvS!(invS, Fp, Fm, g)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   for n=1:g.nl, m=1:g.nkr
@@ -367,6 +424,7 @@ Update `prob.vars` using `prob.sol`.
 """
 function updatevars!(prob)
   p, v, g, sol = prob.params, prob.vars, prob.grid, prob.sol
+
   @. v.qh = sol
   streamfunctionfrompv!(v.psih, v.qh, p.invS, g)
   @. v.uh = -im*g.l*v.psih
@@ -386,6 +444,7 @@ Set the solution `prob.sol` as the transform of `q` and updates variables.
 """
 function set_q!(prob, q)
   p, v, sol = prob.params, prob.vars, prob.sol
+
   fwdtransform!(v.qh, q, p)
   @. v.qh[1, 1, :] = 0
   @. sol = v.qh
@@ -408,6 +467,7 @@ function energies(prob)
   KE, PE = zeros(p.nlayers), zeros(p.nlayers-1)
 
   @. v.uh = g.Krsq * abs2(v.psih)
+
   for j=1:p.nlayers
     KE[j] = 1/(2*g.Lx*g.Ly)*parsevalsum(v.uh[:, :, j], g)*p.H[j]/sum(p.H)
   end
