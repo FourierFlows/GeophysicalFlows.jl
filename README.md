@@ -1,18 +1,19 @@
 # GeophysicalFlows.jl
 
 <p align="left">
-    <a href="https://GeophysicalFlows.github.io/GeophysicalFlows.jl/stable/">
-        <img src="https://img.shields.io/badge/docs-stable-blue.svg">
-    </a>
-    <a href="https://fourierflows.github.io/GeophysicalFlows.jl/latest/">
-        <img src="https://img.shields.io/badge/docs-latest-blue.svg">
-    </a>
     <a href="https://travis-ci.org/FourierFlows/GeophysicalFlows.jl">
         <img src="https://travis-ci.org/FourierFlows/GeophysicalFlows.jl.svg?branch=master" title="Build Status">
     </a>
     <a href="https://ci.appveyor.com/project/navidcy/geophysicalflows-jl">
         <img src="https://ci.appveyor.com/api/projects/status/7c5f4wfckq5gb6qv?svg=true" title="Build Status">
     </a>
+    <a href="https://GeophysicalFlows.github.io/GeophysicalFlows.jl/stable/">
+        <img src="https://img.shields.io/badge/docs-stable-blue.svg">
+    </a>
+    <a href="https://fourierflows.github.io/GeophysicalFlows.jl/latest/">
+        <img src="https://img.shields.io/badge/docs-latest-blue.svg">
+    </a>
+    <a href='https://coveralls.io/github/FourierFlows/GeophysicalFlows.jl?branch=master'><img src='https://coveralls.io/repos/github/FourierFlows/GeophysicalFlows.jl/badge.svg?branch=master' alt='Coverage Status' /></a>
 </p>
     
 This package leverages the [FourierFlows.jl]() framework to provide modules for solving problems in
