@@ -15,7 +15,6 @@ export
 
 using
   FFTW,
-  Requires,
   Reexport
 
 @reexport using FourierFlows
