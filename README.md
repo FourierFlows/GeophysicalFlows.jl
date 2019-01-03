@@ -15,7 +15,7 @@
     </a>
     <a href='https://coveralls.io/github/FourierFlows/GeophysicalFlows.jl?branch=master'><img src='https://coveralls.io/repos/github/FourierFlows/GeophysicalFlows.jl/badge.svg?branch=master' alt='Coverage Status' /></a>
 </p>
-    
+
 This package leverages the [FourierFlows.jl]() framework to provide modules for solving problems in
 Geophysical Fluid Dynamics on periodic domains using Fourier-based pseudospectral methods.
 
@@ -35,10 +35,6 @@ All modules provide solvers on two-dimensional domains. We currently provide
 * `TwoDTurb`: the two-dimensional vorticity equation.
 * `BarotropicQG`: the barotropic quasi-geostrophic equation, which generalizes `TwoDTurb` to cases with topography and Coriolis parameters of the form `f = f₀ + βy`.
 * `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
-* `NIWQG`: [a two-mode truncation][WY16] of the [NIW-QG model][XV15].
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
-[two-mode truncation]: https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/stimulated-generation-extraction-of-energy-from-balanced-flow-by-nearinertial-waves/900227E2C12AA98ECEBBE64F4FF21C43
-[XV15]: https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/generalisedlagrangianmean-model-of-the-interactions-between-nearinertial-waves-and-mean-flow/C4FB1C5ABFBAC3A39B52DDC10F4C723F
-[WY16]: https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/threecomponent-model-for-the-coupled-evolution-of-nearinertial-waves-quasigeostrophic-flow-and-the-nearinertial-second-harmonic/4F2E61BDD531DEA02D24FBE9A2617DAB 
