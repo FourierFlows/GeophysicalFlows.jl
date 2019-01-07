@@ -1,27 +1,27 @@
-using Documenter, GeophysicalFlows
+# Workaround for JuliaLang/julia/pull/28625
+if Base.HOME_PROJECT[] !== nothing
+  Base.HOME_PROJECT[] = abspath(Base.HOME_PROJECT[])
+end
+
+using
+  Documenter,
+  GeophysicalFlows
 
 makedocs(
-   modules = [GeophysicalFlows],
+   modules = [FourierFlows],
    doctest = false, clean = true,
  checkdocs = :all,
     format = :html,
    authors = "Gregory L. Wagner and Navid C. Constantinou",
-  sitename = "GeophysicalFlows.jl",
+  sitename = "FourierFlows.jl",
      pages = Any[
               "Home" => "index.md",
-              "Modules" => Any[
-                "modules/twodturb.md",
-                "modules/barotropicqg.md"
-              ],
+              "Code Basics" => "basics.md",
+              "Forcing" => "forcing.md",
               "DocStrings" => Any[
               "man/types.md",
               "man/functions.md"]
              ]
 )
 
-deploydocs(
-       repo = "github.com/FourierFlows/GeophysicalFlows.jl.git",
-     target = "build",
-       deps = nothing,
-       make = nothing
- )
+deploydocs(repo = "github.com/FourierFlows/FourierFlows.jl.git")
