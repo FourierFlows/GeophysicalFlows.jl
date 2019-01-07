@@ -8,20 +8,23 @@ using
   GeophysicalFlows
 
 makedocs(
-   modules = [FourierFlows],
-   doctest = false, clean = true,
- checkdocs = :all,
-    format = :html,
-   authors = "Gregory L. Wagner and Navid C. Constantinou",
-  sitename = "FourierFlows.jl",
-     pages = Any[
-              "Home" => "index.md",
-              "Code Basics" => "basics.md",
-              "Forcing" => "forcing.md",
-              "DocStrings" => Any[
-              "man/types.md",
-              "man/functions.md"]
-             ]
+ modules = [GeophysicalFlows],
+ doctest = false,
+   clean = true,
+checkdocs = :all,
+  format = :html,
+ authors = "Gregory L. Wagner and Navid C. Constantinou",
+sitename = "GeophysicalFlows.jl",
+   pages = Any[
+            "Home" => "index.md",
+            "Modules" => Any[
+              "modules/twodturb.md",
+              "modules/barotropicqg.md"
+            ],
+            "DocStrings" => Any[
+            "man/types.md",
+            "man/functions.md"]
+           ]
 )
 
-deploydocs(repo = "github.com/FourierFlows/FourierFlows.jl.git")
+deploydocs(repo = "github.com/FourierFlows/GeophysicalFlows.jl.git")
