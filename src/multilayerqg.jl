@@ -272,13 +272,13 @@ invtransform!(var, varh, p::AbstractParams) = ldiv!(var, p.rfftplan, varh)
 
 function streamfunctionfrompv!(psih, qh, invS, g)
   for j=1:g.nl, i=1:g.nkr
-    psih[i, j, :] .= @views invS[i, j, :, :]*qh[i, j, :]
+    @views psih[i, j, :] .= invS[i, j, :, :]*qh[i, j, :]
   end
 end
 
 function pvfromstreamfunction!(qh, psih, S, g)
   for j=1:g.nl, i=1:g.nkr
-    qh[i, j, :] .= @views S[i, j, :, :]*psih[i, j, :]
+    @views qh[i, j, :] .= S[i, j, :, :]*psih[i, j, :]
   end
 end
 
