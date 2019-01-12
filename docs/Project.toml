@@ -1,0 +1,6 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+GeophysicalFlows = "26314728-b5fa-11e8-0e35-91b531bec86e"
+
+[compat]
+Documenter = "~0.20"
