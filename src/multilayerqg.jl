@@ -11,7 +11,9 @@ export
   pvfromstreamfunction!,
   updatevars!,
   set_q!,
-  energies
+  set_psi!,
+  energies,
+  fluxes
 
 using
   FFTW,
@@ -440,8 +442,9 @@ function updatevars!(prob)
   nothing
 end
 
+
 """
-    energies(prob)
+    set_q!(prob)
 
 Set the solution `prob.sol` as the transform of `q` and updates variables.
 """
@@ -455,6 +458,25 @@ function set_q!(prob, q)
   updatevars!(prob)
   nothing
 end
+
+
+"""
+    set_psi!(prob)
+
+Set the solution `prob.sol` as the transform of `q` that corresponds to
+streamfunctio `psi` and updates variables.
+"""
+function set_psi!(prob, psi)
+  p, v, g = prob.params, prob.vars, prob.grid
+
+  fwdtransform!(v.psih, psi, p)
+  pvfromstreamfunction!(v.qh, v.psih, p.S, g)
+  invtransform!(v.q, v.qh, p)
+  set_q!(prob, v.q)
+
+  nothing
+end
+
 
 """
     energies(prob)
