@@ -21,33 +21,11 @@ using FourierFlows: parsevalsum, xmoment, ymoment
 
 const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
 const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
-const rtol_niwqg = 1e-13 # tolerance for niwqg forcing tests
 const rtol_twodturb = 1e-13 # tolerance for twodturb forcing tests
 
 "Get the CFL number, assuming a uniform grid with `dx=dy`."
 cfl(U, V, dt, dx) = maximum([maximum(abs.(U)), maximum(abs.(V))]*dt/dx)
 cfl(prob) = cfl(prob.vars.u, prob.vars.v, prob.cl.dt, prob.grid.dx)
-
-"Returns the energy in vertically Fourier mode 1 in the Boussinesq equations."
-e1_fourier(u, v, p, m, N) = @. abs2(u) + abs2(v) + m^2*abs2(p)/N^2
-e1_fourier(prob) = e1_fourier(prob.vars.u, prob.vars.v, prob.vars.p, prob.params.m, prob.params.N)
-
-"Returns the `x, y` centroid of a cosine mode 1 internal wave in the Boussinesq equations."
-wavecentroid_fourier(prob) = (xmoment(e1_fourier(prob), prob.grid), ymoment(e1_fourier(prob), prob.grid))
-
-"Returns the energy in vertically cosine mode 1 in the Boussinesq equations."
-e1_cosine(u, v, p, m, N) = @. ( u^2 + v^2 + m^2*p^2/N^2 )/2
-e1_cosine(prob) = e1_cosine(prob.vars.u, prob.vars.v, prob.vars.p, prob.params.m, prob.params.N)
-
-"Returns the `x, y` centroid of a cosine mode 1 internal wave in the Boussinesq equations."
-wavecentroid_cosine(prob) = (xmoment(e1_cosine(prob), prob.grid), ymoment(e1_cosine(prob), prob.grid))
-
-"Returns the wave kinetic energy in NIWQG."
-ke_niwqg(phi) = @. abs2(phi)
-ke_niwqg(prob::FourierFlows.Problem) = ke_niwqg(prob.vars.phi)
-
-"Returns the `x, y` centroid of the wave field kinetic energy in NIWQG."
-wavecentroid_niwqg(prob) = (xmoment(ke_niwqg(prob), prob.grid), ymoment(ke_niwqg(prob), prob.grid))
 
 
 # Run tests
