@@ -48,8 +48,7 @@ function Problem(;
           f0 = 1.0,                     # Coriolis parameter
         beta = 0.0,                     # Coriolis parameter y-gradient
            g = 1.0,                     # gravitational constant
-           U = zeros(nlayers),          # imposed zonal flow U in each layer
-           u = zeros(ny, nlayers),      # imposed zonal flow u(y) in each layer
+           U = zeros(ny, nlayers),      # imposed zonal flow U(y) in each layer
            H = [0.2, 0.8],              # rest fluid height of each layer
          rho = [4.0, 5.0],              # density of each layer
          eta = zeros(nx, ny),           # topographic PV
@@ -65,10 +64,10 @@ function Problem(;
 
    grid = TwoDGrid(nx, Lx, ny, Ly; T=T)
    if calcFq == nothingfunction
-     params = Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid)
+     params = Params(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, grid)
      vars = Vars(grid, params)
    else
-     params = Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid, calcFq=calcFq)
+     params = Params(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, grid, calcFq=calcFq)
      vars = ForcedVars(grid, params)
    end
    eqn = Equation(params, grid; linear=linear)
@@ -89,8 +88,7 @@ struct Params{T} <: AbstractParams
   beta::T                    # Planetary vorticity y-gradient
   rho::Array{T,3}            # Array with density of each fluid layer
   H::Array{T,3}              # Array with rest height of each fluid layer
-  U::Array{T,3}              # Array with imposed constant zonal flow U in each fluid layer
-  u::Array{T,3}              # Array with imposed zonal flow u(y) in each fluid layer
+  U::Array{T,3}              # Array with imposed constant zonal flow U(y) in each fluid layer
   eta::Array{T,2}            # Array containing topographic PV
   mu::T                      # Linear bottom drag
   nu::T                      # Viscosity coefficient
@@ -115,7 +113,6 @@ struct SinglelayerParams{T} <: BarotropicParams
   rho::Array{T,3}            # Array with density of each fluid layer
   H::Array{T,3}              # Array with rest height of each fluid layer
   U::Array{T,3}              # Array with imposed constant zonal flow U in each fluid layer
-  u::Array{T,3}              # Array with imposed zonal flow u(y) in each fluid layer
   eta::Array{T,2}            # Array containing topographic PV
   mu::T                      # Linear bottom drag
   nu::T                      # Viscosity coefficient
@@ -128,10 +125,12 @@ struct SinglelayerParams{T} <: BarotropicParams
   rfftplan::FFTW.rFFTWPlan{Float64,-1,false,2}  # rfft plan for FFTs
 end
 
-function Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
+function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, mu, nu, nnu, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
 
   nkr, nl, ny, nx = grid.nkr, grid.nl,  grid.ny, grid.nx
   kr, l = grid.kr, grid.l
+
+  U = reshape(U, (1, ny, nlayers))
 
   # greduced = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[1:nlayers-1] # definition match PYQG
   greduced = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[2:nlayers] # correct definition
@@ -139,14 +138,11 @@ function Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid::Abst
   Fm = @. f0^2 ./ ( greduced*H[2:nlayers  ] )
   Fp = @. f0^2 ./ ( greduced*H[1:nlayers-1] )
 
-  U = reshape(U, (1,  1, nlayers))
-  u = reshape(u, (1, ny, nlayers))
-
   rho = reshape(rho, (1,  1, nlayers))
   H = reshape(H, (1,  1, nlayers))
 
-  uyy = repeat(irfft( -l.^2 .* rfft(u, [1, 2]),  1, [1, 2]), outer=(1, 1, 1))
-  uyy = repeat(uyy, outer=(nx, 1, 1))
+  Uyy = repeat(irfft( -l.^2 .* rfft(U, [1, 2]),  1, [1, 2]), outer=(1, 1, 1))
+  Uyy = repeat(Uyy, outer=(nx, 1, 1))
 
   etah = rfft(eta)
   etax = irfft(im*kr.*etah, nx)
@@ -156,11 +152,11 @@ function Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid::Abst
   @views @. Qx[:, :, nlayers] += etax
 
   Qy = zeros(nx, ny, nlayers)
-  Qy[:, :, 1] = @. beta - uyy[:, :, 1] - Fp[1]*( (u[:, :, 2]+U[2]) - (u[:, :, 1]+U[1]) )
+  Qy[:, :, 1] = @. beta - Uyy[:, :, 1] - Fp[1]*( U[:, :, 2] - U[:, :, 1] )
   for j=2:nlayers-1
-    Qy[:, :, j] = @. beta - uyy[:, :, j] - Fp[j]*( (u[:, :, j+1]+U[j+1]) - (u[:, :, j]+U[j]) ) - Fm[j-1]*( (u[:, :, j-1]+U[j-1]) - (u[:, :, j]+U[j]) )
+    Qy[:, :, j] = @. beta - Uyy[:, :, j] - Fp[j]*( U[:, :, j+1] - U[:, :, j] ) - Fm[j-1]*( U[:, :, j-1] - U[:, :, j] )
   end
-  @views Qy[:, :, nlayers] = @. beta - uyy[:, :, nlayers] - Fm[nlayers-1]*( (u[:, :, nlayers-1]+U[nlayers-1]) - (u[:, :, nlayers]+U[nlayers]) )
+  @views Qy[:, :, nlayers] = @. beta - Uyy[:, :, nlayers] - Fm[nlayers-1]*( U[:, :, nlayers-1] - U[:, :, nlayers] )
   @views @. Qy[:, :, nlayers] += etay
 
   S = Array{Float64}(undef, (nkr, nl, nlayers, nlayers))
@@ -172,10 +168,16 @@ function Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid::Abst
   rfftplanlayered = plan_rfft(Array{T,3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
 
   if nlayers == 1
-    SinglelayerParams{T}(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, calcFq, Qx, Qy, grid.rfftplan)
+    SinglelayerParams{T}(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, calcFq, Qx, Qy, grid.rfftplan)
   else
-    Params{T}(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, calcFq, greduced, Qx, Qy, S, invS, rfftplanlayered)
+    Params{T}(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, calcFq, greduced, Qx, Qy, S, invS, rfftplanlayered)
   end
+end
+
+function Params(nlayers, g, f0, beta, rho, H, U::Array{T,1}, eta, mu, nu, nnu, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
+  U = reshape(U, (1, nlayers))
+  U = repeat(U, outer=(grid.ny, 1))
+  Params(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, grid; calcFq=calcFq, effort=effort)
 end
 
 
@@ -338,7 +340,7 @@ function calcN_advection!(N, sol, v, p, g)
   @. v.vh =  im*g.kr*v.psih
 
   invtransform!(v.u, v.uh, p)
-  @. v.u += p.U + p.u                           # add the imposed zonal flow
+  @. v.u += p.U                           # add the imposed zonal flow
   @. v.q = v.u*p.Qx
   fwdtransform!(v.uh, v.q, p)
   @. N = -v.uh                                   # -(U+u)*∂Q/∂x
@@ -376,18 +378,18 @@ function calcN_linearadvection!(N, sol, v, p, g)
   @. v.vh =  im*g.kr*v.psih
 
   invtransform!(v.u, v.uh, p)
-  @. v.u += p.U + p.u                           # add the imposed zonal flow
+  @. v.u += p.U                           # add the imposed zonal flow
   @. v.q = v.u*p.Qx
   fwdtransform!(v.uh, v.q, p)
-  @. N = -v.uh                                   # -(U+u)*∂Q/∂x
+  @. N = -v.uh                            # -(U+u)*∂Q/∂x
 
   invtransform!(v.v, v.vh, p)
   @. v.q = v.v*p.Qy
   fwdtransform!(v.vh, v.q, p)
-  @. N -= v.vh                                  # -v*∂Q/∂y
+  @. N -= v.vh                            # -v*∂Q/∂y
 
   invtransform!(v.q, v.qh, p)
-  @. v.u = p.U + p.u
+  @. v.u = p.U
   @. v.u *= v.q # u*q
 
   fwdtransform!(v.uh, v.u, p)
@@ -508,11 +510,11 @@ function fluxes(prob)
   @. v.uh = -im*g.l*v.uh
   invtransform!(v.u, v.uh, p)
 
-  lateralfluxes = (sum(@. p.H*(p.U+p.u)*v.v*v.u; dims=(1,2)))[1, 1, :]
+  lateralfluxes = (sum(@. p.H*p.U*v.v*v.u; dims=(1,2)))[1, 1, :]
   lateralfluxes *= g.dx*g.dy/(g.Lx*g.Ly*sum(p.H))
 
   for j=1:p.nlayers-1
-    verticalfluxes[j] = sum( @views @. p.f0^2/p.greduced[j] * (p.U[: ,:, j]+p.u[:, :, j] - p.U[:, :, j+1]-p.u[:, :, j+1])*v.v[:, :, j+1]*v.psi[:, :, j] ; dims=(1,2) )[1]
+    verticalfluxes[j] = sum( @views @. p.f0^2/p.greduced[j] * (p.U[: ,:, j] - p.U[:, :, j+1])*v.v[:, :, j+1]*v.psi[:, :, j] ; dims=(1,2) )[1]
     verticalfluxes[j] *= g.dx*g.dy/(g.Lx*g.Ly*sum(p.H))
   end
 
