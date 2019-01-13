@@ -23,19 +23,3 @@ Modules = [GeophysicalFlows.BarotropicQG]
 Public = false
 Order = [:type]
 ```
-
-## Private types in module `VerticallyFourierBoussinesq`:
-
-```@autodocs
-Modules = [GeophysicalFlows.VerticallyFourierBoussinesq]
-Public = false
-Order = [:type]
-```
-
-## Private types in module `VerticallyCosineBoussinesq`:
-
-```@autodocs
-Modules = [GeophysicalFlows.VerticallyCosineBoussinesq]
-Public = false
-Order = [:type]
-```

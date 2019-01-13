@@ -12,19 +12,22 @@ nx = 256        # Resolution
 Lx = 2π         # Domain size
 nu = 1e-6       # Viscosity
 nnu = 1         # Order of (hyper-)viscosity. nnu=1 means Laplacian
-dt = 1.0        # Timestep
-nint = 100      # Number of steps between plots
+dt = 0.1        # Timestep
+nint = 200      # Number of steps between plots
 ntot = 10nint   # Number of total timesteps
 
 # Define problem
 prob = TwoDTurb.Problem(nx=nx, Lx=Lx, nu=nu, nnu=nnu, dt=dt, stepper="FilteredRK4")
 TwoDTurb.set_q!(prob, rand(nx, nx))
 
+cl, vs, gr = prob.clock, prob.vars, prob.grid
+x, y = gridpoints(gr)
+
 "Plot the vorticity of the twodturb problem `prob`."
 function makeplot!(ax, prob)
   sca(ax)
   cla()
-  pcolormesh(prob.grid.X, prob.grid.Y, prob.vars.q)
+  pcolormesh(x, y, vs.q)
   title("Vorticity")
   xlabel(L"x")
   ylabel(L"y")
@@ -35,10 +38,10 @@ end
 # Step forward
 fig1, ax = subplots(figsize=(8, 8))
 
-while prob.step < ntot
+while cl.step < ntot
   @time begin
     stepforward!(prob, nint)
-    @printf("step: %04d, t: %6.1f", prob.step, prob.t)
+    @printf("step: %04d, t: %6.1f", cl.step, cl.t)
   end
 
   TwoDTurb.updatevars!(prob)
@@ -46,14 +49,14 @@ while prob.step < ntot
 end
 
 # Plot the radial energy spectrum
-E = @. 0.5*(prob.vars.U^2 + prob.vars.V^2) # energy density
+E = @. 0.5*(vs.u^2 + vs.v^2) # energy density
 Eh = rfft(E)
-kr, Ehr = FourierFlows.radialspectrum(Eh, prob.grid, refinement=1)
+kr, Ehr = FourierFlows.radialspectrum(Eh, gr, refinement=1)
 
 fig2, axs = subplots(ncols=2, figsize=(8, 4))
 
 sca(axs[1])
-pcolormesh(prob.grid.X, prob.grid.Y, prob.vars.q)
+pcolormesh(x, y, vs.q)
 xlabel(L"x")
 ylabel(L"y")
 title("Vorticity")

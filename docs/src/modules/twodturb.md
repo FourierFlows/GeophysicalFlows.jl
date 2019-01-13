@@ -76,8 +76,8 @@ The nonlinear term $\mathcal{N}(\widehat{q})$ is computed via functions:
 
 ```julia
 function calcN_advection!(N, sol, t, s, v, p, g)
-  @. v.Uh =  im * g.l  * g.invKKrsq * sol
-  @. v.Vh = -im * g.kr * g.invKKrsq * sol
+  @. v.Uh =  im * g.l  * g.invKrsq * sol
+  @. v.Vh = -im * g.kr * g.invKrsq * sol
   @. v.qh = sol
 
   A_mul_B!(v.U, g.irfftplan, v.Uh)

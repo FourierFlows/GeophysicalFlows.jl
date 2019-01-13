@@ -29,7 +29,7 @@ mu   = 1.0e-2  # linear drag
                # zonal flow U(t) flow
 
 # Topographic PV
-topoPV(x, y) = 2*cos.(10x).*cos.(10y)
+topoPV(x, y) = @. 2*cos(10x)*cos(10y)
 
 # Forcing on the domain-averaged U equation
 calcFU(t) = F
@@ -38,8 +38,9 @@ calcFU(t) = F
 # Initialize problem
 prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, f0=f0, beta=beta, eta=topoPV,
                   calcFU=calcFU, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper)
-s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
+x, y = gridpoints(g)
 
 # Files
 filepath = "."
@@ -52,11 +53,10 @@ if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 
 # Initialize with zeros
-BarotropicQG.set_zeta!(prob, 0*g.X)
+BarotropicQG.set_zeta!(prob, 0*x)
 
 
-# Create Diagnostic -- "energy" and "enstrophy" are functions imported
-# at the top.
+# Create Diagnostics
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Q = Diagnostic(enstrophy, prob; nsteps=nsteps)
 Emean = Diagnostic(meanenergy, prob; nsteps=nsteps)
@@ -64,8 +64,8 @@ Qmean = Diagnostic(meanenergy, prob; nsteps=nsteps)
 diags = [E, Emean, Q, Qmean]
 
 # Create Output
-get_sol(prob) = prob.state.sol # extracts the Fourier-transformed solution
-get_u(prob) = irfft(im*g.Lr.*g.invKKrsq.*prob.state.sol, g.nx)
+get_sol(prob) = sol # extracts the Fourier-transformed solution
+get_u(prob) = irfft(im*g.lr.*g.invKrsq.*sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 
 
@@ -74,11 +74,11 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   # Plot the PV field and the evolution of energy and enstrophy.
 
-  s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
+  sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid
   BarotropicQG.updatevars!(prob)
 
   sca(axs[1])
-  pcolormesh(g.X, g.Y, v.q)
+  pcolormesh(x, y, v.q)
   axis("square")
   xlim(0, 2)
   xticks(0:0.5:2)
@@ -91,8 +91,8 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[2])
   cla()
-  plot(mu*E.time[1:E.prob.step], E.data[1:prob.step], label=L"$E_{\psi}$")
-  plot(mu*E.time[1:Emean.prob.step], Emean.data[1:prob.step], label=L"$E_U$")
+  plot(mu*E.t[1:E.i], E.data[1:E.i], label=L"$E_{\psi}$")
+  plot(mu*E.t[1:Emean.i], Emean.data[1:Emean.i], label=L"$E_U$")
 
   xlabel(L"\mu t")
   ylabel(L"E")
@@ -100,8 +100,8 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[3])
   cla()
-  plot(mu*Q.time[1:Q.prob.step], Q.data[1:prob.step], label=L"$Q_{\psi}$")
-  plot(mu*Qmean.time[1:Qmean.prob.step], Qmean.data[1:prob.step], label=L"$Q_U$")
+  plot(mu*Q.t[1:Q.i], Q.data[1:Q.i], label=L"$Q_{\psi}$")
+  plot(mu*Qmean.t[1:Qmean.i], Qmean.data[1:Qmean.i], label=L"$Q_U$")
   xlabel(L"\mu t")
   ylabel(L"Q")
   legend()
@@ -116,12 +116,12 @@ plot_output(prob, fig, axs; drawcolorbar=true)
 # Step forward
 startwalltime = time()
 
-while prob.step < nsteps
+while cl.step < nsteps
   stepforward!(prob, diags, nsubs)
 
   # Message
   log = @sprintf("step: %04d, t: %d, E: %.4f, Q: %.4f, τ: %.2f min",
-    prob.step, prob.t, E.value, Q.value,
+    cl.step, cl.t, E.data[E.i], Q.data[Q.i],
     (time()-startwalltime)/60)
 
   println(log)

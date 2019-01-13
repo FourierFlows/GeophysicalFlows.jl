@@ -24,19 +24,3 @@ Modules = [GeophysicalFlows.BarotropicQG]
 Private = false
 Order = [:function]
 ```
-
-## Functions exported from `VerticallyFourierBoussinesq`:
-
-```@autodocs
-Modules = [GeophysicalFlows.VerticallyFourierBoussinesq]
-Private = false
-Order = [:function]
-```
-
-## Functions exported from `VerticallyCosineBoussinesq`:
-
-```@autodocs
-Modules = [GeophysicalFlows.VerticallyCosineBoussinesq]
-Private = false
-Order = [:function]
-```
