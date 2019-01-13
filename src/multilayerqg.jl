@@ -9,7 +9,7 @@ export
   invtransform!,
   streamfunctionfrompv!,
   pvfromstreamfunction!,
-  updatevars!,
+  ars!,
   set_q!,
   set_psi!,
   energies,
@@ -486,13 +486,12 @@ potential energy of each fluid interface PE_{3/2},...,PE_{nlayers-1/2}.
 """
 function energies(prob)
   v, p, g, sol = prob.vars, prob.params, prob.grid, prob.sol
+  KE, PE = zeros(p.nlayers), zeros(p.nlayers-1)
+
   @. v.qh = sol
   streamfunctionfrompv!(v.psih, v.qh, p.invS, g)
 
-  KE, PE = zeros(p.nlayers), zeros(p.nlayers-1)
-
   @. v.uh = g.Krsq * abs2(v.psih)
-
   for j=1:p.nlayers
     KE[j] = 1/(2*g.Lx*g.Ly)*parsevalsum(v.uh[:, :, j], g)*p.H[j]/sum(p.H)
   end
@@ -500,7 +499,34 @@ function energies(prob)
   for j=1:p.nlayers-1
     PE[j] = 1/(2*g.Lx*g.Ly)*p.f0^2/p.gprime[j]*parsevalsum(abs2.(v.psih[:, :, j+1].-v.psih[:, :, j]), g)
   end
+
   KE, PE
+end
+
+
+"""
+    fluxes(prob)
+
+Returns the fluxes
+"""
+function fluxes(prob)
+  v, p, g, sol = prob.vars, prob.params, prob.grid, prob.sol
+  lateralfluxes, verticalfluxes = zeros(p.nlayers), zeros(p.nlayers-1)
+
+  updatevars!(prob)
+
+  @. v.uh = -im*g.l*v.uh
+  invtransform!(v.u, v.uh, p)
+
+  lateralfluxes = (sum(@. p.H*(p.U+p.u)*v.v*v.u; dims=(1,2)))[1, 1, :]
+  lateralfluxes *= g.dx*g.dy/(g.Lx*g.Ly*sum(p.H))
+
+  for j=1:p.nlayers-1
+    verticalfluxes[j] = sum( @views @. p.f0^2/p.gprime[j] * (p.U[: ,:, j+1]+p.u[:, :, j+1] - p.U[:, :, j]-p.u[:, :, j])*v.v[:, :, j+1]*v.psi[:, :, j] ; dims=(1,2) )
+    verticalfluxes[j] *= g.dx*g.dy/(g.Lx*g.Ly*sum(p.H))
+  end
+
+  lateralfluxes, verticalfluxes
 end
 
 end # module
