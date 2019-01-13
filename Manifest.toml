@@ -55,17 +55,11 @@ git-tree-sha1 = "fb86fe40cb5b35990e368709bfdc1b46dbb99dac"
 uuid = "8f4d0f93-b110-5947-807f-2305c1781a2d"
 version = "1.1.1"
 
-[[Coverage]]
-deps = ["Compat", "HTTP", "JSON", "MbedTLS", "Pkg"]
-git-tree-sha1 = "f22894bf140288c9f9a967ef757acb3d2b8f2e99"
-uuid = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
-version = "0.7.0"
-
 [[DataStructures]]
 deps = ["InteractiveUtils", "OrderedCollections", "Random", "Serialization", "Test"]
-git-tree-sha1 = "8fc6e166e24fda04b2b648d4260cdad241788c54"
+git-tree-sha1 = "ca971f03e146cf144a9e2f2ce59674f5bf0e8038"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.14.0"
+version = "0.15.0"
 
 [[Dates]]
 deps = ["Printf"]
@@ -110,24 +104,10 @@ uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.5.3"
 
 [[FourierFlows]]
-deps = ["Coverage", "Documenter", "FFTW", "Interpolations", "JLD2", "LinearAlgebra", "Printf", "Random", "Reexport", "Statistics", "Test"]
-git-tree-sha1 = "a7531b490c024aa9d6be487eb8dcf548d3be98ef"
-repo-rev = "master"
-repo-url = "https://github.com/FourierFlows/FourierFlows.jl"
+deps = ["FFTW", "Interpolations", "JLD2", "LinearAlgebra", "Random", "Reexport", "Statistics"]
+git-tree-sha1 = "1addb960281c1cbd44156975ebb8e21a99f79232"
 uuid = "2aec4490-903f-5c70-9b11-9bed06a700e1"
-version = "0.2.2"
-
-[[HTTP]]
-deps = ["Base64", "Dates", "Distributed", "IniFile", "MbedTLS", "Sockets", "Test"]
-git-tree-sha1 = "b881f69331e85642be315c63d05ed65d6fc8a05b"
-uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
-version = "0.7.1"
-
-[[IniFile]]
-deps = ["Test"]
-git-tree-sha1 = "098e4d2c533924c921f9f9847274f2ad89e018b8"
-uuid = "83e8ac13-25f8-5344-8a64-a9f2b223428f"
-version = "0.5.0"
+version = "0.3.0"
 
 [[InteractiveUtils]]
 deps = ["LinearAlgebra", "Markdown"]
@@ -135,9 +115,9 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[Interpolations]]
 deps = ["AxisAlgorithms", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "SharedArrays", "SparseArrays", "StaticArrays", "Test", "WoodburyMatrices"]
-git-tree-sha1 = "3493536a64dae5a21c0cc8aecf680647f3e12313"
+git-tree-sha1 = "1ec5b78dbfb5ae2b3d7a4987a9287fed4cc31ded"
 uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
-version = "0.11.0"
+version = "0.11.1"
 
 [[JLD2]]
 deps = ["CodecZlib", "DataStructures", "FileIO", "LinearAlgebra", "Mmap", "Printf", "Random", "Test"]
@@ -179,12 +159,6 @@ version = "0.4.4"
 [[Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
-
-[[MbedTLS]]
-deps = ["BinaryProvider", "Dates", "Libdl", "Random", "Sockets", "Test"]
-git-tree-sha1 = "c93a87da4081a3de781f34e0540175795a2ce83d"
-uuid = "739be429-bea8-5141-9913-cc70e7f3736d"
-version = "0.6.6"
 
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
@@ -272,9 +246,9 @@ version = "0.7.2"
 
 [[StaticArrays]]
 deps = ["InteractiveUtils", "LinearAlgebra", "Random", "Statistics", "Test"]
-git-tree-sha1 = "97c4bf0f647488dd7ac01ea12be5885f88762938"
+git-tree-sha1 = "1eb114d6e23a817cd3e99abc3226190876d7c898"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "0.10.0"
+version = "0.10.2"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
