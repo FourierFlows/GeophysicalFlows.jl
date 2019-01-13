@@ -247,7 +247,7 @@ function test_mqg_energies(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlay
      H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
    rho = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  prob = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=n, Lx=L, f0=f0, g=g, H=H, rho=rho)
+  prob = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, rho=rho)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
@@ -261,4 +261,35 @@ function test_mqg_energies(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlay
   KE, PE = MultilayerQG.energies(prob)
 
   isapprox(KE[1], 61/640*1e-6, rtol=rtol_multilayerqg) && isapprox(KE[2], 3*1e-6, rtol=rtol_multilayerqg) && isapprox(PE[1], 1025/1152*1e-6, rtol=rtol_multilayerqg)
+end
+
+function test_mqg_fluxes(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
+  nx, ny = 128, 126
+  Lx, Ly = 2π, 2π
+  gr = TwoDGrid(nx, Lx, ny, Ly)
+
+  x, y = gridpoints(gr)
+  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
+
+    nlayers = 2       # these choice of parameters give the
+    f0, g = 1, 1      # desired PV-streamfunction relations
+     H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
+   rho = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+     u = zeros(ny, nlayers)
+     u[:, 1] = @. sech(gr.y/0.2)^2
+
+  prob = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, rho=rho, u=u)
+  sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
+
+  ψ1 = @. cos(k0*x)*cos(l0*y)
+  ψ2 = @. cos(k0*x+π/10)*cos(l0*y)
+  ψf = zeros(gr.nx, gr.ny, nlayers)
+  ψf[:, :, 1] .= ψ1
+  ψf[:, :, 2] .= ψ2
+
+  MultilayerQG.set_psi!(prob, ψf)
+
+  lateralfluxes, verticalfluxes = MultilayerQG.fluxes(prob)
+  println(verticalfluxes)
+  isapprox(lateralfluxes[1], 0, atol=1e-12) && isapprox(lateralfluxes[2], 0, atol=1e-12) && isapprox(verticalfluxes[1], -0.04763511558, rtol=1e-6)
 end

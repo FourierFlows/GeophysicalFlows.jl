@@ -1,5 +1,5 @@
 # TODO split given params and computed paramss
-# TODO change the tests to work with the correct gprime definition rather than that used in PyQG
+# TODO change the tests to work with the correct greduced definition rather than that used in PyQG
 # TODO make sure that setting nlayers=1 works
 
 module MultilayerQG
@@ -99,7 +99,7 @@ struct Params{T} <: AbstractParams
   nnu::Int                   # Hyperviscous order (nnu=1 is plain old viscosity)
 
   # derived params
-  gprime::Array{T,1}         # Array with the reduced gravity constants for each fluid interface
+  greduced::Array{T,1}         # Array with the reduced gravity constants for each fluid interface
   Qx::Array{T,3}             # Array containing zonal PV gradient due to beta, U, and eta in each fluid layer
   Qy::Array{T,3}             # Array containing meridional PV gradient due to beta, U, and eta in each fluid layer
   S::Array{T,4}              # Array containing coeffients for getting PV from  streamfunction
@@ -135,11 +135,11 @@ function Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid::Abst
   nkr, nl, ny, nx = grid.nkr, grid.nl,  grid.ny, grid.nx
   kr, l = grid.kr, grid.l
 
-  # gprime = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[1:nlayers-1] # definition match PYQG
-  gprime = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[2:nlayers] # correct definition
+  # greduced = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[1:nlayers-1] # definition match PYQG
+  greduced = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[2:nlayers] # correct definition
 
-  Fm = @. f0^2 ./ ( gprime*H[2:nlayers  ] ) # m^(-2)
-  Fp = @. f0^2 ./ ( gprime*H[1:nlayers-1] ) # m^(-2)
+  Fm = @. f0^2 ./ ( greduced*H[2:nlayers  ] ) # m^(-2)
+  Fp = @. f0^2 ./ ( greduced*H[1:nlayers-1] ) # m^(-2)
 
   U = reshape(U, (1,  1, nlayers))
   u = reshape(u, (1, ny, nlayers))
@@ -185,7 +185,7 @@ function Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid::Abst
   if nlayers == 1
     SinglelayerParams{T}(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, Qx, Qy, grid.rfftplan, calcFq)
   else
-    Params{T}(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, gprime, Qx, Qy, S, invS, rfftplanlayered, calcFq)
+    Params{T}(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, greduced, Qx, Qy, S, invS, rfftplanlayered, calcFq)
   end
 end
 
@@ -497,7 +497,7 @@ function energies(prob)
   end
 
   for j=1:p.nlayers-1
-    PE[j] = 1/(2*g.Lx*g.Ly)*p.f0^2/p.gprime[j]*parsevalsum(abs2.(v.psih[:, :, j+1].-v.psih[:, :, j]), g)
+    PE[j] = 1/(2*g.Lx*g.Ly)*p.f0^2/p.greduced[j]*parsevalsum(abs2.(v.psih[:, :, j+1].-v.psih[:, :, j]), g)
   end
 
   KE, PE
@@ -522,7 +522,7 @@ function fluxes(prob)
   lateralfluxes *= g.dx*g.dy/(g.Lx*g.Ly*sum(p.H))
 
   for j=1:p.nlayers-1
-    verticalfluxes[j] = sum( @views @. p.f0^2/p.gprime[j] * (p.U[: ,:, j+1]+p.u[:, :, j+1] - p.U[:, :, j]-p.u[:, :, j])*v.v[:, :, j+1]*v.psi[:, :, j] ; dims=(1,2) )
+    verticalfluxes[j] = sum( @views @. p.f0^2/p.greduced[j] * (p.U[: ,:, j]+p.u[:, :, j] - p.U[:, :, j+1]-p.u[:, :, j+1])*v.v[:, :, j+1]*v.psi[:, :, j] ; dims=(1,2) )[1]
     verticalfluxes[j] *= g.dx*g.dy/(g.Lx*g.Ly*sum(p.H))
   end
 
