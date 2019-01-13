@@ -283,13 +283,11 @@ function test_mqg_fluxes(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayer
 
   ψ1 = @. cos(k0*x)*cos(l0*y)
   ψ2 = @. cos(k0*x+π/10)*cos(l0*y)
-  ψf = zeros(gr.nx, gr.ny, nlayers)
-  ψf[:, :, 1] .= ψ1
-  ψf[:, :, 2] .= ψ2
-
-  MultilayerQG.set_psi!(prob, ψf)
-
+  ψ = zeros(gr.nx, gr.ny, nlayers)
+  ψ[:, :, 1] .= ψ1
+  ψ[:, :, 2] .= ψ2
+  MultilayerQG.set_psi!(prob, ψ)
   lateralfluxes, verticalfluxes = MultilayerQG.fluxes(prob)
-  println(verticalfluxes)
+
   isapprox(lateralfluxes[1], 0, atol=1e-12) && isapprox(lateralfluxes[2], 0, atol=1e-12) && isapprox(verticalfluxes[1], -0.04763511558, rtol=1e-6)
 end

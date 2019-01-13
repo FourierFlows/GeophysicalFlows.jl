@@ -1,5 +1,3 @@
-# TODO split given params and computed paramss
-# TODO change the tests to work with the correct greduced definition rather than that used in PyQG
 # TODO make sure that setting nlayers=1 works
 
 module MultilayerQG
@@ -65,7 +63,7 @@ function Problem(;
       linear = false,
            T = Float64)
 
-     grid = TwoDGrid(nx, Lx, ny, Ly; T=T)
+   grid = TwoDGrid(nx, Lx, ny, Ly; T=T)
    if calcFq == nothingfunction
      params = Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid)
      vars = Vars(grid, params)
@@ -86,17 +84,18 @@ abstract type BarotropicParams <: AbstractParams end
 struct Params{T} <: AbstractParams
   # prescribed params
   nlayers::Int               # Number of fluid layers
-  g::T                       # Gravitational constat
+  g::T                       # Gravitational constant
   f0::T                      # Constant planetary vorticity
   beta::T                    # Planetary vorticity y-gradient
   rho::Array{T,3}            # Array with density of each fluid layer
-  H::Array{T,3}              # Array with rest heigh of each fluid layer
+  H::Array{T,3}              # Array with rest height of each fluid layer
   U::Array{T,3}              # Array with imposed constant zonal flow U in each fluid layer
   u::Array{T,3}              # Array with imposed zonal flow u(y) in each fluid layer
   eta::Array{T,2}            # Array containing topographic PV
   mu::T                      # Linear bottom drag
   nu::T                      # Viscosity coefficient
   nnu::Int                   # Hyperviscous order (nnu=1 is plain old viscosity)
+  calcFq!::Function          # Function that calculates the forcing on QGPV q
 
   # derived params
   greduced::Array{T,1}         # Array with the reduced gravity constants for each fluid interface
@@ -105,29 +104,28 @@ struct Params{T} <: AbstractParams
   S::Array{T,4}              # Array containing coeffients for getting PV from  streamfunction
   invS::Array{T,4}           # Array containing coeffients for inverting PV to streamfunction
   rfftplan::FFTW.rFFTWPlan{Float64,-1,false,3}  # rfft plan for FFTs
-  calcFq!::Function          # Function that calculates the forcing on QGPV q
 end
 
 struct SinglelayerParams{T} <: BarotropicParams
   # prescribed params
   nlayers::Int               # Number of fluid layers
-  g::T                       # Gravitational constat
+  g::T                       # Gravitational constant
   f0::T                      # Constant planetary vorticity
   beta::T                    # Planetary vorticity y-gradient
   rho::Array{T,3}            # Array with density of each fluid layer
-  H::Array{T,3}              # Array with rest heigh of each fluid layer
+  H::Array{T,3}              # Array with rest height of each fluid layer
   U::Array{T,3}              # Array with imposed constant zonal flow U in each fluid layer
   u::Array{T,3}              # Array with imposed zonal flow u(y) in each fluid layer
   eta::Array{T,2}            # Array containing topographic PV
   mu::T                      # Linear bottom drag
   nu::T                      # Viscosity coefficient
   nnu::Int                   # Hyperviscous order (nnu=1 is plain old viscosity)
+  calcFq!::Function          # Function that calculates the forcing on QGPV q
 
   # derived params
   Qx::Array{T,3}             # Array containing zonal PV gradient due to beta, U, and eta in each fluid layer
   Qy::Array{T,3}             # Array containing meridional PV gradient due to beta, U, and eta in each fluid layer
   rfftplan::FFTW.rFFTWPlan{Float64,-1,false,2}  # rfft plan for FFTs
-  calcFq!::Function          # Function that calculates the forcing on QGPV q
 end
 
 function Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
@@ -138,23 +136,14 @@ function Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid::Abst
   # greduced = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[1:nlayers-1] # definition match PYQG
   greduced = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[2:nlayers] # correct definition
 
-  Fm = @. f0^2 ./ ( greduced*H[2:nlayers  ] ) # m^(-2)
-  Fp = @. f0^2 ./ ( greduced*H[1:nlayers-1] ) # m^(-2)
+  Fm = @. f0^2 ./ ( greduced*H[2:nlayers  ] )
+  Fp = @. f0^2 ./ ( greduced*H[1:nlayers-1] )
 
   U = reshape(U, (1,  1, nlayers))
   u = reshape(u, (1, ny, nlayers))
 
   rho = reshape(rho, (1,  1, nlayers))
   H = reshape(H, (1,  1, nlayers))
-
-  #=
-  Qy = zeros(1, 1, nlayers)
-  Qy[1] = beta - Fp[1]*(U[2]-U[1])
-  for j=2:nlayers-1
-    Qy[j] = beta - Fp[j]*(U[j+1]-U[j]) - Fm[j-1]*(U[j-1]-U[j])
-  end
-  Qy[nlayers] = beta - Fm[nlayers-1]*(U[nlayers-1]-U[nlayers])
-  =#
 
   uyy = repeat(irfft( -l.^2 .* rfft(u, [1, 2]),  1, [1, 2]), outer=(1, 1, 1))
   uyy = repeat(uyy, outer=(nx, 1, 1))
@@ -183,9 +172,9 @@ function Params(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, grid::Abst
   rfftplanlayered = plan_rfft(Array{T,3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
 
   if nlayers == 1
-    SinglelayerParams{T}(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, Qx, Qy, grid.rfftplan, calcFq)
+    SinglelayerParams{T}(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, calcFq, Qx, Qy, grid.rfftplan)
   else
-    Params{T}(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, greduced, Qx, Qy, S, invS, rfftplanlayered, calcFq)
+    Params{T}(nlayers, g, f0, beta, rho, H, U, u, eta, mu, nu, nnu, calcFq, greduced, Qx, Qy, S, invS, rfftplanlayered)
   end
 end
 
@@ -237,7 +226,6 @@ singlelayervarsspecs = cat(
 eval(varsexpression(:Vars, physicalvars, fouriervars))
 eval(varsexpression(:ForcedVars, physicalvars, forcedfouriervars))
 eval(varsexpression(:SinglelayerVars, singlelayervarsspecs; parent=:BarotropicVars, typeparams=:T))
-
 
 """
     Vars(g)
@@ -463,8 +451,8 @@ end
 """
     set_psi!(prob)
 
-Set the solution `prob.sol` as the transform of `q` that corresponds to
-streamfunctio `psi` and updates variables.
+Set the solution `prob.sol` to correspond to a streamfunction `psi` and
+updates variables.
 """
 function set_psi!(prob, psi)
   p, v, g = prob.params, prob.vars, prob.grid
@@ -507,7 +495,9 @@ end
 """
     fluxes(prob)
 
-Returns the fluxes
+Returns the lateral eddy fluxes within each fluid layer
+lateralfluxes_1,...,lateralfluxes_nlayers and also the vertical eddy fluxes for
+each fluid interface verticalfluxes_{3/2},...,verticalfluxes_{nlayers-1/2}
 """
 function fluxes(prob)
   v, p, g, sol = prob.vars, prob.params, prob.grid, prob.sol

@@ -17,8 +17,6 @@ import # use 'import' rather than 'using' for submodules to keep namespace clean
 using GeophysicalFlows: lambdipole
 using FourierFlows: parsevalsum, xmoment, ymoment
 
-#using GeophysicalFlows.VerticallyFourierBoussinesq: mode1u
-
 const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
 const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
 const rtol_twodturb = 1e-13 # tolerance for twodturb forcing tests
