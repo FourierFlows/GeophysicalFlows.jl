@@ -1,10 +1,10 @@
 function test_twodturb_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01, nm=3)
   nt = round(Int, ti/dt)
   prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, dt=dt, stepper="FilteredRK4")
-  zeta₀ = lambdipole(Ue, Re, prob.grid)
-  TwoDTurb.set_zeta!(prob, zeta₀)
+  q₀ = lambdipole(Ue, Re, prob.grid)
+  TwoDTurb.set_q!(prob, q₀)
 
-  xzeta = zeros(nm)   # centroid of abs(zeta)
+  xq = zeros(nm)   # centroid of abs(q)
   Ue_m = zeros(nm) # measured dipole speed
   x, y = gridpoints(prob.grid)
   q = prob.vars.q
@@ -12,9 +12,9 @@ function test_twodturb_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti
   for i = 1:nm # step forward
     stepforward!(prob, nt)
     TwoDTurb.updatevars!(prob)
-    xzeta[i] = mean(abs.(zeta).*x) / mean(abs.(zeta))
+    xq[i] = mean(abs.(q).*x) / mean(abs.(q))
     if i > 1
-      Ue_m[i] = (xzeta[i]-xzeta[i-1]) / ((nt-1)*dt)
+      Ue_m[i] = (xq[i]-xq[i-1]) / ((nt-1)*dt)
     end
   end
   isapprox(Ue, mean(Ue_m[2:end]), rtol=rtol_lambdipole)
@@ -109,7 +109,7 @@ function test_twodturb_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
   TwoDTurb.set_q!(prob, 0*x)
-  
+
   E = Diagnostic(TwoDTurb.energy,      prob, nsteps=nt)
   D = Diagnostic(TwoDTurb.dissipation, prob, nsteps=nt)
   R = Diagnostic(TwoDTurb.drag,        prob, nsteps=nt)
@@ -157,7 +157,7 @@ function test_twodturb_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0
   x, y = gridpoints(gr)
 
   psif = @. sin(2x)*cos(2y) + 2sin(x)*cos(3y)
-  zetaf = @. -8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
+    qf = @. -8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
 
   Ff = @. -(
     nu*( 64sin(2x)*cos(2y) + 200sin(x)*cos(3y) )
@@ -179,7 +179,7 @@ function test_twodturb_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0
   stepforward!(prob, nt)
   TwoDTurb.updatevars!(prob)
 
-  isapprox(prob.vars.zeta, zetaf, rtol=rtol_twodturb)
+  isapprox(prob.vars.q, qf, rtol=rtol_twodturb)
 end
 
 function test_twodturb_energyenstrophy()
@@ -190,7 +190,7 @@ function test_twodturb_energyenstrophy()
   x, y = gridpoints(gr)
 
    psi0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
-  zeta0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
+     q0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
 
   energy_calc = 29/9
   enstrophy_calc = 2701/162
@@ -200,8 +200,8 @@ function test_twodturb_energyenstrophy()
   TwoDTurb.set_q!(prob, q0)
   TwoDTurb.updatevars!(prob)
 
-  energy_num = TwoDTurb.energy(prob)
-  enstrophy_num = TwoDTurb.enstrophy(prob)
+  energyq0 = TwoDTurb.energy(prob)
+  enstrophyq0 = TwoDTurb.enstrophy(prob)
 
   (isapprox(energyq0, 29.0/9, rtol=rtol_twodturb) &&
    isapprox(enstrophyq0, 2701.0/162, rtol=rtol_twodturb))

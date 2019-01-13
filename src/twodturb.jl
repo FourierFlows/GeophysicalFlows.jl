@@ -2,7 +2,7 @@ module TwoDTurb
 
 export
   Problem,
-  set_zeta!,
+  set_q!,
   updatevars!,
 
   energy,
@@ -18,7 +18,7 @@ using
 @reexport using FourierFlows
 
 using LinearAlgebra: mul!, ldiv!
-using FourierFlows: getfieldspecs, varsexpression, parsevalsum, parsevalsum2
+using FourierFlows: getfieldspecs, structvarsexpr, parsevalsum, parsevalsum2
 
 abstract type TwoDTurbVars <: AbstractVars end
 
@@ -50,7 +50,8 @@ function Problem(;
      stepper = "RK4",
        calcF = nothingfunction,
   stochastic = false,
-           T = Float64)
+           T = Float64
+)
 
   gr = TwoDGrid(nx, Lx, ny, Ly)
   pr = Params{T}(nu, nnu, mu, nmu, calcF)
@@ -58,6 +59,11 @@ function Problem(;
   eq = Equation(pr, gr)
   FourierFlows.Problem(eq, stepper, dt, gr, vs, pr)
 end
+
+
+# ----------
+# Parameters
+# ----------
 
 """
     Params(nu, nnu, mu, nmu, calcF!)
@@ -73,6 +79,11 @@ struct Params{T} <: AbstractParams
 end
 Params(nu, nnu) = Params(nu, nnu, typeof(nu)(0), 0, nothingfunction)
 
+
+# ---------
+# Equations
+# ---------
+
 """
     Equation(p, g)
 
@@ -85,10 +96,22 @@ function Equation(p::Params, g::AbstractGrid{T}) where T
 end
 
 
+# ----
+# Vars
+# ----
+
+varspecs = cat(
+  getfieldspecs(physicalvars, :(Array{T,2})),
+  getfieldspecs(transformvars, :(Array{Complex{T},2})),
+  dims=1)
+
+forcedvarspecs = cat(varspecs, getfieldspecs(forcedvars, :(Array{Complex{T},2})), dims=1)
+stochforcedvarspecs = cat(forcedvarspecs, getfieldspecs(stochforcedvars, :(Array{Complex{T},2})), dims=1)
+
 # Construct Vars types
-eval(varsexpression(:Vars, physicalvars, fouriervars))
-eval(varsexpression(:ForcedVars, physicalvars, forcedfouriervars))
-eval(varsexpression(:StochasticForcedVars, physicalvars, stochfouriervars))
+eval(structvarsexpr(:Vars, varspecs; parent=:TwoDTurbVars))
+eval(structvarsexpr(:ForcedVars, forcedvarspecs; parent=:TwoDTurbVars))
+eval(structvarsexpr(:StochasticForcedVars, stochforcedvarspecs; parent=:TwoDTurbVars))
 
 """
     Vars(g)
@@ -106,20 +129,20 @@ end
 
 Returns the vars for forced two-dimensional turbulence with grid g.
 """
-function ForcedVars(g::AbstractGrid{T}) where T
-  v = Vars(g)
-  F = zeros(Complex{T}, (g.nkr, g.nl))
-  ForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., F)
+function ForcedVars(g; T=typeof(g.Lx))
+  v = Vars(g; T=T)
+  Fh = zeros(Complex{T}, (g.nkr, g.nl))
+  ForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., Fh)
 end
 
 """
-    StochasticForcedVars(g)
+    StochasticForcedVars(g; T)
 
 Returns the vars for stochastically forced two-dimensional turbulence with grid
 g.
 """
-function StochasticForcedVars(g::AbstractGrid{T}) where T
-  v = ForcedVars(g)
+function StochasticForcedVars(g; T=typeof(g.Lx))
+  v = ForcedVars(g; T=T)
   prevsol = zeros(Complex{T}, (g.nkr, g.nl))
   StochasticForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., prevsol)
 end
@@ -172,7 +195,7 @@ function addforcing!(N, sol, t, cl, v::StochasticForcedVars, p, g)
     @. v.prevsol = sol # sol at previous time-step is needed to compute budgets for stochastic forcing
     p.calcF!(v.Fh, sol, t, cl, v, p, g)
   end
-  @. N += v.F
+  @. N += v.Fh
   nothing
 end
 
@@ -250,7 +273,7 @@ end
     work(prob)
     work(sol, v, g)
 
-Returns the domain-averaged rate of work of energy by the forcing `F`.
+Returns the domain-averaged rate of work of energy by the forcing Fh.
 """
 @inline function work(sol, v::ForcedVars, g)
   @. v.uh = g.invKrsq * sol * conj(v.Fh)
@@ -268,7 +291,7 @@ end
 """
     drag(prob)
 
-Returns the extraction of domain-averaged energy by drag/hypodrag `mu`.
+Returns the extraction of domain-averaged energy by drag/hypodrag mu.
 """
 @inline function drag(prob)
   sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid

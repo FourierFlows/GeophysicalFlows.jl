@@ -7,8 +7,6 @@ export
 
   energy,
   enstrophy,
-  energy00,
-  enstrophy00,
   dissipation,
   work,
   drag
