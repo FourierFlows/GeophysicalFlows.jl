@@ -133,5 +133,5 @@ println((time()-startwalltime))
 
 plot_output(prob, fig, axs; drawcolorbar=false)
 
-savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
+savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename, dpi=240)
