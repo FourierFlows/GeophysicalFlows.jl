@@ -40,7 +40,7 @@ All modules provide solvers on two-dimensional domains. We currently provide
 * `TwoDTurb`: the two-dimensional vorticity equation.
 * `BarotropicQG`: the barotropic quasi-geostrophic equation, which generalizes `TwoDTurb` to cases with topography and Coriolis parameters of the form `f = f₀ + βy`.
 * `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
-* `MultilayerQG`: a multi-layer quasi-geostrophic model over topography and with ability to impose a zonal flow `u_n(y)` in each layer.
+* `MultilayerQG`: a multi-layer quasi-geostrophic model over topography and with ability to impose a zonal flow `U_n(y)` in each layer.
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
