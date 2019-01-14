@@ -7,7 +7,8 @@ export
   invtransform!,
   streamfunctionfrompv!,
   pvfromstreamfunction!,
-  ars!,
+  updatevars!,
+
   set_q!,
   set_psi!,
   energies,
