@@ -153,8 +153,17 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.
   isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.psi, ψf, rtol=rtol_multilayerqg)
 end
 
+"""
+    test_mqg_linearadvection(dt, stepper; kwargs...)
 
-
+Tests the advection term of the linearized equations by timestepping a test
+problem with timestep dt and timestepper identified by the string stepper.
+The test 2-layer problem is derived by picking a solution q1f, q2f (with
+streamfunctions ψ1f, ψ2f) for which the advection terms J(ψn, qn) are non-zero.
+Next, a forcing Ff is derived such that a solution to the problem forced by this
+Ff is then qf. (This solution may not be realized, at least at long times, if it
+is unstable.)
+"""
 function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
   tf = 0.5
   nt = round(Int, tf/dt)
@@ -228,8 +237,12 @@ function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, 
   isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.psi, ψf, rtol=rtol_multilayerqg)
 end
 
+"""
+    test_mqg_energies(dt, stepper; kwargs...)
 
-
+Tests the kinetic (KE) and potential (PE) energies function by constructing a
+2-layer problem and initializing it with a flow field whose KE and PE are known.
+"""
 function test_mqg_energies(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
   nx, ny = 64, 66
   Lx, Ly = 2π, 2π
@@ -259,6 +272,12 @@ function test_mqg_energies(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlay
   isapprox(KE[1], 61/640*1e-6, rtol=rtol_multilayerqg) && isapprox(KE[2], 3*1e-6, rtol=rtol_multilayerqg) && isapprox(PE[1], 1025/1152*1e-6, rtol=rtol_multilayerqg)
 end
 
+"""
+    test_mqg_fluxes(dt, stepper; kwargs...)
+
+Tests the lateral and vertical eddy fluxes by constructing a 2-layer problem and
+initializing it with a flow field whose fluxes are known.
+"""
 function test_mqg_fluxes(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
   nx, ny = 128, 126
   Lx, Ly = 2π, 2π
@@ -286,4 +305,46 @@ function test_mqg_fluxes(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayer
   lateralfluxes, verticalfluxes = MultilayerQG.fluxes(prob)
 
   isapprox(lateralfluxes[1], 0, atol=1e-12) && isapprox(lateralfluxes[2], 0, atol=1e-12) && isapprox(verticalfluxes[1], -0.04763511558, rtol=1e-6)
+end
+
+"""
+    test_setqsetpsi(dt, stepper; kwargs...)
+
+Tests the set_q!() and set_psi!() functions that initialize sol with a flow with
+given `q` or `psi` respectively.
+"""
+function test_setqsetpsi(;dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
+  nx, ny = 32, 34
+  L = 2π
+  gr = TwoDGrid(nx, L, ny, L)
+
+  x, y = gridpoints(gr)
+  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
+
+    nlayers = 2       # these choice of parameters give the
+    f0, g = 1, 1      # desired PV-streamfunction relations
+     H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
+   rho = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+
+  prob = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, rho=rho)
+  sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
+
+  f1 = @. 2cos(k0*x)*cos(l0*y)
+  f2 = @.  cos(k0*x+π/10)*cos(2l0*y)
+  f = zeros(gr.nx, gr.ny, nlayers)
+  f[:, :, 1] .= f1
+  f[:, :, 2] .= f2
+
+  ψtest = zeros(size(f))
+  MultilayerQG.set_psi!(prob, f)
+  @. vs.qh = sol
+  MultilayerQG.streamfunctionfrompv!(vs.psih, vs.qh, pr.invS, gr)
+  MultilayerQG.invtransform!(ψtest, vs.psih, pr)
+
+  qtest = zeros(size(f))
+  MultilayerQG.set_q!(prob, f)
+  @. vs.qh = sol
+  MultilayerQG.invtransform!(qtest, vs.qh, pr)
+
+  isapprox(ψtest, f, rtol=rtol_multilayerqg) && isapprox(qtest, f, rtol=rtol_multilayerqg)
 end
