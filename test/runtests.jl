@@ -89,6 +89,7 @@ end
   @test test_mqg_energies()
   @test test_mqg_fluxes()
   @test test_setqsetpsi()
+  @test test_paramsconstructor()
 end
 
 end # time

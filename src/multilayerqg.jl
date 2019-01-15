@@ -107,13 +107,12 @@ end
 
 struct SinglelayerParams{T} <: BarotropicParams
   # prescribed params
-  nlayers::Int               # Number of fluid layers
   g::T                       # Gravitational constant
   f0::T                      # Constant planetary vorticity
   beta::T                    # Planetary vorticity y-gradient
-  rho::Array{T,3}            # Array with density of each fluid layer
-  H::Array{T,3}              # Array with rest height of each fluid layer
-  U::Array{T,3}              # Array with imposed constant zonal flow U in each fluid layer
+  rho::T                     # Fluid layer density
+  H::T                       # Fluid layer rest height
+  U::Array{T,1}              # Imposed constant zonal flow U(y)
   eta::Array{T,2}            # Array containing topographic PV
   mu::T                      # Linear bottom drag
   nu::T                      # Viscosity coefficient
@@ -121,8 +120,8 @@ struct SinglelayerParams{T} <: BarotropicParams
   calcFq!::Function          # Function that calculates the forcing on QGPV q
 
   # derived params
-  Qx::Array{T,3}             # Array containing zonal PV gradient due to beta, U, and eta in each fluid layer
-  Qy::Array{T,3}             # Array containing meridional PV gradient due to beta, U, and eta in each fluid layer
+  Qx::Array{T,2}             # Array containing zonal PV gradient due to beta, U, and eta in each fluid layer
+  Qy::Array{T,2}             # Array containing meridional PV gradient due to beta, U, and eta in each fluid layer
   rfftplan::FFTW.rFFTWPlan{Float64,-1,false,2}  # rfft plan for FFTs
 end
 
@@ -169,7 +168,7 @@ function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, mu, nu, nnu, g
   rfftplanlayered = plan_rfft(Array{T,3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
 
   if nlayers == 1
-    SinglelayerParams{T}(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, calcFq, Qx, Qy, grid.rfftplan)
+    SinglelayerParams{T}(g, f0, beta, rho, H, U, eta, mu, nu, nnu, calcFq, Qx, Qy, grid.rfftplan)
   else
     Params{T}(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, calcFq, greduced, Qx, Qy, S, invS, rfftplanlayered)
   end

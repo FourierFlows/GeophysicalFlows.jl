@@ -348,3 +348,35 @@ function test_setqsetpsi(;dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers
 
   isapprox(ψtest, f, rtol=rtol_multilayerqg) && isapprox(qtest, f, rtol=rtol_multilayerqg)
 end
+
+"""
+    test_paramsconstructor(; kwargs...)
+
+Tests that `Params` constructor works with both mean flow `U` being a floats
+(i.e., constant `U` in each layer) or vectors (i.e., `U(y)` in each layer).
+"""
+function test_paramsconstructor(;dt=0.001, stepper="ForwardEuler")
+  nx, ny = 32, 34
+  L = 2π
+  gr = TwoDGrid(nx, L, ny, L)
+
+    nlayers = 2       # these choice of parameters give the
+    f0, g = 1, 1      # desired PV-streamfunction relations
+     H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
+   rho = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+
+   U1, U2 = 0.1, 0.05
+
+   Uvectors = zeros(ny, nlayers)
+   Uvectors[:, 1] .= U1
+   Uvectors[:, 2] .= U2
+
+   Ufloats = zeros(nlayers)
+   Ufloats[1] = U1
+   Ufloats[2] = U2
+
+  probUvectors = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, rho=rho, U=Uvectors)
+  probUfloats = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, rho=rho, U=Ufloats)
+
+  isapprox(probUfloats.params.U, probUvectors.params.U, rtol=rtol_multilayerqg)
+end
