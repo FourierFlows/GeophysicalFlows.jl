@@ -49,19 +49,6 @@ where
 \end{pmatrix}
 ```
 
-The kinetic energy in each layer is:
-
-```math
-\textrm{KE}_j = \dfrac{H_j}{H} \int \dfrac1{2} |\boldsymbol{\nabla}\psi_j|^2 \frac{\mathrm{d}^2\boldsymbol{x}}{L_x L_y},\quad j=1,\dots,n,
-```
-
-while the potential energy related to each of fluid interface is
-
-```math
-\textrm{PE}_{j+1/2} = \int \dfrac1{2} \dfrac{f_0^2}{g'_{j+1/2}} (\psi_j-\psi_{j+1})^2 \frac{\mathrm{d}^2\boldsymbol{x}}{L_x L_y},\quad j=1,\dots,n-1.
-```
-
-
 Including an imposed zonal flow $U_j(y)$ in each layer the equations of motion are:
 
 ```math
@@ -73,6 +60,31 @@ with
 ```math
 \partial_y Q_j \equiv \beta - \partial_y^2 U_j - (1-\delta_{j,1})F_{j-1/2, j} (U_{j-1}-U_j) - (1-\delta_{j,n})F_{j+1/2, j} (U_{j+1}-U_j) + \delta_{j,n}\partial_y\eta, \\
 \partial_x Q_j \equiv \delta_{j,n}\partial_x\eta.
+```
+
+The eddy kinetic energy in each layer is:
+
+```math
+\textrm{KE}_j = \dfrac{H_j}{H} \int \dfrac1{2} |\boldsymbol{\nabla}\psi_j|^2 \frac{\mathrm{d}^2\boldsymbol{x}}{L_x L_y},\quad j=1,\dots,n,
+```
+
+while the eddy potential energy related to each of fluid interface is
+
+```math
+\textrm{PE}_{j+1/2} = \int \dfrac1{2} \dfrac{f_0^2}{g'_{j+1/2}} (\psi_j-\psi_{j+1})^2 \frac{\mathrm{d}^2\boldsymbol{x}}{L_x L_y},\quad j=1,\dots,n-1.
+```
+
+The lateral eddy fluxes in each layer are:
+
+```math
+\textrm{lateralfluxes}_j = \dfrac{H_j}{H} \int \dfrac1{2} U_j\,\upsilon_j \,\partial_y u_j \frac{\mathrm{d}^2\boldsymbol{x}}{L_x L_y},\quad j=1,\dots,n,
+```
+
+while the vertical fluxes accros fluid interfaces are:
+
+```math
+\textrm{verticalfluxes}_{j+1/2} = \int \dfrac{f_0^2}{g'_{j+1/2} H} (U_j-U_{j+1})\,\upsilon_{j+1}\,\psi_{j} \frac{\mathrm{d}^2\boldsymbol{x}}{L_x L_y},\quad j=1,\dots,n-1.
+
 ```
 
 
