@@ -367,13 +367,13 @@ function test_paramsconstructor(;dt=0.001, stepper="ForwardEuler")
 
    U1, U2 = 0.1, 0.05
 
-   Uvectors = zeros(ny, nlayers)
-   Uvectors[:, 1] .= U1
-   Uvectors[:, 2] .= U2
+  Uvectors = zeros(ny, nlayers)
+  Uvectors[:, 1] .= U1
+  Uvectors[:, 2] .= U2
 
-   Ufloats = zeros(nlayers)
-   Ufloats[1] = U1
-   Ufloats[2] = U2
+  Ufloats = zeros(nlayers)
+  Ufloats[1] = U1
+  Ufloats[2] = U2
 
   probUvectors = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, rho=rho, U=Uvectors)
   probUfloats = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, rho=rho, U=Ufloats)
