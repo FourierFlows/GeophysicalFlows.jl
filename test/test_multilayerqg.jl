@@ -50,7 +50,7 @@ function test_pvtofromstreamfunction()
     H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
   rho = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  prob = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=n, Lx=L, f0=f0, g=g, H=H, rho=rho)
+  prob = MultilayerQG.Problem(nlayers=nlayers, nx=n, Lx=L, f0=f0, g=g, H=H, rho=rho)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
@@ -133,7 +133,7 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.
     nothing
   end
 
-  prob = MultilayerQG.ForcedProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0,
+  prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0,
           g=g, H=H, rho=rho, U=U, eta=η, beta=beta, mu=mu, nu=nu, nnu=nnu, calcFq=calcFq!)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
@@ -216,7 +216,7 @@ function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, 
     nothing
   end
 
-  prob = MultilayerQG.ForcedProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0,
+  prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0,
           g=g, H=H, rho=rho, U=U, eta=η, beta=beta, mu=mu, nu=nu, nnu=nnu, calcFq=calcFq!, linear=true)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
@@ -256,7 +256,7 @@ function test_mqg_energies(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlay
      H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
    rho = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  prob = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, rho=rho)
+  prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, rho=rho)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
@@ -293,7 +293,7 @@ function test_mqg_fluxes(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayer
      U = zeros(ny, nlayers)
      U[:, 1] = @. sech(gr.y/0.2)^2
 
-  prob = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, rho=rho, U=U)
+  prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, rho=rho, U=U)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1 = @. cos(k0*x)*cos(l0*y)
@@ -326,7 +326,7 @@ function test_setqsetpsi(;dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers
      H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
    rho = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  prob = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, rho=rho)
+  prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, rho=rho)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   f1 = @. 2cos(k0*x)*cos(l0*y)
@@ -375,8 +375,8 @@ function test_paramsconstructor(;dt=0.001, stepper="ForwardEuler")
   Ufloats[1] = U1
   Ufloats[2] = U2
 
-  probUvectors = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, rho=rho, U=Uvectors)
-  probUfloats = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, rho=rho, U=Ufloats)
+  probUvectors = MultilayerQG.Problem(nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, rho=rho, U=Uvectors)
+  probUfloats = MultilayerQG.Problem(nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, rho=rho, U=Ufloats)
 
   isapprox(probUfloats.params.U, probUvectors.params.U, rtol=rtol_multilayerqg)
 end

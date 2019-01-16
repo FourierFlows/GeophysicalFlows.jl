@@ -25,12 +25,7 @@ using LinearAlgebra: mul!, ldiv!
 using FFTW: rfft, irfft
 using FourierFlows: getfieldspecs, varsexpression, parsevalsum, parsevalsum2, superzeros
 
-const physicalvars = [:q, :psi, :u, :v]
-const fouriervars = [ Symbol(var, :h) for var in physicalvars ]
-const forcedfouriervars = cat(fouriervars, [:Fqh], dims=1)
-
 nothingfunction(args...) = nothing
-
 
 """
     Problem(; parameters...)
@@ -64,20 +59,12 @@ function Problem(;
            T = Float64)
 
    grid = TwoDGrid(nx, Lx, ny, Ly; T=T)
-   if calcFq == nothingfunction
-     params = Params(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, grid)
-     vars = Vars(grid, params)
-   else
-     params = Params(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, grid, calcFq=calcFq)
-     vars = ForcedVars(grid, params)
-   end
-   eqn = Equation(params, grid; linear=linear)
+   params = Params(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, grid, calcFq=calcFq)
+   vars = calcFq == nothingfunction ? Vars(grid, params) : ForcedVars(grid, params)
+   eqn = linear ? LinearEquation(params, grid) : Equation(params, grid)
 
   FourierFlows.Problem(eqn, stepper, dt, grid, vars, params)
 end
-
-InitialValueProblem(; kwargs...) = Problem(; kwargs...)
-ForcedProblem(; kwargs...) = Problem(; kwargs...)
 
 abstract type BarotropicParams <: AbstractParams end
 
@@ -105,7 +92,7 @@ struct Params{T} <: AbstractParams
   rfftplan::FFTW.rFFTWPlan{Float64,-1,false,3}  # rfft plan for FFTs
 end
 
-struct SinglelayerParams{T} <: BarotropicParams
+struct SingleLayerParams{T} <: BarotropicParams
   # prescribed params
   g::T                       # Gravitational constant
   f0::T                      # Constant planetary vorticity
@@ -135,8 +122,8 @@ function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, mu, nu, nnu, g
   # greduced = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[1:nlayers-1] # definition match PYQG
   greduced = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[2:nlayers] # correct definition
 
-  Fm = @. f0^2 ./ ( greduced*H[2:nlayers  ] )
-  Fp = @. f0^2 ./ ( greduced*H[1:nlayers-1] )
+  Fm = @. f0^2 / ( greduced*H[2:nlayers  ] )
+  Fp = @. f0^2 / ( greduced*H[1:nlayers-1] )
 
   rho = reshape(rho, (1,  1, nlayers))
   H = reshape(H, (1,  1, nlayers))
@@ -153,7 +140,7 @@ function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, mu, nu, nnu, g
 
   Qy = zeros(nx, ny, nlayers)
   Qy[:, :, 1] = @. beta - Uyy[:, :, 1] - Fp[1]*( U[:, :, 2] - U[:, :, 1] )
-  for j=2:nlayers-1
+  for j = 2:nlayers-1
     Qy[:, :, j] = @. beta - Uyy[:, :, j] - Fp[j]*( U[:, :, j+1] - U[:, :, j] ) - Fm[j-1]*( U[:, :, j-1] - U[:, :, j] )
   end
   @views Qy[:, :, nlayers] = @. beta - Uyy[:, :, nlayers] - Fm[nlayers-1]*( U[:, :, nlayers-1] - U[:, :, nlayers] )
@@ -168,7 +155,7 @@ function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, mu, nu, nnu, g
   rfftplanlayered = plan_rfft(Array{T,3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
 
   if nlayers == 1
-    SinglelayerParams{T}(g, f0, beta, rho, H, U, eta, mu, nu, nnu, calcFq, Qx, Qy, grid.rfftplan)
+    SingleLayerParams{T}(g, f0, beta, rho, H, U, eta, mu, nu, nnu, calcFq, Qx, Qy, grid.rfftplan)
   else
     Params{T}(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, calcFq, greduced, Qx, Qy, S, invS, rfftplanlayered)
   end
@@ -185,18 +172,24 @@ end
 # Equations
 # ---------
 
-function Equation(p, g::AbstractGrid{T}; linear=false) where T
-  L = Array{Complex{T}}(undef, (g.nkr, g.nl, p.nlayers))
-  @. L = - p.nu*g.Krsq^p.nnu
-  @views L[1, 1, :] .= 0
-  if linear==true
-    FourierFlows.Equation(L, calcNlinear!, g)
-  else
-    FourierFlows.Equation(L, calcN!, g)
-  end
+function hyperdissipation(nu, nnu, Krsq, nkr, nl, nlayers, T)
+  L = Array{Complex{T}}(undef, (nkr, nl, nlayers))
+  @. L = -nu*Krsq^nnu
+  @views @. L[1, 1, :] = 0
+  L
 end
 
-function Equation(p::SinglelayerParams, g::AbstractGrid{T}) where T
+function LinearEquation(p, g::AbstractGrid{T}) where T
+  L = hyperdissipation(p.nu, p.nnu, g.Krsq, g.nkr, g.nl, p.nlayers, T)
+  FourierFlows.Equation(L, calcNlinear!, g)
+end
+
+function Equation(p, g::AbstractGrid{T}) where T
+  L = hyperdissipation(p.nu, p.nnu, g.Krsq, g.nkr, g.nl, p.nlayers, T)
+  FourierFlows.Equation(L, calcN!, g)
+end
+
+function Equation(p::SingleLayerParams, g::AbstractGrid{T}) where T
   L = @. -p.mu - p.nu*g.Krsq^p.nnu + im*p.beta*g.kr*g.invKrsq
   L[1, 1] = 0
   FourierFlows.Equation(L, calcN!, g)
@@ -208,6 +201,10 @@ end
 # ----
 
 abstract type BarotropicVars <: AbstractVars end
+
+const physicalvars = [:q, :psi, :u, :v]
+const fouriervars = [ Symbol(var, :h) for var in physicalvars ]
+const forcedfouriervars = cat(fouriervars, [:Fqh], dims=1)
 
 varspecs = cat(
   getfieldspecs(physicalvars, :(Array{T,3})),
@@ -227,7 +224,7 @@ singlelayervarsspecs = cat(
 # Construct Vars types
 eval(varsexpression(:Vars, physicalvars, fouriervars))
 eval(varsexpression(:ForcedVars, physicalvars, forcedfouriervars))
-eval(varsexpression(:SinglelayerVars, singlelayervarsspecs; parent=:BarotropicVars, typeparams=:T))
+eval(varsexpression(:SingleLayerVars, singlelayervarsspecs; parent=:BarotropicVars, typeparams=:T))
 
 """
     Vars(g)
@@ -251,15 +248,13 @@ function ForcedVars(g::AbstractGrid{T}, p) where T
   ForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., Fqh)
 end
 
-function SinglelayerVars(g::AbstractGrid{T}) where T
+function SingleLayerVars(g::AbstractGrid{T}) where T
   @zeros T (g.nx, g.ny) q psi u v
   @zeros Complex{T} (g.nkr, g.nl) qh psih uh vh
-  SinglelayerParams(q, psi, u, v, qh, psih, uh, vh)
+  SingleLayerParams(q, psi, u, v, qh, psih, uh, vh)
 end
 
-
 fwdtransform!(varh, var, p::AbstractParams) = mul!(varh, p.rfftplan, var)
-
 invtransform!(var, varh, p::AbstractParams) = ldiv!(var, p.rfftplan, varh)
 
 function streamfunctionfrompv!(psih, qh, invS, g)
@@ -316,12 +311,14 @@ end
 
 function calcN!(N, sol, t, cl, v, p, g)
   calcN_advection!(N, sol, v, p, g)
+  @views @. N[:, :, p.nlayers] += p.mu*g.Krsq*v.psih[:, :, p.nlayers]   # bottom linear drag
   addforcing!(N, sol, t, cl, v, p, g)
   nothing
 end
 
 function calcNlinear!(N, sol, t, cl, v, p, g)
   calcN_linearadvection!(N, sol, v, p, g)
+  @views @. N[:, :, p.nlayers] += p.mu*g.Krsq*v.psih[:, :, p.nlayers]   # bottom linear drag
   addforcing!(N, sol, t, cl, v, p, g)
   nothing
 end
@@ -343,12 +340,12 @@ function calcN_advection!(N, sol, v, p, g)
   @. v.u += p.U                           # add the imposed zonal flow
   @. v.q = v.u*p.Qx
   fwdtransform!(v.uh, v.q, p)
-  @. N = -v.uh                                   # -(U+u)*∂Q/∂x
+  @. N = -v.uh                          # -(U+u)*∂Q/∂x
 
   invtransform!(v.v, v.vh, p)
   @. v.q = v.v*p.Qy
   fwdtransform!(v.vh, v.q, p)
-  @. N -= v.vh                                  # -v*∂Q/∂y
+  @. N -= v.vh                          # -v*∂Q/∂y
 
   invtransform!(v.q, v.qh, p)
 
@@ -358,9 +355,9 @@ function calcN_advection!(N, sol, v, p, g)
   fwdtransform!(v.uh, v.u, p)
   fwdtransform!(v.vh, v.v, p)
 
-  @. N -= im*g.kr*v.uh + im*g.l*v.vh  # -∂[(U+u)q]/∂x-∂[vq]/∂y
+  @. N -= im*g.kr*v.uh + im*g.l*v.vh    # -∂[(U+u)q]/∂x-∂[vq]/∂y
 
-  @views @. N[:, :, p.nlayers] += p.mu*g.Krsq*v.psih[:, :, p.nlayers]   # bottom linear drag
+  nothing
 end
 
 
@@ -378,15 +375,15 @@ function calcN_linearadvection!(N, sol, v, p, g)
   @. v.vh =  im*g.kr*v.psih
 
   invtransform!(v.u, v.uh, p)
-  @. v.u += p.U                           # add the imposed zonal flow
+  @. v.u += p.U                        # add the imposed zonal flow
   @. v.q = v.u*p.Qx
   fwdtransform!(v.uh, v.q, p)
-  @. N = -v.uh                            # -(U+u)*∂Q/∂x
+  @. N = -v.uh                         # -(U+u)*∂Q/∂x
 
   invtransform!(v.v, v.vh, p)
   @. v.q = v.v*p.Qy
   fwdtransform!(v.vh, v.q, p)
-  @. N -= v.vh                            # -v*∂Q/∂y
+  @. N -= v.vh                         # -v*∂Q/∂y
 
   invtransform!(v.q, v.qh, p)
   @. v.u = p.U
@@ -394,9 +391,9 @@ function calcN_linearadvection!(N, sol, v, p, g)
 
   fwdtransform!(v.uh, v.u, p)
 
-  @. N -= im*g.kr*v.uh  # -∂[U*q]/∂x
+  @. N -= im*g.kr*v.uh                 # -∂[U*q]/∂x
 
-  @views @. N[:, :, p.nlayers] += p.mu*g.Krsq*v.psih[:, :, p.nlayers]   # bottom linear drag
+  nothing
 end
 
 addforcing!(N, sol, t, cl, v::Vars, p, g) = nothing

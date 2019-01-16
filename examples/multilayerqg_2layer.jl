@@ -38,7 +38,7 @@ x, y = gridpoints(gr)
 k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
 
 # Initialize problem
-prob = MultilayerQG.InitialValueProblem(nlayers=nlayers, nx=nx, Lx=Lx, f0=f0, g=g, H=H, rho=rho, U=U, dt=dt, stepper=stepper, mu=mu, beta=beta)
+prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, Lx=Lx, f0=f0, g=g, H=H, rho=rho, U=U, dt=dt, stepper=stepper, mu=mu, beta=beta)
 sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
 # Files
