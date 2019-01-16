@@ -45,7 +45,7 @@ sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 filepath = "."
 plotpath = "./plots_2layer"
 plotname = "snapshots"
-filename = joinpath(filepath, "2layer.jl.jld2")
+filename = joinpath(filepath, "2layer.jld2")
 
 # File management
 if isfile(filename); rm(filename); end
