@@ -2,7 +2,7 @@ module TwoDTurb
 
 export
   Problem,
-  set_q!,
+  set_zeta!,
   updatevars!,
 
   energy,
@@ -22,7 +22,7 @@ using FourierFlows: getfieldspecs, structvarsexpr, parsevalsum, parsevalsum2
 
 abstract type TwoDTurbVars <: AbstractVars end
 
-const physicalvars = [:q, :u, :v]
+const physicalvars = [:zeta, :u, :v]
 const transformvars = [ Symbol(var, :h) for var in physicalvars ]
 const forcedvars = [:Fh]
 const stochforcedvars = [:prevsol]
@@ -90,9 +90,9 @@ Params(nu, nnu) = Params(nu, nnu, typeof(nu)(0), 0, nothingfunction)
 Returns the equation for two-dimensional turbulence with params p and grid g.
 """
 function Equation(p::Params, g::AbstractGrid{T}) where T
-  LC = @. - p.nu*g.Krsq^p.nnu - p.mu*g.Krsq^p.nmu
-  LC[1, 1] = 0
-  FourierFlows.Equation(LC, calcN!, g)
+  L = @. - p.nu*g.Krsq^p.nnu - p.mu*g.Krsq^p.nmu
+  L[1, 1] = 0
+  FourierFlows.Equation(L, calcN!, g)
 end
 
 
@@ -119,9 +119,9 @@ eval(structvarsexpr(:StochasticForcedVars, stochforcedvarspecs; parent=:TwoDTurb
 Returns the vars for unforced two-dimensional turbulence with grid g.
 """
 function Vars(g; T=typeof(g.Lx))
-  @createarrays T (g.nx, g.ny) q u v
-  @createarrays Complex{T} (g.nkr, g.nl) sol qh uh vh
-  Vars(q, u, v, qh, uh, vh)
+  @createarrays T (g.nx, g.ny) zeta u v
+  @createarrays Complex{T} (g.nkr, g.nl) sol zetah uh vh
+  Vars(zeta, u, v, zetah, uh, vh)
 end
 
 """
@@ -160,17 +160,17 @@ Calculates the advection term.
 function calcN_advection!(N, sol, t, cl, v, p, g)
   @. v.uh =  im * g.l  * g.invKrsq * sol
   @. v.vh = -im * g.kr * g.invKrsq * sol
-  @. v.qh = sol
+  @. v.zetah = sol
 
   ldiv!(v.u, g.rfftplan, v.uh)
   ldiv!(v.v, g.rfftplan, v.vh)
-  ldiv!(v.q, g.rfftplan, v.qh)
+  ldiv!(v.zeta, g.rfftplan, v.zetah)
 
-  @. v.u *= v.q # U*q
-  @. v.v *= v.q # V*q
+  @. v.u *= v.zeta # u*zeta
+  @. v.v *= v.zeta # v*zeta
 
-  mul!(v.uh, g.rfftplan, v.u) # \hat{U*q}
-  mul!(v.vh, g.rfftplan, v.v) # \hat{U*q}
+  mul!(v.uh, g.rfftplan, v.u) # \hat{u*zeta}
+  mul!(v.vh, g.rfftplan, v.v) # \hat{v*zeta}
 
   @. N = -im*g.kr*v.uh - im*g.l*v.vh
   nothing
@@ -211,24 +211,24 @@ Update the vars in v on the grid g with the solution in sol.
 """
 function updatevars!(prob)
   v, g, sol = prob.vars, prob.grid, prob.sol
-  v.qh .= sol
+  v.zetah .= sol
   @. v.uh =  im * g.l  * g.invKrsq * sol
   @. v.vh = -im * g.kr * g.invKrsq * sol
-  ldiv!(v.q, g.rfftplan, deepcopy(v.qh))
+  ldiv!(v.zeta, g.rfftplan, deepcopy(v.zetah))
   ldiv!(v.u, g.rfftplan, deepcopy(v.uh))
   ldiv!(v.v, g.rfftplan, deepcopy(v.vh))
   nothing
 end
 
 """
-    set_q!(prob, q)
+    set_zeta!(prob, zeta)
 
-Set the solution sol as the transform of q and update variables v
+Set the solution sol as the transform of zeta and update variables v
 on the grid g.
 """
-function set_q!(prob, q)
+function set_zeta!(prob, zeta)
   p, v, g, sol = prob.params, prob.vars, prob.grid, prob.sol
-  mul!(sol, g.rfftplan, q)
+  mul!(sol, g.rfftplan, zeta)
   sol[1, 1] = 0 # zero domain average
   updatevars!(prob)
   nothing

@@ -18,7 +18,7 @@ ntot = 10nint   # Number of total timesteps
 
 # Define problem
 prob = TwoDTurb.Problem(nx=nx, Lx=Lx, nu=nu, nnu=nnu, dt=dt, stepper="FilteredRK4")
-TwoDTurb.set_q!(prob, rand(nx, nx))
+TwoDTurb.set_zeta!(prob, rand(nx, nx))
 
 cl, vs, gr = prob.clock, prob.vars, prob.grid
 x, y = gridpoints(gr)
@@ -27,7 +27,7 @@ x, y = gridpoints(gr)
 function makeplot!(ax, prob)
   sca(ax)
   cla()
-  pcolormesh(x, y, vs.q)
+  pcolormesh(x, y, vs.zeta)
   title("Vorticity")
   xlabel(L"x")
   ylabel(L"y")
@@ -56,7 +56,7 @@ kr, Ehr = FourierFlows.radialspectrum(Eh, gr, refinement=1)
 fig2, axs = subplots(ncols=2, figsize=(8, 4))
 
 sca(axs[1])
-pcolormesh(x, y, vs.q)
+pcolormesh(x, y, vs.zeta)
 xlabel(L"x")
 ylabel(L"y")
 title("Vorticity")
