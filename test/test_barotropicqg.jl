@@ -276,13 +276,12 @@ function test_bqg_energyenstrophy()
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
   g  = TwoDGrid(nx, Lx, ny, Ly)
-  k0 = g.k[2] # fundamental wavenumber
-  l0 = g.l[2] # fundamental wavenumber
+  k0, l0 = g.k[2], g.l[2] # fundamental wavenumbers
   x, y = gridpoints(g)
 
-    eta = @. cos(10*k0*x)*cos(10*l0*y)
-   psi0 = @. sin(2*k0*x)*cos(2*l0*y) + 2sin(k0*x)*cos(3*l0*y)
-  zeta0 = @. -((2*k0)^2+(2*l0)^2)*sin(2*k0*x)*cos(2*l0*y) - (k0^2+(3*l0)^2)*2sin(k0*x)*cos(3*l0*y)
+    eta = @. cos(10k0*x)*cos(10l0*y)
+   psi0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
+  zeta0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
 
   prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta = eta, stepper="ForwardEuler")
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
@@ -304,7 +303,7 @@ function test_bqg_meanenergyenstrophy()
 
   calcFU(t) = 0.0
   eta(x, y) = @. cos(10x)*cos(10y)
-  psi0 = @. sin(2*k0*x)*cos(2*l0*y) + 2sin(k0*x)*cos(3*l0*y)
+  psi0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
  zeta0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
   beta = 10.0
   U = 1.2

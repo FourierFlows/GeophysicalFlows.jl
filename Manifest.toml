@@ -63,9 +63,9 @@ version = "0.7.0"
 
 [[DataStructures]]
 deps = ["InteractiveUtils", "OrderedCollections", "Random", "Serialization", "Test"]
-git-tree-sha1 = "8fc6e166e24fda04b2b648d4260cdad241788c54"
+git-tree-sha1 = "ca971f03e146cf144a9e2f2ce59674f5bf0e8038"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.14.0"
+version = "0.15.0"
 
 [[Dates]]
 deps = ["Printf"]
@@ -87,9 +87,9 @@ version = "0.2.4"
 
 [[FileIO]]
 deps = ["Pkg", "Random", "Test"]
-git-tree-sha1 = "1a114d08094e7267ba8d4d684f930d5a722184de"
+git-tree-sha1 = "c94b0787956629036fb2b20fccde9e52b89d079a"
 uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.0.4"
+version = "1.0.5"
 
 [[FixedPointNumbers]]
 deps = ["Test"]
@@ -203,9 +203,9 @@ version = "1.18.5"
 
 [[PyPlot]]
 deps = ["Colors", "Compat", "LaTeXStrings", "PyCall", "VersionParsing"]
-git-tree-sha1 = "777c48006c57c8bd322d2032267085983a5fd50f"
+git-tree-sha1 = "dd9f4a0bba3933f907640a567e1ce2a8ab44c58c"
 uuid = "d330b81b-6aea-500a-939a-2ce795aea3ee"
-version = "2.6.3"
+version = "2.7.0"
 
 [[REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets"]

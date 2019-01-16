@@ -10,14 +10,15 @@ using
 import # use 'import' rather than 'using' for submodules to keep namespace clean
   GeophysicalFlows.TwoDTurb,
   GeophysicalFlows.BarotropicQG,
-  GeophysicalFlows.BarotropicQGQL
+  GeophysicalFlows.BarotropicQGQL,
+  GeophysicalFlows.MultilayerQG
 
 using FourierFlows: parsevalsum, xmoment, ymoment
 using GeophysicalFlows: lambdipole, peakedisotropicspectrum
 
 const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
-const rtol_niwqg = 1e-13 # tolerance for niwqg forcing tests
-const rtol_twodturb = 1e-13 # tolerance for niwqg forcing tests
+const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
+const rtol_twodturb = 1e-13 # tolerance for twodturb forcing tests
 
 "Get the CFL number, assuming a uniform grid with `dx=dy`."
 cfl(u, v, dt, dx) = maximum([maximum(abs.(u)), maximum(abs.(v))]*dt/dx)
@@ -77,6 +78,18 @@ end
   @test test_bqgql_stochasticforcingbudgets()
   @test test_bqgql_advection(0.0005, "ForwardEuler")
   @test test_bqgql_energyenstrophy()
+end
+
+@testset "MultilayerQG" begin
+  include("test_multilayerqg.jl")
+
+  @test test_pvtofromstreamfunction()
+  @test test_mqg_nonlinearadvection(0.001, "ForwardEuler")
+  @test test_mqg_linearadvection(0.001, "ForwardEuler")
+  @test test_mqg_energies()
+  @test test_mqg_fluxes()
+  @test test_setqsetpsi()
+  @test test_paramsconstructor()
 end
 
 end # time

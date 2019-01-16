@@ -19,7 +19,8 @@ sitename = "GeophysicalFlows.jl",
             "Home" => "index.md",
             "Modules" => Any[
               "modules/twodturb.md",
-              "modules/barotropicqg.md"
+              "modules/barotropicqg.md",
+              "modules/multilayerqg.md"
             ],
             "DocStrings" => Any[
             "man/types.md",

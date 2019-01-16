@@ -263,7 +263,7 @@ end
 """
     updatevars!(v, s, g)
 
-Update the vars in v on the grid g with the solution in s.sol.
+Update the vars in v on the grid g with the solution in sol.
 """
 function updatevars!(sol, v, p, g)
   v.U[] = sol[1, 1].re
@@ -289,7 +289,7 @@ updatevars!(prob) = updatevars!(prob.sol, prob.vars, prob.params, prob.grid)
     set_zeta!(prob, zeta)
     set_zeta!(s, v, g, zeta)
 
-Set the solution s.sol as the transform of zeta and update variables v
+Set the solution sol as the transform of zeta and update variables v
 on the grid g.
 """
 function set_zeta!(sol, v::Vars, p, g, zeta)
@@ -316,9 +316,9 @@ set_zeta!(prob, zeta) = set_zeta!(prob.sol, prob.vars, prob.params, prob.grid, z
 
 """
     set_U!(prob, U)
-    set_U!(s, v, g, U)
+    set_U!(sol, v, g, U)
 
-Set the (kx, ky)=(0, 0) part of solution s.sol as the domain-average zonal flow U.
+Set the (kx, ky)=(0, 0) part of solution sol as the domain-average zonal flow U.
 """
 function set_U!(sol, v, p, g, U::Float64)
   sol[1, 1] = U

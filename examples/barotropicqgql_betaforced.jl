@@ -187,5 +187,5 @@ figure(2); pcolormesh(zMean.t, y[1, :], UM)
 
 
 # save the figure as png
-# savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
+# savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 # savefig(savename)
