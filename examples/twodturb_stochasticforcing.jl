@@ -43,7 +43,7 @@ prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepp
 
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
-TwoDTurb.set_q!(prob, 0*x)
+TwoDTurb.set_zeta!(prob, 0*x)
 E = Diagnostic(energy,      prob, nsteps=nt)
 D = Diagnostic(dissipation, prob, nsteps=nt)
 R = Diagnostic(drag,        prob, nsteps=nt)
@@ -57,7 +57,7 @@ function makeplot(prob, diags)
 
   t = round(mu*cl.t, digits=2)
   sca(axs[1]); cla()
-  pcolormesh(x, y, v.q)
+  pcolormesh(x, y, v.zeta)
   xlabel(L"$x$")
   ylabel(L"$y$")
   title("\$\\nabla^2\\psi(x,y,\\mu t= $t )\$")
