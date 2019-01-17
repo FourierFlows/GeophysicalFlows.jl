@@ -14,6 +14,7 @@ matrix:
 
 after_success:
   - julia --project -e 'using Pkg; Pkg.add("Coverage"); Pkg.dir("GeophysicalFlows"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  - julia --project -e 'using Pkg; Pkg.add("Coverage"); Pkg.dir("GeophysicalFlows"); using Coverage; Codecov.submit(Codecov.process_folder())'
 
 jobs:
   include:
