@@ -15,6 +15,9 @@
     </a>
     <a href='https://coveralls.io/github/FourierFlows/GeophysicalFlows.jl?branch=master'><img src='https://coveralls.io/repos/github/FourierFlows/GeophysicalFlows.jl/badge.svg?branch=master' alt='Coverage Status' />
     </a>
+    <a href="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl">
+        <img src="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl/branch/master/graph/badge.svg" />
+    </a>
     <a href="https://doi.org/10.5281/zenodo.1463809">
         <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1463809.svg" alt="DOI">
     </a>
