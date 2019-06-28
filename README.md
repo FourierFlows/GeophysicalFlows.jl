@@ -46,4 +46,16 @@ All modules provide solvers on two-dimensional domains. We currently provide
 * `MultilayerQG`: a multi-layer quasi-geostrophic model over topography and with ability to impose a zonal flow `U_n(y)` in each layer.
 
 
+
+## Cite
+
+The code is citable via [zenodo](https://zenodo.org). Please cite as:
+
+> Navid C. Constantinou, & Gregory L. Wagner. (2018). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.2.0  (Version v0.2.0). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
+
+
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
+
+
+
+
