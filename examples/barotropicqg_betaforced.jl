@@ -18,7 +18,7 @@ nx = 256       # 2D resolution = nx^2
 stepper = "FilteredRK4"   # timestepper
 dt  = 0.01     # timestep
 nsteps = 40000 # total number of time-steps
-nsubs  = 1000   # number of time-steps for plotting
+nsubs  = 500   # number of time-steps for plotting
                # (nsteps must be multiple of nsubs)
 
 # Physical parameters
@@ -112,7 +112,10 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[2])
   cla()
-  pcolormesh(x, y, v.psi)
+  contourf(x, y, v.psi)
+  if maximum(abs.(v.psi))>0
+    contour(x, y, v.psi, colors="k")
+  end
   axis("square")
   xticks(-2:2:2)
   yticks(-2:2:2)

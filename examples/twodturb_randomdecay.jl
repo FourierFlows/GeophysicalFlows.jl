@@ -68,7 +68,7 @@ ylabel(L"\int | \hat{E} | k_r \mathrm{d} k_{\theta}")
 title("Radial energy spectrum")
 
 xlim(0, nx/4)
-axs[2][:set_yscale]("log")
+axs[2].set_yscale("log")
 
 tight_layout(w_pad=0.1)
 show()

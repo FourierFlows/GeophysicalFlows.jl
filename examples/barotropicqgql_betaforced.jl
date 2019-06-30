@@ -109,7 +109,10 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[2])
   cla()
-  pcolormesh(x, y, v.psi)
+  contourf(x, y, v.psi)
+  if maximum(abs.(v.psi))>0
+    contour(x, y, v.psi, colors="k")
+  end
   axis("square")
   xticks(-3:1:3)
   yticks(-3:1:3)
@@ -147,8 +150,8 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   plot(mu*Z.t[1:Z.i], Z.data[1:E.i], label="enstrophy")
   xlabel(L"\mu t")
   legend()
-
-  pause(0.001)
+  
+  drawnow()
 end
 
 fig, axs = subplots(ncols=3, nrows=2, figsize=(14, 8))

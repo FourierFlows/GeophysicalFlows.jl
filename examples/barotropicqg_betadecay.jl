@@ -97,7 +97,10 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[2])
   cla()
-  pcolormesh(x, y, v.psi)
+  contourf(x, y, v.psi)
+  if maximum(abs.(v.psi))>0
+    contour(x, y, v.psi, colors="k")
+  end
   axis("square")
   xticks(-2:2:2)
   yticks(-2:2:2)
