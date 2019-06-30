@@ -24,7 +24,7 @@
 
 </p>
 
-This package leverages the [FourierFlows.jl]() framework to provide modules for solving problems in
+This package leverages the [FourierFlows.jl] framework to provide modules for solving problems in
 Geophysical Fluid Dynamics on periodic domains using Fourier-based pseudospectral methods.
 
 ## Installation
