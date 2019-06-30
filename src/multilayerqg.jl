@@ -42,7 +42,7 @@ function Problem(;
     # Physical parameters
      nlayers = 2,                       # number of fluid layers
           f0 = 1.0,                     # Coriolis parameter
-        beta = 0.0,                     # Coriolis parameter y-gradient
+        beta = 0.0,                     # y-gradient of Coriolis parameter
            g = 1.0,                     # gravitational constant
            U = zeros(ny, nlayers),      # imposed zonal flow U(y) in each layer
            H = [0.2, 0.8],              # rest fluid height of each layer
@@ -84,9 +84,9 @@ struct Params{T} <: AbstractParams
   calcFq!::Function          # Function that calculates the forcing on QGPV q
 
   # derived params
-  greduced::Array{T,1}         # Array with the reduced gravity constants for each fluid interface
-  Qx::Array{T,3}             # Array containing zonal PV gradient due to beta, U, and eta in each fluid layer
-  Qy::Array{T,3}             # Array containing meridional PV gradient due to beta, U, and eta in each fluid layer
+  greduced::Array{T,1}       # Array with the reduced gravity constants for each fluid interface
+  Qx::Array{T,3}             # Array containing x-gradient of PV due to U and eta in each fluid layer
+  Qy::Array{T,3}             # Array containing y-gradient of PV due to beta, U, and eta in each fluid layer
   S::Array{T,4}              # Array containing coeffients for getting PV from  streamfunction
   invS::Array{T,4}           # Array containing coeffients for inverting PV to streamfunction
   rfftplan::FFTW.rFFTWPlan{Float64,-1,false,3}  # rfft plan for FFTs
@@ -337,7 +337,7 @@ function calcN_advection!(N, sol, v, p, g)
   @. v.vh =  im*g.kr*v.psih
 
   invtransform!(v.u, v.uh, p)
-  @. v.u += p.U                           # add the imposed zonal flow
+  @. v.u += p.U                         # add the imposed zonal flow U
   @. v.q = v.u*p.Qx
   fwdtransform!(v.uh, v.q, p)
   @. N = -v.uh                          # -(U+u)*∂Q/∂x
@@ -375,7 +375,7 @@ function calcN_linearadvection!(N, sol, v, p, g)
   @. v.vh =  im*g.kr*v.psih
 
   invtransform!(v.u, v.uh, p)
-  @. v.u += p.U                        # add the imposed zonal flow
+  @. v.u += p.U                        # add the imposed zonal flow U
   @. v.q = v.u*p.Qx
   fwdtransform!(v.uh, v.q, p)
   @. N = -v.uh                         # -(U+u)*∂Q/∂x
