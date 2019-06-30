@@ -11,26 +11,26 @@ import GeophysicalFlows.MultilayerQG: energies, fluxes
 
 
 # Numerical parameters and time-stepping parameters
-nx = 64          # 2D resolution = nx^2
+nx = 128          # 2D resolution = nx^2
 ny = nx
 
 stepper = "FilteredRK4"   # timestepper
-dt  = 1e-2     # timestep
-nsteps = 20000 # total number of time-steps
-nsubs  = 200   # number of time-steps for plotting
+dt  = 5e-3     # timestep
+nsteps = 40000 # total number of time-steps
+nsubs  = 250   # number of time-steps for plotting
                # (nsteps must be multiple of nsubs)
 
 # Physical parameters
 Lx  = 2π      # domain size
-mu  = 1e-2     # bottom drag
-beta = 5       # the y-gradient of planetary PV
+mu  = 5e-2    # bottom drag
+beta = 5      # the y-gradient of planetary PV
 
 nlayers = 2       # these choice of parameters give the
 f0, g = 1, 1      # desired PV-streamfunction relations
   H = [0.2, 0.8]  # q1 = Δψ1 + 25*(ψ2-ψ1), and
 rho = [4.0, 5.0]  # q2 = Δψ2 + 25/4*(ψ1-ψ2).
   U = zeros(nlayers)
-  U[1] = 0.5
+  U[1] = 1.0
   U[2] = 0.0
 
 gr = TwoDGrid(nx, Lx)
@@ -52,7 +52,7 @@ if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 
 # Initialize with zeros
-MultilayerQG.set_q!(prob, 1e-2randn(Float64, (nx, ny, nlayers)))
+MultilayerQG.set_q!(prob, 1e-2randn((nx, ny, nlayers)))
 
 
 # Create Diagnostics
@@ -84,7 +84,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
     axis("square")
     xlim(-Lx/2, Lx/2)
     ylim(-Lx/2, Lx/2)
-    title(L"$\nabla^2\psi + \eta$ (part of the domain)")
+    title(L"$q_"*string(j)*L"$")
     if drawcolorbar==true
       colorbar()
     end
@@ -96,7 +96,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
     axis("square")
     xlim(-Lx/2, Lx/2)
     ylim(-Lx/2, Lx/2)
-    title(L"$\nabla^2\psi + \eta$ (part of the domain)")
+    title(L"$\psi_"*string(j)*L"$")
     if drawcolorbar==true
       colorbar()
     end
@@ -110,7 +110,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   # legend()
 
   sca(axs[6])
-  plot(mu*E.t[E.i], E.data[E.i][2][1], ".", color="k", label=L"$PE_1$")
+  plot(mu*E.t[E.i], E.data[E.i][2][1], ".", color="k", label=L"$PE_{3/2}$")
   xlabel(L"\mu t")
   ylabel(L"PE")
   # legend()
