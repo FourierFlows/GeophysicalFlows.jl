@@ -59,7 +59,7 @@ function Problem(;
            T = Float64)
 
    grid = TwoDGrid(nx, Lx, ny, Ly; T=T)
-   params = Params(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, grid, calcFq=calcFq)
+   params = Params(nlayers, T(g), T(f0), T(beta), Array{T}(rho), Array{T}(H), Array{T}(U), Array{T}(eta), T(mu), T(nu), nnu, grid, calcFq=calcFq)
    vars = calcFq == nothingfunction ? Vars(grid, params) : ForcedVars(grid, params)
    eqn = linear ? LinearEquation(params, grid) : Equation(params, grid)
 
@@ -89,7 +89,7 @@ struct Params{T} <: AbstractParams
   Qy::Array{T,3}             # Array containing y-gradient of PV due to beta, U, and eta in each fluid layer
   S::Array{T,4}              # Array containing coeffients for getting PV from  streamfunction
   invS::Array{T,4}           # Array containing coeffients for inverting PV to streamfunction
-  rfftplan::FFTW.rFFTWPlan{Float64,-1,false,3}  # rfft plan for FFTs
+  rfftplan::FFTW.rFFTWPlan{T,-1,false,3}  # rfft plan for FFTs
 end
 
 struct SingleLayerParams{T} <: BarotropicParams
@@ -109,7 +109,7 @@ struct SingleLayerParams{T} <: BarotropicParams
   # derived params
   Qx::Array{T,2}             # Array containing zonal PV gradient due to beta, U, and eta in each fluid layer
   Qy::Array{T,2}             # Array containing meridional PV gradient due to beta, U, and eta in each fluid layer
-  rfftplan::FFTW.rFFTWPlan{Float64,-1,false,2}  # rfft plan for FFTs
+  rfftplan::FFTW.rFFTWPlan{T,-1,false,2}  # rfft plan for FFTs
 end
 
 function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, mu, nu, nnu, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
@@ -146,10 +146,10 @@ function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, mu, nu, nnu, g
   @views Qy[:, :, nlayers] = @. beta - Uyy[:, :, nlayers] - Fm[nlayers-1]*( U[:, :, nlayers-1] - U[:, :, nlayers] )
   @views @. Qy[:, :, nlayers] += etay
 
-  S = Array{Float64}(undef, (nkr, nl, nlayers, nlayers))
+  S = Array{T}(undef, (nkr, nl, nlayers, nlayers))
   calcS!(S, Fp, Fm, grid)
 
-  invS = Array{Float64}(undef, (nkr, nl, nlayers, nlayers))
+  invS = Array{T}(undef, (nkr, nl, nlayers, nlayers))
   calcinvS!(invS, Fp, Fm, grid)
 
   rfftplanlayered = plan_rfft(Array{T,3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)

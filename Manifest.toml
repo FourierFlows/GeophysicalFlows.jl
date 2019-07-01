@@ -105,8 +105,10 @@ uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.6.1"
 
 [[FourierFlows]]
-deps = ["FFTW", "Interpolations", "JLD2", "LinearAlgebra", "Random", "Reexport", "Statistics"]
-git-tree-sha1 = "1addb960281c1cbd44156975ebb8e21a99f79232"
+deps = ["Coverage", "FFTW", "Interpolations", "JLD2", "LinearAlgebra", "Printf", "Random", "Reexport", "Statistics", "Test"]
+git-tree-sha1 = "89f28ce759aadfffb3db7494e890d6511443efc4"
+repo-rev = "master"
+repo-url = "https://github.com/FourierFlows/FourierFlows.jl.git"
 uuid = "2aec4490-903f-5c70-9b11-9bed06a700e1"
 version = "0.3.0"
 
