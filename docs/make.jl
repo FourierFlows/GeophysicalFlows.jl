@@ -12,8 +12,8 @@ makedocs(
  doctest = false,
    clean = true,
 checkdocs = :all,
-  format = :html,
- authors = "Gregory L. Wagner and Navid C. Constantinou",
+  format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
+ authors = "Navid C. Constantinou and Gregory L. Wagner",
 sitename = "GeophysicalFlows.jl",
    pages = Any[
             "Home" => "index.md",
