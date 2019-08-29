@@ -22,11 +22,6 @@ using FourierFlows: getfieldspecs, structvarsexpr, parsevalsum, parsevalsum2
 
 abstract type TwoDTurbVars <: AbstractVars end
 
-const physicalvars = [:zeta, :u, :v]
-const transformvars = [ Symbol(var, :h) for var in physicalvars ]
-const forcedvars = [:Fh]
-const stochforcedvars = [:prevsol]
-
 nothingfunction(args...) = nothing
 
 """
@@ -50,14 +45,15 @@ function Problem(;
      stepper = "RK4",
        calcF = nothingfunction,
   stochastic = false,
-           T = Float64
+           T = Float64,
+         dev = CPU()
 )
 
-  gr = TwoDGrid(nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
   pr = Params{T}(nu, nnu, mu, nmu, calcF)
-  vs = calcF == nothingfunction ? Vars(gr) : (stochastic ? StochasticForcedVars(gr) : ForcedVars(gr))
+  vs = calcF == nothingfunction ? Vars(dev, gr) : (stochastic ? StochasticForcedVars(dev, gr) : ForcedVars(dev, gr))
   eq = Equation(pr, gr)
-  FourierFlows.Problem(eq, stepper, dt, gr, vs, pr)
+  FourierFlows.Problem(eq, stepper, dt, gr, vs, pr, dev)
 end
 
 
@@ -100,50 +96,70 @@ end
 # Vars
 # ----
 
-varspecs = cat(
-  getfieldspecs(physicalvars, :(Array{T,2})),
-  getfieldspecs(transformvars, :(Array{Complex{T},2})),
-  dims=1)
+struct Vars{Aphys, Atrans} <: TwoDTurbVars
+   zeta :: Aphys
+      u :: Aphys
+      v :: Aphys
+  zetah :: Atrans
+     uh :: Atrans
+     vh :: Atrans
+end
 
-forcedvarspecs = cat(varspecs, getfieldspecs(forcedvars, :(Array{Complex{T},2})), dims=1)
-stochforcedvarspecs = cat(forcedvarspecs, getfieldspecs(stochforcedvars, :(Array{Complex{T},2})), dims=1)
+struct ForcedVars{Aphys, Atrans} <: TwoDTurbVars
+   zeta :: Aphys
+      u :: Aphys
+      v :: Aphys
+  zetah :: Atrans
+     uh :: Atrans
+     vh :: Atrans
+     Fh :: Atrans
+end
 
-# Construct Vars types
-eval(structvarsexpr(:Vars, varspecs; parent=:TwoDTurbVars))
-eval(structvarsexpr(:ForcedVars, forcedvarspecs; parent=:TwoDTurbVars))
-eval(structvarsexpr(:StochasticForcedVars, stochforcedvarspecs; parent=:TwoDTurbVars))
+struct StochasticForcedVars{Aphys, Atrans} <: TwoDTurbVars
+     zeta :: Aphys
+        u :: Aphys
+        v :: Aphys
+    zetah :: Atrans
+       uh :: Atrans
+       vh :: Atrans
+       Fh :: Atrans
+  prevsol :: Atrans
+end
+
 
 """
-    Vars(g)
+    Vars(dev, g)
 
-Returns the vars for unforced two-dimensional turbulence with grid g.
+Returns the vars for unforced two-dimensional turbulence on device dev and with 
+  grid g.
 """
-function Vars(g; T=typeof(g.Lx))
-  @createarrays T (g.nx, g.ny) zeta u v
-  @createarrays Complex{T} (g.nkr, g.nl) sol zetah uh vh
+function Vars(::Dev, g::AbstractGrid{T}) where {Dev, T}
+  @devzeros Dev T (g.nx, g.ny) zeta u v
+  @devzeros Dev Complex{T} (g.nkr, g.nl) zetah uh vh
   Vars(zeta, u, v, zetah, uh, vh)
 end
 
 """
-    ForcedVars(g)
+    ForcedVars(dev, g)
 
-Returns the vars for forced two-dimensional turbulence with grid g.
+Returns the vars for forced two-dimensional turbulence on device dev and with 
+  grid g.
 """
-function ForcedVars(g; T=typeof(g.Lx))
-  v = Vars(g; T=T)
-  Fh = zeros(Complex{T}, (g.nkr, g.nl))
+function ForcedVars(dev::Dev, g::AbstractGrid{T}) where {Dev, T}
+  v = Vars(dev, g)
+  @devzeros Dev Complex{T} (g.nkr, g.nl) Fh
   ForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., Fh)
 end
 
 """
-    StochasticForcedVars(g; T)
+    StochasticForcedVars(dev, g)
 
-Returns the vars for stochastically forced two-dimensional turbulence with grid
-g.
+Returns the vars for stochastically forced two-dimensional turbulence on device
+  dev and with grid g.
 """
-function StochasticForcedVars(g; T=typeof(g.Lx))
-  v = ForcedVars(g; T=T)
-  prevsol = zeros(Complex{T}, (g.nkr, g.nl))
+function StochasticForcedVars(dev::Dev, g::AbstractGrid{T}) where {Dev, T}
+  v = ForcedVars(dev, g)
+  @devzeros Dev Complex{T} (g.nkr, g.nl) prevsol
   StochasticForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., prevsol)
 end
 
@@ -281,7 +297,7 @@ Returns the domain-averaged rate of work of energy by the forcing Fh.
 end
 
 @inline function work(sol, v::StochasticForcedVars, g)
-  @. v.uh = g.invKrsq * (v.prevsol + sol)/2.0 * conj(v.Fh) # Stratonovich
+  @. v.uh = g.invKrsq * (v.prevsol + sol)/2 * conj(v.Fh) # Stratonovich
   # @. v.uh = g.invKrsq * v.prevsol * conj(v.Fh)           # Ito
   1/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
