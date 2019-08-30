@@ -7,9 +7,9 @@ import GeophysicalFlows.TwoDTurb
 import GeophysicalFlows.TwoDTurb: energy, enstrophy, dissipation, work, drag
 
   n, L  = 256, 2π
-nu, nnu = 1e-7, 2
-mu, nmu = 1e-1, 0
-dt, tf = 0.005, 0.2/mu
+ ν, nν = 1e-7, 2
+ μ, nμ = 1e-1, 0
+dt, tf = 0.005, 0.2/μ
 nt = round(Int, tf/dt)
 ns = 4
 
@@ -38,7 +38,7 @@ function calcF!(Fh, sol, t, cl, v, p, g)
   nothing
 end
 
-prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper="RK4",
+prob = TwoDTurb.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper="RK4",
                         calcF=calcF!, stochastic=true)
 
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
@@ -55,7 +55,7 @@ function makeplot(prob, diags)
   TwoDTurb.updatevars!(prob)
   E, D, W, R = diags
 
-  t = round(mu*cl.t, digits=2)
+  t = round(μ*cl.t, digits=2)
   sca(axs[1]); cla()
   pcolormesh(x, y, v.zeta)
   xlabel(L"$x$")
@@ -80,25 +80,25 @@ function makeplot(prob, diags)
 
   # If the Ito interpretation was used for the work
   # then we need to add the drift term: I[ii2] + ε
-  plot(mu*E.t[ii], W[ii2], label=L"work ($W$)")   # Ito
-  # plot(mu*E.t[ii], W[ii2] , label=L"work ($W$)")      # Stratonovich
-  plot(mu*E.t[ii], ε .+ 0*E.t[ii], "--", label=L"ensemble mean  work ($\langle W\rangle $)")
-  # plot(mu*E.t[ii], -D[ii], label="dissipation (\$D\$)")
-  plot(mu*E.t[ii], -R[ii], label=L"drag ($D=2\mu E$)")
-  plot(mu*E.t[ii], 0*E.t[ii], "k:", linewidth=0.5)
+  plot(μ*E.t[ii], W[ii2], label=L"work ($W$)")   # Ito
+  # plot(μ*E.t[ii], W[ii2] , label=L"work ($W$)")      # Stratonovich
+  plot(μ*E.t[ii], ε .+ 0*E.t[ii], "--", label=L"ensemble mean  work ($\langle W\rangle $)")
+  # plot(μ*E.t[ii], -D[ii], label="dissipation (\$D\$)")
+  plot(μ*E.t[ii], -R[ii], label=L"drag ($D=2\mu E$)")
+  plot(μ*E.t[ii], 0*E.t[ii], "k:", linewidth=0.5)
   ylabel("Energy sources and sinks")
   xlabel(L"$\mu t$")
   legend(fontsize=10)
 
   sca(axs[2]); cla()
-  plot(mu*E.t[ii], total[ii], label=L"computed $W-D$")
-  plot(mu*E.t[ii], dEdt, "--k", label=L"numerical $dE/dt$")
+  plot(μ*E.t[ii], total[ii], label=L"computed $W-D$")
+  plot(μ*E.t[ii], dEdt, "--k", label=L"numerical $dE/dt$")
   ylabel(L"$dE/dt$")
   xlabel(L"$\mu t$")
   legend(fontsize=10)
 
   sca(axs[4]); cla()
-  plot(mu*E.t[ii], residual, "c-", label=L"residual $dE/dt$ = computed $-$ numerical")
+  plot(μ*E.t[ii], residual, "c-", label=L"residual $dE/dt$ = computed $-$ numerical")
   xlabel(L"$\mu t$")
   legend(fontsize=10)
 

@@ -37,10 +37,10 @@ function Problem(;
           Ly = Lx,
           dt = 0.01,
     # Drag and/or hyper-/hypo-viscosity
-          nu = 0,
-         nnu = 1,
-          mu = 0,
-         nmu = 0,
+           ν = 0,
+          nν = 1,
+           μ = 0,
+          nμ = 0,
     # Timestepper and eqn options
      stepper = "RK4",
        calcF = nothingfunction,
@@ -50,7 +50,7 @@ function Problem(;
 )
 
   gr = TwoDGrid(dev, nx, Lx, ny, Ly)
-  pr = Params{T}(nu, nnu, mu, nmu, calcF)
+  pr = Params{T}(ν, nν, μ, nμ, calcF)
   vs = calcF == nothingfunction ? Vars(dev, gr) : (stochastic ? StochasticForcedVars(dev, gr) : ForcedVars(dev, gr))
   eq = Equation(pr, gr)
   FourierFlows.Problem(eq, stepper, dt, gr, vs, pr, dev)
@@ -62,18 +62,18 @@ end
 # ----------
 
 """
-    Params(nu, nnu, mu, nmu, calcF!)
+    Params(ν, nν, μ, nμ, calcF!)
 
 Returns the params for two-dimensional turbulence.
 """
 struct Params{T} <: AbstractParams
-  nu::T              # Vorticity viscosity
-  nnu::Int           # Vorticity hyperviscous order
-  mu::T              # Bottom drag or hypoviscosity
-  nmu::Int           # Order of hypodrag
-  calcF!::Function   # Function that calculates the forcing F
+  ν::T              # Vorticity viscosity
+  nν::Int           # Vorticity hyperviscous order
+  μ::T              # Bottom drag or hypoviscosity
+  nμ::Int           # Order of hypodrag
+  calcF!::Function  # Function that calculates the forcing F
 end
-Params(nu, nnu) = Params(nu, nnu, typeof(nu)(0), 0, nothingfunction)
+Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
 
 
 # ---------
@@ -86,7 +86,7 @@ Params(nu, nnu) = Params(nu, nnu, typeof(nu)(0), 0, nothingfunction)
 Returns the equation for two-dimensional turbulence with params p and grid g.
 """
 function Equation(p::Params, g::AbstractGrid{T}) where T
-  L = @. - p.nu*g.Krsq^p.nnu - p.mu*g.Krsq^p.nmu
+  L = @. - p.ν*g.Krsq^p.nν - p.μ*g.Krsq^p.nμ
   L[1, 1] = 0
   FourierFlows.Equation(L, calcN!, g)
 end
@@ -276,13 +276,13 @@ end
 """
     dissipation(prob)
 
-Returns the domain-averaged dissipation rate. nnu must be >= 1.
+Returns the domain-averaged dissipation rate. nν must be >= 1.
 """
 @inline function dissipation(prob)
   sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid
-  @. v.uh = g.Krsq^(p.nnu-1) * abs2(sol)
+  @. v.uh = g.Krsq^(p.nν-1) * abs2(sol)
   v.uh[1, 1] = 0
-  p.nu/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
+  p.ν/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
 """
@@ -307,13 +307,13 @@ end
 """
     drag(prob)
 
-Returns the extraction of domain-averaged energy by drag/hypodrag mu.
+Returns the extraction of domain-averaged energy by drag/hypodrag μ.
 """
 @inline function drag(prob)
   sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid
-  @. v.uh = g.Krsq^(p.nmu-1) * abs2(sol)
+  @. v.uh = g.Krsq^(p.nμ-1) * abs2(sol)
   v.uh[1, 1] = 0
-  p.mu/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
+  p.μ/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
 end # module

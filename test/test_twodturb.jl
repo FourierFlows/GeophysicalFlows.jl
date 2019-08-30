@@ -1,6 +1,6 @@
-function test_twodturb_lambdipole(n, dt, dev::Device=CPU(); L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01, nm=3)
+function test_twodturb_lambdipole(n, dt, dev::Device=CPU(); L=2π, Ue=1, Re=L/20, ν=0.0, nν=1, ti=L/Ue*0.01, nm=3)
   nt = round(Int, ti/dt)
-  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, dt=dt, stepper="FilteredRK4", dev=dev)
+  prob = TwoDTurb.Problem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
   zeta₀ = lambdipole(Ue, Re, prob.grid)
   TwoDTurb.set_zeta!(prob, zeta₀)
 
@@ -20,7 +20,7 @@ function test_twodturb_lambdipole(n, dt, dev::Device=CPU(); L=2π, Ue=1, Re=L/20
   isapprox(Ue, mean(Ue_m[2:end]), rtol=rtol_lambdipole)
 end
 
-function test_twodturb_stochasticforcingbudgets(dev::Device=CPU(); n=256, L=2π, dt=0.005, nu=1e-7, nnu=2, mu=1e-1, nmu=0, tf=0.1/mu)
+function test_twodturb_stochasticforcingbudgets(dev::Device=CPU(); n=256, L=2π, dt=0.005, ν=1e-7, nν=2, μ=1e-1, nμ=0, tf=0.1/μ)
   nt = round(Int, tf/dt)
 
   # Forcing parameters
@@ -49,7 +49,7 @@ function test_twodturb_stochasticforcingbudgets(dev::Device=CPU(); n=256, L=2π,
     nothing
   end
 
-  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt,
+  prob = TwoDTurb.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=true, dev=dev)
 
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
@@ -65,7 +65,7 @@ function test_twodturb_stochasticforcingbudgets(dev::Device=CPU(); n=256, L=2π,
   TwoDTurb.updatevars!(prob)
 
   E, D, W, R = diags
-  t = round(mu*cl.t, digits=2)
+  t = round(μ*cl.t, digits=2)
 
   i₀ = 1
   dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
@@ -83,11 +83,11 @@ function test_twodturb_stochasticforcingbudgets(dev::Device=CPU(); n=256, L=2π,
 end
 
 
-function test_twodturb_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, nmu=0)
+function test_twodturb_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, nμ=0)
   n, L  = 256, 2π
-  nu, nnu = 1e-7, 2
-  mu, nmu = 1e-1, 0
-  dt, tf = 0.005, 0.1/mu
+  ν, nν = 1e-7, 2
+  μ, nμ = 1e-1, 0
+  dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
   
   gr  = TwoDGrid(dev, n, L)
@@ -101,7 +101,7 @@ function test_twodturb_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=
     nothing
   end
 
-  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt,
+  prob = TwoDTurb.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=false, dev=dev)
 
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
@@ -119,7 +119,7 @@ function test_twodturb_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=
   TwoDTurb.updatevars!(prob)
 
   E, D, W, R = diags
-  t = round(mu*cl.t, digits=2)
+  t = round(μ*cl.t, digits=2)
 
   i₀ = 1
   dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
@@ -140,14 +140,14 @@ Tests the advection term in the twodturb module by timestepping a
 test problem with timestep dt and timestepper identified by the string stepper.
 The test problem is derived by picking a solution ζf (with associated
 streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
-forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - nuΔζf. One solution
+forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - νΔζf. One solution
 to the vorticity equation forced by this Ff is then ζf. (This solution may not
 be realized, at least at long times, if it is unstable.)
 """
-function test_twodturb_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, nmu=0)
+function test_twodturb_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1, μ=0.0, nμ=0)
   n, L  = 128, 2π
-  nu, nnu = 1e-2, 1
-  mu, nmu = 0.0, 0
+  ν, nν = 1e-2, 1
+  μ, nμ = 0.0, 0
   tf = 1.0
   nt = round(Int, tf/dt)
 
@@ -158,7 +158,7 @@ function test_twodturb_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, n
   zetaf = @. -8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
 
   Ff = @. -(
-    nu*( 64sin(2x)*cos(2y) + 200sin(x)*cos(3y) )
+    ν*( 64sin(2x)*cos(2y) + 200sin(x)*cos(3y) )
     + 8*( cos(x)*cos(3y)*sin(2x)*sin(2y) - 3cos(2x)*cos(2y)*sin(x)*sin(3y) )
   )
 
@@ -170,7 +170,7 @@ function test_twodturb_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, n
     nothing
   end
 
-  prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!, stochastic=false, dev=dev)
+  prob = TwoDTurb.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper=stepper, calcF=calcF!, stochastic=false, dev=dev)
   sol, cl, p, v, g = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
   TwoDTurb.set_zeta!(prob, zetaf)
 
@@ -203,7 +203,7 @@ function test_twodturb_energyenstrophy(dev::Device=CPU())
   energyzeta0 = TwoDTurb.energy(prob)
   enstrophyzeta0 = TwoDTurb.enstrophy(prob)
   
-  params = TwoDTurb.Params(p.nu, p.nnu)
+  params = TwoDTurb.Params(p.ν, p.nν)
 
   (isapprox(energyzeta0, energy_calc, rtol=rtol_twodturb) &&
    isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_twodturb) &&
