@@ -50,6 +50,7 @@ for dev in devices
     @test test_twodturb_stochasticforcingbudgets(dev)
     @test test_twodturb_deterministicforcingbudgets(dev)
     @test test_twodturb_energyenstrophy(dev)
+    @test TwoDTurb.nothingfunction() == nothing
   end
 
 end

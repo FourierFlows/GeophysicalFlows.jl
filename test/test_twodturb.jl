@@ -194,13 +194,18 @@ function test_twodturb_energyenstrophy(dev::Device=CPU())
   enstrophy_calc = 2701/162
 
   prob = TwoDTurb.Problem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler", dev=dev)
+  
+  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
 
   TwoDTurb.set_zeta!(prob, zeta0)
   TwoDTurb.updatevars!(prob)
 
   energyzeta0 = TwoDTurb.energy(prob)
   enstrophyzeta0 = TwoDTurb.enstrophy(prob)
+  
+  params = TwoDTurb.Params(p.nu, p.nnu)
 
   (isapprox(energyzeta0, energy_calc, rtol=rtol_twodturb) &&
-   isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_twodturb))
+   isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_twodturb) &&
+   TwoDTurb.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
 end
