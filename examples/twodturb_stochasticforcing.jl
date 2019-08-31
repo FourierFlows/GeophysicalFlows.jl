@@ -22,7 +22,7 @@ kf, dkf = 12.0, 2.0     # forcing central wavenumber, wavenumber width
 gr  = TwoDGrid(dev, n, L)
 x, y = gridpoints(gr)
 
-Kr = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl]
+Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
 
 force2k = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
 force2k[gr.Krsq .< 2.0^2 ] .= 0
@@ -34,7 +34,7 @@ force2k .= ε/ε0 * force2k
 seed!(1234)
 
 function calcF!(Fh, sol, t, cl, v, p, g)
-  eta = exp.(2π*im*rand(Float64, size(sol)))/sqrt(cl.dt)
+  eta = ArrayType(dev)(exp.(2π*im*rand(typeof(gr.Lx), size(sol)))/sqrt(cl.dt))
   eta[1, 1] = 0
   @. Fh = eta*sqrt(force2k)
   nothing
