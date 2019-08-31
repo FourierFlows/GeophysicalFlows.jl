@@ -17,8 +17,8 @@ using GeophysicalFlows: lambdipole, peakedisotropicspectrum
 
 # the devices on which tests will run
 devices = (CPU(),)
-@hascuda devices = (CPU(), GPU())
-@hascuda using CuArrays
+@has_cuda devices = (CPU(), GPU())
+@has_cuda using CuArrays
 
 const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
 const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
