@@ -6,6 +6,8 @@ import GeophysicalFlows.TwoDTurb
 import GeophysicalFlows.TwoDTurb: energy, enstrophy
 import GeophysicalFlows: peakedisotropicspectrum
 
+dev = CPU()     # Device (CPU/GPU)
+
 # Parameters
   n = 256
   L = 2π
@@ -13,7 +15,7 @@ import GeophysicalFlows: peakedisotropicspectrum
   ν = 0.0
  dt = 1e-2
 nsteps = 5000
-nsubs = 200
+ nsubs = 200
 
 # Files
 filepath = "."

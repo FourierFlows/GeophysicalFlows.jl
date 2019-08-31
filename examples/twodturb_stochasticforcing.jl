@@ -6,18 +6,20 @@ using Printf: @printf
 import GeophysicalFlows.TwoDTurb
 import GeophysicalFlows.TwoDTurb: energy, enstrophy, dissipation, work, drag
 
-  n, L  = 256, 2π
+   dev = CPU()     # Device (CPU/GPU)
+
+ n, L  = 256, 2π
  ν, nν = 1e-7, 2
  μ, nμ = 1e-1, 0
 dt, tf = 0.005, 0.2/μ
-nt = round(Int, tf/dt)
-ns = 4
+    nt = round(Int, tf/dt)
+    ns = 4
 
 # Forcing
 kf, dkf = 12.0, 2.0     # forcing central wavenumber, wavenumber width
 ε = 0.1                 # energy injection rate
 
-gr  = TwoDGrid(n, L)
+gr  = TwoDGrid(dev, n, L)
 x, y = gridpoints(gr)
 
 Kr = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl]
@@ -39,7 +41,7 @@ function calcF!(Fh, sol, t, cl, v, p, g)
 end
 
 prob = TwoDTurb.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper="RK4",
-                        calcF=calcF!, stochastic=true)
+                        calcF=calcF!, stochastic=true, dev=dev)
 
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 

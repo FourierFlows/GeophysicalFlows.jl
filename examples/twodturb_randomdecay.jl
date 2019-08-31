@@ -7,6 +7,7 @@ using FFTW: rfft
 
 import GeophysicalFlows.TwoDTurb
 
+dev = CPU()     # Device (CPU/GPU)
 
 nx = 256        # Resolution
 Lx = 2π         # Domain size
@@ -15,9 +16,9 @@ nν = 1          # Order of (hyper-)viscosity. nν=1 means Laplacian
 dt = 0.1        # Timestep
 nint = 200      # Number of steps between plots
 ntot = 10nint   # Number of total timesteps
-
+ 
 # Define problem
-prob = TwoDTurb.Problem(nx=nx, Lx=Lx, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4")
+prob = TwoDTurb.Problem(nx=nx, Lx=Lx, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
 TwoDTurb.set_zeta!(prob, rand(nx, nx))
 
 cl, vs, gr = prob.clock, prob.vars, prob.grid
