@@ -294,7 +294,8 @@ function test_bqg_energyenstrophy()
   energyzeta0 = BarotropicQG.energy(prob)
   enstrophyzeta0 = BarotropicQG.enstrophy(prob)
 
-  isapprox(energyzeta0, energy_calc, rtol=1e-13) && isapprox(enstrophyzeta0, enstrophy_calc, rtol=1e-13)
+  isapprox(energyzeta0, energy_calc, rtol=1e-13) && isapprox(enstrophyzeta0, enstrophy_calc, rtol=1e-13) &&
+  BarotropicQG.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing
 end
 
 function test_bqg_meanenergyenstrophy()
