@@ -279,6 +279,9 @@ function test_bqg_energyenstrophy()
   k0, l0 = g.k[2], g.l[2] # fundamental wavenumbers
   x, y = gridpoints(g)
 
+  energy_calc = 29/9
+  enstrophy_calc = 2701/162
+
     eta = @. cos(10k0*x)*cos(10l0*y)
    psi0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
   zeta0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
@@ -291,7 +294,8 @@ function test_bqg_energyenstrophy()
   energyzeta0 = BarotropicQG.energy(prob)
   enstrophyzeta0 = BarotropicQG.enstrophy(prob)
 
-  isapprox(energyzeta0, 29.0/9, rtol=1e-13) && isapprox(enstrophyzeta0, 2701.0/162, rtol=1e-13)
+  isapprox(energyzeta0, energy_calc, rtol=1e-13) && isapprox(enstrophyzeta0, enstrophy_calc, rtol=1e-13) &&
+  BarotropicQG.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing
 end
 
 function test_bqg_meanenergyenstrophy()
@@ -308,6 +312,9 @@ function test_bqg_meanenergyenstrophy()
   beta = 10.0
   U = 1.2
 
+  energy_calc = 29/9
+  enstrophy_calc = 2701/162
+
   prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, beta=beta, eta=eta, calcFU = calcFU,
                                     stepper="ForwardEuler")
 
@@ -323,7 +330,7 @@ function test_bqg_meanenergyenstrophy()
 
   (isapprox(energyU, 0.5*U^2, rtol=1e-13) &&
     isapprox(enstrophyU, beta*U, rtol=1e-13) &&
-    isapprox(energyzeta0, 29.0/9, rtol=1e-13) &&
-    isapprox(enstrophyzeta0, 2701.0/162, rtol=1e-13)
+    isapprox(energyzeta0, energy_calc, rtol=1e-13) &&
+    isapprox(enstrophyzeta0, enstrophy_calc, rtol=1e-13)
   )
 end

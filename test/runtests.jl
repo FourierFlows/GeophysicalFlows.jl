@@ -40,6 +40,7 @@ for dev in devices
     include("test_utils.jl")
 
     @test testpeakedisotropicspectrum(dev)
+    @test_throws ErrorException("the domain is not square") testpeakedisotropicspectrum_rectangledomain()
   end
 
   @testset "TwoDTurb" begin
@@ -75,6 +76,7 @@ println("rest of tests only on CPU")
   @test test_bqg_formstress(0.01, "ForwardEuler")
   @test test_bqg_energyenstrophy()
   @test test_bqg_meanenergyenstrophy()
+  @test BarotropicQG.nothingfunction() == nothing
 end
 
 @testset "BarotropicQGQL" begin
@@ -92,6 +94,7 @@ end
   @test test_bqgql_stochasticforcingbudgets()
   @test test_bqgql_advection(0.0005, "ForwardEuler")
   @test test_bqgql_energyenstrophy()
+  @test BarotropicQGQL.nothingfunction() == nothing
 end
 
 @testset "MultilayerQG" begin
@@ -104,6 +107,7 @@ end
   @test test_mqg_fluxes()
   @test test_setqsetpsi()
   @test test_paramsconstructor()
+  @test MultilayerQG.nothingfunction() == nothing
 end
 
 end # time
