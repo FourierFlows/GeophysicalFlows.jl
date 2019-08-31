@@ -239,17 +239,21 @@ function test_bqgql_energyenstrophy()
   k0, l0 = g.k[2], g.l[2] # fundamental wavenumbers
   x, y = gridpoints(g)
 
+  energy_calc = 29/9
+  enstrophy_calc = 2701/162
+
     eta = @. cos(10k0*x)*cos(10l0*y)
    psi0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
   zeta0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
 
   prob = BarotropicQGQL.InitialValueProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta=eta, stepper="ForwardEuler")
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+  
   BarotropicQGQL.set_zeta!(prob, zeta0)
   BarotropicQGQL.updatevars!(prob)
 
   energyzeta0 = BarotropicQGQL.energy(prob)
   enstrophyzeta0 = BarotropicQGQL.enstrophy(prob)
 
-  isapprox(energyzeta0, 29.0/9, rtol=1e-13) && isapprox(enstrophyzeta0, 2701.0/162, rtol=1e-13)
+  isapprox(energyzeta0, energy_calc, rtol=1e-13) && isapprox(enstrophyzeta0, enstrophy_calc, rtol=1e-13) && BarotropicQGQL.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing
 end

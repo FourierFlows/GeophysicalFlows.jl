@@ -61,6 +61,7 @@ end
   @test test_bqg_formstress(0.01, "ForwardEuler")
   @test test_bqg_energyenstrophy()
   @test test_bqg_meanenergyenstrophy()
+  @test BarotropicQG.nothingfunction() == nothing
 end
 
 @testset "BarotropicQGQL" begin
@@ -78,6 +79,7 @@ end
   @test test_bqgql_stochasticforcingbudgets()
   @test test_bqgql_advection(0.0005, "ForwardEuler")
   @test test_bqgql_energyenstrophy()
+  @test BarotropicQGQL.nothingfunction() == nothing
 end
 
 @testset "MultilayerQG" begin
