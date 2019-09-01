@@ -13,3 +13,12 @@ function testpeakedisotropicspectrum()
 
   isapprox(abs.(qhρtest)/abs(qhρtest[1]), (ρtest/ρtest[1]).^(-2), rtol=5e-3)
 end
+
+
+function testpeakedisotropicspectrum_rectangledomain()
+  nx, ny = 32, 34
+  Lx, Ly = 2π, 3π
+  gr = TwoDGrid(nx, Lx, ny, Ly)
+  k0, E0 = 6, 0.5
+  qi = peakedisotropicspectrum(gr, k0, E0; allones=true)
+end
