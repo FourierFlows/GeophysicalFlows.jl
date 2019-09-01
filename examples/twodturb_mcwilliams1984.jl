@@ -1,4 +1,4 @@
-using FourierFlows, PyPlot, JLD2, Printf, Random
+using FourierFlows, PyPlot, JLD2, Printf, Random, FFTW
 
 using Random: seed!
 
@@ -48,7 +48,7 @@ diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will
 get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im*gr.l.*gr.invKrsq.*sol, gr.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
-
+saveproblem(out)
 
 function plot_output(prob, fig, axs; drawcolorbar=false)
   # Plot the vorticity field and the evolution of energy and enstrophy.
@@ -80,7 +80,8 @@ plot_output(prob, fig, axs; drawcolorbar=true)
 startwalltime = time()
 while cl.step < nsteps
   stepforward!(prob, diags, nsubs)
-
+  saveoutput(out)
+  
   # Message
   log = @sprintf("step: %04d, t: %d, ΔE: %.4f, ΔZ: %.4f, τ: %.2f min",
     cl.step, cl.t, E.data[E.i]/E.data[1], Z.data[Z.i]/Z.data[1], (time()-startwalltime)/60)

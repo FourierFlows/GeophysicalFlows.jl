@@ -7,7 +7,7 @@
     <a href="https://ci.appveyor.com/project/navidcy/geophysicalflows-jl">
         <img src="https://ci.appveyor.com/api/projects/status/7c5f4wfckq5gb6qv?svg=true" title="Build Status">
     </a>
-    <a href="https://GeophysicalFlows.github.io/GeophysicalFlows.jl/stable/">
+    <a href="https://fourierflows.github.io/GeophysicalFlows.jl/stable/">
         <img src="https://img.shields.io/badge/docs-stable-blue.svg">
     </a>
     <a href="https://fourierflows.github.io/GeophysicalFlows.jl/latest/">
