@@ -40,28 +40,28 @@ Construct a BarotropicQG turbulence problem.
 
 function Problem(;
     # Numerical parameters
-            nx = 256,
-            Lx = 2π,
-            ny = nx,
-            Ly = Lx,
-            dt = 0.01,
-    # Physical parameters
-            f0 = 1.0,
-          beta = 0.0,
-           eta = nothing,
-    # Drag and/or hyper-/hypo-viscosity
-            nu = 0.0,
-           nnu = 1,
-            mu = 0.0,
-   # Timestepper and eqn options
-       stepper = "RK4",
-        calcFU = nothingfunction,
-        calcFq = nothingfunction,
-    stochastic = false,
-             T = Float64)
+          nx = 256,
+          Lx = 2π,
+          ny = nx,
+          Ly = Lx,
+          dt = 0.01,
+  # Physical parameters
+          f0 = 1.0,
+           β = 0.0,
+         eta = nothing,
+  # Drag and/or hyper-/hypo-viscosity
+           ν = 0.0,
+          nν = 1,
+           μ = 0.0,
+  # Timestepper and eqn options
+     stepper = "RK4",
+      calcFU = nothingfunction,
+      calcFq = nothingfunction,
+  stochastic = false,
+           T = Float64)
 
   # the grid
-  gr  = TwoDGrid(nx, Lx, ny, Ly)
+   gr  = TwoDGrid(nx, Lx, ny, Ly)
   x, y = gridpoints(gr)
 
   # topographic PV
@@ -71,9 +71,9 @@ function Problem(;
   end
 
   if typeof(eta)!=Array{Float64,2} #this is true if eta was passes in Problem as a function
-    pr = Params(gr, f0, beta, eta, mu, nu, nnu, calcFU, calcFq)
+    pr = Params(gr, f0, β, eta, μ, ν, nν, calcFU, calcFq)
   else
-    pr = Params(f0, beta, eta, rfft(eta), mu, nu, nnu, calcFU, calcFq)
+    pr = Params(f0, β, eta, rfft(eta), μ, ν, nν, calcFU, calcFq)
   end
 
   if calcFq == nothingfunction && calcFU == nothingfunction
@@ -98,33 +98,33 @@ ForcedProblem(; kwargs...) = Problem(; kwargs...)
 # ----------
 
 """
-    Params(g::TwoDGrid, f0, beta, FU, eta, mu, nu, nnu, calcFU, calcFq)
+    Params(g::TwoDGrid, f0, β, FU, eta, μ, ν, nν, calcFU, calcFq)
 
 Returns the params for an unforced two-dimensional barotropic QG problem.
 """
 struct Params{T} <: AbstractParams
   f0::T                      # Constant planetary vorticity
-  beta::T                    # Planetary vorticity y-gradient
+  β::T                    # Planetary vorticity y-gradient
   eta::Array{T,2}            # Topographic PV
   etah::Array{Complex{T},2}  # FFT of Topographic PV
-  mu::T                      # Linear drag
-  nu::T                      # Viscosity coefficient
-  nnu::Int                   # Hyperviscous order (nnu=1 is plain old viscosity)
+  μ::T                      # Linear drag
+  ν::T                      # Viscosity coefficient
+  nν::Int                   # Hyperviscous order (nν=1 is plain old viscosity)
   calcFU::Function    # Function that calculates the forcing F(t) on
                       # domain-averaged zonal flow U(t)
   calcFq!::Function   # Function that calculates the forcing on QGPV q
 end
 
 """
-    Params(g::TwoDGrid, f0, beta, eta::Function, mu, nu, nnu, calcFU, calcFq)
+    Params(g::TwoDGrid, f0, β, eta::Function, μ, ν, nν, calcFU, calcFq)
 
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function Params(g, f0, beta, eta::Function, mu, nu, nnu, calcFU, calcFq)
+function Params(g, f0, β, eta::Function, μ, ν, nν, calcFU, calcFq)
   x, y = gridpoints(g)
   etagrid = eta(x, y)
   etah = rfft(etagrid)
-  Params(f0, beta, etagrid, etah, mu, nu, nnu, calcFU, calcFq)
+  Params(f0, β, etagrid, etah, μ, ν, nν, calcFU, calcFq)
 end
 
 
@@ -138,7 +138,7 @@ end
 Returns the equation for two-dimensional barotropic QG problem with params p and grid g.
 """
 function Equation(p::Params, g::AbstractGrid{T}) where T
-  LC = @. -p.mu - p.nu*g.Krsq^p.nnu + im*p.beta*g.kr*g.invKrsq
+  LC = @. -p.μ - p.ν*g.Krsq^p.nν + im*p.β*g.kr*g.invKrsq
   LC[1, 1] = 0
   FourierFlows.Equation(LC, calcN!, g)
 end
@@ -357,18 +357,18 @@ meanenergy(prob) = real(0.5*prob.sol[1, 1].^2)
 """
 Returns the enstrophy of the domain-averaged U.
 """
-meanenstrophy(prob) = real(prob.params.beta*prob.sol[1, 1])
+meanenstrophy(prob) = real(prob.params.β*prob.sol[1, 1])
 
 """
     dissipation(prob)
     dissipation(s, v, p, g)
 
-Returns the domain-averaged dissipation rate. nnu must be >= 1.
+Returns the domain-averaged dissipation rate. nν must be >= 1.
 """
 @inline function dissipation(sol, v, p, g)
-  @. v.uh = g.Krsq^(p.nnu-1) * abs2(sol)
+  @. v.uh = g.Krsq^(p.nν-1) * abs2(sol)
   v.uh[1, 1] = 0
-  p.nu/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
+  p.ν/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
 
 @inline dissipation(prob) = dissipation(prob.sol, prob.vars, prob.params, prob.grid)
@@ -396,12 +396,12 @@ end
     drag(prob)
     drag(s, v, p, g)
 
-Returns the extraction of domain-averaged energy by drag mu.
+Returns the extraction of domain-averaged energy by drag μ.
 """
 @inline function drag(sol, v, p, g)
   @. v.uh = g.Krsq^(-1) * abs2(sol)
   v.uh[1, 1] = 0
-  p.mu/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.uh, g)
+  p.μ/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.uh, g)
 end
 
 @inline drag(prob) = drag(prob.sol, prob.vars, prob.params, prob.grid)
