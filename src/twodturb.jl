@@ -67,11 +67,11 @@ end
 Returns the params for two-dimensional turbulence.
 """
 struct Params{T} <: AbstractParams
-  ν::T              # Vorticity viscosity
-  nν::Int           # Vorticity hyperviscous order
-  μ::T              # Bottom drag or hypoviscosity
-  nμ::Int           # Order of hypodrag
-  calcF!::Function  # Function that calculates the forcing F
+      ν  :: T         # Vorticity viscosity
+      nν :: Int       # Vorticity hyperviscous order
+       μ :: T         # Bottom drag or hypoviscosity
+      nμ :: Int       # Order of hypodrag
+  calcF! :: Function  # Function that calculates the forcing F
 end
 Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
 
