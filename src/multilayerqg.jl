@@ -70,46 +70,46 @@ abstract type BarotropicParams <: AbstractParams end
 
 struct Params{T} <: AbstractParams
   # prescribed params
-  nlayers::Int               # Number of fluid layers
-  g::T                       # Gravitational constant
-  f0::T                      # Constant planetary vorticity
-  beta::T                    # Planetary vorticity y-gradient
-  rho::Array{T,3}            # Array with density of each fluid layer
-  H::Array{T,3}              # Array with rest height of each fluid layer
-  U::Array{T,3}              # Array with imposed constant zonal flow U(y) in each fluid layer
-  eta::Array{T,2}            # Array containing topographic PV
-  mu::T                      # Linear bottom drag
-  nu::T                      # Viscosity coefficient
-  nnu::Int                   # Hyperviscous order (nnu=1 is plain old viscosity)
-  calcFq!::Function          # Function that calculates the forcing on QGPV q
+   nlayers :: Int            # Number of fluid layers
+         g :: T              # Gravitational constant
+         f0:: T              # Constant planetary vorticity
+      beta :: T              # Planetary vorticity y-gradient
+       rho :: Array{T,3}     # Array with density of each fluid layer
+         H :: Array{T,3}     # Array with rest height of each fluid layer
+         U :: Array{T,3}     # Array with imposed constant zonal flow U(y) in each fluid layer
+       eta :: Array{T,2}     # Array containing topographic PV
+        mu :: T              # Linear bottom drag
+        nu :: T              # Viscosity coefficient
+       nnu :: Int            # Hyperviscous order (nnu=1 is plain old viscosity)
+   calcFq! :: Function       # Function that calculates the forcing on QGPV q
 
   # derived params
-  greduced::Array{T,1}       # Array with the reduced gravity constants for each fluid interface
-  Qx::Array{T,3}             # Array containing x-gradient of PV due to U and eta in each fluid layer
-  Qy::Array{T,3}             # Array containing y-gradient of PV due to beta, U, and eta in each fluid layer
-  S::Array{T,4}              # Array containing coeffients for getting PV from  streamfunction
-  invS::Array{T,4}           # Array containing coeffients for inverting PV to streamfunction
-  rfftplan::FFTW.rFFTWPlan{T,-1,false,3}  # rfft plan for FFTs
+        g′ :: Array{T,1}     # Array with the reduced gravity constants for each fluid interface
+        Qx :: Array{T,3}     # Array containing x-gradient of PV due to U and eta in each fluid layer
+        Qy :: Array{T,3}     # Array containing y-gradient of PV due to beta, U, and eta in each fluid layer
+         S :: Array{T,4}     # Array containing coeffients for getting PV from  streamfunction
+      invS :: Array{T,4}     # Array containing coeffients for inverting PV to streamfunction
+  rfftplan :: FFTW.rFFTWPlan{T,-1,false,3}  # rfft plan for FFTs
 end
 
 struct SingleLayerParams{T} <: BarotropicParams
   # prescribed params
-  g::T                       # Gravitational constant
-  f0::T                      # Constant planetary vorticity
-  beta::T                    # Planetary vorticity y-gradient
-  rho::T                     # Fluid layer density
-  H::T                       # Fluid layer rest height
-  U::Array{T,1}              # Imposed constant zonal flow U(y)
-  eta::Array{T,2}            # Array containing topographic PV
-  mu::T                      # Linear bottom drag
-  nu::T                      # Viscosity coefficient
-  nnu::Int                   # Hyperviscous order (nnu=1 is plain old viscosity)
-  calcFq!::Function          # Function that calculates the forcing on QGPV q
+         g :: T              # Gravitational constant
+        f0 :: T              # Constant planetary vorticity
+      beta :: T              # Planetary vorticity y-gradient
+       rho :: T              # Fluid layer density
+         H :: T              # Fluid layer rest height
+         U :: Array{T,1}     # Imposed constant zonal flow U(y)
+       eta :: Array{T,2}     # Array containing topographic PV
+        mu :: T              # Linear bottom drag
+        nu :: T              # Viscosity coefficient
+       nnu :: Int            # Hyperviscous order (nnu=1 is plain old viscosity)
+   calcFq! :: Function       # Function that calculates the forcing on QGPV q
 
   # derived params
-  Qx::Array{T,2}             # Array containing zonal PV gradient due to beta, U, and eta in each fluid layer
-  Qy::Array{T,2}             # Array containing meridional PV gradient due to beta, U, and eta in each fluid layer
-  rfftplan::FFTW.rFFTWPlan{T,-1,false,2}  # rfft plan for FFTs
+        Qx :: Array{T,2}     # Array containing zonal PV gradient due to beta, U, and eta in each fluid layer
+        Qy :: Array{T,2}     # Array containing meridional PV gradient due to beta, U, and eta in each fluid layer
+  rfftplan :: FFTW.rFFTWPlan{T,-1,false,2}  # rfft plan for FFTs
 end
 
 function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, mu, nu, nnu, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
@@ -119,11 +119,11 @@ function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, mu, nu, nnu, g
 
   U = reshape(U, (1, ny, nlayers))
 
-  # greduced = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[1:nlayers-1] # definition match PYQG
-  greduced = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[2:nlayers] # correct definition
+  # g′ = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[1:nlayers-1] # definition match PYQG
+  g′ = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[2:nlayers] # correct definition
 
-  Fm = @. f0^2 / ( greduced*H[2:nlayers  ] )
-  Fp = @. f0^2 / ( greduced*H[1:nlayers-1] )
+  Fm = @. f0^2 / ( g′*H[2:nlayers  ] )
+  Fp = @. f0^2 / ( g′*H[1:nlayers-1] )
 
   rho = reshape(rho, (1,  1, nlayers))
   H = reshape(H, (1,  1, nlayers))
@@ -157,7 +157,7 @@ function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, mu, nu, nnu, g
   if nlayers == 1
     SingleLayerParams{T}(g, f0, beta, rho, H, U, eta, mu, nu, nnu, calcFq, Qx, Qy, grid.rfftplan)
   else
-    Params{T}(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, calcFq, greduced, Qx, Qy, S, invS, rfftplanlayered)
+    Params{T}(nlayers, g, f0, beta, rho, H, U, eta, mu, nu, nnu, calcFq, g′, Qx, Qy, S, invS, rfftplanlayered)
   end
 end
 
@@ -270,14 +270,14 @@ function pvfromstreamfunction!(qh, psih, S, g)
 end
 
 """
-    calcS!(S, Fp, Fm, g)
+    calcS!(S, Fp, Fm, gr)
 
 Constructs the stretching matrix S that connects q and ψ: q_{k,l} = S * ψ_{k,l}.
 """
-function calcS!(S, Fp, Fm, g)
+function calcS!(S, Fp, Fm, gr)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
-  for n=1:g.nl, m=1:g.nkr
-    k2 = g.Krsq[m, n]
+  for n=1:gr.nl, m=1:gr.nkr
+     k2 = gr.Krsq[m, n]
     Skl = -k2*I + F
     @views S[m, n, :, :] .= Skl
   end
@@ -290,10 +290,10 @@ end
 Constructs the inverse of the stretching matrix S that connects q and ψ:
 ψ_{k,l} = invS * q_{k,l}.
 """
-function calcinvS!(invS, Fp, Fm, g)
+function calcinvS!(invS, Fp, Fm, gr)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
-  for n=1:g.nl, m=1:g.nkr
-    k2 = g.Krsq[m, n]
+  for n=1:gr.nl, m=1:gr.nkr
+    k2 = gr.Krsq[m, n]
     if k2 == 0
       k2 = 1
     end
@@ -484,7 +484,7 @@ function energies(prob)
   end
 
   for j=1:p.nlayers-1
-    PE[j] = 1/(2*g.Lx*g.Ly)*p.f0^2/p.greduced[j]*parsevalsum(abs2.(v.psih[:, :, j+1].-v.psih[:, :, j]), g)
+    PE[j] = 1/(2*g.Lx*g.Ly)*p.f0^2/p.g′[j]*parsevalsum(abs2.(v.psih[:, :, j+1].-v.psih[:, :, j]), g)
   end
 
   KE, PE
@@ -511,7 +511,7 @@ function fluxes(prob)
   lateralfluxes *= g.dx*g.dy/(g.Lx*g.Ly*sum(p.H))
 
   for j=1:p.nlayers-1
-    verticalfluxes[j] = sum( @views @. p.f0^2/p.greduced[j] * (p.U[: ,:, j] - p.U[:, :, j+1])*v.v[:, :, j+1]*v.psi[:, :, j] ; dims=(1,2) )[1]
+    verticalfluxes[j] = sum( @views @. p.f0^2/p.g′[j] * (p.U[: ,:, j] - p.U[:, :, j+1])*v.v[:, :, j+1]*v.psi[:, :, j] ; dims=(1,2) )[1]
     verticalfluxes[j] *= g.dx*g.dy/(g.Lx*g.Ly*sum(p.H))
   end
 
