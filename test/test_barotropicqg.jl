@@ -7,8 +7,8 @@ function test_bqg_rossbywave(stepper, dt, nsteps)
     nx = 64
   beta = 2.0
     Lx = 2π
-    mu = 0.0
-    nu = 0.0
+    μ = 0.0
+    ν = 0.0
 
   gr  = TwoDGrid(nx, Lx)
   x, y = gridpoints(gr)
@@ -21,7 +21,7 @@ function test_bqg_rossbywave(stepper, dt, nsteps)
     eta(x, y) = 0*x
   end
 
-  prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, eta=eta, beta=beta, mu=mu, nu=nu, stepper=stepper, dt=dt)
+  prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, eta=eta, beta=beta, μ=μ, ν=ν, stepper=stepper, dt=dt)
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
   x, y = gridpoints(g)
@@ -50,11 +50,11 @@ end
 
 Tests if the energy budgets are closed for BarotropicQG with stochastic forcing.
 """
-function test_bqg_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, message=false)
+function test_bqg_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, message=false)
   n, L  = 256, 2π
-  nu, nnu = 1e-7, 2
-  mu = 1e-1
-  dt, tf = 0.005, 0.1/mu
+  ν, nν = 1e-7, 2
+  μ = 1e-1
+  dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
   ns = 1
 
@@ -84,7 +84,7 @@ function test_bqg_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu
     nothing
   end
 
-  prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt,
+  prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcFq=calcFq!, stochastic=true)
 
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
@@ -106,7 +106,7 @@ function test_bqg_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu
 
   E, D, W, R = diags
 
-  t = round(mu*cl.t, digits=2)
+  t = round(μ*cl.t, digits=2)
 
   i₀ = 1
   dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
@@ -133,11 +133,11 @@ end
 
 Tests if the energy budgets are closed for BarotropicQG with stochastic forcing.
 """
-function test_bqg_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, message=false)
+function test_bqg_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, message=false)
   n, L  = 256, 2π
-  nu, nnu = 1e-7, 2
-  mu = 1e-1
-  dt, tf = 0.005, 0.1/mu
+  ν, nν = 1e-7, 2
+  μ = 1e-1
+  dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
   ns = 1
 
@@ -154,7 +154,7 @@ function test_bqg_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, 
     nothing
   end
 
-  prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt,
+  prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcFq=calcFq!, stochastic=false)
 
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
@@ -176,7 +176,7 @@ function test_bqg_deterministicforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, 
 
   E, D, W, R = diags
 
-  t = round(mu*cl.t, digits=2)
+  t = round(μ*cl.t, digits=2)
 
   i₀ = 1
   dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
@@ -202,14 +202,14 @@ Tests the advection term in the twodturb module by timestepping a
 test problem with timestep dt and timestepper identified by the string stepper.
 The test problem is derived by picking a solution ζf (with associated
 streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
-forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - nuΔζf. One solution
+forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - νΔζf. One solution
 to the vorticity equation forced by this Ff is then ζf. (This solution may not
 be realized, at least at long times, if it is unstable.)
 """
-function test_bqg_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, message=false)
+function test_bqg_advection(dt, stepper; n=128, L=2π, ν=1e-2, nν=1, μ=0.0, message=false)
   n, L  = 128, 2π
-  nu, nnu = 1e-2, 1
-  mu = 0.0
+  ν, nν = 1e-2, 1
+  μ = 0.0
   tf = 1.0
   nt = round(Int, tf/dt)
 
@@ -220,7 +220,7 @@ function test_bqg_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, m
   qf = @. -8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
 
   Ff = @. -(
-    nu*( 64sin(2x)*cos(2y) + 200sin(x)*cos(3y) )
+    ν*( 64sin(2x)*cos(2y) + 200sin(x)*cos(3y) )
     + 8*( cos(x)*cos(3y)*sin(2x)*sin(2y) - 3cos(2x)*cos(2y)*sin(x)*sin(3y) )
   )
 
@@ -232,7 +232,7 @@ function test_bqg_advection(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, m
     nothing
   end
 
-  prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper, calcFq=calcFq!)
+  prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcFq=calcFq!)
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
   BarotropicQG.set_zeta!(prob, qf)
 
@@ -247,10 +247,10 @@ end
 
 Tests the form stress term that forces the domain-averaged zonal flow U(t).
 """
-function test_bqg_formstress(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, message=false)
+function test_bqg_formstress(dt, stepper; n=128, L=2π, ν=0.0, nν=1, μ=0.0, message=false)
   n, L  = 128, 2π
-  nu, nnu = 1e-2, 1
-  mu = 0.0
+  ν, nν = 1e-2, 1
+  μ = 0.0
   tf = 1
   nt = 1
 
@@ -263,7 +263,7 @@ function test_bqg_formstress(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, m
 
   answer = 0.25 # this is what <v*eta> should be
 
-  prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper, eta=topoPV, calcFU = F)
+  prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, eta=topoPV, calcFU = F)
   BarotropicQG.set_zeta!(prob, zetai)
   BarotropicQG.updatevars!(prob)
 
