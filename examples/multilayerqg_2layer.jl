@@ -21,9 +21,9 @@ nsubs  = 250   # number of time-steps for plotting
                # (nsteps must be multiple of nsubs)
 
 # Physical parameters
-Lx  = 2π      # domain size
-mu  = 5e-2    # bottom drag
-beta = 5      # the y-gradient of planetary PV
+ Lx  = 2π      # domain size
+   μ = 5e-2    # bottom drag
+beta = 5       # the y-gradient of planetary PV
 
 nlayers = 2       # these choice of parameters give the
 f0, g = 1, 1      # desired PV-streamfunction relations
@@ -38,7 +38,7 @@ x, y = gridpoints(gr)
 k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
 
 # Initialize problem
-prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, Lx=Lx, f0=f0, g=g, H=H, rho=rho, U=U, dt=dt, stepper=stepper, mu=mu, beta=beta)
+prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, Lx=Lx, f0=f0, g=g, H=H, rho=rho, U=U, dt=dt, stepper=stepper, μ=μ, beta=beta)
 sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
 # Files
@@ -103,14 +103,14 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   end
 
   sca(axs[5])
-  plot(mu*E.t[E.i], E.data[E.i][1][1], ".", color="b", label=L"$KE_1$")
-  plot(mu*E.t[E.i], E.data[E.i][1][2], ".", color="r", label=L"$KE_2$")
+  plot(μ*E.t[E.i], E.data[E.i][1][1], ".", color="b", label=L"$KE_1$")
+  plot(μ*E.t[E.i], E.data[E.i][1][2], ".", color="r", label=L"$KE_2$")
   xlabel(L"\mu t")
   ylabel(L"KE")
   # legend()
 
   sca(axs[6])
-  plot(mu*E.t[E.i], E.data[E.i][2][1], ".", color="k", label=L"$PE_{3/2}$")
+  plot(μ*E.t[E.i], E.data[E.i][2][1], ".", color="k", label=L"$PE_{3/2}$")
   xlabel(L"\mu t")
   ylabel(L"PE")
   # legend()

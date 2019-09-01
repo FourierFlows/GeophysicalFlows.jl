@@ -27,7 +27,7 @@ cfl(prob) = cfl(prob.vars.u, prob.vars.v, prob.clock.dt, prob.grid.dx)
 
 # Run tests
 testtime = @elapsed begin
-
+#=
 @testset "Utils" begin
   include("test_utils.jl")
 
@@ -79,7 +79,7 @@ end
   @test test_bqgql_advection(0.0005, "ForwardEuler")
   @test test_bqgql_energyenstrophy()
 end
-
+=#
 @testset "MultilayerQG" begin
   include("test_multilayerqg.jl")
 
