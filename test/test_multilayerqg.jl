@@ -81,7 +81,7 @@ the advection terms J(ψn, qn) are non-zero. Next, a forcing Ff is derived such
 that a solution to the problem forced by this Ff is then qf.
 (This solution may not be realized, at least at long times, if it is unstable.)
 """
-function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
+function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   tf = 0.5
   nt = round(Int, tf/dt)
 
@@ -109,7 +109,7 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.
   U[:, 1] = u1 .+ U1
   U[:, 2] = u2 .+ U2
 
-  mu, nu, nnu = 0.1, 0.05, 1
+  μ, ν, nν = 0.1, 0.05, 1
 
   η0, σx, σy = 1.0, Lx/25, Ly/20
   η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
@@ -117,8 +117,8 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
 
-  Ff1 = FourierFlows.jacobian(ψ1, q1, gr)     + (beta .- uyy1 .-   25*(U2.+u2.-U1.-u1) ).*ψ1x + (U1.+u1).*q1x - nu*Δq1
-  Ff2 = FourierFlows.jacobian(ψ2, q2 + η, gr) + (beta .- uyy2 .- 25/4*(U1.+u1.-U2.-u2) ).*ψ2x + (U2.+u2).*(q2x + ηx) + mu*Δψ2 - nu*Δq2
+  Ff1 = FourierFlows.jacobian(ψ1, q1, gr)     + (beta .- uyy1 .-   25*(U2.+u2.-U1.-u1) ).*ψ1x + (U1.+u1).*q1x - ν*Δq1
+  Ff2 = FourierFlows.jacobian(ψ2, q2 + η, gr) + (beta .- uyy2 .- 25/4*(U1.+u1.-U2.-u2) ).*ψ2x + (U2.+u2).*(q2x + ηx) + μ*Δψ2 - ν*Δq2
 
   Ff = zeros(gr.nx, gr.ny, nlayers)
   Ff[:, :, 1] .= Ff1
@@ -134,7 +134,7 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.
   end
 
   prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0,
-          g=g, H=H, rho=rho, U=U, eta=η, beta=beta, mu=mu, nu=nu, nnu=nnu, calcFq=calcFq!)
+          g=g, H=H, rho=rho, U=U, eta=η, beta=beta, μ=μ, ν=ν, nν=nν, calcFq=calcFq!)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   qf = zeros(gr.nx, gr.ny, nlayers)
@@ -164,7 +164,7 @@ Next, a forcing Ff is derived such that a solution to the problem forced by this
 Ff is then qf. (This solution may not be realized, at least at long times, if it
 is unstable.)
 """
-function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
+function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   tf = 0.5
   nt = round(Int, tf/dt)
 
@@ -192,7 +192,7 @@ function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, 
   U[:, 1] = u1 .+ U1
   U[:, 2] = u2 .+ U2
 
-  mu, nu, nnu = 0.1, 0.05, 1
+  μ, ν, nν = 0.1, 0.05, 1
 
   η0, σx, σy = 1.0, Lx/25, Ly/20
   η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
@@ -200,8 +200,8 @@ function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, 
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
 
-  Ff1 = (beta .- uyy1 .-   25*(U2.+u2.-U1.-u1) ).*ψ1x + (U1.+u1).*q1x - nu*Δq1
-  Ff2 = FourierFlows.jacobian(ψ2, η, gr) + (beta .- uyy2 .- 25/4*(U1.+u1.-U2.-u2) ).*ψ2x + (U2.+u2).*(q2x + ηx) + mu*Δψ2 - nu*Δq2
+  Ff1 = (beta .- uyy1 .-   25*(U2.+u2.-U1.-u1) ).*ψ1x + (U1.+u1).*q1x - ν*Δq1
+  Ff2 = FourierFlows.jacobian(ψ2, η, gr) + (beta .- uyy2 .- 25/4*(U1.+u1.-U2.-u2) ).*ψ2x + (U2.+u2).*(q2x + ηx) + μ*Δψ2 - ν*Δq2
 
   Ff = zeros(gr.nx, gr.ny, nlayers)
   Ff[:, :, 1] .= Ff1
@@ -217,7 +217,7 @@ function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, mu=0.0, 
   end
 
   prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0,
-          g=g, H=H, rho=rho, U=U, eta=η, beta=beta, mu=mu, nu=nu, nnu=nnu, calcFq=calcFq!, linear=true)
+          g=g, H=H, rho=rho, U=U, eta=η, beta=beta, μ=μ, ν=ν, nν=nν, calcFq=calcFq!, linear=true)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
 
@@ -243,7 +243,7 @@ end
 Tests the kinetic (KE) and potential (PE) energies function by constructing a
 2-layer problem and initializing it with a flow field whose KE and PE are known.
 """
-function test_mqg_energies(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
+function test_mqg_energies(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 64, 66
   Lx, Ly = 2π, 2π
   gr = TwoDGrid(nx, Lx, ny, Ly)
@@ -278,7 +278,7 @@ end
 Tests the lateral and vertical eddy fluxes by constructing a 2-layer problem and
 initializing it with a flow field whose fluxes are known.
 """
-function test_mqg_fluxes(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
+function test_mqg_fluxes(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 128, 126
   Lx, Ly = 2π, 2π
   gr = TwoDGrid(nx, Lx, ny, Ly)
@@ -313,7 +313,7 @@ end
 Tests the set_q!() and set_psi!() functions that initialize sol with a flow with
 given `q` or `psi` respectively.
 """
-function test_setqsetpsi(;dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers=2, mu=0.0, nu=0.0, nnu=1)
+function test_setqsetpsi(;dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 32, 34
   L = 2π
   gr = TwoDGrid(nx, L, ny, L)
