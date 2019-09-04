@@ -151,7 +151,7 @@ function test_twodturb_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, �
   tf = 1.0
   nt = round(Int, tf/dt)
 
-  gr  = TwoDGrid(dev, n, L)
+  gr   = TwoDGrid(dev, n, L)
   x, y = gridpoints(gr)
 
    psif = @.   sin(2x)*cos(2y) +  2sin(x)*cos(3y)
@@ -184,9 +184,9 @@ function test_twodturb_energyenstrophy(dev::Device=CPU())
   nx, Lx  = 128, 2π
   ny, Ly  = 128, 3π
   gr = TwoDGrid(dev, nx, Lx, ny, Ly)
-  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
   x, y = gridpoints(gr)
 
+  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
     psi0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
    zeta0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
 
