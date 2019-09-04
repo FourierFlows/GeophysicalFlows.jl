@@ -153,8 +153,8 @@ version = "0.6.1"
 
 [[FourierFlows]]
 deps = ["CUDAapi", "Coverage", "CuArrays", "FFTW", "Interpolations", "JLD2", "LinearAlgebra", "Printf", "Random", "Reexport", "Requires", "Statistics"]
-git-tree-sha1 = "8b58b99504aec93275be09ae5bb8a39817956d17"
-repo-rev = "ImplementCUDAapi"
+git-tree-sha1 = "60d0e58e32fcd19d4ceef13626c48f63887a2329"
+repo-rev = "master"
 repo-url = "https://github.com/FourierFlows/FourierFlows.jl.git"
 uuid = "2aec4490-903f-5c70-9b11-9bed06a700e1"
 version = "0.3.1"
