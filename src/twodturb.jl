@@ -53,7 +53,7 @@ function Problem(;
            T = Float64
 )
 
-  gr = TwoDGrid(nx, Lx, ny, Ly)
+  gr = TwoDGrid(nx, Lx, ny, Ly; T=T)
   pr = Params{T}(nu, nnu, mu, nmu, calcF)
   vs = calcF == nothingfunction ? Vars(gr) : (stochastic ? StochasticForcedVars(gr) : ForcedVars(gr))
   eq = Equation(pr, gr)

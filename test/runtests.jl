@@ -43,6 +43,8 @@ end
   @test test_twodturb_stochasticforcingbudgets()
   @test test_twodturb_deterministicforcingbudgets()
   @test test_twodturb_energyenstrophy()
+  @test test_twodturb_problemtype(Float32)
+  @test TwoDTurb.nothingfunction() == nothing
 end
 
 @testset "BarotropicQG" begin
@@ -62,6 +64,7 @@ end
   @test test_bqg_formstress(0.01, "ForwardEuler")
   @test test_bqg_energyenstrophy()
   @test test_bqg_meanenergyenstrophy()
+  @test test_bqg_problemtype(Float32)
   @test BarotropicQG.nothingfunction() == nothing
 end
 
@@ -80,6 +83,7 @@ end
   @test test_bqgql_stochasticforcingbudgets()
   @test test_bqgql_advection(0.0005, "ForwardEuler")
   @test test_bqgql_energyenstrophy()
+  @test test_bqgql_problemtype(Float32)
   @test BarotropicQGQL.nothingfunction() == nothing
 end
 
@@ -91,8 +95,9 @@ end
   @test test_mqg_linearadvection(0.001, "ForwardEuler")
   @test test_mqg_energies()
   @test test_mqg_fluxes()
-  @test test_setqsetpsi()
-  @test test_paramsconstructor()
+  @test test_mqg_setqsetpsi()
+  @test test_mqg_paramsconstructor()
+  @test test_mqg_problemtype(Float32)
   @test MultilayerQG.nothingfunction() == nothing
 end
 
