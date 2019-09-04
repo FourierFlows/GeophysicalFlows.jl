@@ -44,7 +44,6 @@ git-tree-sha1 = "c69698c3d4a7255bc1b4bc2afc09f59db910243b"
 uuid = "00ebfdb7-1f24-5e51-bd34-a7502290713f"
 version = "0.6.2"
 
-[[CUDAapi]]
 deps = ["Libdl", "Logging"]
 git-tree-sha1 = "9b2b4b71d6b7f946c9689bb4dea03ff92e3c7091"
 uuid = "3895d2a7-ec45-59b8-82bb-cfc6a382f9b3"
