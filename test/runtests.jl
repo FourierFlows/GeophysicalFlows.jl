@@ -1,6 +1,5 @@
 using
   FourierFlows,
-  Test,
   Statistics,
   Random,
   FFTW,
