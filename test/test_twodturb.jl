@@ -205,7 +205,7 @@ function test_twodturb_energyenstrophy()
   energyzeta0 = TwoDTurb.energy(prob)
   enstrophyzeta0 = TwoDTurb.enstrophy(prob)
   
-  params = TwoDTurb.Params(p.ν, p.nν)
+  params = TwoDTurb.Params(p.nu, p.nnu)
 
   (isapprox(energyzeta0, energy_calc, rtol=rtol_twodturb) &&
    isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_twodturb) &&
