@@ -10,8 +10,8 @@
     <a href="https://fourierflows.github.io/GeophysicalFlows.jl/stable/">
         <img src="https://img.shields.io/badge/docs-stable-blue.svg">
     </a>
-    <a href="https://fourierflows.github.io/GeophysicalFlows.jl/latest/">
-        <img src="https://img.shields.io/badge/docs-latest-blue.svg">
+    <a href="https://fourierflows.github.io/GeophysicalFlows.jl/dev/">
+        <img src="https://img.shields.io/badge/docs-dev-blue.svg">
     </a>
     <a href='https://coveralls.io/github/FourierFlows/GeophysicalFlows.jl?branch=master'><img src='https://coveralls.io/repos/github/FourierFlows/GeophysicalFlows.jl/badge.svg?branch=master' alt='Coverage Status' />
     </a>
