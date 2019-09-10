@@ -313,7 +313,7 @@ end
 Tests the set_q!() and set_psi!() functions that initialize sol with a flow with
 given `q` or `psi` respectively.
 """
-function test_setqsetpsi(;dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+function test_mqg_setqsetpsi(;dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 32, 34
   L = 2π
   gr = TwoDGrid(nx, L, ny, L)
@@ -355,7 +355,7 @@ end
 Tests that `Params` constructor works with both mean flow `U` being a floats
 (i.e., constant `U` in each layer) or vectors (i.e., `U(y)` in each layer).
 """
-function test_paramsconstructor(;dt=0.001, stepper="ForwardEuler")
+function test_mqg_paramsconstructor(;dt=0.001, stepper="ForwardEuler")
   nx, ny = 32, 34
   L = 2π
   gr = TwoDGrid(nx, L, ny, L)
@@ -379,4 +379,10 @@ function test_paramsconstructor(;dt=0.001, stepper="ForwardEuler")
   probUfloats = MultilayerQG.Problem(nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, rho=rho, U=Ufloats)
 
   isapprox(probUfloats.params.U, probUvectors.params.U, rtol=rtol_multilayerqg)
+end
+
+function test_mqg_problemtype(T=Float32)
+  prob = MultilayerQG.Problem(nlayers=2, T=T)
+
+  (typeof(prob.sol)==Array{Complex{T},3} && typeof(prob.grid.Lx)==T && typeof(prob.grid.x)==Array{T,2} && typeof(prob.vars.u)==Array{T,3})
 end

@@ -59,7 +59,7 @@ function Problem(;
            T = Float64)
 
    grid = TwoDGrid(nx, Lx, ny, Ly; T=T)
-   params = Params(nlayers, T(g), T(f0), T(beta), Array{T}(rho), Array{T}(H), Array{T}(U), Array{T}(eta), T(μ), T(ν), nν, grid, calcFq=calcFq)
+   params = Params(nlayers, g, f0, beta, Array{T}(rho), Array{T}(H), Array{T}(U), Array{T}(eta), μ, ν, nν, grid, calcFq=calcFq)
    vars = calcFq == nothingfunction ? Vars(grid, params) : ForcedVars(grid, params)
    eqn = linear ? LinearEquation(params, grid) : Equation(params, grid)
 
