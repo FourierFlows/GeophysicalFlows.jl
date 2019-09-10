@@ -61,7 +61,7 @@ function Problem(;
              T = Float64)
 
   # the grid
-  gr  = TwoDGrid(nx, Lx, ny, Ly)
+  gr  = TwoDGrid(nx, Lx, ny, Ly; T=T)
   x, y = gridpoints(gr)
 
   # topographic PV
@@ -70,10 +70,10 @@ function Problem(;
     etah = rfft(eta)
   end
 
-  if typeof(eta)!=Array{Float64,2} #this is true if eta was passes in Problem as a function
+  if typeof(eta)!=Array{T, 2} #this is true if eta was passes in Problem as a function
     pr = Params(gr, f0, beta, eta, mu, nu, nnu, calcFU, calcFq)
   else
-    pr = Params(f0, beta, eta, rfft(eta), mu, nu, nnu, calcFU, calcFq)
+    pr = Params{T}(f0, beta, eta, rfft(eta), mu, nu, nnu, calcFU, calcFq)
   end
 
   if calcFq == nothingfunction && calcFU == nothingfunction
@@ -120,11 +120,11 @@ end
 
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function Params(g, f0, beta, eta::Function, mu, nu, nnu, calcFU, calcFq)
+function Params(g::AbstractGrid{T}, f0, beta, eta::Function, mu, nu, nnu, calcFU, calcFq)  where T
   x, y = gridpoints(g)
   etagrid = eta(x, y)
   etah = rfft(etagrid)
-  Params(f0, beta, etagrid, etah, mu, nu, nnu, calcFU, calcFq)
+  Params{T}(f0, beta, etagrid, etah, mu, nu, nnu, calcFU, calcFq)
 end
 
 
@@ -138,9 +138,9 @@ end
 Returns the equation for two-dimensional barotropic QG problem with params p and grid g.
 """
 function Equation(p::Params, g::AbstractGrid{T}) where T
-  LC = @. -p.mu - p.nu*g.Krsq^p.nnu + im*p.beta*g.kr*g.invKrsq
-  LC[1, 1] = 0
-  FourierFlows.Equation(LC, calcN!, g)
+  L = @. -p.mu - p.nu*g.Krsq^p.nnu + im*p.beta*g.kr*g.invKrsq
+  L[1, 1] = 0
+  FourierFlows.Equation(L, calcN!, g)
 end
 
 
@@ -167,7 +167,7 @@ eval(structvarsexpr(:StochasticForcedVars, stochforcedvarspecs; parent=:Barotrop
 
 Returns the vars for unforced two-dimensional barotropic QG problem with grid g.
 """
-function Vars(g; T=typeof(g.Lx))
+function Vars(g::AbstractGrid{T}) where T
   U = Array{T,0}(undef, ); U[] = 0
   @createarrays T (g.nx, g.ny) q u v psi zeta
   @createarrays Complex{T} (g.nkr, g.nl) qh uh vh psih zetah
@@ -179,8 +179,8 @@ end
 
 Returns the vars for forced two-dimensional barotropic QG problem with grid g.
 """
-function ForcedVars(g; T=typeof(g.Lx))
-  v = Vars(g; T=T)
+function ForcedVars(g::AbstractGrid{T}) where T
+  v = Vars(g)
   Fqh = zeros(Complex{T}, (g.nkr, g.nl))
   ForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., Fqh)
 end
@@ -190,8 +190,8 @@ end
 
 Returns the vars for stochastically forced two-dimensional barotropic QG problem with grid g.
 """
-function StochasticForcedVars(g; T=typeof(g.Lx))
-  v = ForcedVars(g; T=T)
+function StochasticForcedVars(g::AbstractGrid{T}) where T
+  v = ForcedVars(g)
   prevsol = zeros(Complex{T}, (g.nkr, g.nl))
   StochasticForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., prevsol)
 end

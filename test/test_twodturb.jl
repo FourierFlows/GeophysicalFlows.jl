@@ -186,9 +186,9 @@ function test_twodturb_energyenstrophy()
   nx, Lx  = 128, 2π
   ny, Ly  = 128, 3π
   gr = TwoDGrid(nx, Lx, ny, Ly)
-  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
   x, y = gridpoints(gr)
 
+  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
     psi0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
    zeta0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
 
@@ -196,13 +196,24 @@ function test_twodturb_energyenstrophy()
   enstrophy_calc = 2701/162
 
   prob = TwoDTurb.Problem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
+  
+  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
 
   TwoDTurb.set_zeta!(prob, zeta0)
   TwoDTurb.updatevars!(prob)
 
   energyzeta0 = TwoDTurb.energy(prob)
   enstrophyzeta0 = TwoDTurb.enstrophy(prob)
+  
+  params = TwoDTurb.Params(p.nu, p.nnu)
 
-  (isapprox(energyzeta0, 29.0/9, rtol=rtol_twodturb) &&
-   isapprox(enstrophyzeta0, 2701.0/162, rtol=rtol_twodturb))
+  (isapprox(energyzeta0, energy_calc, rtol=rtol_twodturb) &&
+   isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_twodturb) &&
+   TwoDTurb.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
+end
+
+function test_twodturb_problemtype(T=Float32)
+  prob = TwoDTurb.Problem(T=T)
+
+  (typeof(prob.sol)==Array{Complex{T},2} && typeof(prob.grid.Lx)==T && typeof(prob.grid.x)==Array{T,2} && typeof(prob.vars.u)==Array{T,2})
 end

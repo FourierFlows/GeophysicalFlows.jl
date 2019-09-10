@@ -58,7 +58,7 @@ function Problem(;
              T = Float64)
 
   # the grid
-  gr  = BarotropicQGQL.TwoDGrid(nx, Lx, ny, Ly)
+  gr  = TwoDGrid(nx, Lx, ny, Ly; T=T)
   x, y = gridpoints(gr)
 
   # topographic PV
@@ -67,10 +67,10 @@ function Problem(;
     etah = rfft(eta)
   end
 
-  if typeof(eta)!=Array{Float64,2} #this is true if eta was passes in Problem as a function
+  if typeof(eta)!=Array{T, 2} #this is true if eta was passes in Problem as a function
     pr = Params(gr, f0, beta, eta, mu, nu, nnu, calcF)
   else
-    pr = Params(f0, beta, eta, rfft(eta), mu, nu, nnu, calcF)
+    pr = Params{T}(f0, beta, eta, rfft(eta), mu, nu, nnu, calcF)
   end
   vs = calcF == nothingfunction ? Vars(gr) : (stochastic ? StochasticForcedVars(gr) : ForcedVars(gr))
   eq = BarotropicQGQL.Equation(pr, gr)
@@ -93,8 +93,8 @@ Returns the params for an unforced two-dimensional barotropic QG problem.
 struct Params{T} <: AbstractParams
   f0::T                      # Constant planetary vorticity
   beta::T                    # Planetary vorticity y-gradient
-  eta::Array{T,2}            # Topographic PV
-  etah::Array{Complex{T},2}  # FFT of Topographic PV
+  eta::Array{T, 2}           # Topographic PV
+  etah::Array{Complex{T}, 2} # FFT of Topographic PV
   mu::T                      # Linear drag
   nu::T                      # Viscosity coefficient
   nnu::Int                   # Hyperviscous order (nnu=1 is plain old viscosity)
@@ -106,11 +106,11 @@ end
 
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function Params(g::TwoDGrid, f0, beta, eta::Function, mu, nu, nnu, calcF)
+function Params(g::AbstractGrid{T}, f0, beta, eta::Function, mu, nu, nnu, calcF) where T
   x, y = gridpoints(g)
   etagrid = eta(x, y)
   etah = rfft(etagrid)
-  Params(f0, beta, etagrid, etah, mu, nu, nnu, calcF)
+  Params{T}(f0, beta, etagrid, etah, mu, nu, nnu, calcF)
 end
 
 
@@ -124,9 +124,9 @@ end
 Returns the equation for two-dimensional barotropic QG problem with params p and grid g.
 """
 function Equation(p::Params, g::AbstractGrid{T}) where T
-  LC = @. -p.mu - p.nu*g.Krsq^p.nnu + im*p.beta*g.kr*g.invKrsq
-  LC[1, 1] = 0
-  FourierFlows.Equation(LC, calcN!, g)
+  L = @. -p.mu - p.nu*g.Krsq^p.nnu + im*p.beta*g.kr*g.invKrsq
+  L[1, 1] = 0
+  FourierFlows.Equation(L, calcN!, g)
 end
 
 
@@ -160,7 +160,7 @@ mutable struct Vars{T} <: BarotropicQGQLVars
   Psih::Array{Complex{T},2}
 end
 
-function Vars(g; T=typeof(g.Lx))
+function Vars(g::AbstractGrid{T}) where T
   @createarrays T (g.nx, g.ny) u v U uzeta vzeta zeta Zeta psi Psi
   @createarrays Complex{T} (g.nkr, g.nl) N NZ uh vh Uh zetah Zetah psih Psih
   Vars(u, v, U, uzeta, vzeta, zeta, Zeta, psi, Psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih, Psih)
@@ -193,8 +193,8 @@ mutable struct ForcedVars{T} <: BarotropicQGQLForcedVars
   Fh::Array{Complex{T},2}
 end
 
-function ForcedVars(g; T=typeof(g.Lx))
-  v = Vars(g; T=T)
+function ForcedVars(g::AbstractGrid{T}) where T
+  v = Vars(g)
   Fh = zeros(Complex{T}, (g.nkr, g.nl))
   ForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., Fh)
 end
@@ -223,8 +223,8 @@ mutable struct StochasticForcedVars{T} <: BarotropicQGQLForcedVars
   prevsol::Array{Complex{T},2}
 end
 
-function StochasticForcedVars(g; T=typeof(g.Lx))
-  v = ForcedVars(g; T=T)
+function StochasticForcedVars(g::AbstractGrid{T}) where T
+  v = ForcedVars(g)
   prevsol = zeros(Complex{T}, (g.nkr, g.nl))
   StochasticForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., prevsol)
 end
