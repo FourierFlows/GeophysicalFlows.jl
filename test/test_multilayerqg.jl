@@ -63,7 +63,7 @@ end
 
 
 """
-    test_pvtofromstreamfunction()
+    test_pvtofromstreamfunction_2layer()
 
 Tests the pvfromstreamfunction function that gives qh from ψh. To do so, it
 constructs a 2-layer problem with parameters such that
@@ -102,7 +102,7 @@ end
 
 
 """
-    test_pvtofromstreamfunction()
+    test_pvtofromstreamfunction_3layer()
 
 Tests the pvfromstreamfunction function that gives qh from ψh. To do so, it
 constructs a 3-layer problem with parameters such that
