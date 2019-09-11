@@ -1,11 +1,11 @@
 """
-    constructtestfields()
+    constructtestfields_2layer(gr)
 
 Constructs flow fields for a 2-layer problem with parameters such that
     q1 = Δψ1 + 25*(ψ2-ψ1),
     q2 = Δψ2 + 25/4*(ψ1-ψ2).
 """
-function constructtestfields(gr)
+function constructtestfields_2layer(gr)
   x, y = gridpoints(gr)
   k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
 
@@ -33,6 +33,36 @@ end
 
 
 """
+    constructtestfields_3layer(gr)
+
+Constructs flow fields for a 3-layer problem with parameters such that
+    q1 = Δψ1 + 20ψ2 - 20ψ1,
+    q2 = Δψ2 + 20ψ1 - 44ψ2 + 24ψ3,
+    q2 = Δψ2 + 12ψ2 - 12ψ3.
+"""
+function constructtestfields_3layer(gr)
+  x, y = gridpoints(gr)
+  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
+
+  # a set of streafunctions ψ1, ψ2, ψ3, ...
+  ψ1 = @. 1e-3 * ( 1/4*cos(2k0*x)*cos(5l0*y) + 1/3*cos(3k0*x)*cos(3l0*y) )
+  ψ2 = @. 1e-3 * (     cos(3k0*x)*cos(4l0*y) + 1/2*cos(4k0*x)*cos(2l0*y) )
+  ψ3 = @. 1e-3 * (     cos(1k0*x)*cos(3l0*y) + 1/2*cos(2k0*x)*cos(2l0*y) )
+  
+  Δψ1 = @. -1e-3 * ( 1/4*((2k0)^2+(5l0)^2)*cos(2k0*x)*cos(5l0*y) + 1/3*((3k0)^2+(3l0)^2)*cos(3k0*x)*cos(3l0*y) )
+  Δψ2 = @. -1e-3 * (     ((3k0)^2+(4l0)^2)*cos(3k0*x)*cos(4l0*y) + 1/2*((4k0)^2+(2l0)^2)*cos(4k0*x)*cos(2l0*y) )
+  Δψ3 = @. -1e-3 * (     ((1k0)^2+(3l0)^2)*cos(1k0*x)*cos(3l0*y) + 1/2*((2k0)^2+(2l0)^2)*cos(2k0*x)*cos(2l0*y) )
+
+  # ... their corresponding PVs q1, q2, q3,
+  q1 = @. Δψ1 + 20ψ2 - 20ψ1
+  q2 = @. Δψ2 + 20ψ1 - 44ψ2 + 24ψ3
+  q3 = @. Δψ3        + 12ψ2 - 12ψ3
+
+  return ψ1, ψ2, ψ3, q1, q2, q3
+end
+
+
+"""
     test_pvtofromstreamfunction()
 
 Tests the pvfromstreamfunction function that gives qh from ψh. To do so, it
@@ -41,19 +71,19 @@ constructs a 2-layer problem with parameters such that
 Then given ψ1 and ψ2 it tests if pvfromstreamfunction gives the expected
 q1 and q2. Similarly, that streamfunctionfrompv gives ψ1 and ψ2 from q1 and q2.
 """
-function test_pvtofromstreamfunction()
+function test_pvtofromstreamfunction_2layer()
   n, L = 128, 2π
   gr = TwoDGrid(n, L)
 
-  nlayers = 2       # these choice of parameters give the
-  f0, g = 1, 1      # desired PV-streamfunction relations
+  nlayers = 2      # these choice of parameters give the
+  f0, g = 1, 1     # desired PV-streamfunction relations
   H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
   ρ = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
   prob = MultilayerQG.Problem(nlayers=nlayers, nx=n, Lx=L, f0=f0, g=g, H=H, ρ=ρ)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
-  ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
+  ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
   vs.psih[:, :, 1] .= rfft(ψ1)
   vs.psih[:, :, 2] .= rfft(ψ2)
@@ -68,6 +98,49 @@ function test_pvtofromstreamfunction()
   MultilayerQG.invtransform!(vs.psi, vs.psih, pr)
 
   isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) && isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) && isapprox(ψ1, vs.psi[:, :, 1], rtol=rtol_multilayerqg) && isapprox(ψ2, vs.psi[:, :, 2], rtol=rtol_multilayerqg)
+end
+
+
+"""
+    test_pvtofromstreamfunction()
+
+Tests the pvfromstreamfunction function that gives qh from ψh. To do so, it
+constructs a 3-layer problem with parameters such that
+  q1 = Δψ1 + 20ψ2 - 20ψ1, q2 = Δψ2 + 20ψ1 - 44ψ2 + 24ψ3, q3 = Δψ3 + 12ψ2 - 12ψ3.
+Then given ψ1, ψ2, and ψ2 it tests if pvfromstreamfunction gives the expected
+q1, q2, and q3. Similarly, that streamfunctionfrompv gives ψ1, ψ2, and ψ2 from 
+q1, q2, and q3.
+"""
+function test_pvtofromstreamfunction_3layer()
+  n, L = 128, 2π
+  gr = TwoDGrid(n, L)
+
+  nlayers = 3      # these choice of parameters give the
+  f0, g = 1, 1     # desired PV-streamfunction relations
+  H = [0.25, 0.25, 0.5]  # q1 = Δψ1 + 20ψ2 - 20ψ1,
+  ρ = [4.0, 5.0, 6.0]    # q2 = Δψ2 + 20ψ1 - 44ψ2 + 24ψ3,
+                         # q3 = Δψ3        + 12ψ2 - 12ψ3.
+
+  prob = MultilayerQG.Problem(nlayers=nlayers, nx=n, Lx=L, f0=f0, g=g, H=H, ρ=ρ)
+  sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
+
+  ψ1, ψ2, ψ3, q1, q2, q3 = constructtestfields_3layer(gr)
+
+  vs.psih[:, :, 1] .= rfft(ψ1)
+  vs.psih[:, :, 2] .= rfft(ψ2)
+  vs.psih[:, :, 3] .= rfft(ψ3)
+
+  MultilayerQG.pvfromstreamfunction!(vs.qh, vs.psih, pr.S, gr)
+  MultilayerQG.invtransform!(vs.q, vs.qh, pr)
+
+  vs.qh[:, :, 1] .= rfft(q1)
+  vs.qh[:, :, 2] .= rfft(q2)
+  vs.qh[:, :, 3] .= rfft(q3)
+
+  MultilayerQG.streamfunctionfrompv!(vs.psih, vs.qh, pr.invS, gr)
+  MultilayerQG.invtransform!(vs.psi, vs.psih, pr)
+
+  isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) && isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) && isapprox(q3, vs.q[:, :, 3], rtol=rtol_multilayerqg) && isapprox(ψ1, vs.psi[:, :, 1], rtol=rtol_multilayerqg) && isapprox(ψ2, vs.psi[:, :, 2], rtol=rtol_multilayerqg) && isapprox(ψ3, vs.psi[:, :, 3], rtol=rtol_multilayerqg)
 end
 
 
@@ -115,7 +188,7 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, μ=0.
   η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
   ηx = @. -(x+Lx/8)/(σx^2) * η
 
-  ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
+  ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
   Ff1 = FourierFlows.jacobian(ψ1, q1, gr)     + (β .- uyy1 .-   25*(U2.+u2.-U1.-u1) ).*ψ1x + (U1.+u1).*q1x - ν*Δq1
   Ff2 = FourierFlows.jacobian(ψ2, q2 + η, gr) + (β .- uyy2 .- 25/4*(U1.+u1.-U2.-u2) ).*ψ2x + (U2.+u2).*(q2x + ηx) + μ*Δψ2 - ν*Δq2
@@ -198,7 +271,7 @@ function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, μ=0.0, 
   η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
   ηx = @. -(x+Lx/8)/(σx^2) * η
 
-  ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
+  ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
   Ff1 = (β .- uyy1 .-   25*(U2.+u2.-U1.-u1) ).*ψ1x + (U1.+u1).*q1x - ν*Δq1
   Ff2 = FourierFlows.jacobian(ψ2, η, gr) + (β .- uyy2 .- 25/4*(U1.+u1.-U2.-u2) ).*ψ2x + (U2.+u2).*(q2x + ηx) + μ*Δψ2 - ν*Δq2
@@ -243,7 +316,7 @@ end
 Tests the kinetic (KE) and potential (PE) energies function by constructing a
 2-layer problem and initializing it with a flow field whose KE and PE are known.
 """
-function test_mqg_energies(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+function test_mqg_energies(; dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 64, 66
   Lx, Ly = 2π, 2π
   gr = TwoDGrid(nx, Lx, ny, Ly)
@@ -259,7 +332,7 @@ function test_mqg_energies(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlay
   prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, ρ=ρ)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
-  ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields(gr)
+  ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
   qf = zeros(gr.nx, gr.ny, nlayers)
   qf[:, :, 1] .= q1
@@ -278,7 +351,7 @@ end
 Tests the lateral and vertical eddy fluxes by constructing a 2-layer problem and
 initializing it with a flow field whose fluxes are known.
 """
-function test_mqg_fluxes(;dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+function test_mqg_fluxes(; dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 128, 126
   Lx, Ly = 2π, 2π
   gr = TwoDGrid(nx, Lx, ny, Ly)
@@ -313,7 +386,7 @@ end
 Tests the set_q!() and set_psi!() functions that initialize sol with a flow with
 given `q` or `psi` respectively.
 """
-function test_mqg_setqsetpsi(;dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+function test_mqg_setqsetpsi(; dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 32, 34
   L = 2π
   gr = TwoDGrid(nx, L, ny, L)
@@ -355,13 +428,13 @@ end
 Tests that `Params` constructor works with both mean flow `U` being a floats
 (i.e., constant `U` in each layer) or vectors (i.e., `U(y)` in each layer).
 """
-function test_mqg_paramsconstructor(;dt=0.001, stepper="ForwardEuler")
+function test_mqg_paramsconstructor(; dt=0.001, stepper="ForwardEuler")
   nx, ny = 32, 34
   L = 2π
   gr = TwoDGrid(nx, L, ny, L)
 
-  nlayers = 2       # these choice of parameters give the
-  f0, g = 1, 1      # desired PV-streamfunction relations
+  nlayers = 2      # these choice of parameters give the
+  f0, g = 1, 1     # desired PV-streamfunction relations
   H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
   ρ = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
   
