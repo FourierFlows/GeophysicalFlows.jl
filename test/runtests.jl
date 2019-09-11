@@ -90,7 +90,8 @@ end
 @testset "MultilayerQG" begin
   include("test_multilayerqg.jl")
 
-  @test test_pvtofromstreamfunction()
+  @test test_pvtofromstreamfunction_2layer()
+  @test test_pvtofromstreamfunction_3layer()
   @test test_mqg_nonlinearadvection(0.001, "ForwardEuler")
   @test test_mqg_linearadvection(0.001, "ForwardEuler")
   @test test_mqg_energies()
