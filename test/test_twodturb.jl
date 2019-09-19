@@ -209,3 +209,9 @@ function test_twodturb_energyenstrophy(dev::Device=CPU())
    isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_twodturb) &&
    TwoDTurb.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
 end
+
+function test_twodturb_problemtype(T=Float32, dev::Device=CPU())
+  prob = TwoDTurb.Problem(T=T, dev=dev)
+
+  (typeof(prob.sol)==Array{Complex{T},2} && typeof(prob.grid.Lx)==T && typeof(prob.grid.x)==Array{T,2} && typeof(prob.vars.u)==Array{T,2})
+end

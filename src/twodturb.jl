@@ -67,7 +67,7 @@ end
 Returns the params for two-dimensional turbulence.
 """
 struct Params{T} <: AbstractParams
-      ν  :: T         # Vorticity viscosity
+       ν :: T         # Vorticity viscosity
       nν :: Int       # Vorticity hyperviscous order
        μ :: T         # Bottom drag or hypoviscosity
       nμ :: Int       # Order of hypodrag

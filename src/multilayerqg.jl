@@ -42,11 +42,11 @@ function Problem(;
     # Physical parameters
      nlayers = 2,                       # number of fluid layers
           f0 = 1.0,                     # Coriolis parameter
-        beta = 0.0,                     # y-gradient of Coriolis parameter
+           β = 0.0,                     # y-gradient of Coriolis parameter
            g = 1.0,                     # gravitational constant
            U = zeros(ny, nlayers),      # imposed zonal flow U(y) in each layer
            H = [0.2, 0.8],              # rest fluid height of each layer
-         rho = [4.0, 5.0],              # density of each layer
+           ρ = [4.0, 5.0],              # density of each layer
          eta = zeros(nx, ny),           # topographic PV
     # Bottom Drag and/or (hyper)-viscosity
            μ = 0.0,
@@ -59,7 +59,7 @@ function Problem(;
            T = Float64)
 
    grid = TwoDGrid(nx, Lx, ny, Ly; T=T)
-   params = Params(nlayers, T(g), T(f0), T(beta), Array{T}(rho), Array{T}(H), Array{T}(U), Array{T}(eta), T(μ), T(ν), nν, grid, calcFq=calcFq)
+   params = Params(nlayers, g, f0, β, Array{T}(ρ), Array{T}(H), Array{T}(U), Array{T}(eta), μ, ν, nν, grid, calcFq=calcFq)
    vars = calcFq == nothingfunction ? Vars(grid, params) : ForcedVars(grid, params)
    eqn = linear ? LinearEquation(params, grid) : Equation(params, grid)
 
@@ -72,9 +72,9 @@ struct Params{T} <: AbstractParams
   # prescribed params
    nlayers :: Int            # Number of fluid layers
          g :: T              # Gravitational constant
-         f0:: T              # Constant planetary vorticity
-      beta :: T              # Planetary vorticity y-gradient
-       rho :: Array{T,3}     # Array with density of each fluid layer
+        f0 :: T              # Constant planetary vorticity
+         β :: T              # Planetary vorticity y-gradient
+         ρ :: Array{T,3}     # Array with density of each fluid layer
          H :: Array{T,3}     # Array with rest height of each fluid layer
          U :: Array{T,3}     # Array with imposed constant zonal flow U(y) in each fluid layer
        eta :: Array{T,2}     # Array containing topographic PV
@@ -85,8 +85,8 @@ struct Params{T} <: AbstractParams
 
   # derived params
         g′ :: Array{T,1}     # Array with the reduced gravity constants for each fluid interface
-        Qx :: Array{T,3}     # Array containing x-gradient of PV due to U and eta in each fluid layer
-        Qy :: Array{T,3}     # Array containing y-gradient of PV due to beta, U, and eta in each fluid layer
+        Qx :: Array{T,3}     # Array containing x-gradient of PV due to eta in each fluid layer
+        Qy :: Array{T,3}     # Array containing y-gradient of PV due to β, U, and eta in each fluid layer
          S :: Array{T,4}     # Array containing coeffients for getting PV from  streamfunction
       invS :: Array{T,4}     # Array containing coeffients for inverting PV to streamfunction
   rfftplan :: FFTW.rFFTWPlan{T,-1,false,3}  # rfft plan for FFTs
@@ -96,8 +96,8 @@ struct SingleLayerParams{T} <: BarotropicParams
   # prescribed params
          g :: T              # Gravitational constant
         f0 :: T              # Constant planetary vorticity
-      beta :: T              # Planetary vorticity y-gradient
-       rho :: T              # Fluid layer density
+         β :: T              # Planetary vorticity y-gradient
+         ρ :: T              # Fluid layer density
          H :: T              # Fluid layer rest height
          U :: Array{T,1}     # Imposed constant zonal flow U(y)
        eta :: Array{T,2}     # Array containing topographic PV
@@ -107,12 +107,12 @@ struct SingleLayerParams{T} <: BarotropicParams
    calcFq! :: Function       # Function that calculates the forcing on QGPV q
 
   # derived params
-        Qx :: Array{T,2}     # Array containing zonal PV gradient due to beta, U, and eta in each fluid layer
-        Qy :: Array{T,2}     # Array containing meridional PV gradient due to beta, U, and eta in each fluid layer
+        Qx :: Array{T,2}     # Array containing x-gradient of PV due to eta in each fluid layer
+        Qy :: Array{T,2}     # Array containing meridional PV gradient due to β, U, and eta in each fluid layer
   rfftplan :: FFTW.rFFTWPlan{T,-1,false,2}  # rfft plan for FFTs
 end
 
-function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, μ, ν, nν, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
+function Params(nlayers, g, f0, β, ρ, H, U::Array{T,2}, eta, μ, ν, nν, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
 
    ny, nx = grid.ny , grid.nx
   nkr, nl = grid.nkr, grid.nl
@@ -120,14 +120,14 @@ function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, μ, ν, nν, g
 
   U = reshape(U, (1, ny, nlayers))
 
-  # g′ = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[1:nlayers-1] # definition match PYQG
-  g′ = g*(rho[2:nlayers]-rho[1:nlayers-1]) ./ rho[2:nlayers] # correct definition
+  # g′ = g*(ρ[2:nlayers]-ρ[1:nlayers-1]) ./ ρ[1:nlayers-1] # definition match PYQG
+  g′ = g*(ρ[2:nlayers]-ρ[1:nlayers-1]) ./ ρ[2:nlayers] # correct definition
 
   Fm = @. f0^2 / ( g′*H[2:nlayers  ] )
   Fp = @. f0^2 / ( g′*H[1:nlayers-1] )
 
-  rho = reshape(rho, (1,  1, nlayers))
-    H = reshape(H  , (1,  1, nlayers))
+   ρ = reshape(ρ, (1,  1, nlayers))
+   H = reshape(H, (1,  1, nlayers))
 
   Uyy = repeat(irfft( -l.^2 .* rfft(U, [1, 2]),  1, [1, 2]), outer=(1, 1, 1))
   Uyy = repeat(Uyy, outer=(nx, 1, 1))
@@ -140,11 +140,11 @@ function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, μ, ν, nν, g
   @views @. Qx[:, :, nlayers] += etax
 
   Qy = zeros(nx, ny, nlayers)
-  Qy[:, :, 1] = @. beta - Uyy[:, :, 1] - Fp[1]*( U[:, :, 2] - U[:, :, 1] )
+  Qy[:, :, 1] = @. β - Uyy[:, :, 1] - Fp[1]*( U[:, :, 2] - U[:, :, 1] )
   for j = 2:nlayers-1
-    Qy[:, :, j] = @. beta - Uyy[:, :, j] - Fp[j]*( U[:, :, j+1] - U[:, :, j] ) - Fm[j-1]*( U[:, :, j-1] - U[:, :, j] )
+    Qy[:, :, j] = @. β - Uyy[:, :, j] - Fp[j]*( U[:, :, j+1] - U[:, :, j] ) - Fm[j-1]*( U[:, :, j-1] - U[:, :, j] )
   end
-  @views Qy[:, :, nlayers] = @. beta - Uyy[:, :, nlayers] - Fm[nlayers-1]*( U[:, :, nlayers-1] - U[:, :, nlayers] )
+  @views Qy[:, :, nlayers] = @. β - Uyy[:, :, nlayers] - Fm[nlayers-1]*( U[:, :, nlayers-1] - U[:, :, nlayers] )
   @views @. Qy[:, :, nlayers] += etay
 
   S = Array{T}(undef, (nkr, nl, nlayers, nlayers))
@@ -156,16 +156,16 @@ function Params(nlayers, g, f0, beta, rho, H, U::Array{T,2}, eta, μ, ν, nν, g
   rfftplanlayered = plan_rfft(Array{T,3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
 
   if nlayers == 1
-    SingleLayerParams{T}(g, f0, beta, rho, H, U, eta, μ, ν, nν, calcFq, Qx, Qy, grid.rfftplan)
+    SingleLayerParams{T}(g, f0, β, ρ, H, U, eta, μ, ν, nν, calcFq, Qx, Qy, grid.rfftplan)
   else
-    Params{T}(nlayers, g, f0, beta, rho, H, U, eta, μ, ν, nν, calcFq, g′, Qx, Qy, S, invS, rfftplanlayered)
+    Params{T}(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, calcFq, g′, Qx, Qy, S, invS, rfftplanlayered)
   end
 end
 
-function Params(nlayers, g, f0, beta, rho, H, U::Array{T,1}, eta, μ, ν, nν, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
+function Params(nlayers, g, f0, β, ρ, H, U::Array{T,1}, eta, μ, ν, nν, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
   U = reshape(U, (1, nlayers))
   U = repeat(U, outer=(grid.ny, 1))
-  Params(nlayers, g, f0, beta, rho, H, U, eta, μ, ν, nν, grid; calcFq=calcFq, effort=effort)
+  Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=calcFq, effort=effort)
 end
 
 
@@ -191,7 +191,7 @@ function Equation(p, gr::AbstractGrid{T}) where T
 end
 
 function Equation(p::SingleLayerParams, gr::AbstractGrid{T}) where T
-  L = @. -p.μ - p.ν*gr.Krsq^p.nν + im*p.beta*gr.kr*gr.invKrsq
+  L = @. -p.μ - p.ν*gr.Krsq^p.nν + im*p.β*gr.kr*gr.invKrsq
   L[1, 1] = 0
   FourierFlows.Equation(L, calcN!, gr)
 end

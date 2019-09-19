@@ -50,6 +50,7 @@ for dev in devices
     @test test_twodturb_stochasticforcingbudgets(dev)
     @test test_twodturb_deterministicforcingbudgets(dev)
     @test test_twodturb_energyenstrophy(dev)
+    @test test_twodturb_problemtype(Float32)
     @test TwoDTurb.nothingfunction() == nothing
   end
 
@@ -75,6 +76,7 @@ println("rest of tests only on CPU")
   @test test_bqg_formstress(0.01, "ForwardEuler")
   @test test_bqg_energyenstrophy()
   @test test_bqg_meanenergyenstrophy()
+  @test test_bqg_problemtype(Float32)
   @test BarotropicQG.nothingfunction() == nothing
 end
 
@@ -93,19 +95,22 @@ end
   @test test_bqgql_stochasticforcingbudgets()
   @test test_bqgql_advection(0.0005, "ForwardEuler")
   @test test_bqgql_energyenstrophy()
+  @test test_bqgql_problemtype(Float32)
   @test BarotropicQGQL.nothingfunction() == nothing
 end
 
 @testset "MultilayerQG" begin
   include("test_multilayerqg.jl")
 
-  @test test_pvtofromstreamfunction()
+  @test test_pvtofromstreamfunction_2layer()
+  @test test_pvtofromstreamfunction_3layer()
   @test test_mqg_nonlinearadvection(0.001, "ForwardEuler")
   @test test_mqg_linearadvection(0.001, "ForwardEuler")
   @test test_mqg_energies()
   @test test_mqg_fluxes()
-  @test test_setqsetpsi()
-  @test test_paramsconstructor()
+  @test test_mqg_setqsetpsi()
+  @test test_mqg_paramsconstructor()
+  @test test_mqg_problemtype(Float32)
   @test MultilayerQG.nothingfunction() == nothing
 end
 
