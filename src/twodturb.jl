@@ -49,7 +49,7 @@ function Problem(;
          dev = CPU()
 )
 
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
   pr = Params{T}(ν, nν, μ, nμ, calcF)
   vs = calcF == nothingfunction ? Vars(dev, gr) : (stochastic ? StochasticForcedVars(dev, gr) : ForcedVars(dev, gr))
   eq = Equation(pr, gr)
