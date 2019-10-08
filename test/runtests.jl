@@ -1,11 +1,9 @@
-#!/usr/bin/env julia
-
 using
   FourierFlows,
-  Test,
   Statistics,
   Random,
-  FFTW
+  FFTW,
+  Test
 
 import # use 'import' rather than 'using' for submodules to keep namespace clean
   GeophysicalFlows.TwoDTurb,
@@ -15,6 +13,11 @@ import # use 'import' rather than 'using' for submodules to keep namespace clean
 
 using FourierFlows: parsevalsum, xmoment, ymoment
 using GeophysicalFlows: lambdipole, peakedisotropicspectrum
+
+# the devices on which tests will run
+devices = (CPU(),)
+@has_cuda devices = (CPU(), GPU())
+@has_cuda using CuArrays
 
 const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
 const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
@@ -28,24 +31,33 @@ cfl(prob) = cfl(prob.vars.u, prob.vars.v, prob.clock.dt, prob.grid.dx)
 # Run tests
 testtime = @elapsed begin
 
-@testset "Utils" begin
-  include("test_utils.jl")
+for dev in devices
+  
+  println("testing on "*string(typeof(dev)))
+  
+  @testset "Utils" begin
+    include("test_utils.jl")
 
-  @test testpeakedisotropicspectrum()
-  @test_throws ErrorException("the domain is not square") testpeakedisotropicspectrum_rectangledomain()
+    @test testpeakedisotropicspectrum(dev)
+    @test_throws ErrorException("the domain is not square") testpeakedisotropicspectrum_rectangledomain()
+  end
+
+  @testset "TwoDTurb" begin
+    include("test_twodturb.jl")
+
+    @test test_twodturb_advection(0.0005, "ForwardEuler", dev)
+    @test test_twodturb_lambdipole(256, 1e-3, dev)
+    @test test_twodturb_stochasticforcingbudgets(dev)
+    @test test_twodturb_deterministicforcingbudgets(dev)
+    @test test_twodturb_energyenstrophy(dev)
+    @test test_twodturb_problemtype(Float32)
+    @test TwoDTurb.nothingfunction() == nothing
+  end
+
 end
 
-@testset "TwoDTurb" begin
-  include("test_twodturb.jl")
 
-  @test test_twodturb_advection(0.0005, "ForwardEuler")
-  @test test_twodturb_lambdipole(256, 1e-3)
-  @test test_twodturb_stochasticforcingbudgets()
-  @test test_twodturb_deterministicforcingbudgets()
-  @test test_twodturb_energyenstrophy()
-  @test test_twodturb_problemtype(Float32)
-  @test TwoDTurb.nothingfunction() == nothing
-end
+println("rest of tests only on CPU")
 
 @testset "BarotropicQG" begin
   include("test_barotropicqg.jl")

@@ -1,9 +1,9 @@
 """
 Test the peakedisotropicspectrum function.
 """
-function testpeakedisotropicspectrum()
+function testpeakedisotropicspectrum(dev::Device=CPU())
   n, L = 128, 2π
-  gr = TwoDGrid(n, L)
+  gr = TwoDGrid(dev, n, L)
   k0, E0 = 6, 0.5
   qi = peakedisotropicspectrum(gr, k0, E0; allones=true)
   ρ, qhρ = FourierFlows.radialspectrum(rfft(qi).*gr.invKrsq, gr)

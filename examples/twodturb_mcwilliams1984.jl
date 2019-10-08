@@ -6,14 +6,16 @@ import GeophysicalFlows.TwoDTurb
 import GeophysicalFlows.TwoDTurb: energy, enstrophy
 import GeophysicalFlows: peakedisotropicspectrum
 
+dev = CPU()     # Device (CPU/GPU)
+
 # Parameters
   n = 256
   L = 2π
-nnu = 2
- nu = 0.0
+ nν = 2
+  ν = 0.0
  dt = 1e-2
 nsteps = 5000
-nsubs = 200
+ nsubs = 200
 
 # Files
 filepath = "."
@@ -26,7 +28,7 @@ if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 
 # Initialize problem
-prob = TwoDTurb.Problem(; nx=n, Lx=L, ny=n, Ly=L, nu=nu, nnu=nnu, dt=dt, stepper="FilteredRK4")
+prob = TwoDTurb.Problem(; nx=n, Lx=L, ny=n, Ly=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
 
 sol, cl, vs, gr, filter = prob.sol, prob.clock, prob.vars, prob.grid, prob.timestepper.filter
 x, y = gridpoints(gr)
@@ -35,7 +37,7 @@ x, y = gridpoints(gr)
 # that reproduces the results of the paper by McWilliams (1984)
 seed!(1234)
 k0, E0 = 6, 0.5
-zetai = peakedisotropicspectrum(gr, k0, E0, mask=filter)
+zetai  = peakedisotropicspectrum(gr, k0, E0, mask=filter)
 TwoDTurb.set_zeta!(prob, zetai)
 
 # Create Diagnostic -- energy and enstrophy are functions imported at the top.
@@ -45,8 +47,8 @@ diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will
 # be updated every timestep.
 
 # Create Output
-get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
-get_u(prob) = irfft(im*gr.l.*gr.invKrsq.*sol, gr.nx)
+get_sol(prob) = Array(prob.sol) # extracts the Fourier-transformed solution
+get_u(prob) = Array(irfft(im*gr.l.*gr.invKrsq.*sol, gr.nx))
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 saveproblem(out)
 
@@ -89,7 +91,7 @@ while cl.step < nsteps
   println(log)
   plot_output(prob, fig, axs; drawcolorbar=false)
 end
-
+println("finished")
 plot_output(prob, fig, axs; drawcolorbar=false)
 
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
