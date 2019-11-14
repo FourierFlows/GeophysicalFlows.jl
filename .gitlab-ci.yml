@@ -10,9 +10,9 @@ include:
 test:v1.2:
   extends: .test:v1.2
 
-# test:v1.3:
-#   extends: .test:v1.3
-#   allow_failure: true
+test:v1.3:
+  extends: .test:v1.3
+  allow_failure: true
 
 test:dev:
   extends: .test:dev
@@ -33,3 +33,4 @@ coverage:
                           Coveralls.submit_local(Coveralls.process_folder(), ".")'
   coverage: '/\(\d+.\d+\%\) covered/'
   allow_failure: true
+  
