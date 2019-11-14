@@ -10,9 +10,9 @@ include:
 test:v1.2:
   extends: .test:v1.2
 
-test:v1.3:
-  extends: .test:v1.3
-  allow_failure: true
+# test:v1.3:
+#   extends: .test:v1.3
+#   allow_failure: true
 
 test:dev:
   extends: .test:dev
