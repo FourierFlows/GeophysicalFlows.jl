@@ -42,10 +42,10 @@ $$\mathcal{N}(\widehat{\zeta}) = - \mathrm{i}k_x \mathrm{FFT}(u \zeta)-
 **Params**
 
 For the unforced case ($f=0$) parameters AbstractType is build with `Params` and it includes:
-- `nu`:   Float; viscosity or hyperviscosity coefficient.
-- `nnu`: Integer$>0$; the order of viscosity $n_\nu$. Case $n_\nu=1$ give normal viscosity.
-- `mu`: Float; bottom drag or hypoviscosity coefficient.
-- `nmu`: Integer$\ge 0$; the order of hypodrag $n_\mu$. Case $n_\mu=0$ give plain linear drag $\mu$.
+- `ν`:   Float; viscosity or hyperviscosity coefficient.
+- `nν`: Integer$>0$; the order of viscosity $n_\nu$. Case $n_\nu=1$ give normal viscosity.
+- `μ`: Float; bottom drag or hypoviscosity coefficient.
+- `nμ`: Integer$\ge 0$; the order of hypodrag $n_\mu$. Case $n_\mu=0$ give plain linear drag $\mu$.
 
 For the forced case ($f\ne 0$) parameters AbstractType is build with `ForcedParams`. It includes all parameters in `Params` and additionally:
 - `calcF!`: Function that calculates the forcing $\widehat{f}$
