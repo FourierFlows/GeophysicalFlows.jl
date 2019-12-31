@@ -12,7 +12,6 @@ test:v1.2:
 
 test:v1.3:
   extends: .test:v1.3
-  allow_failure: true
 
 test:dev:
   extends: .test:dev
@@ -29,7 +28,8 @@ coverage:
     - julia --project -e 'using Coverage;
                           cl, tl = get_summary(process_folder());
                           println("(", cl/tl*100, "%) covered");
-                          Codecov.submit_local(Codecov.process_folder(), ".")'
+                          Codecov.submit_local(Codecov.process_folder(), ".");
+                          Coveralls.submit_local(Codecov.process_folder(), ".")'
   coverage: '/\(\d+.\d+\%\) covered/'
   allow_failure: true
   
