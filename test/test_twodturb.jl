@@ -140,7 +140,7 @@ Tests the advection term in the twodturb module by timestepping a
 test problem with timestep dt and timestepper identified by the string stepper.
 The test problem is derived by picking a solution ζf (with associated
 streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
-forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - νΔζf. One solution
+forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - ν∇²ζf. One solution
 to the vorticity equation forced by this Ff is then ζf. (This solution may not
 be realized, at least at long times, if it is unstable.)
 """
@@ -151,7 +151,7 @@ function test_twodturb_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, �
   tf = 1.0
   nt = round(Int, tf/dt)
 
-  gr  = TwoDGrid(dev, n, L)
+  gr = TwoDGrid(dev, n, L)
   x, y = gridpoints(gr)
 
    psif = @.   sin(2x)*cos(2y) +  2sin(x)*cos(3y)

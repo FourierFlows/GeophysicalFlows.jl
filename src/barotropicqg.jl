@@ -22,13 +22,6 @@ using LinearAlgebra: mul!, ldiv!
 using FourierFlows: getfieldspecs, structvarsexpr, parsevalsum, parsevalsum2
 
 abstract type BarotropicQGVars <: AbstractVars end
-abstract type BarotropicQGForcedVars <: BarotropicQGVars end
-
-const realscalarvars = [:U]
-const physicalvars = [:q, :zeta, :psi, :u, :v]
-const transformvars = [ Symbol(var, :h) for var in physicalvars ]
-const forcedvars = [:Fqh]
-const stochforcedvars = [:prevsol]
 
 nothingfunction(args...) = nothing
 
@@ -58,39 +51,36 @@ function Problem(;
       calcFU = nothingfunction,
       calcFq = nothingfunction,
   stochastic = false,
-           T = Float64)
+           T = Float64,
+         dev = CPU())
 
   # the grid
-   gr  = TwoDGrid(nx, Lx, ny, Ly)
+    gr = TwoDGrid(dev, nx, Lx, ny, Ly)
   x, y = gridpoints(gr)
 
   # topographic PV
   if eta==nothing
-    eta = 0*x
-    etah = rfft(eta)
+     eta = ArrayType(dev)(0*x)
   end
 
-  if typeof(eta)!=Array{Float64,2} #this is true if eta was passes in Problem as a function
+  if typeof(eta)!=ArrayType(dev, T, 2) #this is true if eta was passes in Problem as a function
     pr = Params(gr, f0, β, eta, μ, ν, nν, calcFU, calcFq)
   else
     pr = Params(f0, β, eta, rfft(eta), μ, ν, nν, calcFU, calcFq)
   end
 
   if calcFq == nothingfunction && calcFU == nothingfunction
-      vs = Vars(gr)
+    vs = Vars(dev, gr)
   else
-      if stochastic ==  false
-          vs = ForcedVars(gr)
-      elseif stochastic == true
-          vs = StochasticForcedVars(gr)
-      end
+    if stochastic ==  false
+      vs = ForcedVars(dev, gr)
+    elseif stochastic == true
+      vs = StochasticForcedVars(dev, gr)
+    end
   end
   eq = Equation(pr, gr)
-  FourierFlows.Problem(eq, stepper, dt, gr, vs, pr)
+  FourierFlows.Problem(eq, stepper, dt, gr, vs, pr, dev)
 end
-
-InitialValueProblem(; kwargs...) = Problem(; kwargs...)
-ForcedProblem(; kwargs...) = Problem(; kwargs...)
 
 
 # ----------
@@ -102,17 +92,17 @@ ForcedProblem(; kwargs...) = Problem(; kwargs...)
 
 Returns the params for an unforced two-dimensional barotropic QG problem.
 """
-struct Params{T} <: AbstractParams
-  f0::T                      # Constant planetary vorticity
-  β::T                    # Planetary vorticity y-gradient
-  eta::Array{T,2}            # Topographic PV
-  etah::Array{Complex{T},2}  # FFT of Topographic PV
-  μ::T                      # Linear drag
-  ν::T                      # Viscosity coefficient
-  nν::Int                   # Hyperviscous order (nν=1 is plain old viscosity)
-  calcFU::Function    # Function that calculates the forcing F(t) on
-                      # domain-averaged zonal flow U(t)
-  calcFq!::Function   # Function that calculates the forcing on QGPV q
+struct Params{T, Aphys, Atrans} <: AbstractParams
+       f0 :: T            # Constant planetary vorticity
+        β :: T            # Planetary vorticity y-gradient
+      eta :: Aphys        # Topographic PV
+     etah :: Atrans       # FFT of Topographic PV
+        μ :: T            # Linear drag
+        ν :: T            # Viscosity coefficient
+       nν :: Int          # Hyperviscous order (nν=1 is plain old viscosity)
+   calcFU :: Function     # Function that calculates the forcing F(t) on
+                          # domain-averaged zonal flow U(t)
+  calcFq! :: Function     # Function that calculates the forcing on QGPV q
 end
 
 """
@@ -120,10 +110,9 @@ end
 
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function Params(g, f0, β, eta::Function, μ, ν, nν, calcFU, calcFq)
-  x, y = gridpoints(g)
-  etagrid = eta(x, y)
-  etah = rfft(etagrid)
+function Params(g::AbstractGrid{T, A}, f0, β, eta::Function, μ, ν, nν, calcFU, calcFq) where {T, A}
+  etagrid = A([eta(g.x[i], g.y[j]) for i=1:g.nx, j=1:g.ny])
+     etah = rfft(etagrid)
   Params(f0, β, etagrid, etah, μ, ν, nν, calcFU, calcFq)
 end
 
@@ -137,10 +126,10 @@ end
 
 Returns the equation for two-dimensional barotropic QG problem with params p and grid g.
 """
-function Equation(p::Params, g::AbstractGrid{T}) where T
-  LC = @. -p.μ - p.ν*g.Krsq^p.nν + im*p.β*g.kr*g.invKrsq
-  LC[1, 1] = 0
-  FourierFlows.Equation(LC, calcN!, g)
+function Equation(p::Params, g::AbstractGrid)
+  L = @. - p.μ - p.ν*g.Krsq^p.nν + im*p.β*g.kr*g.invKrsq
+  L[1, 1] = 0
+  FourierFlows.Equation(L, calcN!, g)
 end
 
 
@@ -148,52 +137,59 @@ end
 # Vars
 # ----
 
-varspecs = cat(
-  getfieldspecs(realscalarvars, :(Array{T,0})),
-  getfieldspecs(physicalvars, :(Array{T,2})),
-  getfieldspecs(transformvars, :(Array{Complex{T},2})),
-  dims=1)
+struct Vars{Ascalar, Aphys, Atrans, F, P} <: BarotropicQGVars
+        U :: Ascalar
+        q :: Aphys
+     zeta :: Aphys
+      psi :: Aphys
+        u :: Aphys
+        v :: Aphys
+       qh :: Atrans
+    zetah :: Atrans
+     psih :: Atrans
+       uh :: Atrans
+       vh :: Atrans
+      Fqh :: F
+  prevsol :: P
+end
 
-forcedvarspecs = cat(varspecs, getfieldspecs(forcedvars, :(Array{Complex{T},2})), dims=1)
-stochforcedvarspecs = cat(forcedvarspecs, getfieldspecs(stochforcedvars, :(Array{Complex{T},2})), dims=1)
-
-# Construct Vars types
-eval(structvarsexpr(:Vars, varspecs; parent=:BarotropicQGVars))
-eval(structvarsexpr(:ForcedVars, forcedvarspecs; parent=:BarotropicQGForcedVars))
-eval(structvarsexpr(:StochasticForcedVars, stochforcedvarspecs; parent=:BarotropicQGForcedVars))
+const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray, Nothing}
+const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
 
 """
-    Vars(g)
+    Vars(dev, g)
 
-Returns the vars for unforced two-dimensional barotropic QG problem with grid g.
+Returns the vars for unforced two-dimensional barotropic QG problem on device dev and with grid g.
 """
-function Vars(g; T=typeof(g.Lx))
-  U = Array{T,0}(undef, ); U[] = 0
-  @createarrays T (g.nx, g.ny) q u v psi zeta
-  @createarrays Complex{T} (g.nkr, g.nl) qh uh vh psih zetah
-  Vars(U, q, zeta, psi, u, v, qh, zetah, psih, uh, vh)
+function Vars(dev::Dev, g::AbstractGrid{T}) where {Dev, T}
+  U = ArrayType(dev, T, 0)(undef, ); U[] = 0
+  @devzeros Dev T (g.nx, g.ny) q u v psi zeta
+  @devzeros Dev Complex{T} (g.nkr, g.nl) qh uh vh psih zetah
+  Vars(U, q, zeta, psi, u, v, qh, zetah, psih, uh, vh, nothing, nothing)
 end
 
 """
-    ForcedVars(g)
+    ForcedVars(dev, g)
 
-Returns the vars for forced two-dimensional barotropic QG problem with grid g.
+Returns the vars for forced two-dimensional barotropic QG problem on device dev and with grid g.
 """
-function ForcedVars(g; T=typeof(g.Lx))
-  v = Vars(g; T=T)
-  Fqh = zeros(Complex{T}, (g.nkr, g.nl))
-  ForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., Fqh)
+function ForcedVars(dev::Dev, g::AbstractGrid{T}) where {Dev, T}
+  U = ArrayType(dev, T, 0)(undef, ); U[] = 0
+  @devzeros Dev T (g.nx, g.ny) q u v psi zeta
+  @devzeros Dev Complex{T} (g.nkr, g.nl) qh uh vh psih zetah Fqh
+  Vars(U, q, zeta, psi, u, v, qh, zetah, psih, uh, vh, Fqh, nothing)
 end
 
 """
-    StochasticForcedVars(g)
+    StochasticForcedVars(dev, g)
 
-Returns the vars for stochastically forced two-dimensional barotropic QG problem with grid g.
+Returns the vars for stochastically forced two-dimensional barotropic QG problem on device dev and with grid g.
 """
-function StochasticForcedVars(g; T=typeof(g.Lx))
-  v = ForcedVars(g; T=T)
-  prevsol = zeros(Complex{T}, (g.nkr, g.nl))
-  StochasticForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., prevsol)
+function StochasticForcedVars(dev::Dev, g::AbstractGrid{T}) where {Dev, T}
+  U = ArrayType(dev, T, 0)(undef, ); U[] = 0
+  @devzeros Dev T (g.nx, g.ny) q u v psi zeta
+  @devzeros Dev Complex{T} (g.nkr, g.nl) qh uh vh psih zetah Fqh prevsol
+  Vars(U, q, zeta, psi, u, v, qh, zetah, psih, uh, vh, Fqh, prevsol)
 end
 
 
@@ -301,7 +297,7 @@ function set_zeta!(sol, v::Vars, p, g, zeta)
   nothing
 end
 
-function set_zeta!(sol, v::BarotropicQGForcedVars, p, g, zeta)
+function set_zeta!(sol, v::Union{ForcedVars, StochasticForcedVars}, p, g, zeta)
   v.U[] = deepcopy(sol[1, 1])
   mul!(v.zetah, g.rfftplan, zeta)
   v.zetah[1, 1] = 0.0
