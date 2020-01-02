@@ -60,27 +60,17 @@ function Problem(;
 
   # topographic PV
   if eta==nothing
-     eta = ArrayType(dev)(0*x)
+     eta = zeros(dev, T, (nx, ny))
   end
 
-  if typeof(eta)!=ArrayType(dev, T, 2) #this is true if eta was passes in Problem as a function
-    pr = Params(gr, f0, β, eta, μ, ν, nν, calcFU, calcFq)
-  else
-    pr = Params(f0, β, eta, rfft(eta), μ, ν, nν, calcFU, calcFq)
-  end
+  pr = !(typeof(eta)<:ArrayType(dev)) ? Params(gr, f0, β, eta, μ, ν, nν, calcFU, calcFq) : Params(f0, β, eta, rfft(eta), μ, ν, nν, calcFU, calcFq)
 
-  if calcFq == nothingfunction && calcFU == nothingfunction
-    vs = Vars(dev, gr)
-  else
-    if stochastic ==  false
-      vs = ForcedVars(dev, gr)
-    elseif stochastic == true
-      vs = StochasticForcedVars(dev, gr)
-    end
-  end
+  vs = (calcFq == nothingfunction && calcFU == nothingfunction) ? Vars(dev, gr) : (stochastic ? StochasticForcedVars(dev, gr) : ForcedVars(dev, gr))
+  
   eq = Equation(pr, gr)
   FourierFlows.Problem(eq, stepper, dt, gr, vs, pr, dev)
 end
+
 
 
 # ----------
@@ -110,7 +100,7 @@ end
 
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function Params(g::AbstractGrid{T, A}, f0, β, eta::Function, μ, ν, nν, calcFU, calcFq) where {T, A}
+function Params(g::AbstractGrid{T, A}, f0, β, eta::Function, μ, ν, nν::Int, calcFU, calcFq) where {T, A}
   etagrid = A([eta(g.x[i], g.y[j]) for i=1:g.nx, j=1:g.ny])
      etah = rfft(etagrid)
   Params(f0, β, etagrid, etah, μ, ν, nν, calcFU, calcFq)
