@@ -8,8 +8,9 @@
 **/*.pdf
 **/.nfs*
 **/*.cov
+**/Manifest.toml
 
 docs/build/
 docs/site/
 coverage/
-docs/Manifest.toml
+
