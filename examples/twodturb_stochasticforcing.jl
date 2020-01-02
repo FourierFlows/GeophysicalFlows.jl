@@ -19,7 +19,7 @@ dt, tf = 0.005, 0.2/μ
 kf, dkf = 12.0, 2.0     # forcing central wavenumber, wavenumber width
 ε = 0.1                 # energy injection rate
 
-gr  = TwoDGrid(dev, n, L)
+gr   = TwoDGrid(dev, n, L)
 x, y = gridpoints(gr)
 
 Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])

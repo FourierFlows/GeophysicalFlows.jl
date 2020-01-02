@@ -1,17 +1,20 @@
 # GeophysicalFlows.jl
 
 <p align="left">
-    <a href="https://travis-ci.org/FourierFlows/GeophysicalFlows.jl">
-        <img src="https://travis-ci.org/FourierFlows/GeophysicalFlows.jl.svg?branch=master" title="Build Status">
+    <a href="https://travis-ci.com/FourierFlows/GeophysicalFlows.jl">
+        <img alt="Build Status for CPU" src="https://img.shields.io/travis/com/FourierFlows/GeophysicalFlows.jl/master?label=CPU&logo=travis&logoColor=white&style=flat-square">
+    </a>
+    <a href="https://gitlab.com/JuliaGPU/GeophysicalFlows-jl/commits/master">
+      <img alt="Build Status for GPU" src="https://img.shields.io/gitlab/pipeline/JuliaGPU/GeophysicalFlows-jl/master?label=GPU&logo=gitlab&logoColor=white&style=flat-square">
     </a>
     <a href="https://ci.appveyor.com/project/navidcy/geophysicalflows-jl">
-        <img src="https://ci.appveyor.com/api/projects/status/7c5f4wfckq5gb6qv?svg=true" title="Build Status">
+        <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/geophysicalflows-jl/master?label=Window&logo=appveyor&logoColor=white&style=flat-square">
     </a>
     <a href="https://fourierflows.github.io/GeophysicalFlows.jl/stable/">
         <img src="https://img.shields.io/badge/docs-stable-blue.svg">
     </a>
-    <a href="https://fourierflows.github.io/GeophysicalFlows.jl/latest/">
-        <img src="https://img.shields.io/badge/docs-latest-blue.svg">
+    <a href="https://fourierflows.github.io/GeophysicalFlows.jl/dev/">
+        <img src="https://img.shields.io/badge/docs-dev-blue.svg">
     </a>
     <a href='https://coveralls.io/github/FourierFlows/GeophysicalFlows.jl?branch=master'><img src='https://coveralls.io/repos/github/FourierFlows/GeophysicalFlows.jl/badge.svg?branch=master' alt='Coverage Status' />
     </a>

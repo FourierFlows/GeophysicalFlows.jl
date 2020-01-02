@@ -257,3 +257,9 @@ function test_bqgql_energyenstrophy()
 
   isapprox(energyzeta0, energy_calc, rtol=1e-13) && isapprox(enstrophyzeta0, enstrophy_calc, rtol=1e-13) && BarotropicQGQL.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing
 end
+
+function test_bqgql_problemtype(T=Float32)
+  prob = BarotropicQGQL.Problem(T=T)
+
+  (typeof(prob.sol)==Array{Complex{T},2} && typeof(prob.grid.Lx)==T && typeof(prob.grid.x)==Array{T,2} && typeof(prob.vars.u)==Array{T,2})
+end

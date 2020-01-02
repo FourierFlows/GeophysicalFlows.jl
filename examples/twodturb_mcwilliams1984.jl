@@ -37,7 +37,7 @@ x, y = gridpoints(gr)
 # that reproduces the results of the paper by McWilliams (1984)
 seed!(1234)
 k0, E0 = 6, 0.5
-zetai = peakedisotropicspectrum(gr, k0, E0, mask=filter)
+zetai  = peakedisotropicspectrum(gr, k0, E0, mask=filter)
 TwoDTurb.set_zeta!(prob, zetai)
 
 # Create Diagnostic -- energy and enstrophy are functions imported at the top.

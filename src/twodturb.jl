@@ -49,7 +49,7 @@ function Problem(;
          dev = CPU()
 )
 
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
   pr = Params{T}(ν, nν, μ, nμ, calcF)
   vs = calcF == nothingfunction ? Vars(dev, gr) : (stochastic ? StochasticForcedVars(dev, gr) : ForcedVars(dev, gr))
   eq = Equation(pr, gr)
@@ -67,11 +67,11 @@ end
 Returns the params for two-dimensional turbulence.
 """
 struct Params{T} <: AbstractParams
-  ν::T              # Vorticity viscosity
-  nν::Int           # Vorticity hyperviscous order
-  μ::T              # Bottom drag or hypoviscosity
-  nμ::Int           # Order of hypodrag
-  calcF!::Function  # Function that calculates the forcing F
+       ν :: T         # Vorticity viscosity
+      nν :: Int       # Vorticity hyperviscous order
+       μ :: T         # Bottom drag or hypoviscosity
+      nμ :: Int       # Order of hypodrag
+  calcF! :: Function  # Function that calculates the forcing F
 end
 Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
 
@@ -157,8 +157,8 @@ end
 Calculates the advection term.
 """
 function calcN_advection!(N, sol, t, cl, v, p, g)
-  @. v.uh =  im * g.l  * g.invKrsq * sol
-  @. v.vh = -im * g.kr * g.invKrsq * sol
+  @. v.uh =   im * g.l  * g.invKrsq * sol
+  @. v.vh = - im * g.kr * g.invKrsq * sol
   @. v.zetah = sol
 
   ldiv!(v.u, g.rfftplan, v.uh)
@@ -171,7 +171,7 @@ function calcN_advection!(N, sol, t, cl, v, p, g)
   mul!(v.uh, g.rfftplan, v.u) # \hat{u*zeta}
   mul!(v.vh, g.rfftplan, v.v) # \hat{v*zeta}
 
-  @. N = -im*g.kr*v.uh - im*g.l*v.vh
+  @. N = - im*g.kr*v.uh - im*g.l*v.vh
   nothing
 end
 
@@ -210,9 +210,9 @@ Update the vars in v on the grid g with the solution in sol.
 """
 function updatevars!(prob)
   v, g, sol = prob.vars, prob.grid, prob.sol
-  v.zetah .= sol
-  @. v.uh =  im * g.l  * g.invKrsq * sol
-  @. v.vh = -im * g.kr * g.invKrsq * sol
+  @. v.zetah = sol
+  @. v.uh =   im * g.l  * g.invKrsq * sol
+  @. v.vh = - im * g.kr * g.invKrsq * sol
   ldiv!(v.zeta, g.rfftplan, deepcopy(v.zetah))
   ldiv!(v.u, g.rfftplan, deepcopy(v.uh))
   ldiv!(v.v, g.rfftplan, deepcopy(v.vh))
