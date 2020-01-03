@@ -9,10 +9,9 @@ $$\phi(x, y, t) = \overline{\phi}(y, t) + \phi'(x,y,t) ,$$
 
 where overline above denotes a zonal mean, $\overline{\phi}(y, t) = \int \phi(x, y, t)\,\mathrm{d}x/L_x$ and prime denotes deviations from the zonal mean. This approximation is used in many process-model studies of zonation, e.g., 
 
-- Farrell, B. F. and Ioannou, P. J. (2003). Structural stability of turbulent jets. *J. Atmos. Sci.*, **60**, 2101-2118.
-- Tobias, S. M. and Marston, J. B. (2013). Direct statistical simulation of out-of-equilibrium jets. *Phys. Rev. Lett.*, **110 (10)**, 104502.
-- Constantinou, N. C. (2014). Emergence and equilibration of jets in beta-plane turbulence: applications of Stochastic Structural Stability Theory. *J. Atmos. Sci.*, **71 (5)**, 1818-1842.
-- Parker, J. B. and Krommes, J. A. (2013). Zonal flow as pattern formation. *Phys. Plasmas*, **20**, 100703.
+- Farrell, B. F. and Ioannou, P. J. (2003). [Structural stability of turbulent jets.](http://doi.org/10.1175/1520-0469(2003)060<2101:SSOTJ>2.0.CO;2) *J. Atmos. Sci.*, **60**, 2101-2118.
+- Srinivasan, K. and Young, W. R. (2012). [Zonostrophic instability.](http://doi.org/10.1175/JAS-D-11-0200.1) *Phys. Rev. Lett.*, **69 (5)**, 1633-1656.
+- Constantinou, N. C., Farrell, B. F., and Ioannou, P. J. (2014). [Emergence and equilibration of jets in beta-plane turbulence: applications of Stochastic Structural Stability Theory.](http://doi.org/10.1175/JAS-D-13-076.1) *J. Atmos. Sci.*, **71 (5)**, 1818-1842.
 
 
 As in the [BarotropicQG module](barotropicqg.md), the flow is obtained through a streamfunction $\psi$ as $(u, \upsilon) = (-\partial_y\psi, \partial_x\psi)$. All flow fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
