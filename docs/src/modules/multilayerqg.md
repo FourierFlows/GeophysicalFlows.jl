@@ -1,9 +1,5 @@
 # MultilayerQG Module
 
-```math
-\newcommand{\J}{\mathsf{J}}
-```
-
 ### Basic Equations
 
 This module solves the layered quasi-geostrophic equations on a beta-plane of variable fluid depth $H-h(x,y)$. The flow in each layer is obtained through a streamfunction $\psi_j$ as $(u_j, \upsilon_j) = (-\partial_y\psi_j, \partial_x\psi_j)$, $j=1,...,n$, where $n$ is the number of fluid layers.
@@ -52,7 +48,7 @@ where
 Including an imposed zonal flow $U_j(y)$ in each layer the equations of motion are:
 
 ```math
-\partial_t q_j + \J(\psi_j, q_j ) + (U_j - \partial_y\psi_j) \partial_x Q_j +  U_j \partial_x q_j  + (\partial_y Q_j)(\partial_x\psi_j) = -\delta_{j,n}\mu\nabla^2\psi_n - \nu(-1)^{n_\nu} \nabla^{2n_\nu} q_j,
+\partial_t q_j + \mathsf{J}(\psi_j, q_j ) + (U_j - \partial_y\psi_j) \partial_x Q_j +  U_j \partial_x q_j  + (\partial_y Q_j)(\partial_x\psi_j) = -\delta_{j,n}\mu\nabla^2\psi_n - \nu(-1)^{n_\nu} \nabla^{2n_\nu} q_j,
 ```
 
 with
@@ -100,16 +96,16 @@ You can get $\widehat{\psi}_j$ from $\widehat{q}_j$ with `streamfunctionfrompv!(
 The equations are time-stepped forward in Fourier space:
 
 ```math
-\partial_t \widehat{q}_j = - \widehat{\J(\psi_j, q_j)}  - \widehat{U_j \partial_x Q_j} - \widehat{U_j \partial_x q_j}
+\partial_t \widehat{q}_j = - \widehat{\mathsf{J}(\psi_j, q_j)}  - \widehat{U_j \partial_x Q_j} - \widehat{U_j \partial_x q_j}
 + \widehat{(\partial_y\psi_j) \partial_x Q_j}  - \widehat{(\partial_x\psi_j)(\partial_y Q_j)} + \delta_{j,n}\mu k^{2} \widehat{\psi}_n - \nu k^{2n_\nu} \widehat{q}_j
 ```
 
-In doing so the Jacobian is computed in the conservative form: $\J(f,g) =
+In doing so the Jacobian is computed in the conservative form: $\mathsf{J}(f,g) =
 \partial_y [ (\partial_x f) g] -\partial_x[ (\partial_y f) g]$.
 
 
 Thus:
 
 $$\mathcal{L} = - \nu k^{2n_\nu}\ ,$$
-$$\mathcal{N}(\widehat{q}_j) = - \widehat{\J(\psi_j, q_j)} - \widehat{U_j \partial_x Q_j} - \widehat{U_j \partial_x q_j}
+$$\mathcal{N}(\widehat{q}_j) = - \widehat{\mathsf{J}(\psi_j, q_j)} - \widehat{U_j \partial_x Q_j} - \widehat{U_j \partial_x q_j}
  + \widehat{(\partial_y\psi_j)(\partial_x Q_j)} - \widehat{(\partial_x\psi_j)(\partial_y Q_j)} + \delta_{j,n}\mu k^{2} \widehat{\psi}_n\ .$$
