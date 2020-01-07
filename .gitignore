@@ -1,15 +1,32 @@
-**/*.swp
-**/*.jld
-**/*.jld2
-**/*.png
-**/*.mp4
-**/*.DS_Store
-**/*.mem
-**/*.pdf
+# Julia stuff
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+coverage/
 **/.nfs*
-**/*.cov
 
+# Swap files.
+*.swp
+*~
+
+# Documenter.jl and MkDocs
 docs/build/
 docs/site/
-coverage/
+docs/src/generated
 docs/Manifest.toml
+
+# Model output
+**/*.jld
+**/*.jld2
+
+# Plots and movies
+**/*.png
+**/*.mp4
+**/*.pdf
+
+# Jupyter Lab stuff and notebooks
+*.ipynb
+.ipynb_checkpoints
+
+# MacOS stuff
+*.DS_Store
