@@ -55,7 +55,7 @@ function Problem(;
          dev = CPU())
 
   # the grid
-    gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+    gr = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
   x, y = gridpoints(gr)
 
   # topographic PV
