@@ -2,7 +2,7 @@ name = "GeophysicalFlows"
 uuid = "44ee3b1c-bc02-53fa-8355-8e347616e15e"
 license = "MIT"
 authors = ["Navid C. Constantinou <navidcy@gmail.com>", "Gregory L. Wagner <wagner.greg@gmail.com>"]
-version = "0.3.2"
+version = "0.3.3"
 
 [deps]
 CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae"
@@ -21,7 +21,7 @@ FFTW = "< 1.2"
 FourierFlows = "^0.4"
 JLD2 = "^0.1"
 Reexport = "^0.2"
-SpecialFunctions = "^0.10, ^1"
+SpecialFunctions = "^0.8, ^1"
 julia = "^1"
 
 [extras]
