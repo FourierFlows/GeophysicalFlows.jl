@@ -73,7 +73,7 @@ while the eddy potential energy related to each of fluid interface is
 The lateral eddy fluxes in each layer are:
 
 ```math
-\textrm{lateralfluxes}_j = \dfrac{H_j}{H} \int \dfrac1{2} U_j\,\upsilon_j \,\partial_y u_j \frac{\mathrm{d}^2\boldsymbol{x}}{L_x L_y},\quad j=1,\dots,n,
+\textrm{lateralfluxes}_j = \dfrac{H_j}{H} \int U_j\,\upsilon_j \,\partial_y u_j \frac{\mathrm{d}^2\boldsymbol{x}}{L_x L_y},\quad j=1,\dots,n,
 ```
 
 while the vertical fluxes accros fluid interfaces are:
