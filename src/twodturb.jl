@@ -18,7 +18,7 @@ using
 @reexport using FourierFlows
 
 using LinearAlgebra: mul!, ldiv!
-using FourierFlows: getfieldspecs, structvarsexpr, parsevalsum, parsevalsum2
+using FourierFlows: getfieldspecs, parsevalsum, parsevalsum2
 
 abstract type TwoDTurbVars <: AbstractVars end
 
