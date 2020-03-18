@@ -18,7 +18,7 @@ sitename = "GeophysicalFlows.jl",
    pages = Any[
             "Home" => "index.md",
             "Modules" => Any[
-              "modules/twodturb.md",
+              "modules/twodnavierstokes.md",
               "modules/barotropicqg.md",
               "modules/barotropicqgql.md",
               "modules/multilayerqg.md"

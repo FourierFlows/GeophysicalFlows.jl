@@ -43,8 +43,8 @@ See `examples/` for example scripts.
 
 All modules provide solvers on two-dimensional domains. We currently provide
 
-* `TwoDTurb`: the two-dimensional vorticity equation.
-* `BarotropicQG`: the barotropic quasi-geostrophic equation, which generalizes `TwoDTurb` to cases with topography and Coriolis parameters of the form `f = f₀ + βy`.
+* `TwoDNavierStokes`: the two-dimensional vorticity equation.
+* `BarotropicQG`: the barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography and Coriolis parameters of the form `f = f₀ + βy`.
 * `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
 * `MultilayerQG`: a multi-layer quasi-geostrophic model over topography and with ability to impose a zonal flow `U_n(y)` in each layer.
 
@@ -54,7 +54,7 @@ All modules provide solvers on two-dimensional domains. We currently provide
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Navid C. Constantinou, & Gregory L. Wagner. (2019). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.3.0  (Version v0.3.0). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
+> Navid C. Constantinou, & Gregory L. Wagner. (2020). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.3.3  (Version v0.3.3). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl

@@ -1,4 +1,4 @@
-# TwoDTurb Module
+# TwoDNavierStokes Module
 
 
 ### Basic Equations
@@ -78,10 +78,10 @@ The nonlinear term $\mathcal{N}(\widehat{\zeta})$ is computed via functions:
 
 ## Examples
 
-- `examples/twodturb_mcwilliams1984.jl`: A script that simulates decaying two-dimensional turbulence reproducing the results of the paper by
+- `examples/twodnavierstokes_mcwilliams1984.jl`: A script that simulates decaying two-dimensional turbulence reproducing the results of the paper by
 
   > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43.
 
-- `examples/twodturb_randomdecay.jl`: A script that simulates decaying two-dimensional turbulence starting from random initial conditions.
+- `examples/twodnavierstokes_randomdecay.jl`: A script that simulates decaying two-dimensional turbulence starting from random initial conditions.
 
-- `examples/twodturb_stochasticforcing.jl`: A script that simulates forced-dissipative two-dimensional turbulence with isotropic temporally delta-correlated stochastic forcing.
+- `examples/twodnavierstokes_stochasticforcing.jl`: A script that simulates forced-dissipative two-dimensional turbulence with isotropic temporally delta-correlated stochastic forcing.

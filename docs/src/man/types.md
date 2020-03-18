@@ -8,10 +8,10 @@ Public = false
 Order = [:type]
 ```
 
-## Private types in module `TwoDTurb`:
+## Private types in module `TwoDNavierStokes`:
 
 ```@autodocs
-Modules = [GeophysicalFlows.TwoDTurb]
+Modules = [GeophysicalFlows.TwoDNavierStokes]
 Public = false
 Order = [:type]
 ```
@@ -20,6 +20,22 @@ Order = [:type]
 
 ```@autodocs
 Modules = [GeophysicalFlows.BarotropicQG]
+Public = false
+Order = [:type]
+```
+
+## Private types in module `BarotropicQGQL`:
+
+```@autodocs
+Modules = [GeophysicalFlows.BarotropicQGQL]
+Public = false
+Order = [:type]
+```
+
+## Private types in module `MultilayerQG`:
+
+```@autodocs
+Modules = [GeophysicalFlows.MultilayerQG]
 Public = false
 Order = [:type]
 ```

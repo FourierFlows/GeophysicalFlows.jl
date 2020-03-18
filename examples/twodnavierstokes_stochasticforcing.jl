@@ -3,8 +3,8 @@ using PyPlot, FourierFlows
 using Random: seed!
 using Printf: @printf
 
-import GeophysicalFlows.TwoDTurb
-import GeophysicalFlows.TwoDTurb: energy, enstrophy, dissipation, work, drag
+import GeophysicalFlows.TwoDNavierStokes
+import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy, dissipation, work, drag
 
    dev = CPU()     # Device (CPU/GPU)
 
@@ -40,12 +40,12 @@ function calcF!(Fh, sol, t, cl, v, p, g)
   nothing
 end
 
-prob = TwoDTurb.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper="RK4",
+prob = TwoDNavierStokes.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper="RK4",
                         calcF=calcF!, stochastic=true, dev=dev)
 
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
-TwoDTurb.set_zeta!(prob, 0*x)
+TwoDNavierStokes.set_zeta!(prob, 0*x)
 E = Diagnostic(energy,      prob, nsteps=nt)
 D = Diagnostic(dissipation, prob, nsteps=nt)
 R = Diagnostic(drag,        prob, nsteps=nt)
@@ -54,7 +54,7 @@ diags = [E, D, W, R]
 
 
 function makeplot(prob, diags)
-  TwoDTurb.updatevars!(prob)
+  TwoDNavierStokes.updatevars!(prob)
   E, D, W, R = diags
 
   t = round(μ*cl.t, digits=2)
@@ -115,7 +115,7 @@ startwalltime = time()
 for i = 1:ns
   stepforward!(prob, diags, round(Int, nt/ns))
 
-  TwoDTurb.updatevars!(prob)
+  TwoDNavierStokes.updatevars!(prob)
   # saveoutput(out)
 
   cfl = cl.dt*maximum([maximum(v.u)/g.dx, maximum(v.v)/g.dy])
