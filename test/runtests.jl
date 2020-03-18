@@ -11,7 +11,7 @@ import # use 'import' rather than 'using' for submodules to keep namespace clean
   GeophysicalFlows.BarotropicQGQL,
   GeophysicalFlows.MultilayerQG
 
-using FourierFlows: parsevalsum, xmoment, ymoment
+using FourierFlows: parsevalsum
 using GeophysicalFlows: lambdipole, peakedisotropicspectrum
 
 # the devices on which tests will run
