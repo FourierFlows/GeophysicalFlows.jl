@@ -20,11 +20,11 @@ nsubs  = 500   # number of time-steps for plotting
                # (nsteps must be multiple of nsubs)
 
 # Physical parameters
-Lx  = 2π       # domain size
-nu  = 0e-05    # viscosity
-nnu = 1        # viscosity order
-beta = 15.0    # planetary PV gradient
-mu   = 0.02    # bottom drag
+Lx = 2π        # domain size
+ ν = 0e-05     # viscosity
+nν = 1         # viscosity order
+ β = 15.0      # planetary PV gradient
+ μ = 0.02      # bottom drag
 
 
 # Forcing

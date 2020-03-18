@@ -19,13 +19,13 @@ nsubs  = 500   # number of time-steps for plotting
                # (nsteps must be multiple of nsubs)
 
 # Physical parameters
-Lx  = 2π       # domain size
-nu  = 8.0e-10  # viscosity
-nnu = 2        # viscosity order
-f0  = -1.0     # Coriolis parameter
-beta = 1.4015  # the y-gradient of planetary PV
-mu   = 1.0e-2  # linear drag
-   F = 0.0012  # normalized wind stress forcing on domain-averaged
+Lx = 2π        # domain size
+ ν = 8.0e-10   # viscosity
+nν = 2         # viscosity order
+f0 = -1.0      # Coriolis parameter
+ β = 1.4015    # the y-gradient of planetary PV
+ μ = 1.0e-2    # linear drag
+ F = 0.0012    # normalized wind stress forcing on domain-averaged
                # zonal flow U(t) flow
 
 # Topographic PV
@@ -36,8 +36,8 @@ calcFU(t) = F
 
 
 # Initialize problem
-prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, f0=f0, beta=beta, eta=topoPV,
-                  calcFU=calcFU, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper)
+prob = BarotropicQG.Problem(nx=nx, Lx=Lx, f0=f0, β=β, eta=topoPV,
+                  calcFU=calcFU, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper)
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
 x, y = gridpoints(g)
@@ -91,8 +91,8 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[2])
   cla()
-  plot(mu*E.t[1:E.i], E.data[1:E.i], label=L"$E_{\psi}$")
-  plot(mu*E.t[1:Emean.i], Emean.data[1:Emean.i], label=L"$E_U$")
+  plot(μ*E.t[1:E.i], E.data[1:E.i], label=L"$E_{\psi}$")
+  plot(μ*E.t[1:Emean.i], Emean.data[1:Emean.i], label=L"$E_U$")
 
   xlabel(L"\mu t")
   ylabel(L"E")
@@ -100,8 +100,8 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[3])
   cla()
-  plot(mu*Q.t[1:Q.i], Q.data[1:Q.i], label=L"$Q_{\psi}$")
-  plot(mu*Qmean.t[1:Qmean.i], Qmean.data[1:Qmean.i], label=L"$Q_U$")
+  plot(μ*Q.t[1:Q.i], Q.data[1:Q.i], label=L"$Q_{\psi}$")
+  plot(μ*Qmean.t[1:Qmean.i], Qmean.data[1:Qmean.i], label=L"$Q_U$")
   xlabel(L"\mu t")
   ylabel(L"Q")
   legend()
