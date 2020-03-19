@@ -2,8 +2,8 @@ using FourierFlows, PyPlot, JLD2, Printf, Random, FFTW
 
 using Random: seed!
 
-import GeophysicalFlows.TwoDTurb
-import GeophysicalFlows.TwoDTurb: energy, enstrophy
+import GeophysicalFlows.TwoDNavierStokes
+import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy
 import GeophysicalFlows: peakedisotropicspectrum
 
 dev = CPU()     # Device (CPU/GPU)
@@ -28,7 +28,7 @@ if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 
 # Initialize problem
-prob = TwoDTurb.Problem(; nx=n, Lx=L, ny=n, Ly=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
+prob = TwoDNavierStokes.Problem(; nx=n, Lx=L, ny=n, Ly=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
 
 sol, cl, vs, gr, filter = prob.sol, prob.clock, prob.vars, prob.grid, prob.timestepper.filter
 x, y = gridpoints(gr)
@@ -38,7 +38,7 @@ x, y = gridpoints(gr)
 seed!(1234)
 k0, E0 = 6, 0.5
 zetai  = peakedisotropicspectrum(gr, k0, E0, mask=filter)
-TwoDTurb.set_zeta!(prob, zetai)
+TwoDNavierStokes.set_zeta!(prob, zetai)
 
 # Create Diagnostic -- energy and enstrophy are functions imported at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
@@ -54,7 +54,7 @@ saveproblem(out)
 
 function plot_output(prob, fig, axs; drawcolorbar=false)
   # Plot the vorticity field and the evolution of energy and enstrophy.
-  TwoDTurb.updatevars!(prob)
+  TwoDNavierStokes.updatevars!(prob)
   sca(axs[1])
   pcolormesh(x, y, vs.zeta)
   clim(-40, 40)

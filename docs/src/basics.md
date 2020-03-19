@@ -70,7 +70,7 @@ Here's an overview of the code structure:
         For each time-stepper exists also a "filtered" version that filters out high-wavenumber spectral components of the solution. The `Dual` time-steppers evolve a state variable that comprises both of real valued         and complex valued fields.
 
     - `physics/`
-        - `twodturb.jl`: Defines a `TwoDTurb` module that provides a solver for the two-dimensional vorticity equation.
+        - `twodnavierstokes.jl`: Defines a `TwoDNavierStokes` module that provides a solver for the two-dimensional vorticity equation.
         - `barotropicqg.jl`: Defines a `BarotropicQG` module that provides several solvers for the barotropic QG model that permit beta, topography, beta + topography, and forcing.
         - `kuramotosivashinsky.jl`: Defines a `KuramotoSivashinsky` module that solves the Kuramoto-Sivashinsky.
         - `verticallyfourierboussinesq.jl`: Defines a `VerticallyFourierBoussinesq` module that solves the two-mode truncation of the Fourier series thin-layer approximation to the hydrostatic Boussinesq equations.
@@ -164,10 +164,10 @@ The time-stepper is constructed and stored as `ts`. Finally, all supertypes are 
 
 ```@contents
 Pages = [
-    "modules/kuramotosivashinsky.md",
-    "modules/twodturb.md",
+    "modules/twodnavierstokes.md",
     "modules/barotropicqg.md",
-    "modules/traceradvdiff.md"
+    "modules/multilayerqg.md",
+    "modules/barotropicqgql.md"
         ]
 Depth = 1
 ```

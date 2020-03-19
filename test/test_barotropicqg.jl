@@ -183,7 +183,7 @@ end
 """
     test_bqg_nonlinearadvection(dt, stepper; kwargs...)
 
-Tests the advection term in the twodturb module by timestepping a
+Tests the advection term in the TwoDNavierStokes module by timestepping a
 test problem with timestep dt and timestepper identified by the string stepper.
 The test problem is derived by picking a solution ζf (with associated
 streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
