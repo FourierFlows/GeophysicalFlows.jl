@@ -161,8 +161,6 @@ function test_bqg_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01,
 
   BarotropicQG.updatevars!(prob)
 
-  cfl = cl.dt*maximum([maximum(v.v)/g.dx, maximum(v.u)/g.dy])
-
   E, D, W, R = diags
 
   t = round(μ*cl.t, digits=2)
