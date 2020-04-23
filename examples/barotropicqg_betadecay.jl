@@ -11,6 +11,8 @@ using FFTW: irfft
 import GeophysicalFlows.BarotropicQG
 import GeophysicalFlows.BarotropicQG: energy, enstrophy
 
+dev = CPU()    # Device (CPU/GPU)
+
 # Numerical parameters and time-stepping parameters
 nx  = 256      # 2D resolution = nx^2
 stepper = "FilteredETDRK4"   # timestepper
@@ -27,7 +29,7 @@ nν = 1         # viscosity order
  μ = 0e-1      # bottom drag
 
 # Initialize problem
-prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper)
+prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, dev=dev)
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
 # Files
@@ -39,8 +41,6 @@ filename = joinpath(filepath, "decayingbetaturb.jld2")
 # File management
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
-
-
 
 
 # Initial condition that has power only at wavenumbers with
