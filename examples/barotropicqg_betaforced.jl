@@ -12,6 +12,7 @@ using Statistics: mean
 import GeophysicalFlows.BarotropicQG
 import GeophysicalFlows.BarotropicQG: energy, enstrophy
 
+dev = CPU()    # Device (CPU/GPU)
 
 # Numerical parameters and time-stepping parameters
 nx = 256       # 2D resolution = nx^2
@@ -61,7 +62,7 @@ end
 
 # Initialize problem
 prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, ν=ν, nν=nν, μ=μ, dt=dt,
-                            stepper=stepper, calcFq=calcFq!, stochastic=true)
+                            stepper=stepper, calcFq=calcFq!, stochastic=true, dev=dev)
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
 

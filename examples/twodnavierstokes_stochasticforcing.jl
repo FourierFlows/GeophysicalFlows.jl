@@ -6,7 +6,7 @@ using Printf: @printf
 import GeophysicalFlows.TwoDNavierStokes
 import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy, dissipation, work, drag
 
-   dev = CPU()     # Device (CPU/GPU)
+dev = CPU()    # Device (CPU/GPU)
 
  n, L  = 256, 2π
  ν, nν = 1e-7, 2

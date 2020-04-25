@@ -9,6 +9,7 @@ using FFTW: ifft
 import GeophysicalFlows.BarotropicQG
 import GeophysicalFlows.BarotropicQG: energy, meanenergy, enstrophy, meanenstrophy
 
+dev = CPU()    # Device (CPU/GPU)
 
 # Numerical parameters and time-stepping parameters
 nx  = 512      # 2D resolution = nx^2
@@ -37,7 +38,7 @@ calcFU(t) = F
 
 # Initialize problem
 prob = BarotropicQG.Problem(nx=nx, Lx=Lx, f0=f0, β=β, eta=topoPV,
-                  calcFU=calcFU, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper)
+                  calcFU=calcFU, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, dev=dev)
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
 x, y = gridpoints(g)
