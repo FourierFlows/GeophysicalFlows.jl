@@ -101,7 +101,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   pause(0.01)
 end
 
-# ## Time-stepping the `Problem` forwward
+# ## Time-stepping the `Problem` forwwrd
 
 # Finally, we time-step the `Problem` forward in time.
 

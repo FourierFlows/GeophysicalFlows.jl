@@ -13,7 +13,7 @@ const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 
 examples = [
-    "twodturb_mcwilliams1984.jl"
+    "twodnavierstokes_mcwilliams1984.jl"
 ]
 
 for example in examples
@@ -54,7 +54,7 @@ sitename = "GeophysicalFlows.jl",
               "modules/multilayerqg.md"
             ],
             "Examples" => [
-            "Two-dimensional turbulence"  => "generated/twodturb_mcwilliams1984.md"
+            "Two-dimensional turbulence"  => "generated/twodnavierstokes_mcwilliams1984.md"
             ],
             "DocStrings" => Any[
             "man/types.md",
