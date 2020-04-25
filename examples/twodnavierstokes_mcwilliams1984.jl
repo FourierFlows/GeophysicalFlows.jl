@@ -6,6 +6,7 @@
 using FourierFlows, PyPlot, JLD2, Printf, Random, FFTW
 
 using Random: seed!
+using FFTW: rfft
 
 import GeophysicalFlows.TwoDNavierStokes
 import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy
@@ -43,7 +44,7 @@ nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
-# `stepper` keyword defines the time-stepper to be used.
+# `stepper` keyword defines the time-stepper to be used,
 prob = TwoDNavierStokes.Problem(; nx=n, Lx=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
 
 # and define some shortcuts
@@ -101,9 +102,9 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   pause(0.01)
 end
 
-# ## Time-stepping the `Problem` forwwrd
+# ## Time-stepping the `Problem` forward
 
-# Finally, we time-step the `Problem` forward in time.
+# We time-step the `Problem` forward in time.
 
 fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
 plot_output(prob, fig, axs; drawcolorbar=true)
@@ -124,3 +125,34 @@ plot_output(prob, fig, axs; drawcolorbar=false)
 
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename, dpi=240)
+
+# ## Radial energy spectrum
+
+# After the simulation is done we plot the radial energy spectrum to illustrate
+# how `FourierFlows.radialspectrum` can be used,
+
+E  = @. 0.5*(vs.u^2 + vs.v^2) # energy density
+Eh = rfft(E)                  # Fourier transform of energy density
+kr, Ehr = FourierFlows.radialspectrum(Eh, gr, refinement=1) # compute radial specturm of `Eh`
+
+# and we plot it.
+
+fig2, axs = subplots(ncols=2, figsize=(8, 4))
+
+sca(axs[1])
+pcolormesh(x, y, vs.zeta)
+xlabel(L"x")
+ylabel(L"y")
+title("Vorticity")
+
+sca(axs[2])
+plot(kr, abs.(Ehr))
+xlabel(L"k_r")
+ylabel(L"\int | \hat{E} | k_r \mathrm{d} k_{\theta}")
+title("Radial energy spectrum")
+
+xlim(0, nx/4)
+axs[2].set_yscale("log")
+
+tight_layout(w_pad=0.1)
+show()
