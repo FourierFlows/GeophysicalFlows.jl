@@ -9,10 +9,10 @@ Private = false
 Order = [:function]
 ```
 
-## Functions exported from `TwoDTurb`:
+## Functions exported from `TwoDNavierStokes`:
 
 ```@autodocs
-Modules = [GeophysicalFlows.TwoDTurb]
+Modules = [GeophysicalFlows.TwoDNavierStokes]
 Private = false
 Order = [:function]
 ```
@@ -21,6 +21,22 @@ Order = [:function]
 
 ```@autodocs
 Modules = [GeophysicalFlows.BarotropicQG]
+Private = false
+Order = [:function]
+```
+
+## Functions exported from `BarotropicQGQL`:
+
+```@autodocs
+Modules = [GeophysicalFlows.BarotropicQGQL]
+Private = false
+Order = [:function]
+```
+
+## Functions exported from `MultilayerQG`:
+
+```@autodocs
+Modules = [GeophysicalFlows.MultilayerQG]
 Private = false
 Order = [:function]
 ```

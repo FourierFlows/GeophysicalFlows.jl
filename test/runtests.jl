@@ -6,12 +6,12 @@ using
   Test
 
 import # use 'import' rather than 'using' for submodules to keep namespace clean
-  GeophysicalFlows.TwoDTurb,
+  GeophysicalFlows.TwoDNavierStokes,
   GeophysicalFlows.BarotropicQG,
   GeophysicalFlows.BarotropicQGQL,
   GeophysicalFlows.MultilayerQG
 
-using FourierFlows: parsevalsum, xmoment, ymoment
+using FourierFlows: parsevalsum
 using GeophysicalFlows: lambdipole, peakedisotropicspectrum
 
 # the devices on which tests will run
@@ -21,7 +21,8 @@ devices = (CPU(),)
 
 const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
 const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
-const rtol_twodturb = 1e-13 # tolerance for twodturb forcing tests
+const rtol_twodnavierstokes = 1e-13 # tolerance for twodnavierstokes forcing tests
+const rtol_barotropicQG = 1e-13 # tolerance for barotropicqg forcing tests
 
 "Get the CFL number, assuming a uniform grid with `dx=dy`."
 cfl(u, v, dt, dx) = maximum([maximum(abs.(u)), maximum(abs.(v))]*dt/dx)
@@ -42,43 +43,42 @@ for dev in devices
     @test_throws ErrorException("the domain is not square") testpeakedisotropicspectrum_rectangledomain()
   end
 
-  @testset "TwoDTurb" begin
-    include("test_twodturb.jl")
+  @testset "TwoDNavierStokes" begin
+    include("test_twodnavierstokes.jl")
 
-    @test test_twodturb_advection(0.0005, "ForwardEuler", dev)
-    @test test_twodturb_lambdipole(256, 1e-3, dev)
-    @test test_twodturb_stochasticforcingbudgets(dev)
-    @test test_twodturb_deterministicforcingbudgets(dev)
-    @test test_twodturb_energyenstrophy(dev)
-    @test test_twodturb_problemtype(Float32)
-    @test TwoDTurb.nothingfunction() == nothing
+    @test test_twodnavierstokes_advection(0.0005, "ForwardEuler", dev)
+    @test test_twodnavierstokes_lambdipole(256, 1e-3, dev)
+    @test test_twodnavierstokes_stochasticforcingbudgets(dev)
+    @test test_twodnavierstokes_deterministicforcingbudgets(dev)
+    @test test_twodnavierstokes_energyenstrophy(dev)
+    @test test_twodnavierstokes_problemtype(Float32)
+    @test TwoDNavierStokes.nothingfunction() == nothing
+  end
+
+  @testset "BarotropicQG" begin
+    include("test_barotropicqg.jl")
+
+    @test test_bqg_rossbywave("ETDRK4", 1e-2, 20, dev)
+    @test test_bqg_rossbywave("FilteredETDRK4", 1e-2, 20, dev)
+    @test test_bqg_rossbywave("RK4", 1e-2, 20, dev)
+    @test test_bqg_rossbywave("FilteredRK4", 1e-2, 20, dev)
+    @test test_bqg_rossbywave("AB3", 1e-3, 200, dev)
+    @test test_bqg_rossbywave("FilteredAB3", 1e-3, 200, dev)
+    @test test_bqg_rossbywave("ForwardEuler", 1e-4, 2000, dev)
+    @test test_bqg_rossbywave("FilteredForwardEuler", 1e-4, 2000, dev)
+    @test test_bqg_stochasticforcingbudgets(dev)
+    @test test_bqg_deterministicforcingbudgets(dev)
+    @test test_bqg_advection(0.0005, "ForwardEuler", dev)
+    @test test_bqg_formstress(0.01, "ForwardEuler", dev)
+    @test test_bqg_energyenstrophy(dev)
+    @test test_bqg_meanenergyenstrophy(dev)
+    @test BarotropicQG.nothingfunction() == nothing
   end
 
 end
 
 
 println("rest of tests only on CPU")
-
-@testset "BarotropicQG" begin
-  include("test_barotropicqg.jl")
-
-  @test test_bqg_rossbywave("ETDRK4", 1e-2, 20)
-  @test test_bqg_rossbywave("FilteredETDRK4", 1e-2, 20)
-  @test test_bqg_rossbywave("RK4", 1e-2, 20)
-  @test test_bqg_rossbywave("FilteredRK4", 1e-2, 20)
-  @test test_bqg_rossbywave("AB3", 1e-3, 200)
-  @test test_bqg_rossbywave("FilteredAB3", 1e-3, 200)
-  @test test_bqg_rossbywave("ForwardEuler", 1e-4, 2000)
-  @test test_bqg_rossbywave("FilteredForwardEuler", 1e-4, 2000)
-  @test test_bqg_stochasticforcingbudgets()
-  @test test_bqg_deterministicforcingbudgets()
-  @test test_bqg_advection(0.0005, "ForwardEuler")
-  @test test_bqg_formstress(0.01, "ForwardEuler")
-  @test test_bqg_energyenstrophy()
-  @test test_bqg_meanenergyenstrophy()
-  @test test_bqg_problemtype(Float32)
-  @test BarotropicQG.nothingfunction() == nothing
-end
 
 @testset "BarotropicQGQL" begin
   include("test_barotropicqgql.jl")

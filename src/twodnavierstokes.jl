@@ -1,4 +1,4 @@
-module TwoDTurb
+module TwoDNavierStokes
 
 export
   Problem,
@@ -18,9 +18,9 @@ using
 @reexport using FourierFlows
 
 using LinearAlgebra: mul!, ldiv!
-using FourierFlows: getfieldspecs, structvarsexpr, parsevalsum, parsevalsum2
+using FourierFlows: getfieldspecs, parsevalsum, parsevalsum2
 
-abstract type TwoDTurbVars <: AbstractVars end
+abstract type TwoDNavierStokesVars <: AbstractVars end
 
 nothingfunction(args...) = nothing
 
@@ -96,7 +96,7 @@ end
 # Vars
 # ----
 
-struct Vars{Aphys, Atrans, F, P} <: TwoDTurbVars
+struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
      zeta :: Aphys
         u :: Aphys
         v :: Aphys

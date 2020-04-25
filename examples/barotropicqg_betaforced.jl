@@ -12,6 +12,7 @@ using Statistics: mean
 import GeophysicalFlows.BarotropicQG
 import GeophysicalFlows.BarotropicQG: energy, enstrophy
 
+dev = CPU()    # Device (CPU/GPU)
 
 # Numerical parameters and time-stepping parameters
 nx = 256       # 2D resolution = nx^2
@@ -22,11 +23,11 @@ nsubs  = 500   # number of time-steps for plotting
                # (nsteps must be multiple of nsubs)
 
 # Physical parameters
- Lx  = 2π      # domain size
- nu  = 0e-05   # viscosity
- nnu = 1       # viscosity order
-beta = 10.0    # planetary PV gradient
-mu   = 0.01    # bottom drag
+Lx = 2π        # domain size
+ ν = 0e-05     # viscosity
+nν = 1         # viscosity order 
+ β = 10.0      # planetary PV gradient
+ μ = 0.01      # bottom drag
 
 
 # Forcing
@@ -52,7 +53,7 @@ seed!(1234)
 
 # the function that updates the forcing realization
 function calcFq!(Fh, sol, t, cl, v, p, g)
-  ξ = exp.(2π*im*rand(Float64, size(sol)))/sqrt(cl.dt)
+  ξ = ArrayType(dev)(exp.(2π*im*rand(Float64, size(sol)))/sqrt(cl.dt))
   ξ[1, 1] = 0
   @. Fh = ξ*sqrt(force2k)
   Fh[abs.(Kr).==0] .= 0
@@ -60,8 +61,8 @@ function calcFq!(Fh, sol, t, cl, v, p, g)
 end
 
 # Initialize problem
-prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, beta=beta, nu=nu, nnu=nnu,
-                                  mu=mu, dt=dt, stepper=stepper, calcFq=calcFq!, stochastic=true)
+prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, ν=ν, nν=nν, μ=μ, dt=dt,
+                            stepper=stepper, calcFq=calcFq!, stochastic=true, dev=dev)
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
 
@@ -142,13 +143,13 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[5])
   cla()
-  plot(mu*E.t[1:E.i], E.data[1:E.i], label="energy")
+  plot(μ*E.t[1:E.i], E.data[1:E.i], label="energy")
   xlabel(L"\mu t")
   legend()
 
   sca(axs[6])
   cla()
-  plot(mu*Z.t[1:Z.i], Z.data[1:E.i], label="enstrophy")
+  plot(μ*Z.t[1:Z.i], Z.data[1:E.i], label="enstrophy")
   xlabel(L"\mu t")
   legend()
 

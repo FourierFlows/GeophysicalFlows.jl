@@ -505,7 +505,7 @@ function fluxes(prob)
 
   updatevars!(prob)
 
-  @. v.uh = -im*gr.l*v.uh
+  @. v.uh = im*gr.l*v.uh
   invtransform!(v.u, v.uh, p)
 
   lateralfluxes = (sum(@. p.H*p.U*v.v*v.u; dims=(1,2)))[1, 1, :]

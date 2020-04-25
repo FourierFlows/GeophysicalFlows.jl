@@ -5,7 +5,7 @@ using
 
 using FFTW: rfft
 
-import GeophysicalFlows.TwoDTurb
+import GeophysicalFlows.TwoDNavierStokes
 
  dev = CPU()   # Device (CPU/GPU)
 
@@ -18,13 +18,13 @@ nint = 200     # Number of steps between plots
 ntot = 10nint  # Number of total timesteps
  
 # Define problem
-prob = TwoDTurb.Problem(nx=nx, Lx=Lx, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
-TwoDTurb.set_zeta!(prob, ArrayType(dev)(rand(nx, nx)))
+prob = TwoDNavierStokes.Problem(nx=nx, Lx=Lx, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
+TwoDNavierStokes.set_zeta!(prob, ArrayType(dev)(rand(nx, nx)))
 
 cl, vs, gr = prob.clock, prob.vars, prob.grid
 x, y = gridpoints(gr)
 
-"Plot the vorticity of the twodturb problem `prob`."
+"Plot the vorticity of the TwoDNavierStokes problem `prob`."
 function makeplot!(ax, prob)
   sca(ax)
   cla()
@@ -45,7 +45,7 @@ while cl.step < ntot
     @printf("step: %04d, t: %6.1f", cl.step, cl.t)
   end
 
-  TwoDTurb.updatevars!(prob)
+  TwoDNavierStokes.updatevars!(prob)
   makeplot!(ax, prob)
 end
 

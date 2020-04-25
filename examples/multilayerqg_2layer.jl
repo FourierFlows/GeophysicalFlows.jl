@@ -15,30 +15,30 @@ nx = 128          # 2D resolution = nx^2
 ny = nx
 
 stepper = "FilteredRK4"   # timestepper
-dt  = 5e-3     # timestep
-nsteps = 40000 # total number of time-steps
-nsubs  = 250   # number of time-steps for plotting
-               # (nsteps must be multiple of nsubs)
+dt  = 5e-3      # timestep
+nsteps = 40000  # total number of time-steps
+nsubs  = 250    # number of time-steps for plotting
+                # (nsteps must be multiple of nsubs)
 
 # Physical parameters
- Lx  = 2π      # domain size
-   μ = 5e-2    # bottom drag
-beta = 5       # the y-gradient of planetary PV
+Lx = 2π         # domain size
+ μ = 5e-2       # bottom drag
+ β = 5          # the y-gradient of planetary PV
 
-nlayers = 2       # these choice of parameters give the
-f0, g = 1, 1      # desired PV-streamfunction relations
-  H = [0.2, 0.8]  # q1 = Δψ1 + 25*(ψ2-ψ1), and
-rho = [4.0, 5.0]  # q2 = Δψ2 + 25/4*(ψ1-ψ2).
-  U = zeros(nlayers)
-  U[1] = 1.0
-  U[2] = 0.0
+nlayers = 2     # these choice of parameters give the
+f0, g = 1, 1    # desired PV-streamfunction relations
+ H = [0.2, 0.8] # q1 = Δψ1 + 25*(ψ2-ψ1), and
+ ρ = [4.0, 5.0] # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+ U = zeros(nlayers)
+ U[1] = 1.0
+ U[2] = 0.0
 
 gr = TwoDGrid(nx, Lx)
 x, y = gridpoints(gr)
 k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
 
 # Initialize problem
-prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, Lx=Lx, f0=f0, g=g, H=H, rho=rho, U=U, dt=dt, stepper=stepper, μ=μ, beta=beta)
+prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, Lx=Lx, f0=f0, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
 sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
 # Files
@@ -84,6 +84,8 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
     axis("square")
     xlim(-Lx/2, Lx/2)
     ylim(-Lx/2, Lx/2)
+    xticks([-2, 0, 2])
+    yticks([-2, 0, 2])
     title(L"$q_"*string(j)*L"$")
     if drawcolorbar==true
       colorbar()
@@ -96,6 +98,8 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
     axis("square")
     xlim(-Lx/2, Lx/2)
     ylim(-Lx/2, Lx/2)
+    xticks([-2, 0, 2])
+    yticks([-2, 0, 2])
     title(L"$\psi_"*string(j)*L"$")
     if drawcolorbar==true
       colorbar()
@@ -103,24 +107,24 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   end
 
   sca(axs[5])
-  plot(μ*E.t[E.i], E.data[E.i][1][1], ".", color="b", label=L"$KE_1$")
-  plot(μ*E.t[E.i], E.data[E.i][1][2], ".", color="r", label=L"$KE_2$")
+  cla()
+  semilogy(μ*[E.t[i] for i=1:E.i], [E.data[i][1][1] for i=1:E.i], color="b", label=L"$KE_1$")
+  plot(μ*[E.t[i] for i=1:E.i], [E.data[i][1][2] for i=1:E.i], color="r", label=L"$KE_2$")
   xlabel(L"\mu t")
-  ylabel(L"KE")
-  # legend()
+  legend()
 
   sca(axs[6])
-  plot(μ*E.t[E.i], E.data[E.i][2][1], ".", color="k", label=L"$PE_{3/2}$")
+  cla()
+  semilogy(μ*[E.t[i] for i=1:E.i], [E.data[i][2][1] for i=1:E.i], color="k", label=L"$PE_{3/2}$")
   xlabel(L"\mu t")
-  ylabel(L"PE")
-  # legend()
+  legend()
 
   pause(0.001)
 end
 
 
 fig, axs = subplots(ncols=3, nrows=2, figsize=(15, 8))
-plot_output(prob, fig, axs; drawcolorbar=true)
+plot_output(prob, fig, axs; drawcolorbar=false)
 
 
 # Step forward

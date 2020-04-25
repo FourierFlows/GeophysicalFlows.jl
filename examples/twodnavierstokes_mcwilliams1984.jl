@@ -7,8 +7,8 @@ using FourierFlows, PyPlot, JLD2, Printf, Random, FFTW
 
 using Random: seed!
 
-import GeophysicalFlows.TwoDTurb
-import GeophysicalFlows.TwoDTurb: energy, enstrophy
+import GeophysicalFlows.TwoDNavierStokes
+import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy
 import GeophysicalFlows: peakedisotropicspectrum
 
 # ## Choosing a device: CPU or GPU
@@ -44,7 +44,7 @@ nothing # hide
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used.
-prob = TwoDTurb.Problem(; nx=n, Lx=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
+prob = TwoDNavierStokes.Problem(; nx=n, Lx=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
 
 # and define some shortcuts
 sol, cl, vs, gr, filter = prob.sol, prob.clock, prob.vars, prob.grid, prob.timestepper.filter
@@ -57,7 +57,7 @@ x, y = gridpoints(gr)
 seed!(1234)
 k0, E0 = 6, 0.5
 zetai  = peakedisotropicspectrum(gr, k0, E0, mask=filter)
-TwoDTurb.set_zeta!(prob, zetai)
+TwoDNavierStokes.set_zeta!(prob, zetai)
 
 # ## Diagnostics
 
@@ -80,7 +80,8 @@ saveproblem(out)
 # energy and enstrophy diagnostics.
 
 function plot_output(prob, fig, axs; drawcolorbar=false)
-  TwoDTurb.updatevars!(prob)
+  # Plot the vorticity field and the evolution of energy and enstrophy.
+  TwoDNavierStokes.updatevars!(prob)
   sca(axs[1])
   pcolormesh(x, y, vs.zeta)
   clim(-40, 40)

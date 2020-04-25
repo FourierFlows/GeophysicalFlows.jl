@@ -23,6 +23,13 @@ docs/Manifest.toml
 **/*.png
 **/*.mp4
 **/*.pdf
+**/.nfs*
+**/*.cov
+**/Manifest.toml
+
+docs/build/
+docs/site/
+coverage/
 
 # Jupyter Lab stuff and notebooks
 *.ipynb
