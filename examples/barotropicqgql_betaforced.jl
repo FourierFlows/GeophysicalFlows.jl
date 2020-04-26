@@ -9,7 +9,7 @@ using FourierFlows, PyPlot, JLD2, Statistics, Printf, Random
 import GeophysicalFlows.BarotropicQGQL
 import GeophysicalFlows.BarotropicQGQL: energy, enstrophy
 
-import FFTW: irfft
+import FFTW: irfft, ifft
 import Random: seed!
 import Statistics: mean
 
@@ -108,15 +108,21 @@ nothing # hide
 
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
 filepath = "."
-filename = joinpath(filepath, "forcedbetaturbQL.jld2")
+plotpath = "./plots_forcedbetaturb"
+plotname = "snapshots"
+filename = joinpath(filepath, "forcedbetaturb.jld2")
+nothing # hide
 
 # Do some basic file management
 if isfile(filename); rm(filename); end
+if !isdir(plotpath); mkdir(plotpath); end
+nothing # hide
 
 # And then create Output
 get_sol(prob) = sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im*g.l.*g.invKrsq.*sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
+nothing # hide
 
 
 # ## Visualizing the simulation
@@ -183,8 +189,6 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   plot(μ*Z.t[1:Z.i], Z.data[1:E.i], label="enstrophy")
   xlabel(L"\mu t")
   legend()
-  
-  drawnow()
 end
 nothing # hide
 
