@@ -8,7 +8,7 @@ solvers for problems in Geophysical Fluid Dynamics, on periodic domains and usin
 
 ## Developers
 
-FourierFlows is currently being developed by [Navid C. Constantinou](http://www.navidconstantinou.com) and [Gregory L. Wagner](https://glwagner.github.io).
+GeophysicalFlows is currently being developed by [Navid C. Constantinou](http://www.navidconstantinou.com) and [Gregory L. Wagner](https://glwagner.github.io).
 
 ## Cite
 
