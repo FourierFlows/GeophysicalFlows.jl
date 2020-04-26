@@ -64,20 +64,20 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
 
   Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
 
-  force2k = zeros(dev, T, (gr.nkr, gr.nl))
-  @. force2k = exp.(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
-  @. force2k[gr.Krsq .< 2.0^2 ] = 0
-  @. force2k[gr.Krsq .> 20.0^2 ] = 0
-  @. force2k[Kr .< 2π/L] = 0
-  ε0 = parsevalsum(force2k.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
-  force2k .= ε/ε0 * force2k
+  forcingcovariancespectrum = zeros(dev, T, (gr.nkr, gr.nl))
+  @. forcingcovariancespectrum = exp.(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
+  @. forcingcovariancespectrum[gr.Krsq .< 2.0^2 ] = 0
+  @. forcingcovariancespectrum[gr.Krsq .> 20.0^2 ] = 0
+  @. forcingcovariancespectrum[Kr .< 2π/L] = 0
+  ε0 = parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+  forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum
 
   Random.seed!(1234)
 
   function calcFq!(Fqh, sol, t, cl, v, p, g)
     eta = ArrayType(dev)(exp.(2π*im*rand(T, size(sol)))/sqrt(cl.dt))
     eta[1, 1] = 0
-    @. Fqh = eta * sqrt(force2k)
+    @. Fqh = eta * sqrt(forcingcovariancespectrum)
     nothing
   end
 
