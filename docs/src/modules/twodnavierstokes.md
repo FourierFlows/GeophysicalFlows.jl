@@ -82,6 +82,4 @@ The nonlinear term $\mathcal{N}(\widehat{\zeta})$ is computed via functions:
 
   > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43.
 
-- `examples/twodnavierstokes_randomdecay.jl`: A script that simulates decaying two-dimensional turbulence starting from random initial conditions.
-
 - `examples/twodnavierstokes_stochasticforcing.jl`: A script that simulates forced-dissipative two-dimensional turbulence with isotropic temporally delta-correlated stochastic forcing.

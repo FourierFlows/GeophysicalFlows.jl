@@ -73,8 +73,8 @@ nothing # hide
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used.
-prob = BarotropicQGQL.ForcedProblem(nx=nx, Lx=Lx, beta=beta, nu=nu, nnu=nnu,
-                                  mu=mu, dt=dt, stepper=stepper, calcF=calcF!, stochastic=true)
+prob = BarotropicQGQL.Problem(nx=nx, Lx=Lx, beta=beta, nu=nu, nnu=nnu, mu=mu, 
+                          dt=dt, stepper=stepper, calcF=calcF!, stochastic=true)
 nothing # hide
 
 # and define some shortcuts
@@ -121,8 +121,9 @@ out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 
 # ## Visualizing the simulation
 
-# We define a function that plots the vorticity and streamfunction fields as 
-# well as the zonal mean vorticity and the zonal mean zonal velocity.
+# We define a function that plots the vorticity and streamfunction fields, the 
+# corresponding zonal-mean vorticity and zonal-mean zonal velocity and timeseries
+# of energy and enstrophy.
 
 function plot_output(prob, fig, axs; drawcolorbar=false)
   sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid

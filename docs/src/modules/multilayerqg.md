@@ -109,3 +109,8 @@ Thus:
 $$\mathcal{L} = - \nu k^{2n_\nu}\ ,$$
 $$\mathcal{N}(\widehat{q}_j) = - \widehat{\mathsf{J}(\psi_j, q_j)} - \widehat{U_j \partial_x Q_j} - \widehat{U_j \partial_x q_j}
  + \widehat{(\partial_y\psi_j)(\partial_x Q_j)} - \widehat{(\partial_x\psi_j)(\partial_y Q_j)} + \delta_{j,n}\mu k^{2} \widehat{\psi}_n\ .$$
+
+
+ ## Examples
+
+ - `examples/multilayerqg_2layer.jl`: A script that simulates baroclinic eddy turbulence growth and equilibration of the Phillips 2-layer model..
