@@ -120,15 +120,17 @@ while cl.step < nsteps
 end
 println("finished")
 
-# And now let's see what we got. We plot the output and save.
+# Now let's see what we got. We plot the output,
 
 fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
 plot_output(prob, fig, axs; drawcolorbar=true)
+gcf()
+
+# and finally save the figure
 
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename, dpi=240)
 
-gcf()
 
 # ## Radial energy spectrum
 
