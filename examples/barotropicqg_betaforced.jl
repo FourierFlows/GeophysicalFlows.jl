@@ -33,7 +33,7 @@ nothing # hide
 # ## Physical parameters
 
 Lx = 2π        # domain size
- ν = 0e-05     # viscosity
+ ν = 0.0       # viscosity
 nν = 1         # viscosity order 
  β = 10.0      # planetary PV gradient
  μ = 0.01      # bottom drag

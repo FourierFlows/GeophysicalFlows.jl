@@ -176,7 +176,7 @@ println("finished")
 # Now let's see what we got. We plot the output,
 
 fig, axs = subplots(ncols=2, nrows=2, figsize=(8, 8))
-plot_output(prob, fig, axs; drawcolorbar=true)
+plot_output(prob, fig, axs; drawcolorbar=false)
 gcf() # hide
 
 # and finally save the figure

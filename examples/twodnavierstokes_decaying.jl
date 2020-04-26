@@ -1,4 +1,4 @@
-# # Two-dimensional turbulence example
+# # Two-dimensional decaying turbulence
 #
 # In this example, we simulate decaying two-dimensional turbulence by solving
 # the two-dimensional vorticity equation.

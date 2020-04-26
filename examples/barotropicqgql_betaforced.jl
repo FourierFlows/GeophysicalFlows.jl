@@ -1,4 +1,4 @@
-# # Forced-dissipative barotropic quasi-geostropic turbulence on a beta-plane
+# # Quasi-Linear forced-dissipative barotropic quasi-geostropic turbulence on a beta-plane
 #
 # In this example, we simulate forced-dissipative barotropic quasi-geostrophic 
 # turbulence on a beta plane under the \textit{quasi-linear approximation}. 
@@ -27,7 +27,7 @@ nothing # hide
 # ## Physical parameters
 
 Lx = 2π        # domain size
- ν = 0e-05     # viscosity
+ ν = 0.0       # viscosity
 nν = 1         # viscosity order 
  β = 10.0      # planetary PV gradient
  μ = 0.01      # bottom drag
@@ -73,8 +73,8 @@ nothing # hide
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used.
-prob = BarotropicQGQL.Problem(nx=nx, Lx=Lx, beta=beta, nu=nu, nnu=nnu, mu=mu, 
-                          dt=dt, stepper=stepper, calcF=calcF!, stochastic=true)
+prob = BarotropicQGQL.Problem(nx=nx, Lx=Lx, beta=β, nu=ν, nnu=nν, mu=μ, dt=dt, 
+                              stepper=stepper, calcF=calcF!, stochastic=true)
 nothing # hide
 
 # and define some shortcuts
@@ -174,13 +174,13 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[5])
   cla()
-  plot(mu*E.t[1:E.i], E.data[1:E.i], label="energy")
+  plot(μ*E.t[1:E.i], E.data[1:E.i], label="energy")
   xlabel(L"\mu t")
   legend()
 
   sca(axs[6])
   cla()
-  plot(mu*Z.t[1:Z.i], Z.data[1:E.i], label="enstrophy")
+  plot(μ*Z.t[1:Z.i], Z.data[1:E.i], label="enstrophy")
   xlabel(L"\mu t")
   legend()
   
@@ -221,12 +221,16 @@ gcf() #hide
 # and save the figure
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename)
-
+nothing #hide
+ 
 # We can also plot a Hovmoller plot of the zonal flow
 
 UM = zeros(g.ny, length(zMean.t))
-for in = 1:length(zMean.t)
-    UM[:, in] = real(ifft(im*g.lr.*zMean[in].*g.invKrsq[1, :]))
+for j in 1:length(zMean.t)
+    UM[:, j] = real(ifft(im*g.l'.*zMean[j].*g.invKrsq[1, :]))
 end
 figure(2); pcolormesh(zMean.t, y[1, :], UM)
+xlabel(L"time $t$")
+ylabel(L"zonal mean $u$")
+
 gcf() #hide
