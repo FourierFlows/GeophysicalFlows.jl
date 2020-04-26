@@ -32,20 +32,20 @@ function test_twodnavierstokes_stochasticforcingbudgets(dev::Device=CPU(); n=256
 
   Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
 
-  force2k = ArrayType(dev)(zero(gr.Krsq))
-  @. force2k = exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
-  @. force2k[gr.Krsq .< 2.0^2 ] = 0
-  @. force2k[gr.Krsq .> 20.0^2 ] = 0
-  @. force2k[Kr .< 2π/L] = 0
-  ε0 = parsevalsum(force2k.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
-  force2k .= ε/ε0 * force2k
+  forcingcovariancespectrum = ArrayType(dev)(zero(gr.Krsq))
+  @. forcingcovariancespectrum = exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
+  @. forcingcovariancespectrum[gr.Krsq .< 2.0^2 ] = 0
+  @. forcingcovariancespectrum[gr.Krsq .> 20.0^2 ] = 0
+  @. forcingcovariancespectrum[Kr .< 2π/L] = 0
+  ε0 = parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+  forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum
 
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, cl, v, p, g)
     eta = ArrayType(dev)(exp.(2π*im*rand(Float64, size(sol)))/sqrt(cl.dt))
     eta[1, 1] = 0.0
-    @. Fh = eta * sqrt(force2k)
+    @. Fh = eta * sqrt(forcingcovariancespectrum)
     nothing
   end
 
