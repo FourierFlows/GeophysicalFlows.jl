@@ -1,38 +1,54 @@
-using PyPlot,
-  JLD2,
-  Statistics,
-  Printf,
-  Random,
-  FourierFlows
+# # Forced-dissipative barotropic quasi-geostropic turbulence on a beta-plane
+#
+# In this example, we simulate forced-dissipative barotropic quasi-geostrophic 
+# turbulence on a beta plane. The dynamics include linear drag and stochastic 
+# excitation.
+
+using FourierFlows, PyPlot, JLD2, Statistics, Printf, Random
 
 using FFTW: irfft
-using Random: seed!
 using Statistics: mean
+import Random: seed!
 
 import GeophysicalFlows.BarotropicQG
 import GeophysicalFlows.BarotropicQG: energy, enstrophy
 
-dev = CPU()    # Device (CPU/GPU)
 
-# Numerical parameters and time-stepping parameters
+# ## Choosing a device: CPU or GPU
+
+dev = CPU()    # Device (CPU/GPU)
+nothing # hide
+
+
+# ## Numerical parameters and time-stepping parameters
+
 nx = 256       # 2D resolution = nx^2
 stepper = "FilteredRK4"   # timestepper
 dt  = 0.01     # timestep
 nsteps = 40000 # total number of time-steps
-nsubs  = 500   # number of time-steps for plotting
-               # (nsteps must be multiple of nsubs)
+nsubs  = 5000  # number of time-steps for plotting (nsteps must be multiple of nsubs)
+nothing # hide
 
-# Physical parameters
+
+# ## Physical parameters
+
 Lx = 2π        # domain size
  ν = 0e-05     # viscosity
 nν = 1         # viscosity order 
  β = 10.0      # planetary PV gradient
  μ = 0.01      # bottom drag
+nothing # hide
 
 
-# Forcing
-kf, dkf = 14.0, 1.5     # forcing wavenumber and width of
-                        # forcing ring in wavenumber space
+# ## Forcing
+#
+# We force the vorticity equation with stochastic excitation that is delta-correlated
+# in time and while spatially homogeneously and isotropically correlated. The forcing
+# has a spectrum with power in a ring in wavenumber space of radious $k_f$ and 
+# width $\delta k_f$, and it injects energy per unit area and per unit time equal 
+# to $\varepsilon$.
+
+kf, dkf = 14.0, 1.5     # forcing wavenumber and width of forcing ring in wavenumber space
 ε = 0.001               # energy input rate by the forcing
 
 gr  = TwoDGrid(nx, Lx)
@@ -40,63 +56,81 @@ gr  = TwoDGrid(nx, Lx)
 x, y = gridpoints(gr)
 Kr = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl]
 
-force2k = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
-@. force2k[gr.Krsq < 2.0^2 ] .= 0
-@. force2k[gr.Krsq > 20.0^2 ] .= 0
-force2k[Kr .< 2π/Lx] .= 0
-ε0 = FourierFlows.parsevalsum(force2k.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
-force2k .= ε/ε0 * force2k  # normalization so that forcing injects
-                           # energy ε per domain area per unit time
+forcingcovariancespectrum = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
+@. forcingcovariancespectrum[gr.Krsq < 2.0^2 ] .= 0
+@. forcingcovariancespectrum[gr.Krsq > 20.0^2 ] .= 0
+forcingcovariancespectrum[Kr .< 2π/Lx] .= 0
+ε0 = FourierFlows.parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum  # normalization so that forcing injects energy ε per domain area per unit time
 
-# reset of the random number generator for reproducibility
-seed!(1234)
+seed!(1234) # reset of the random number generator for reproducibility
+nothing # hide
 
-# the function that updates the forcing realization
+# Next we construct function `calcF!` that computes a forcing realization every timestep
 function calcFq!(Fh, sol, t, cl, v, p, g)
   ξ = ArrayType(dev)(exp.(2π*im*rand(Float64, size(sol)))/sqrt(cl.dt))
   ξ[1, 1] = 0
-  @. Fh = ξ*sqrt(force2k)
+  @. Fh = ξ*sqrt(forcingcovariancespectrum)
   Fh[abs.(Kr).==0] .= 0
   nothing
 end
+nothing # hide
 
-# Initialize problem
+
+# ## Problem setup
+# We initialize a `Problem` by providing a set of keyword arguments. The
+# `stepper` keyword defines the time-stepper to be used.
 prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, ν=ν, nν=nν, μ=μ, dt=dt,
                             stepper=stepper, calcFq=calcFq!, stochastic=true, dev=dev)
+nothing # hide
+
+# and define some shortcuts
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+nothing # hide
 
 
-# Files
-filepath = "."
-plotpath = "./plots_forcedbetaturb"
-plotname = "snapshots"
-filename = joinpath(filepath, "forcedbetaturb.jld2")
+# ## Setting initial conditions
 
-# File management
-if isfile(filename); rm(filename); end
-if !isdir(plotpath); mkdir(plotpath); end
-
-
-# Zero initial condition
+# Our initial condition is simply fluid at rest.
 BarotropicQG.set_zeta!(prob, 0*x)
+
+
+# ## Diagnostics
 
 # Create Diagnostic -- "energy" and "enstrophy" are functions imported at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
-diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will
-# be updated every timestep.
+diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
+nothing # hide
 
-# Create Output
+
+# ## Output
+
+# We choose folder for outputing `.jld2` files and snapshots (`.png` files).
+filepath = "."
+plotpath = "./plots_forcedbetaturb"
+plotname = "snapshots"
+filename = joinpath(filepath, "forcedbetaturb.jld2")
+nothing # hide
+
+# Do some basic file management
+if isfile(filename); rm(filename); end
+if !isdir(plotpath); mkdir(plotpath); end
+nothing # hide
+
+# And then create Output
 get_sol(prob) = sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im*g.l.*g.invKrsq.*sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
+nothing # hide
 
 
+# ## Visualizing the simulation
+
+# We define a function that plots the vorticity and streamfunction fields, their 
+# corresponding zonal mean structure and timeseries of energy and enstrophy.
 
 function plot_output(prob, fig, axs; drawcolorbar=false)
-  # Plot the vorticity and streamfunction fields as well as the zonal mean
-  # vorticity and the zonal mean zonal velocity.
-
   sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid
   BarotropicQG.updatevars!(prob)
 
@@ -152,37 +186,37 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   plot(μ*Z.t[1:Z.i], Z.data[1:E.i], label="enstrophy")
   xlabel(L"\mu t")
   legend()
-
-  pause(0.001)
 end
+nothing # hide
 
-fig, axs = subplots(ncols=3, nrows=2, figsize=(14, 8))
-plot_output(prob, fig, axs; drawcolorbar=false)
 
-# Step forward
+# ## Time-stepping the `Problem` forward
+
+# We time-step the `Problem` forward in time.
+
 startwalltime = time()
 
 while cl.step < nsteps
   stepforward!(prob, diags, nsubs)
 
   BarotropicQG.updatevars!(prob)
-
-  # Message
   cfl = cl.dt*maximum([maximum(v.u)/g.dx, maximum(v.v)/g.dy])
-  log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, τ: %.2f min",
-    cl.step, cl.t, cfl, E.data[E.i], Z.data[Z.i],
+
+  log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, walltime: %.2f min",
+    cl.step, cl.t, cfl, E.data[E.i], Z.data[Z.i], 
     (time()-startwalltime)/60)
-
   println(log)
-
-  plot_output(prob, fig, axs; drawcolorbar=false)
 end
+println("finished")
 
-# how long did it take?
-println((time()-startwalltime))
 
+# ## Plot
+# Now let's see what we got. We plot the output,
+
+fig, axs = subplots(ncols=3, nrows=2, figsize=(14, 8))
 plot_output(prob, fig, axs; drawcolorbar=false)
+gcf() # hide
 
-# save the figure as png
+# and finally save the figure
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename)

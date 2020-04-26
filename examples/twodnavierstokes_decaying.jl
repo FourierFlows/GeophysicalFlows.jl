@@ -12,10 +12,12 @@ import GeophysicalFlows.TwoDNavierStokes
 import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy
 import GeophysicalFlows: peakedisotropicspectrum
 
+
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
 nothing # hide
+
 
 # ## Numerical, domain, and simulation parameters
 #
@@ -30,28 +32,18 @@ nsteps = 5000  # total number of steps
  nsubs = 200   # number of steps between each plot
  nothing # hide
 
-## We choose folder for outputing `.jld2` files and snapshots (`.png` files).
-filepath = "."
-plotpath = "./plots_decayingTwoDNavierStokes"
-plotname = "snapshots"
-filename = joinpath(filepath, "decayingTwoDNavierStokes.jld2")
-nothing # hide
-
-# File management
-if isfile(filename); rm(filename); end
-if !isdir(plotpath); mkdir(plotpath); end
-nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used,
-prob = TwoDNavierStokes.Problem(; nx=n, Lx=L, ny=n, Ly=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
+prob = TwoDNavierStokes.Problem(; nx=n, Lx=L, ny=n, Ly=L, dt=dt, stepper="FilteredRK4", dev=dev)
 nothing # hide
 
 # and define some shortcuts
 sol, cl, vs, gr, filter = prob.sol, prob.clock, prob.vars, prob.grid, prob.timestepper.filter
 x, y = gridpoints(gr)
 nothing # hide
+
 
 # ## Setting initial conditions
 
@@ -63,6 +55,7 @@ zetai  = peakedisotropicspectrum(gr, k0, E0, mask=filter)
 TwoDNavierStokes.set_zeta!(prob, zetai)
 nothing # hide
 
+
 # ## Diagnostics
 
 # Create Diagnostics -- `energy` and `enstrophy` functions are imported at the top.
@@ -71,14 +64,28 @@ Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 
+
 # ## Output
 
-# Create Output
+# We choose folder for outputing `.jld2` files and snapshots (`.png` files).
+filepath = "."
+plotpath = "./plots_decayingTwoDNavierStokes"
+plotname = "snapshots"
+filename = joinpath(filepath, "decayingTwoDNavierStokes.jld2")
+nothing # hide
+
+# Do some basic file management
+if isfile(filename); rm(filename); end
+if !isdir(plotpath); mkdir(plotpath); end
+nothing # hide
+
+# And then create Output
 get_sol(prob) = Array(prob.sol) # extracts the Fourier-transformed solution
 get_u(prob) = Array(irfft(im*gr.l.*gr.invKrsq.*sol, gr.nx))
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 saveproblem(out)
 nothing # hide
+
 
 # ## Visualizing the simulation
 
@@ -89,6 +96,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   TwoDNavierStokes.updatevars!(prob)
   sca(axs[1])
   pcolormesh(x, y, vs.zeta)
+  title("Vorticity")
   clim(-40, 40)
   axis("off")
   axis("square")
@@ -98,11 +106,13 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[2])
   cla()
-  plot(E.t[1:E.i], E.data[1:E.i]/E.data[1])
-  plot(Z.t[1:Z.i], Z.data[1:E.i]/Z.data[1])
+  plot(E.t[1:E.i], E.data[1:E.i]/E.data[1], label="energy \$E(t)/E(0)\$")
+  plot(Z.t[1:Z.i], Z.data[1:E.i]/Z.data[1], label="enstrophy \$Z(t)/Z(0)\$")
   xlabel(L"t")
   ylabel(L"\Delta E, \, \Delta Z")
 end
+nothing # hide
+
 
 # ## Time-stepping the `Problem` forward
 
@@ -113,18 +123,20 @@ while cl.step < nsteps
   stepforward!(prob, diags, nsubs)
   saveoutput(out)
 
-  log = @sprintf("step: %04d, t: %d, ΔE: %.4f, ΔZ: %.4f, τ: %.2f min",
+  log = @sprintf("step: %04d, t: %d, ΔE: %.4f, ΔZ: %.4f, walltime: %.2f min",
     cl.step, cl.t, E.data[E.i]/E.data[1], Z.data[Z.i]/Z.data[1], (time()-startwalltime)/60)
 
   println(log)
 end
 println("finished")
 
+
+# ## Plot
 # Now let's see what we got. We plot the output,
 
 fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
 plot_output(prob, fig, axs; drawcolorbar=true)
-gcf()
+gcf() # hide
 
 # and finally save the figure
 
@@ -151,6 +163,7 @@ pcolormesh(x, y, vs.zeta)
 xlabel(L"x")
 ylabel(L"y")
 title("Vorticity")
+colorbar()
 clim(-40, 40)
 axis("off")
 axis("square")
@@ -161,8 +174,8 @@ xlabel(L"k_r")
 ylabel(L"\int | \hat{E} | \, k_r \,\mathrm{d} k_{\theta}")
 title("Radial energy spectrum")
 
-xlim(0, gr.nx/4)
+axs[2].set_xscale("log")
 axs[2].set_yscale("log")
-
+axs[2].set_xlim(5e-1, gr.nx)
 tight_layout(w_pad=0.1)
-gcf()
+gcf() # hide

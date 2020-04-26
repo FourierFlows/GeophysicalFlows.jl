@@ -44,12 +44,12 @@ x, y = gridpoints(gr)
 
 Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
 
-force2k = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
-force2k[gr.Krsq .< 2.0^2 ] .= 0  # making sure that focing has no power for low wavenumbers
-force2k[gr.Krsq .> 20.0^2 ] .= 0 # making sure that focing has no power for high wavenumbers
-force2k[Kr .< 2π/L] .= 0
-ε0 = FourierFlows.parsevalsum(force2k.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
-force2k .= ε/ε0 * force2k # normalize forcing to inject energy ε
+forcingcovariancespectrum = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
+forcingcovariancespectrum[gr.Krsq .< 2.0^2 ] .= 0  # making sure that focing has no power for low wavenumbers
+forcingcovariancespectrum[gr.Krsq .> 20.0^2 ] .= 0 # making sure that focing has no power for high wavenumbers
+forcingcovariancespectrum[Kr .< 2π/L] .= 0
+ε0 = FourierFlows.parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum # normalize forcing to inject energy ε
 
 seed!(1234)
 nothing # hide
@@ -58,7 +58,7 @@ nothing # hide
 function calcF!(Fh, sol, t, cl, v, p, g)
   eta = ArrayType(dev)(exp.(2π*im*rand(typeof(gr.Lx), size(sol)))/sqrt(cl.dt))
   eta[1, 1] = 0
-  @. Fh = eta*sqrt(force2k)
+  @. Fh = eta*sqrt(forcingcovariancespectrum)
   nothing
 end
 nothing # hide
@@ -110,7 +110,7 @@ function makeplot(prob, diags)
   sca(axs[3]); cla()
 
   i₀ = 1
-  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt #numerical approximation of energy tendency
+  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt #numerical first-order approximation of energy tendency
   ii = (i₀):E.i-1
   ii2 = (i₀+1):E.i
 
@@ -137,7 +137,6 @@ function makeplot(prob, diags)
   plot(μ*E.t[ii], residual, "c-", label=L"residual $dE/dt$ = computed $-$ numerical")
   xlabel(L"$\mu t$")
   legend(fontsize=10)
-  nothing
 end
 nothing # hide
 
@@ -154,13 +153,14 @@ for i = 1:ns
   TwoDNavierStokes.updatevars!(prob)
   cfl = cl.dt*maximum([maximum(v.u)/g.dx, maximum(v.v)/g.dy])
 
-  log = @sprintf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s", cl.step, cl.t,
+  log = @sprintf("step: %04d, t: %.1f, cfl: %.3f, walltime: %.2f min", cl.step, cl.t,
         cfl, (time()-startwalltime)/60)
 
   println(log)        
 end
 
-# And now let's see what we got. We plot the output and save.
+# ## Plot
+# And now let's see what we got. We plot the output.
 
 makeplot(prob, diags)
-gcf()
+gcf() # hide

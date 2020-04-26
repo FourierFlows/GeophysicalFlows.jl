@@ -1,9 +1,9 @@
-using
-  PyPlot,
-  JLD2,
-  Printf,
-  Random,
-  FourierFlows
+# # Decaying barotropic quasi-geostropic turbulence on a beta-plane
+#
+# In this example, we simulate decaying barotropic quasi-geostrophic turbulence 
+# on a beta plane.
+
+using FourierFlows, PyPlot, JLD2, Printf, Random
 
 using Statistics: mean
 using FFTW: irfft
@@ -11,40 +11,50 @@ using FFTW: irfft
 import GeophysicalFlows.BarotropicQG
 import GeophysicalFlows.BarotropicQG: energy, enstrophy
 
-dev = CPU()    # Device (CPU/GPU)
 
-# Numerical parameters and time-stepping parameters
-nx  = 256      # 2D resolution = nx^2
+# ## Choosing a device: CPU or GPU
+
+dev = CPU()     # Device (CPU/GPU)
+nothing # hide
+
+
+# ## Numerical parameters and time-stepping parameters
+
+nx = 256       # 2D resolution = nx^2
 stepper = "FilteredETDRK4"   # timestepper
-dt  = 0.02     # timestep
+dt = 0.02      # timestep 
 nsteps = 8000  # total number of time-steps
-nsubs  = 500   # number of time-steps for plotting
-               # (nsteps must be multiple of nsubs)
+nsubs  = 500   # number of time-steps for plotting (nsteps must be multiple of nsubs)
+nothing # hide
 
-# Physical parameters
+
+# ## Physical parameters
+
 Lx = 2π        # domain size
  ν = 0e-05     # viscosity
 nν = 1         # viscosity order
  β = 15.0      # planetary PV gradient
- μ = 0e-1      # bottom drag
+ μ = 0.0       # bottom drag
 
-# Initialize problem
+
+# ## Problem setup
+# We initialize a `Problem` by providing a set of keyword arguments. The
+# `stepper` keyword defines the time-stepper to be used,
+
 prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, dev=dev)
+nothing # hide
+
+# and define some shortcuts
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-
-# Files
-filepath = "."
-plotpath = "./plots_decayingbetaturb"
-plotname = "snapshots"
-filename = joinpath(filepath, "decayingbetaturb.jld2")
-
-# File management
-if isfile(filename); rm(filename); end
-if !isdir(plotpath); mkdir(plotpath); end
+x, y = gridpoints(g)
+nothing # hide
 
 
-# Initial condition that has power only at wavenumbers with
-# 8<L/(2π)*sqrt(kx^2+ky^2)<10 and initial energy E0
+# ## Setting initial conditions
+
+# Our initial condition consist of a flow that has power only at wavenumbers with
+# $8<\frac{L}{2\pi}\sqrt{k_x^2+k_y^2}<10$ and initial energy $E_0$:
+
 Random.seed!(1234)
 E0 = 0.1
 modk = ones(g.nkr, g.nl)
@@ -59,27 +69,45 @@ qi = -irfft(g.Krsq.*psih, g.nx)
 E0 = FourierFlows.parsevalsum(g.Krsq.*abs2.(psih), g)
 
 BarotropicQG.set_zeta!(prob, qi)
+nothing #hide
 
-# Create Diagnostic -- "energy" and "enstrophy" are functions imported at the top.
+
+# ## Diagnostics
+
+# Create Diagnostics -- `energy` and `enstrophy` functions are imported at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
-diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will
-# be updated every timestep. They should be efficient to calculate and
-# have a small memory footprint. (For example, the domain-integrated kinetic
-# energy is just a single number for each timestep). See the file in
-# src/diagnostics.jl and the stepforward! function in timesteppers.jl.
+diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
+nothing # hide
 
-# Create Output
+
+# ## Output
+
+# We choose folder for outputing `.jld2` files and snapshots (`.png` files).
+filepath = "."
+plotpath = "./plots_decayingbetaturb"
+plotname = "snapshots"
+filename = joinpath(filepath, "decayingbetaturb.jld2")
+nothing # hide
+
+# Do some basic file management
+if isfile(filename); rm(filename); end
+if !isdir(plotpath); mkdir(plotpath); end
+nothing # hide
+
+# And then create Output
 get_sol(prob) = sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im*g.l.*g.invKrsq.*sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
+nothing # hide
 
-x, y = gridpoints(g)
+
+# ## Visualizing the simulation
+
+# We define a function that plots the vorticity and streamfunction fields and 
+# their corresponding zonal mean structure.
 
 function plot_output(prob, fig, axs; drawcolorbar=false)
-  # Plot the vorticity and streamfunction fields as well as the zonal mean
-  # vorticity and the zonal mean zonal velocity.
-
   sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid
   BarotropicQG.updatevars!(prob)
 
@@ -123,36 +151,34 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   ylim(-Lx/2, Lx/2)
   xlim(-0.5, 0.5)
   title(L"zonal mean $u$")
-
-  pause(0.001)
 end
+nothing # hide
 
 
+# ## Time-stepping the `Problem` forward
 
-fig, axs = subplots(ncols=2, nrows=2, figsize=(8, 8))
-plot_output(prob, fig, axs; drawcolorbar=false)
+# We time-step the `Problem` forward in time.
 
-# Step forward
 startwalltime = time()
 
 while cl.step < nsteps
   stepforward!(prob, diags, nsubs)
-
-  # Message
-  log = @sprintf("step: %04d, t: %d, E: %.4f, Q: %.4f, τ: %.2f min",
-    cl.step, cl.t, E.data[E.i], Z.data[Z.i],
-    (time()-startwalltime)/60)
+  
+  log = @sprintf("step: %04d, t: %d, E: %.4f, Q: %.4f, walltime: %.2f min",
+    cl.step, cl.t, E.data[E.i], Z.data[Z.i], (time()-startwalltime)/60)
 
   println(log)
-
-  plot_output(prob, fig, axs; drawcolorbar=false)
 end
+println("finished")
 
-# how long did it take?
-println((time()-startwalltime))
 
-plot_output(prob, fig, axs; drawcolorbar=false)
+# ## Plot
+# Now let's see what we got. We plot the output,
 
-# save the figure as png
+fig, axs = subplots(ncols=2, nrows=2, figsize=(8, 8))
+plot_output(prob, fig, axs; drawcolorbar=true)
+gcf() # hide
+
+# and finally save the figure
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename)
