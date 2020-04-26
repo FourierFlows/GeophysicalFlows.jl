@@ -3,7 +3,8 @@ push!(LOAD_PATH, "..")
 using
   Documenter,
   Literate,
-  GeophysicalFlows
+  GeophysicalFlows,
+  GeophysicalFlows.TwoDNavierStokes
 
 #####
 ##### Generate examples

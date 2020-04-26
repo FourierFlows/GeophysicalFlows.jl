@@ -15,26 +15,26 @@ import GeophysicalFlows: peakedisotropicspectrum
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
+nothing # hide
 
 # ## Numerical, domain, and simulation parameters
 #
 # First, we pick some numerical and physical parameters for our model.
 
-n = 256
-L = 2π
+n, L  = 256, 2π             # grid resolution and domain length
 nothing # hide
 
 ## Then we pick the time-stepper parameters
-    dt = 1e-2  # timestep
+    dt = 5e-3  # timestep
 nsteps = 5000  # total number of steps
  nsubs = 200   # number of steps between each plot
  nothing # hide
 
 ## We choose folder for outputing `.jld2` files and snapshots (`.png` files).
 filepath = "."
-plotpath = "./plots_McWilliams1984"
+plotpath = "./plots_decayingTwoDNavierStokes"
 plotname = "snapshots"
-filename = joinpath(filepath, "McWilliams1984.jld2")
+filename = joinpath(filepath, "decayingTwoDNavierStokes.jld2")
 nothing # hide
 
 # File management
@@ -45,11 +45,13 @@ nothing # hide
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used,
-prob = TwoDNavierStokes.Problem(; nx=n, Lx=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
+prob = TwoDNavierStokes.Problem(; nx=n, Lx=L, ny=n, Ly=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
+nothing # hide
 
 # and define some shortcuts
 sol, cl, vs, gr, filter = prob.sol, prob.clock, prob.vars, prob.grid, prob.timestepper.filter
 x, y = gridpoints(gr)
+nothing # hide
 
 # ## Setting initial conditions
 
@@ -59,6 +61,7 @@ seed!(1234)
 k0, E0 = 6, 0.5
 zetai  = peakedisotropicspectrum(gr, k0, E0, mask=filter)
 TwoDNavierStokes.set_zeta!(prob, zetai)
+nothing # hide
 
 # ## Diagnostics
 
@@ -66,6 +69,7 @@ TwoDNavierStokes.set_zeta!(prob, zetai)
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
+nothing # hide
 
 # ## Output
 
@@ -74,6 +78,7 @@ get_sol(prob) = Array(prob.sol) # extracts the Fourier-transformed solution
 get_u(prob) = Array(irfft(im*gr.l.*gr.invKrsq.*sol, gr.nx))
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 saveproblem(out)
+nothing # hide
 
 # ## Visualizing the simulation
 
@@ -81,7 +86,6 @@ saveproblem(out)
 # energy and enstrophy diagnostics.
 
 function plot_output(prob, fig, axs; drawcolorbar=false)
-  # Plot the vorticity field and the evolution of energy and enstrophy.
   TwoDNavierStokes.updatevars!(prob)
   sca(axs[1])
   pcolormesh(x, y, vs.zeta)
@@ -98,16 +102,11 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   plot(Z.t[1:Z.i], Z.data[1:E.i]/Z.data[1])
   xlabel(L"t")
   ylabel(L"\Delta E, \, \Delta Z")
-
-  pause(0.01)
 end
 
 # ## Time-stepping the `Problem` forward
 
 # We time-step the `Problem` forward in time.
-
-fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
-plot_output(prob, fig, axs; drawcolorbar=true)
 
 startwalltime = time()
 while cl.step < nsteps
@@ -118,13 +117,18 @@ while cl.step < nsteps
     cl.step, cl.t, E.data[E.i]/E.data[1], Z.data[Z.i]/Z.data[1], (time()-startwalltime)/60)
 
   println(log)
-  plot_output(prob, fig, axs; drawcolorbar=false)
 end
 println("finished")
-plot_output(prob, fig, axs; drawcolorbar=false)
+
+# And now let's see what we got. We plot the output and save.
+
+fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
+plot_output(prob, fig, axs; drawcolorbar=true)
 
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename, dpi=240)
+
+gcf()
 
 # ## Radial energy spectrum
 
@@ -134,6 +138,7 @@ savefig(savename, dpi=240)
 E  = @. 0.5*(vs.u^2 + vs.v^2) # energy density
 Eh = rfft(E)                  # Fourier transform of energy density
 kr, Ehr = FourierFlows.radialspectrum(Eh, gr, refinement=1) # compute radial specturm of `Eh`
+nothing # hide
 
 # and we plot it.
 
@@ -144,15 +149,18 @@ pcolormesh(x, y, vs.zeta)
 xlabel(L"x")
 ylabel(L"y")
 title("Vorticity")
+clim(-40, 40)
+axis("off")
+axis("square")
 
 sca(axs[2])
 plot(kr, abs.(Ehr))
 xlabel(L"k_r")
-ylabel(L"\int | \hat{E} | k_r \mathrm{d} k_{\theta}")
+ylabel(L"\int | \hat{E} | \, k_r \,\mathrm{d} k_{\theta}")
 title("Radial energy spectrum")
 
-xlim(0, nx/4)
+xlim(0, gr.nx/4)
 axs[2].set_yscale("log")
 
 tight_layout(w_pad=0.1)
-show()
+gcf()

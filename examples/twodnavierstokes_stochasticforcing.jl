@@ -4,10 +4,9 @@
 # solve the two-dimensional vorticity equation with linear drag and stochastic
 # excitation.
 
-using PyPlot, FourierFlows
+using PyPlot, FourierFlows, Printf
 
 using Random: seed!
-using Printf: @printf
 
 import GeophysicalFlows.TwoDNavierStokes
 import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy, dissipation, work, drag
@@ -15,6 +14,7 @@ import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy, dissipation, work, 
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()    # Device (CPU/GPU)
+nothing # hide
 
 # ## Numerical, domain, and simulation parameters
 #
@@ -52,6 +52,7 @@ force2k[Kr .< 2π/L] .= 0
 force2k .= ε/ε0 * force2k # normalize forcing to inject energy ε
 
 seed!(1234)
+nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
 function calcF!(Fh, sol, t, cl, v, p, g)
@@ -67,9 +68,11 @@ nothing # hide
 # `stepper` keyword defines the time-stepper to be used.
 prob = TwoDNavierStokes.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper="RK4",
                         calcF=calcF!, stochastic=true, dev=dev)
+nothing # hide
 
 # and define some shortcuts
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+nothing # hide
 
 # ## Setting initial conditions
 
@@ -84,7 +87,7 @@ R = Diagnostic(drag,        prob, nsteps=nt) # dissipation by drag
 D = Diagnostic(dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
 W = Diagnostic(work,        prob, nsteps=nt) # work input by forcing
 diags = [E, D, W, R] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-
+nothing # hide
 
 # ## Visualizing the simulation
 
@@ -107,7 +110,7 @@ function makeplot(prob, diags)
   sca(axs[3]); cla()
 
   i₀ = 1
-  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
+  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt #numerical approximation of energy tendency
   ii = (i₀):E.i-1
   ii2 = (i₀+1):E.i
 
@@ -134,8 +137,7 @@ function makeplot(prob, diags)
   plot(μ*E.t[ii], residual, "c-", label=L"residual $dE/dt$ = computed $-$ numerical")
   xlabel(L"$\mu t$")
   legend(fontsize=10)
-
-  residual
+  nothing
 end
 nothing # hide
 
@@ -149,13 +151,16 @@ res = makeplot(prob, diags)
 startwalltime = time()
 for i = 1:ns
   stepforward!(prob, diags, round(Int, nt/ns))
-
   TwoDNavierStokes.updatevars!(prob)
-
   cfl = cl.dt*maximum([maximum(v.u)/g.dx, maximum(v.v)/g.dy])
-  res = makeplot(prob, diags)
-  pause(0.01)
 
-  @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", cl.step, cl.t,
+  log = @sprintf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s", cl.step, cl.t,
         cfl, (time()-startwalltime)/60)
+
+  println(log)        
 end
+
+# And now let's see what we got. We plot the output and save.
+
+makeplot(prob, diags)
+gcf()
