@@ -1,3 +1,6 @@
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/examples/barotropicqg_betadecay.ipynb)
+#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/examples/barotropicqg_betadecay.ipynb)
+
 # # Decaying barotropic QG beta-plane turbulence
 #
 # An example of decaying barotropic quasi-geostrophic turbulence on a beta plane.
@@ -90,8 +93,7 @@ axis("square")
 xticks(-2:2:2)
 yticks(-2:2:2)
 title(L"initial streamfunction $\psi$")
-gcf() #hide
-nothing #hide
+gcf() # hide
 
 
 # ## Diagnostics
