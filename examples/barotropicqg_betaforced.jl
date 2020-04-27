@@ -78,13 +78,12 @@ nothing # hide
 
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments. The
-# `stepper` keyword defines the time-stepper to be used.
+# We initialize a `Problem` by providing a set of keyword arguments,
 prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, ν=ν, nν=nν, μ=μ, dt=dt,
                             stepper=stepper, calcFq=calcFq!, stochastic=true, dev=dev)
 nothing # hide
 
-# and define some shortcuts
+# and define some shortcuts.
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 nothing # hide
 
@@ -113,12 +112,12 @@ plotname = "snapshots"
 filename = joinpath(filepath, "forcedbetaturb.jld2")
 nothing # hide
 
-# Do some basic file management
+# Do some basic file management,
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 nothing # hide
 
-# And then create Output
+# and then create Output.
 get_sol(prob) = sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im*g.l.*g.invKrsq.*sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
@@ -213,10 +212,10 @@ println("finished")
 # ## Plot
 # Now let's see what we got. We plot the output,
 
-fig, axs = subplots(ncols=3, nrows=2, figsize=(14, 8))
+fig, axs = subplots(ncols=3, nrows=2, figsize=(14, 8), dpi=200)
 plot_output(prob, fig, axs; drawcolorbar=false)
 gcf() # hide
 
-# and finally save the figure
+# and finally save the figure.
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename)

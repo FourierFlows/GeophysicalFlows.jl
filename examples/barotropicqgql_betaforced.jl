@@ -71,13 +71,12 @@ nothing # hide
 
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments. The
-# `stepper` keyword defines the time-stepper to be used.
+# We initialize a `Problem` by providing a set of keyword arguments,
 prob = BarotropicQGQL.Problem(nx=nx, Lx=Lx, beta=β, nu=ν, nnu=nν, mu=μ, dt=dt, 
                               stepper=stepper, calcF=calcF!, stochastic=true)
 nothing # hide
 
-# and define some shortcuts
+# and define some shortcuts.
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 nothing # hide
 
@@ -86,20 +85,25 @@ nothing # hide
 
 # Our initial condition is simply fluid at rest.
 BarotropicQGQL.set_zeta!(prob, 0*x)
-
+nothing # hide
 
 # ## Diagnostics
 
-# Create Diagnostics -- "energy" and "enstrophy" are functions imported at the top.
+# Create Diagnostics -- `energy` and `enstrophy` are functions imported at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
+nothing # hide
 
+# We can also define our custom diagnostics via functions.
 function zetaMean(prob)
   sol = prob.sol
   sol[1, :]
 end
 
 zMean = Diagnostic(zetaMean, prob; nsteps=nsteps, freq=10)  # the zonal-mean vorticity
+nothing # hide
+
+# We combile all diags in a list.
 diags = [E, Z, zMean] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 
@@ -108,17 +112,17 @@ nothing # hide
 
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
 filepath = "."
-plotpath = "./plots_forcedbetaturb"
+plotpath = "./plots_forcedbetaQLturb"
 plotname = "snapshots"
-filename = joinpath(filepath, "forcedbetaturb.jld2")
+filename = joinpath(filepath, "forcedbetaQLturb.jld2")
 nothing # hide
 
-# Do some basic file management
+# Do some basic file management,
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 nothing # hide
 
-# And then create Output
+# and then create Output.
 get_sol(prob) = sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im*g.l.*g.invKrsq.*sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
@@ -166,7 +170,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   plot(0*y[1, :], y[1, :], "k--")
   yticks(-3:1:3)
   ylim(-Lx/2, Lx/2)
-  xlim(-4, 4)
+  xlim(-3, 3)
   title(L"zonal mean $\zeta$")
 
   sca(axs[4])
@@ -175,7 +179,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   plot(0*y[1, :], y[1, :], "k--")
   yticks(-3:1:3)
   ylim(-Lx/2, Lx/2)
-  xlim(-0.7, 0.7)
+  xlim(-0.5, 0.5)
   title(L"zonal mean $u$")
 
   sca(axs[5])
@@ -199,7 +203,6 @@ nothing # hide
 
 startwalltime = time()
 
-
 while cl.step < nsteps
   stepforward!(prob, diags, nsubs)
 
@@ -218,26 +221,12 @@ println("finished")
 # ## Plot
 # Now let's see what we got. We plot the output,
 
-fig, axs = subplots(ncols=3, nrows=2, figsize=(14, 8))
+fig, axs = subplots(ncols=3, nrows=2, figsize=(14, 8), dpi=200)
 plot_output(prob, fig, axs; drawcolorbar=false)
 gcf() #hide
 
-# and save the figure
+# and save the figure.
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename)
 nothing #hide
  
-# We can also compute the space-time diagram (Hovmoller plot) of the zonal-mea 
-# zonal flow and then plot it.
-
-UmeanTime = zeros(g.ny, length(zMean.t))
-for j in 1:length(zMean.t)
-  UmeanTime[:, j] = real(ifft(im*g.l'.*zMean[j].*g.invKrsq[1, :]))
-end
-
-t, y = zMean.t, y[1, :]
-fig2 = figure(figsize=(10, 5))
-pcolormesh(μ*t, y, UmeanTime)
-xlabel(L"time $\mu t$")
-ylabel(L"zonal mean $u$")
-gcf() #hide

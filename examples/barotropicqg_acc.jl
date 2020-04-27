@@ -42,23 +42,22 @@ f0 = -1.0      # Coriolis parameter
  F = 0.0012    # normalized wind stress forcing on domain-averaged zonal flow U(t) flow
  nothing # hide
 
-# Topographic PV
+# Define the topographic potential vorticity, $f_0 h(x, y)/H$
 topoPV(x, y) = @. 2*cos(4x)*cos(4y)
 nothing # hide
 
-# Forcing on the domain-averaged U equation
+# and the forcing function $F$ (here forcing is constant in time) that acts on the domain-averaged $U$ equation.
 calcFU(t) = F
 nothing # hide
 
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments. The
-# `stepper` keyword defines the time-stepper to be used,
+# We initialize a `Problem` by providing a set of keyword arguments,
 prob = BarotropicQG.Problem(nx=nx, Lx=Lx, f0=f0, β=β, eta=topoPV,
                   calcFU=calcFU, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, dev=dev)
 nothing # hide
 
-# and define some shortcuts
+# and define some shortcuts.
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 x, y = gridpoints(g)
 nothing # hide
@@ -90,12 +89,12 @@ plotname = "snapshots"
 filename = joinpath(filepath, "acctopo.jl.jld2")
 nothing # hide
 
-# Do some basic file management
+# Do some basic file management,
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 nothing # hide
 
-# And then create Output
+# and then create Output.
 get_sol(prob) = sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im*g.lr.*g.invKrsq.*sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
@@ -165,7 +164,7 @@ println("finished")
 # ## Plot
 # Now let's see what we got. We plot the output,
 
-fig, axs = subplots(ncols=3, nrows=1, figsize=(15, 4))
+fig, axs = subplots(ncols=3, nrows=1, figsize=(15, 4), dpi=200)
 plot_output(prob, fig, axs; drawcolorbar=true)
 gcf() # hide
 

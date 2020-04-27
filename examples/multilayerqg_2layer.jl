@@ -41,12 +41,11 @@ f0, g = 1, 1    # Coriolis parameter and gravitational constant
 
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments. The
-# `stepper` keyword defines the time-stepper to be used.
+# We initialize a `Problem` by providing a set of keyword arguments,
 prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, Lx=Lx, f0=f0, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
 nothing # hide
 
-# and define some shortcuts
+# and define some shortcuts.
 sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 x, y = gridpoints(gr)
 nothing # hide
@@ -99,7 +98,7 @@ nothing #hide
 # We define a function that plots the potential vorticity field and the evolution 
 # of energy and enstrophy.
 
-function plot_output(prob, fig, axs; drawcolorbar=false)
+function plot_output(prob, fig, axs; drawcolorbar=false, dpi=200)
 
   sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid
   MultilayerQG.updatevars!(prob)
@@ -167,7 +166,7 @@ println("finished")
 # ## Plot
 # Now let's see what we got. We plot the output,
 
-fig, axs = subplots(ncols=3, nrows=2, figsize=(15, 8))
+fig, axs = subplots(ncols=3, nrows=2, figsize=(15, 8), dpi=200)
 plot_output(prob, fig, axs; drawcolorbar=false)
 gcf() #hide
 
