@@ -1,13 +1,13 @@
 language: julia
 
 os:
-  # - osx
+  - osx
   - linux
 
 julia:
-  # - 1.0
+  - 1.0
   - 1.4
-  # - nightly
+  - nightly
 
 env:
   global:
