@@ -1,8 +1,7 @@
-# # Two-dimensional forced-dissipative turbulence
+# # 2D forced-dissipative turbulence
 #
-# In this example, we simulate forced-dissipative two-dimensional turbulence. We
-# solve the two-dimensional vorticity equation with linear drag and stochastic
-# excitation.
+# A simulation of forced-dissipative two-dimensional turbulence. We solve the 
+# two-dimensional vorticity equation with linear drag and stochastic excitation.
 
 using PyPlot, FourierFlows, Printf
 

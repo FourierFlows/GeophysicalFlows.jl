@@ -11,7 +11,7 @@ using
 #####
 
 const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
-const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
+const OUTPUT_DIR   = joinpath(@__DIR__, "src/examples")
 
 examples = [
     "twodnavierstokes_decaying.jl",
@@ -33,9 +33,9 @@ end
 ##### Build and deploy docs
 #####
 
-# Set up a timer to print a dot '.' every 60 seconds. This is to avoid Travis CI
+# Set up a timer to print a space ' ' every 240 seconds. This is to avoid Travis CI
 # timing out when building demanding Literate.jl examples.
-Timer(t -> println("."), 0, interval=60)
+Timer(t -> println(" "), 0, interval=240)
 
 format = Documenter.HTML(
   collapselevel = 1,
@@ -49,7 +49,7 @@ makedocs(
  doctest = false,
    clean = true,
 checkdocs = :all,
-  format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
+  format = format,
  authors = "Navid C. Constantinou and Gregory L. Wagner",
 sitename = "GeophysicalFlows.jl",
    pages = Any[
@@ -61,13 +61,13 @@ sitename = "GeophysicalFlows.jl",
               "modules/multilayerqg.md"
             ],
             "Examples" => [
-              "generated/twodnavierstokes_decaying.md",
-              "generated/twodnavierstokes_stochasticforcing.md",
-              "generated/barotropicqg_betadecay.md",
-              "generated/barotropicqg_betaforced.md",
-              "generated/barotropicqg_acc.md",
-              "generated/barotropicqgql_betaforced.md",
-              "generated/multilayerqg_2layer.md"
+              "examples/twodnavierstokes_decaying.md",
+              "examples/twodnavierstokes_stochasticforcing.md",
+              "examples/barotropicqg_betadecay.md",
+              "examples/barotropicqg_betaforced.md",
+              "examples/barotropicqg_acc.md",
+              "examples/barotropicqgql_betaforced.md",
+              "examples/multilayerqg_2layer.md"
             ],
             "DocStrings" => Any[
             "man/types.md",
@@ -75,4 +75,8 @@ sitename = "GeophysicalFlows.jl",
            ]
 )
 
-deploydocs(repo = "github.com/FourierFlows/GeophysicalFlows.jl.git")
+deploydocs(        repo = "github.com/FourierFlows/GeophysicalFlows.jl.git"
+                 devurl = "dev",
+               versions = ["stable" => "v^", "v#.#", devurl => devurl],
+           push_preview = true
+           )

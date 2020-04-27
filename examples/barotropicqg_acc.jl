@@ -1,16 +1,24 @@
-# # Decaying barotropic quasi-geostropic turbulence on a beta-plane
+# # Barotropic QG beta-plane turbulence over topography
 #
-# In this example, we simulate an idealized version of the Southern Ocean. The 
-# model solves the barotropic quasi-geostrophic eddy dynamics in a flud with 
-# variable depth $H-h(x,y)$. We also include an ``ACC'', i.e.,  a domain-average
-# zonal velocity $U(t)$ which is forced by constant wind stress $F$ and 
-# influenced by bottom drag and topographic form stress. The equations solved are:
-# $$\partial_t \nabla^2\psi + \mathsf{J}(\psi-U y, \nabla^2\psi + \beta y + \eta) = -\mu\nabla^2\psi, $$
-# $$\partial_t U = F - \mu U -  \langle\psi\partial_x\eta\rangle.$$
+# An idealized version of the Southern Ocean. We solve the barotropic 
+# quasi-geostrophic eddy dynamics in a flud with variable depth $H-h(x,y)$. We 
+# also include an "Antarctic Circumpolar Current," i.e.,  a domain-average zonal 
+# velocity $U(t)$ which is forced by constant wind  stress $F$ and influenced by 
+# bottom drag and topographic form stress.
+# 
+# The equations solved are:
+#
+# $$
+# \partial_t \nabla^2\psi + \mathsf{J}(\psi-U y, \nabla^2\psi + \beta y + \eta) = -\mu\nabla^2\psi,
+# $$
+# 
+# $$
+# \partial_t U = F - \mu U -  \langle\psi\partial_x\eta\rangle .
+# $$
 
-using FourierFlows, PyPlot, JLD2, Printf
+using FourierFlows, PyPlot, Printf
 
-using FFTW: ifft
+using FFTW: irfft
 
 import GeophysicalFlows.BarotropicQG
 import GeophysicalFlows.BarotropicQG: energy, meanenergy, enstrophy, meanenstrophy

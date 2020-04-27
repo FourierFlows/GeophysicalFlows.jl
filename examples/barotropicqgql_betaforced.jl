@@ -1,15 +1,15 @@
-# # Quasi-Linear forced-dissipative barotropic quasi-geostropic turbulence on a beta-plane
+# # Quasi-Linear forced-dissipative barotropic QG beta-plane turbulence
 #
-# In this example, we simulate forced-dissipative barotropic quasi-geostrophic 
-# turbulence on a beta plane under the \textit{quasi-linear approximation}. 
-# The dynamics include linear drag and stochastic excitation.
+# A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
+# a beta plane under the *quasi-linear approximation*. The dynamics include 
+# linear drag and stochastic excitation.
 
-using FourierFlows, PyPlot, JLD2, Statistics, Printf, Random
+using FourierFlows, PyPlot, Statistics, Printf, Random
 
 import GeophysicalFlows.BarotropicQGQL
 import GeophysicalFlows.BarotropicQGQL: energy, enstrophy
 
-import FFTW: irfft, ifft
+import FFTW: irfft
 import Random: seed!
 import Statistics: mean
 
