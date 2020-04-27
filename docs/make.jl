@@ -15,12 +15,12 @@ const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 
 examples = [
     "twodnavierstokes_decaying.jl",
-    # "twodnavierstokes_stochasticforcing.jl",
-    # "barotropicqg_betadecay.jl",
-    # "barotropicqg_betaforced.jl",
-    # "barotropicqg_acc.jl",
-    # "barotropicqgql_betaforced.jl",
-    # "multilayerqg_2layer.jl",
+    "twodnavierstokes_stochasticforcing.jl",
+    "barotropicqg_betadecay.jl",
+    "barotropicqg_betaforced.jl",
+    "barotropicqg_acc.jl",
+    "barotropicqgql_betaforced.jl",
+    "multilayerqg_2layer.jl",
 ]
 
 for example in examples
@@ -62,12 +62,12 @@ sitename = "GeophysicalFlows.jl",
             ],
             "Examples" => [
               "generated/twodnavierstokes_decaying.md",
-              # "generated/twodnavierstokes_stochasticforcing.md",
-              # "generated/barotropicqg_betadecay.md",
-              # "generated/barotropicqg_betaforced.md",
-              # "generated/barotropicqg_acc.md",
-              # "generated/barotropicqgql_betaforced.md",
-              # "generated/multilayerqg_2layer.md"
+              "generated/twodnavierstokes_stochasticforcing.md",
+              "generated/barotropicqg_betadecay.md",
+              "generated/barotropicqg_betaforced.md",
+              "generated/barotropicqg_acc.md",
+              "generated/barotropicqgql_betaforced.md",
+              "generated/multilayerqg_2layer.md"
             ],
             "DocStrings" => Any[
             "man/types.md",
