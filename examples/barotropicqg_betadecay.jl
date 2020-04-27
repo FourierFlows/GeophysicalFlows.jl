@@ -24,7 +24,7 @@ nx = 256       # 2D resolution = nx^2
 stepper = "FilteredETDRK4"   # timestepper
 dt = 0.02      # timestep 
 nsteps = 8000  # total number of time-steps
-nsubs  = 500   # number of time-steps for plotting (nsteps must be multiple of nsubs)
+nsubs  = 2000  # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 

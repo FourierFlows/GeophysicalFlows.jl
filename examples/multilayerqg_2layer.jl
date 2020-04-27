@@ -17,10 +17,10 @@ import GeophysicalFlows.MultilayerQG: energies, fluxes
 nx = 128          # 2D resolution = nx^2
 ny = nx
 
-stepper = "FilteredRK4"   # timestepper
-dt  = 5e-3      # timestep
-nsteps = 8000   # total number of time-steps
-nsubs  = 2000   # number of time-steps for plotting (nsteps must be multiple of nsubs)
+stepper = "FilteredAB3"   # timestepper
+dt  = 2e-3      # timestep
+nsteps = 16000  # total number of time-steps
+nsubs  = 4000   # number of time-steps for plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
