@@ -77,6 +77,6 @@ sitename = "GeophysicalFlows.jl",
 
 deploydocs(        repo = "github.com/FourierFlows/GeophysicalFlows.jl.git",
                  devurl = "dev",
-               versions = ["stable" => "v^", "v#.#", devurl => devurl],
+               versions = ["stable" => "v^", "v#.#", devurl => "dev"],
            push_preview = true,
            )
