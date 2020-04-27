@@ -74,7 +74,7 @@ prob = TwoDNavierStokes.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=d
                         calcF=calcF!, stochastic=true, dev=dev)
 nothing # hide
 
-# and define some shortcuts
+# Define some shortcuts for convenience.
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 nothing # hide
 
@@ -87,7 +87,7 @@ TwoDNavierStokes.set_zeta!(prob, 0*x)
 
 # ## Diagnostics
 
-# Create Diagnostics; the diagnostics here will probe the energy budget
+# Create Diagnostics; the diagnostics here will probe the energy budget.
 E = Diagnostic(energy,      prob, nsteps=nt) # energy
 R = Diagnostic(drag,        prob, nsteps=nt) # dissipation by drag
 D = Diagnostic(dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
@@ -168,6 +168,6 @@ end
 # ## Plot
 # And now let's see what we got. We plot the output.
 
-fig, axs = subplots(ncols=2, nrows=2, figsize=(12, 8))
+fig, axs = subplots(ncols=2, nrows=2, figsize=(12, 8), dpi=200)
 makeplot(prob, diags)
 gcf() # hide

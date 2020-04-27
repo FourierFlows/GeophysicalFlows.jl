@@ -24,8 +24,8 @@ examples = [
 ]
 
 for example in examples
-    example_filepath = joinpath(EXAMPLES_DIR, example)
-    Literate.markdown(example_filepath, OUTPUT_DIR, documenter=true)
+  example_filepath = joinpath(EXAMPLES_DIR, example)
+  Literate.markdown(example_filepath, OUTPUT_DIR, documenter=true)
 end
 
 
@@ -38,9 +38,9 @@ end
 Timer(t -> println("."), 0, interval=60)
 
 format = Documenter.HTML(
-    collapselevel = 1,
-       prettyurls = get(ENV, "CI", nothing) == "true",
-        canonical = "https://fourierflows.github.io/GeophysicalFlows.jl/dev/"
+  collapselevel = 1,
+     prettyurls = get(ENV, "CI", nothing) == "true",
+      canonical = "https://fourierflows.github.io/GeophysicalFlows.jl/dev/"
 )
 
 

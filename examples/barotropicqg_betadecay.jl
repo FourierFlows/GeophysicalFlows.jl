@@ -38,9 +38,7 @@ nν = 1         # viscosity order
 
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments. The
-# `stepper` keyword defines the time-stepper to be used,
-
+# We initialize a `Problem` by providing a set of keyword arguments,
 prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, dev=dev)
 nothing # hide
 
@@ -71,6 +69,31 @@ E0 = FourierFlows.parsevalsum(g.Krsq.*abs2.(psih), g)
 BarotropicQG.set_zeta!(prob, qi)
 nothing #hide
 
+# Let's plot the initial vorticity field:
+
+fig, axs = subplots(ncols=2, nrows=1, figsize=(10, 3.5), dpi=200)
+sca(axs[1])
+cla()
+pcolormesh(x, y, v.q)
+axis("square")
+xticks(-2:2:2)
+yticks(-2:2:2)
+title(L"initial vorticity $\zeta = \partial_x v - \partial_y u$")
+colorbar()
+clim(-15, 15)
+sca(axs[2])
+cla()
+contourf(x, y, v.psi)
+colorbar()
+clim(-0.2, 0.2)
+contour(x, y, v.psi, colors="k")
+axis("square")
+xticks(-2:2:2)
+yticks(-2:2:2)
+title(L"initial streamfunction $\psi$")
+gcf() #hide
+nothing #hide
+
 
 # ## Diagnostics
 
@@ -90,12 +113,12 @@ plotname = "snapshots"
 filename = joinpath(filepath, "decayingbetaturb.jld2")
 nothing # hide
 
-# Do some basic file management
+# Do some basic file management,
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 nothing # hide
 
-# And then create Output
+# and then create Output.
 get_sol(prob) = sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im*g.l.*g.invKrsq.*sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
@@ -125,16 +148,16 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   sca(axs[2])
   cla()
   contourf(x, y, v.psi)
-  if maximum(abs.(v.psi))>0
-    contour(x, y, v.psi, colors="k")
-  end
   axis("square")
-  xticks(-2:2:2)
-  yticks(-2:2:2)
-  title(L"streamfunction $\psi$")
   if drawcolorbar==true
     colorbar()
   end
+  if maximum(abs.(v.psi))>0
+    contour(x, y, v.psi, colors="k")
+  end
+  xticks(-2:2:2)
+  yticks(-2:2:2)
+  title(L"streamfunction $\psi$")
 
   sca(axs[3])
   cla()
@@ -175,8 +198,8 @@ println("finished")
 # ## Plot
 # Now let's see what we got. We plot the output,
 
-fig, axs = subplots(ncols=2, nrows=2, figsize=(8, 8))
-plot_output(prob, fig, axs; drawcolorbar=false)
+fig, axs = subplots(ncols=2, nrows=2, figsize=(10, 7), dpi=200)
+plot_output(prob, fig, axs; drawcolorbar=true)
 gcf() # hide
 
 # and finally save the figure

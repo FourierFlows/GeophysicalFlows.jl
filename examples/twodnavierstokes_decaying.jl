@@ -35,11 +35,11 @@ nsteps = 4000  # total number of steps
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
-# `stepper` keyword defines the time-stepper to be used,
+# `stepper` keyword defines the time-stepper to be used.
 prob = TwoDNavierStokes.Problem(; nx=n, Lx=L, ny=n, Ly=L, dt=dt, stepper="FilteredRK4", dev=dev)
 nothing # hide
 
-# and define some shortcuts
+# Next we define some shortcuts for convenience.
 sol, cl, vs, gr, filter = prob.sol, prob.clock, prob.vars, prob.grid, prob.timestepper.filter
 x, y = gridpoints(gr)
 nothing # hide
@@ -54,6 +54,20 @@ k0, E0 = 6, 0.5
 zetai  = peakedisotropicspectrum(gr, k0, E0, mask=filter)
 TwoDNavierStokes.set_zeta!(prob, zetai)
 nothing # hide
+
+# Let's plot the initial vorticity field:
+
+fig = figure(figsize=(5, 3.5), dpi=200)
+pcolormesh(x, y, vs.zeta)
+axis("square")
+xticks(-2:2:2)
+yticks(-2:2:2)
+title(L"initial vorticity $\zeta = \partial_x v - \partial_y u$")
+colorbar()
+clim(-40, 40)
+axis("off")
+gcf() #hide
+nothing #hide
 
 
 # ## Diagnostics
@@ -134,7 +148,7 @@ println("finished")
 # ## Plot
 # Now let's see what we got. We plot the output,
 
-fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
+fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4), dpi=200)
 plot_output(prob, fig, axs; drawcolorbar=true)
 gcf() # hide
 
@@ -156,7 +170,7 @@ nothing # hide
 
 # and we plot it.
 
-fig2, axs = subplots(ncols=2, figsize=(8, 4))
+fig2, axs = subplots(ncols=2, figsize=(12, 4), dpi=200)
 
 sca(axs[1])
 pcolormesh(x, y, vs.zeta)
