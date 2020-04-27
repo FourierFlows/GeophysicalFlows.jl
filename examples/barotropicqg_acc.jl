@@ -23,19 +23,19 @@ nothing # hide
 
 
 # ## Numerical parameters and time-stepping parameters
-nx  = 256      # 2D resolution = nx^2
-stepper = "FilteredETDRK4"   # timestepper
-dt  = 2e-2     # timestep
-nsteps = 20000 # total number of time-steps
-nsubs  = 5000   # number of time-steps for plotting (nsteps must be multiple of nsubs)
+nx  = 128      # 2D resolution = nx^2
+stepper = "ETDRK4"   # timestepper
+dt  = 1e-1     # timestep
+nsteps = 10000 # total number of time-steps
+nsubs  = 2500  # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
 # ## Physical parameters
 
 Lx = 2π        # domain size
- ν = 8.0e-10   # viscosity
-nν = 2         # viscosity order
+ ν = 4e-15     # viscosity
+nν = 4         # viscosity order
 f0 = -1.0      # Coriolis parameter
  β = 1.4015    # the y-gradient of planetary PV
  μ = 1e-2      # linear drag
@@ -43,7 +43,7 @@ f0 = -1.0      # Coriolis parameter
  nothing # hide
 
 # Topographic PV
-topoPV(x, y) = @. 2*cos(10x)*cos(10y)
+topoPV(x, y) = @. 2*cos(4x)*cos(4y)
 nothing # hide
 
 # Forcing on the domain-averaged U equation
@@ -115,10 +115,8 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   sca(axs[1])
   pcolormesh(x, y, v.q)
   axis("square")
-  xlim(0, 2)
-  xticks(0:0.5:2)
-  ylim(0, 2)
-  yticks(0:0.5:2)
+  xticks(-2:2)
+  yticks(-2:2)
   title(L"$\nabla^2\psi + \eta$ (part of the domain)")
   if drawcolorbar==true
     colorbar()
@@ -130,7 +128,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   plot(μ*E.t[1:Emean.i], Emean.data[1:Emean.i], label=L"$E_U$")
 
   xlabel(L"\mu t")
-  ylabel(L"E")
+  ylabel("energy")
   legend()
 
   sca(axs[3])
@@ -138,8 +136,9 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   plot(μ*Q.t[1:Q.i], Q.data[1:Q.i], label=L"$Q_{\psi}$")
   plot(μ*Qmean.t[1:Qmean.i], Qmean.data[1:Qmean.i], label=L"$Q_U$")
   xlabel(L"\mu t")
-  ylabel(L"Q")
+  ylabel("potential enstrophy")
   legend()
+  tight_layout(w_pad=0.1)
 end
 nothing # hide
 
@@ -153,8 +152,10 @@ startwalltime = time()
 while cl.step < nsteps
   stepforward!(prob, diags, nsubs)
   
-  log = @sprintf("step: %04d, t: %d, E: %.4f, Q: %.4f, walltime: %.2f min",
-    cl.step, cl.t, E.data[E.i], Q.data[Q.i], (time()-startwalltime)/60)
+  cfl = cl.dt*maximum([maximum(v.U.+v.u)/g.dx, maximum(v.v)/g.dy])
+  
+  log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, walltime: %.2f min",
+    cl.step, cl.t, cfl, E.data[E.i], Q.data[Q.i], (time()-startwalltime)/60)
 
   println(log)
 end

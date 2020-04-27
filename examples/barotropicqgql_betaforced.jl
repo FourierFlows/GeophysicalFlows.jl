@@ -16,11 +16,11 @@ import Statistics: mean
 
 # ## Numerical parameters and time-stepping parameters
 
-nx = 256       # 2D resolution = nx^2
+nx = 128       # 2D resolution = nx^2
 stepper = "FilteredRK4"   # timestepper
-dt  = 0.01     # timestep
-nsteps = 40000 # total number of time-steps
-nsubs  = 5000  # number of time-steps for plotting (nsteps must be multiple of nsubs)
+dt  = 0.05     # timestep
+nsteps = 8000  # total number of time-steps
+nsubs  = 2000  # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 

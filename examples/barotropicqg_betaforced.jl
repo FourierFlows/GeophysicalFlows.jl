@@ -22,11 +22,11 @@ nothing # hide
 
 # ## Numerical parameters and time-stepping parameters
 
-nx = 256       # 2D resolution = nx^2
+nx = 128       # 2D resolution = nx^2
 stepper = "FilteredRK4"   # timestepper
-dt  = 0.01     # timestep
-nsteps = 40000 # total number of time-steps
-nsubs  = 5000  # number of time-steps for plotting (nsteps must be multiple of nsubs)
+dt  = 0.05     # timestep
+nsteps = 8000  # total number of time-steps
+nsubs  = 2000  # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
@@ -164,7 +164,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   plot(Array(transpose(mean(v.zeta, dims=1))), y[1,:])
   plot(0*y[1,:], y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
-  xlim(-4, 4)
+  xlim(-3, 3)
   title(L"zonal mean $\zeta$")
 
   sca(axs[4])
@@ -172,7 +172,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   plot(Array(transpose(mean(v.u, dims=1))), y[1,:])
   plot(0*y[1,:], y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
-  xlim(-0.7, 0.7)
+  xlim(-0.5, 0.5)
   title(L"zonal mean $u$")
 
   sca(axs[5])

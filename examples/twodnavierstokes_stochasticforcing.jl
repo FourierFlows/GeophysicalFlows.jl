@@ -11,10 +11,12 @@ using Random: seed!
 import GeophysicalFlows.TwoDNavierStokes
 import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy, dissipation, work, drag
 
+
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()    # Device (CPU/GPU)
 nothing # hide
+
 
 # ## Numerical, domain, and simulation parameters
 #
@@ -27,6 +29,7 @@ dt, tf = 0.005, 0.2/μ        # timestep and final time
     nt = round(Int, tf/dt)   # total timesteps
     ns = 4                   # how many intermediate times we want to plot
 nothing # hide
+
 
 # ## Forcing
 #
@@ -63,6 +66,7 @@ function calcF!(Fh, sol, t, cl, v, p, g)
 end
 nothing # hide
 
+
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used.
@@ -74,10 +78,12 @@ nothing # hide
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 nothing # hide
 
+
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
 TwoDNavierStokes.set_zeta!(prob, 0*x)
+
 
 # ## Diagnostics
 
@@ -88,6 +94,7 @@ D = Diagnostic(dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
 W = Diagnostic(work,        prob, nsteps=nt) # work input by forcing
 diags = [E, D, W, R] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
+
 
 # ## Visualizing the simulation
 
@@ -140,12 +147,10 @@ function makeplot(prob, diags)
 end
 nothing # hide
 
+
 # ## Time-stepping the `Problem` forward
 
 # Finally, we time-step the `Problem` forward in time.
-
-fig, axs = subplots(ncols=2, nrows=2, figsize=(12, 8))
-res = makeplot(prob, diags)
 
 startwalltime = time()
 for i = 1:ns
@@ -159,8 +164,10 @@ for i = 1:ns
   println(log)        
 end
 
+
 # ## Plot
 # And now let's see what we got. We plot the output.
 
+fig, axs = subplots(ncols=2, nrows=2, figsize=(12, 8))
 makeplot(prob, diags)
 gcf() # hide
