@@ -1,9 +1,8 @@
-# # Decaying barotropic quasi-geostropic turbulence on a beta-plane
+# # Decaying barotropic QG beta-plane turbulence
 #
-# In this example, we simulate decaying barotropic quasi-geostrophic turbulence 
-# on a beta plane.
+# An example of decaying barotropic quasi-geostrophic turbulence on a beta plane.
 
-using FourierFlows, PyPlot, JLD2, Printf, Random
+using FourierFlows, PyPlot, Printf, Random
 
 using Statistics: mean
 using FFTW: irfft

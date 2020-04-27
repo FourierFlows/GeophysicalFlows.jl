@@ -1,12 +1,11 @@
-# # Two-dimensional decaying turbulence
+# # 2D decaying turbulence
 #
-# In this example, we simulate decaying two-dimensional turbulence by solving
-# the two-dimensional vorticity equation.
+# A simulations of decaying two-dimensional turbulence.
 
-using FourierFlows, PyPlot, JLD2, Printf, Random, FFTW
+using FourierFlows, PyPlot, Printf, Random
 
 using Random: seed!
-using FFTW: rfft
+using FFTW: rfft, irfft
 
 import GeophysicalFlows.TwoDNavierStokes
 import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy

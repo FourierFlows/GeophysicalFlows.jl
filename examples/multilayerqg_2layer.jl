@@ -1,12 +1,10 @@
 # # Phillips model of Baroclinic Instability
 #
-# Here, we simulate the growth of barolinic instability in the Phillips model
+# A simulation of the growth of barolinic instability in the Phillips 2-layer model
 # when we impose a vertical mean flow shear as a difference $\Delta U$ in the
 # imposed, domain-averaged, zonal flow at each layer.
 
-using FourierFlows, PyPlot, JLD2, Printf
-
-using FFTW: ifft
+using FourierFlows, PyPlot, Printf
 
 import GeophysicalFlows.MultilayerQG
 import GeophysicalFlows.MultilayerQG: energies, fluxes

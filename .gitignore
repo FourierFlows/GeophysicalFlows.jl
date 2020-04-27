@@ -13,6 +13,7 @@ coverage/
 docs/build/
 docs/site/
 docs/src/generated
+docs/src/examples
 docs/Manifest.toml
 
 # Model output

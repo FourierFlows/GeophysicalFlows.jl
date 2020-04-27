@@ -1,10 +1,9 @@
-# # Forced-dissipative barotropic quasi-geostropic turbulence on a beta-plane
+# # Forced-dissipative barotropic QG beta-plane turbulence
 #
-# In this example, we simulate forced-dissipative barotropic quasi-geostrophic 
-# turbulence on a beta plane. The dynamics include linear drag and stochastic 
-# excitation.
+# A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
+# a beta plane. The dynamics include linear drag and stochastic excitation.
 
-using FourierFlows, PyPlot, JLD2, Statistics, Printf, Random
+using FourierFlows, PyPlot, Statistics, Printf, Random
 
 using FFTW: irfft
 using Statistics: mean
