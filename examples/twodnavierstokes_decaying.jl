@@ -1,3 +1,6 @@
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/examples/twodnavierstokes_decaying.ipynb)
+#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/examples/twodnavierstokes_decaying.ipynb)
+
 # # 2D decaying turbulence
 #
 # A simulations of decaying two-dimensional turbulence.
@@ -56,7 +59,7 @@ nothing # hide
 
 # Let's plot the initial vorticity field:
 
-fig = figure(figsize=(5, 3.5), dpi=200)
+fig = figure(figsize=(3, 2), dpi=150)
 pcolormesh(x, y, vs.zeta)
 axis("square")
 xticks(-2:2:2)
@@ -65,8 +68,7 @@ title(L"initial vorticity $\zeta = \partial_x v - \partial_y u$")
 colorbar()
 clim(-40, 40)
 axis("off")
-gcf() #hide
-nothing #hide
+gcf() # hide
 
 
 # ## Diagnostics

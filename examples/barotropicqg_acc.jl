@@ -1,20 +1,17 @@
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/examples/barotropicqgtopography.ipynb)
+#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/examples/barotropicqgtopography.ipynb)
+
 # # Barotropic QG beta-plane turbulence over topography
 #
 # An idealized version of the Southern Ocean. We solve the barotropic 
 # quasi-geostrophic eddy dynamics in a flud with variable depth $H-h(x,y)$. We 
 # also include an "Antarctic Circumpolar Current," i.e.,  a domain-average zonal 
 # velocity $U(t)$ which is forced by constant wind  stress $F$ and influenced by 
-# bottom drag and topographic form stress.
-# 
-# The equations solved are:
-#
-# $$
-# \partial_t \nabla^2\psi + \mathsf{J}(\psi-U y, \nabla^2\psi + \beta y + \eta) = -\mu\nabla^2\psi,
-# $$
-# 
-# $$
-# \partial_t U = F - \mu U -  \langle\psi\partial_x\eta\rangle .
-# $$
+# bottom drag and topographic form stress. The equations solved are: 
+# $\partial_t \nabla^2\psi + \mathsf{J}(\psi-U y, \nabla^2\psi + \beta y + \eta) = -\mu\nabla^2\psi$
+# and 
+# $\partial_t U = F - \mu U -  \langle\psi\partial_x\eta\rangle$.
+
 
 using FourierFlows, PyPlot, Printf
 
@@ -92,9 +89,9 @@ nothing # hide
 
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
 filepath = "."
-plotpath = "./plots_acctopo"
+plotpath = "./plots_barotropicqgtopography"
 plotname = "snapshots"
-filename = joinpath(filepath, "acctopo.jl.jld2")
+filename = joinpath(filepath, "barotropicqgtopography.jld2")
 nothing # hide
 
 # Do some basic file management,
@@ -124,7 +121,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   axis("square")
   xticks(-2:2)
   yticks(-2:2)
-  title(L"$\nabla^2\psi + \eta$ (part of the domain)")
+  title(L"$\nabla^2\psi + \eta$")
   if drawcolorbar==true
     colorbar()
   end
