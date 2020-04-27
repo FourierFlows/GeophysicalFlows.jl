@@ -25,7 +25,7 @@ jobs:
       julia: 1.4
       os: linux
       script:
-        - julia --project=docs/ -e 'using Pkg; Pkg.instantiate(); Pkg.build("PyPlot"); 
+        - julia --project=docs/ -e 'using Pkg; Pkg.instantiate(); Pkg.build("PyPlot"); Pkg.using("PyPlot"); 
                                     Pkg.develop(PackageSpec(path=pwd()));'
         - JULIA_DEBUG=all julia --project=docs/ docs/make.jl
       after_success: skip
