@@ -1,4 +1,4 @@
-# # Two-dimensional forced-dissipative turbulence example
+# # Two-dimensional forced-dissipative turbulence
 #
 # In this example, we simulate forced-dissipative two-dimensional turbulence. We
 # solve the two-dimensional vorticity equation with linear drag and stochastic

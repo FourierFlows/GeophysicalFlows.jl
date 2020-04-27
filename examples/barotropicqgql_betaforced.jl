@@ -227,14 +227,17 @@ savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename)
 nothing #hide
  
-# We can also plot a Hovmoller plot of the zonal flow
+# We can also compute the space-time diagram (Hovmoller plot) of the zonal-mea 
+# zonal flow and then plot it.
 
-UM = zeros(g.ny, length(zMean.t))
+UmeanTime = zeros(g.ny, length(zMean.t))
 for j in 1:length(zMean.t)
-    UM[:, j] = real(ifft(im*g.l'.*zMean[j].*g.invKrsq[1, :]))
+  UmeanTime[:, j] = real(ifft(im*g.l'.*zMean[j].*g.invKrsq[1, :]))
 end
-figure(2); pcolormesh(zMean.t, y[1, :], UM)
-xlabel(L"time $t$")
-ylabel(L"zonal mean $u$")
 
+t, y = zMean.t, y[1, :]
+fig2 = figure(figsize=(10, 5))
+pcolormesh(μ*t, y, UmeanTime)
+xlabel(L"time $\mu t$")
+ylabel(L"zonal mean $u$")
 gcf() #hide
