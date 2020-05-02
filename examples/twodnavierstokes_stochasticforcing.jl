@@ -1,7 +1,7 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/examples/twodnavierstokes_stochasticforcing.ipynb)
 #md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/examples/twodnavierstokes_stochasticforcing.ipynb)
 
-# # 2D forced-dissipative turbulence
+# #  2D forced-dissipative turbulence
 #
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the 
 # two-dimensional vorticity equation with linear drag and stochastic excitation.
@@ -17,7 +17,7 @@ import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy, dissipation, work, 
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()    # Device (CPU/GPU)
-nothing # hide
+#md nothing # hide
 
 
 # ## Numerical, domain, and simulation parameters
@@ -30,7 +30,7 @@ nothing # hide
 dt, tf = 0.005, 0.2/μ        # timestep and final time
     nt = round(Int, tf/dt)   # total timesteps
     ns = 4                   # how many intermediate times we want to plot
-nothing # hide
+#md nothing # hide
 
 
 # ## Forcing
@@ -57,7 +57,7 @@ forcingcovariancespectrum[Kr .< 2π/L] .= 0
 forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum # normalize forcing to inject energy ε
 
 seed!(1234)
-nothing # hide
+#md nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
 function calcF!(Fh, sol, t, cl, v, p, g)
@@ -66,7 +66,7 @@ function calcF!(Fh, sol, t, cl, v, p, g)
   @. Fh = eta*sqrt(forcingcovariancespectrum)
   nothing
 end
-nothing # hide
+#md nothing # hide
 
 
 # ## Problem setup
@@ -74,11 +74,11 @@ nothing # hide
 # `stepper` keyword defines the time-stepper to be used.
 prob = TwoDNavierStokes.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper="RK4",
                         calcF=calcF!, stochastic=true, dev=dev)
-nothing # hide
+#md nothing # hide
 
 # Define some shortcuts for convenience.
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-nothing # hide
+#md nothing # hide
 
 
 # ## Setting initial conditions
@@ -95,7 +95,7 @@ R = Diagnostic(drag,        prob, nsteps=nt) # dissipation by drag
 D = Diagnostic(dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
 W = Diagnostic(work,        prob, nsteps=nt) # work input by forcing
 diags = [E, D, W, R] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-nothing # hide
+#md nothing # hide
 
 
 # ## Visualizing the simulation
@@ -147,7 +147,7 @@ function makeplot(prob, diags)
   xlabel(L"$\mu t$")
   legend(fontsize=10)
 end
-nothing # hide
+#md nothing # hide
 
 
 # ## Time-stepping the `Problem` forward

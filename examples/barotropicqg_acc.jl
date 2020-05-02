@@ -45,7 +45,7 @@ f0 = -1.0      # Coriolis parameter
  β = 1.4015    # the y-gradient of planetary PV
  μ = 1e-2      # linear drag
  F = 0.0012    # normalized wind stress forcing on domain-averaged zonal flow U(t) flow
- nothing # hide
+nothing # hide
 
 # Define the topographic potential vorticity, $f_0 h(x, y)/H$
 topoPV(x, y) = @. 2*cos(4x)*cos(4y)

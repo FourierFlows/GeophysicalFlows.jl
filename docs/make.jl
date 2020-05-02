@@ -3,6 +3,7 @@ push!(LOAD_PATH, "..")
 using
   Documenter,
   Literate,
+  PyPlot, # to not capture precompilation output
   GeophysicalFlows,
   GeophysicalFlows.TwoDNavierStokes
 
@@ -11,7 +12,7 @@ using
 #####
 
 const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
-const OUTPUT_DIR   = joinpath(@__DIR__, "src/examples")
+const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 
 examples = [
     "twodnavierstokes_decaying.jl",
@@ -26,6 +27,8 @@ examples = [
 for example in examples
   example_filepath = joinpath(EXAMPLES_DIR, example)
   Literate.markdown(example_filepath, OUTPUT_DIR, documenter=true)
+  Literate.notebook(example_filepath, OUTPUT_DIR, documenter=true)
+  Literate.script(example_filepath, OUTPUT_DIR, documenter=true)
 end
 
 
@@ -60,14 +63,22 @@ sitename = "GeophysicalFlows.jl",
               "modules/barotropicqgql.md",
               "modules/multilayerqg.md"
             ],
-            "Examples" => [
-              "examples/twodnavierstokes_decaying.md",
-              "examples/twodnavierstokes_stochasticforcing.md",
-              "examples/barotropicqg_betadecay.md",
-              "examples/barotropicqg_betaforced.md",
-              "examples/barotropicqg_acc.md",
-              "examples/barotropicqgql_betaforced.md",
-              "examples/multilayerqg_2layer.md"
+            "Examples" => [ 
+              "TwoDNavierStokes" => Any[
+                "generated/twodnavierstokes_decaying.md",
+                "generated/twodnavierstokes_stochasticforcing.md",
+                ],
+              "BarotropicQG" => Any[
+                "generated/barotropicqg_betadecay.md",
+                "generated/barotropicqg_betaforced.md",
+                "generated/barotropicqg_acc.md",
+                ],
+              "BarotropicQGQL" => Any[
+                "generated/barotropicqgql_betaforced.md",
+                ],
+              "MultilayerQG" => Any[
+                "generated/multilayerqg_2layer.md"
+                ]
             ],
             "DocStrings" => Any[
             "man/types.md",
