@@ -18,7 +18,7 @@ import GeophysicalFlows: peakedisotropicspectrum
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-#md nothing # hide
+nothing # hide
 
 
 # ## Numerical, domain, and simulation parameters
@@ -26,25 +26,25 @@ dev = CPU()     # Device (CPU/GPU)
 # First, we pick some numerical and physical parameters for our model.
 
 n, L  = 128, 2π             # grid resolution and domain length
-#md nothing # hide
+nothing # hide
 
 ## Then we pick the time-stepper parameters
     dt = 1e-2  # timestep
 nsteps = 4000  # total number of steps
  nsubs = 1000  # number of steps between each plot
-#md nothing # hide
+nothing # hide
 
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used.
 prob = TwoDNavierStokes.Problem(; nx=n, Lx=L, ny=n, Ly=L, dt=dt, stepper="FilteredRK4", dev=dev)
-#md nothing # hide
+nothing # hide
 
 # Next we define some shortcuts for convenience.
 sol, cl, vs, gr, filter = prob.sol, prob.clock, prob.vars, prob.grid, prob.timestepper.filter
 x, y = gridpoints(gr)
-#md nothing # hide
+nothing # hide
 
 
 # ## Setting initial conditions
@@ -55,7 +55,7 @@ seed!(1234)
 k0, E0 = 6, 0.5
 zetai  = peakedisotropicspectrum(gr, k0, E0, mask=filter)
 TwoDNavierStokes.set_zeta!(prob, zetai)
-#md nothing # hide
+nothing # hide
 
 # Let's plot the initial vorticity field:
 
@@ -77,7 +77,7 @@ gcf() # hide
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-#md nothing # hide
+nothing # hide
 
 
 # ## Output
@@ -87,19 +87,19 @@ filepath = "."
 plotpath = "./plots_decayingTwoDNavierStokes"
 plotname = "snapshots"
 filename = joinpath(filepath, "decayingTwoDNavierStokes.jld2")
-#md nothing # hide
+nothing # hide
 
 # Do some basic file management
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
-#md nothing # hide
+nothing # hide
 
 # And then create Output
 get_sol(prob) = Array(prob.sol) # extracts the Fourier-transformed solution
 get_u(prob) = Array(irfft(im*gr.l.*gr.invKrsq.*sol, gr.nx))
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 saveproblem(out)
-#md nothing # hide
+nothing # hide
 
 
 # ## Visualizing the simulation
@@ -126,7 +126,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   xlabel(L"t")
   ylabel(L"\Delta E, \, \Delta Z")
 end
-#md nothing # hide
+nothing # hide
 
 
 # ## Time-stepping the `Problem` forward
@@ -167,7 +167,7 @@ savefig(savename, dpi=240)
 E  = @. 0.5*(vs.u^2 + vs.v^2) # energy density
 Eh = rfft(E)                  # Fourier transform of energy density
 kr, Ehr = FourierFlows.radialspectrum(Eh, gr, refinement=1) # compute radial specturm of `Eh`
-#md nothing # hide
+nothing # hide
 
 # and we plot it.
 

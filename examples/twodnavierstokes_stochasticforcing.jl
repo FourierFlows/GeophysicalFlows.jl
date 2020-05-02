@@ -17,7 +17,7 @@ import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy, dissipation, work, 
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()    # Device (CPU/GPU)
-#md nothing # hide
+nothing # hide
 
 
 # ## Numerical, domain, and simulation parameters
@@ -30,7 +30,7 @@ dev = CPU()    # Device (CPU/GPU)
 dt, tf = 0.005, 0.2/μ        # timestep and final time
     nt = round(Int, tf/dt)   # total timesteps
     ns = 4                   # how many intermediate times we want to plot
-#md nothing # hide
+nothing # hide
 
 
 # ## Forcing
@@ -57,7 +57,7 @@ forcingcovariancespectrum[Kr .< 2π/L] .= 0
 forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum # normalize forcing to inject energy ε
 
 seed!(1234)
-#md nothing # hide
+nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
 function calcF!(Fh, sol, t, cl, v, p, g)
@@ -66,7 +66,7 @@ function calcF!(Fh, sol, t, cl, v, p, g)
   @. Fh = eta*sqrt(forcingcovariancespectrum)
   nothing
 end
-#md nothing # hide
+nothing # hide
 
 
 # ## Problem setup
@@ -74,11 +74,11 @@ end
 # `stepper` keyword defines the time-stepper to be used.
 prob = TwoDNavierStokes.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper="RK4",
                         calcF=calcF!, stochastic=true, dev=dev)
-#md nothing # hide
+nothing # hide
 
 # Define some shortcuts for convenience.
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-#md nothing # hide
+nothing # hide
 
 
 # ## Setting initial conditions
@@ -95,7 +95,7 @@ R = Diagnostic(drag,        prob, nsteps=nt) # dissipation by drag
 D = Diagnostic(dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
 W = Diagnostic(work,        prob, nsteps=nt) # work input by forcing
 diags = [E, D, W, R] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-#md nothing # hide
+nothing # hide
 
 
 # ## Visualizing the simulation
@@ -147,7 +147,7 @@ function makeplot(prob, diags)
   xlabel(L"$\mu t$")
   legend(fontsize=10)
 end
-#md nothing # hide
+nothing # hide
 
 
 # ## Time-stepping the `Problem` forward

@@ -24,7 +24,7 @@ stepper = "FilteredRK4"   # timestepper
 dt  = 0.05     # timestep
 nsteps = 8000  # total number of time-steps
 nsubs  = 2000  # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
-#md nothing # hide
+nothing # hide
 
 
 # ## Physical parameters
@@ -34,7 +34,7 @@ Lx = 2π        # domain size
 nν = 1         # viscosity order 
  β = 10.0      # planetary PV gradient
  μ = 0.01      # bottom drag
-#md nothing # hide
+nothing # hide
  
 
 # ## Forcing
@@ -60,7 +60,7 @@ forcingcovariancespectrum[Kr .< 2π/Lx] .= 0
 forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum  # normalization so that forcing injects energy ε per domain area per unit time
 
 seed!(1234) # reset of the random number generator for reproducibility
-#md nothing # hide
+nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
 function calcF!(Fh, sol, t, cl, v, p, g)
@@ -70,32 +70,32 @@ function calcF!(Fh, sol, t, cl, v, p, g)
   Fh[abs.(Kr) .== 0] .= 0
   nothing
 end
-#md nothing # hide
+nothing # hide
 
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments,
 prob = BarotropicQGQL.Problem(nx=nx, Lx=Lx, beta=β, nu=ν, nnu=nν, mu=μ, dt=dt, 
                               stepper=stepper, calcF=calcF!, stochastic=true)
-#md nothing # hide
+nothing # hide
 
 # and define some shortcuts.
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-#md nothing # hide
+nothing # hide
 
 
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
 BarotropicQGQL.set_zeta!(prob, 0*x)
-#md nothing # hide
+nothing # hide
 
 # ## Diagnostics
 
 # Create Diagnostics -- `energy` and `enstrophy` are functions imported at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
-#md nothing # hide
+nothing # hide
 
 # We can also define our custom diagnostics via functions.
 function zetaMean(prob)
@@ -104,11 +104,11 @@ function zetaMean(prob)
 end
 
 zMean = Diagnostic(zetaMean, prob; nsteps=nsteps, freq=10)  # the zonal-mean vorticity
-#md nothing # hide
+nothing # hide
 
 # We combile all diags in a list.
 diags = [E, Z, zMean] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-#md nothing # hide
+nothing # hide
 
 
 # ## Output
@@ -118,18 +118,18 @@ filepath = "."
 plotpath = "./plots_forcedbetaQLturb"
 plotname = "snapshots"
 filename = joinpath(filepath, "forcedbetaQLturb.jld2")
-#md nothing # hide
+nothing # hide
 
 # Do some basic file management,
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
-#md nothing # hide
+nothing # hide
 
 # and then create Output.
 get_sol(prob) = sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im*g.l.*g.invKrsq.*sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
-#md nothing # hide
+nothing # hide
 
 
 # ## Visualizing the simulation
@@ -197,7 +197,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   xlabel(L"\mu t")
   legend()
 end
-#md nothing # hide
+nothing # hide
 
 
 # ## Time-stepping the `Problem` forward

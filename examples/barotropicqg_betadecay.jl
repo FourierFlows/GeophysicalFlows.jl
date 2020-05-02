@@ -17,7 +17,7 @@ import GeophysicalFlows.BarotropicQG: energy, enstrophy
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-#md nothing # hide
+nothing # hide
 
 
 # ## Numerical parameters and time-stepping parameters
@@ -27,7 +27,7 @@ stepper = "FilteredETDRK4"   # timestepper
 dt = 0.02      # timestep 
 nsteps = 8000  # total number of time-steps
 nsubs  = 2000  # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
-#md nothing # hide
+nothing # hide
 
 
 # ## Physical parameters
@@ -42,12 +42,12 @@ nν = 1         # viscosity order
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments,
 prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, dev=dev)
-#md nothing # hide
+nothing # hide
 
 # and define some shortcuts
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 x, y = gridpoints(g)
-#md nothing # hide
+nothing # hide
 
 
 # ## Setting initial conditions
@@ -102,7 +102,7 @@ gcf() # hide
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-#md nothing # hide
+nothing # hide
 
 
 # ## Output
@@ -112,18 +112,18 @@ filepath = "."
 plotpath = "./plots_decayingbetaturb"
 plotname = "snapshots"
 filename = joinpath(filepath, "decayingbetaturb.jld2")
-#md nothing # hide
+nothing # hide
 
 # Do some basic file management,
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
-#md nothing # hide
+nothing # hide
 
 # and then create Output.
 get_sol(prob) = sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im*g.l.*g.invKrsq.*sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
-#md nothing # hide
+nothing # hide
 
 
 # ## Visualizing the simulation
@@ -176,7 +176,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   xlim(-0.5, 0.5)
   title(L"zonal mean $u$")
 end
-#md nothing # hide
+nothing # hide
 
 
 # ## Time-stepping the `Problem` forward

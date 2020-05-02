@@ -22,7 +22,7 @@ stepper = "FilteredAB3"   # timestepper
 dt  = 2e-3      # timestep
 nsteps = 16000  # total number of time-steps
 nsubs  = 4000   # number of time-steps for plotting (nsteps must be multiple of nsubs)
-#md nothing # hide
+nothing # hide
 
 
 # ## Physical parameters
@@ -38,25 +38,25 @@ f0, g = 1, 1    # Coriolis parameter and gravitational constant
  U = zeros(nlayers) # the imposed mean zonal flow in each layer
  U[1] = 1.0
  U[2] = 0.0
-#md nothing # hide
+nothing # hide
 
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments,
 prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, Lx=Lx, f0=f0, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
-#md nothing # hide
+nothing # hide
 
 # and define some shortcuts.
 sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 x, y = gridpoints(gr)
-#md nothing # hide
+nothing # hide
 
 
 # ## Setting initial conditions
 
 # Our initial condition is some small amplitude random flow.
 MultilayerQG.set_q!(prob, 1e-2randn((nx, ny, nlayers)))
-#md nothing # hide
+nothing # hide
 
 
 # ## Diagnostics
@@ -64,7 +64,7 @@ MultilayerQG.set_q!(prob, 1e-2randn((nx, ny, nlayers)))
 # Create Diagnostics -- `energy` function is imported at the top.
 E = Diagnostic(energies, prob; nsteps=nsteps)
 diags = [E] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-#md nothing # hide
+nothing # hide
 
 
 # ## Output
@@ -74,12 +74,12 @@ filepath = "."
 plotpath = "./plots_2layer"
 plotname = "snapshots"
 filename = joinpath(filepath, "2layer.jld2")
-#md nothing # hide
+nothing # hide
 
 # Do some basic file management
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
-#md nothing # hide
+nothing # hide
 
 # And then create Output
 get_sol(prob) = sol # extracts the Fourier-transformed solution
@@ -145,7 +145,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false, dpi=200)
   xlabel(L"\mu t")
   legend()
 end
-#md nothing # hide
+nothing # hide
 
 
 # ## Time-stepping the `Problem` forward
