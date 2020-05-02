@@ -1,7 +1,7 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/examples/twodnavierstokes_stochasticforcing.ipynb)
 #md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/examples/twodnavierstokes_stochasticforcing.ipynb)
 
-# #  2D forced-dissipative turbulence
+# # 2D forced-dissipative turbulence
 #
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the 
 # two-dimensional vorticity equation with linear drag and stochastic excitation.
