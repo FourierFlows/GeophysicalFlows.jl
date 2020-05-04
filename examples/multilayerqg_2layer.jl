@@ -1,5 +1,5 @@
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/examples/multilayerqg_2layer.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/examples/multilayerqg_2layer.ipynb)
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/multilayerqg_2layer.ipynb)
+#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/multilayerqg_2layer.ipynb)
 
 # # Phillips model of Baroclinic Instability
 #
@@ -38,7 +38,7 @@ f0, g = 1, 1    # Coriolis parameter and gravitational constant
  U = zeros(nlayers) # the imposed mean zonal flow in each layer
  U[1] = 1.0
  U[2] = 0.0
- nothing # hide
+nothing # hide
 
 
 # ## Problem setup

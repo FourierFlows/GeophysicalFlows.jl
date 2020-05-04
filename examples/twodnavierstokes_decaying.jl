@@ -1,5 +1,5 @@
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/examples/twodnavierstokes_decaying.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/examples/twodnavierstokes_decaying.ipynb)
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_decaying.ipynb)
+#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_decaying.ipynb)
 
 # # 2D decaying turbulence
 #
@@ -32,7 +32,7 @@ nothing # hide
     dt = 1e-2  # timestep
 nsteps = 4000  # total number of steps
  nsubs = 1000  # number of steps between each plot
- nothing # hide
+nothing # hide
 
 
 # ## Problem setup
@@ -192,5 +192,4 @@ title("Radial energy spectrum")
 axs[2].set_xscale("log")
 axs[2].set_yscale("log")
 axs[2].set_xlim(5e-1, gr.nx)
-tight_layout(w_pad=0.1)
 gcf() # hide

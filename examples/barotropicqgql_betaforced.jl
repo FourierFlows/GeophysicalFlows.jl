@@ -1,5 +1,5 @@
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/examples/barotropicqgql_betaforced.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/examples/barotropicqgql_betaforced.ipynb)
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqgql_betaforced.ipynb)
+#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqgql_betaforced.ipynb)
 
 # # Quasi-Linear forced-dissipative barotropic QG beta-plane turbulence
 #
