@@ -31,7 +31,6 @@ for example in examples
   Literate.script(example_filepath, OUTPUT_DIR, documenter=true)
 end
 
-
 #####
 ##### Build and deploy docs
 #####
