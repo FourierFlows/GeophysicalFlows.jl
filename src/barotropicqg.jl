@@ -328,17 +328,17 @@ end
 energy(prob) = energy(prob.sol, prob.grid)
 
 """
-    enstrophy(sol, g)
+    enstrophy(sol, g, v)
     enstrophy(prob)
 
 Returns the domain-averaged enstrophy of sol.
 """
-function enstrophy(sol, g::AbstractGrid)
+function enstrophy(sol, g::AbstractGrid, v::AbstractVars)
   @. v.uh = sol
   v.uh[1, 1] = 0
   0.5*parsevalsum2(v.uh, g)/(g.Lx*g.Ly)
 end
-enstrophy(prob) = enstrophy(prob.sol, prob.grid)
+enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
 
 """
     meanenergy(prob)
