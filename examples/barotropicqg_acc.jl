@@ -1,7 +1,7 @@
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqgtopography.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqgtopography.ipynb)
-
 # # Barotropic QG beta-plane turbulence over topography
+#
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqgtopography.ipynb).
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqgtopography.ipynb).
 #
 # An idealized version of the Southern Ocean. We solve the barotropic 
 # quasi-geostrophic eddy dynamics in a flud with variable depth $H-h(x,y)$. We 
@@ -76,11 +76,11 @@ BarotropicQG.set_zeta!(prob, 0*x)
 
 # ## Diagnostics
 
-# Create Diagnostics -- `energy` and `enstrophy` functions are imported at the top.
+# Create Diagnostics -- `energy`, `meanenergy`, `enstrophy`, and `meanenstrophy` functions are imported at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Q = Diagnostic(enstrophy, prob; nsteps=nsteps)
 Emean = Diagnostic(meanenergy, prob; nsteps=nsteps)
-Qmean = Diagnostic(meanenergy, prob; nsteps=nsteps)
+Qmean = Diagnostic(meanenstrophy, prob; nsteps=nsteps)
 diags = [E, Emean, Q, Qmean]
 nothing # hide
 
@@ -173,6 +173,7 @@ fig, axs = subplots(ncols=3, nrows=1, figsize=(15, 4), dpi=200)
 plot_output(prob, fig, axs; drawcolorbar=true)
 gcf() # hide
 
-# and finally save the figure
+# Note that since mean flow enstrophy is $Q_U = \beta U$ it can attain negative values. 
+# Finally we save the figure.
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename)

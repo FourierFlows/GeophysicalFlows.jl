@@ -1,7 +1,7 @@
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/multilayerqg_2layer.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/multilayerqg_2layer.ipynb)
-
 # # Phillips model of Baroclinic Instability
+#
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
 #
 # A simulation of the growth of barolinic instability in the Phillips 2-layer model
 # when we impose a vertical mean flow shear as a difference $\Delta U$ in the
@@ -10,7 +10,7 @@
 using FourierFlows, PyPlot, Printf
 
 import GeophysicalFlows.MultilayerQG
-import GeophysicalFlows.MultilayerQG: energies, fluxes
+import GeophysicalFlows.MultilayerQG: energies
 
 
 # ## Numerical parameters and time-stepping parameters
@@ -61,7 +61,7 @@ nothing # hide
 
 # ## Diagnostics
 
-# Create Diagnostics -- `energy` function is imported at the top.
+# Create Diagnostics -- `energies` function is imported at the top.
 E = Diagnostic(energies, prob; nsteps=nsteps)
 diags = [E] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide

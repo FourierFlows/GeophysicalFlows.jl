@@ -1,7 +1,7 @@
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqgql_betaforced.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqgql_betaforced.ipynb)
-
 # # Quasi-Linear forced-dissipative barotropic QG beta-plane turbulence
+#
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqgql_betaforced.ipynb). 
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqgql_betaforced.ipynb).
 #
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane under the *quasi-linear approximation*. The dynamics include 
@@ -82,6 +82,20 @@ nothing # hide
 # and define some shortcuts.
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 nothing # hide
+
+
+# First let's see how a forcing realization looks like.
+calcF!(v.Fh, sol, 0.0, cl, v, p, g)
+
+fig = figure(figsize=(3, 2), dpi=150)
+pcolormesh(x, y, irfft(v.Fh, g.nx))
+axis("square")
+xticks(-3:1:3)
+yticks(-3:1:3)
+title("a forcing realization")
+colorbar()
+clim(-8, 8)
+gcf() # hide
 
 
 # ## Setting initial conditions

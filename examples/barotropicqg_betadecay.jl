@@ -1,8 +1,8 @@
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqg_betadecay.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqg_betadecay.ipynb)
-
 # # Decaying barotropic QG beta-plane turbulence
 #
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqg_betadecay.ipynb). 
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqg_betadecay.ipynb).
+# 
 # An example of decaying barotropic quasi-geostrophic turbulence on a beta plane.
 
 using FourierFlows, PyPlot, Printf, Random
@@ -37,7 +37,7 @@ Lx = 2π        # domain size
 nν = 1         # viscosity order
  β = 15.0      # planetary PV gradient
  μ = 0.0       # bottom drag
-
+nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments,
@@ -57,16 +57,12 @@ nothing # hide
 
 Random.seed!(1234)
 E0 = 0.1
-modk = ones(g.nkr, g.nl)
-modk[real.(g.Krsq).<(8*2*pi/g.Lx)^2] .= 0
-modk[real.(g.Krsq).>(10*2*pi/g.Lx)^2] .= 0
-modk[1, :] .= 0
-psih = (randn(Float64, size(sol)) .+ im*randn(Float64, size(sol))).*modk
-psih = @. psih*prob.timestepper.filter
-Ein = real(sum(g.Krsq.*abs2.(psih)/(g.nx*g.ny)^2))
-psih = psih*sqrt(E0/Ein)
-qi = -irfft(g.Krsq.*psih, g.nx)
-E0 = FourierFlows.parsevalsum(g.Krsq.*abs2.(psih), g)
+qih = randn(Complex{Float64}, size(sol))
+qih[ g.Krsq .< (8*2π /g.Lx)^2] .= 0
+qih[ g.Krsq .> (10*2π/g.Lx)^2] .= 0
+Ein = energy(qih, g) # compute energy of qi
+qih = qih*sqrt(E0/Ein) # normalize qi to have energy E0
+qi  = irfft(qih, g.nx) 
 
 BarotropicQG.set_zeta!(prob, qi)
 nothing #hide

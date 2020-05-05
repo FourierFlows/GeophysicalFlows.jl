@@ -1,7 +1,7 @@
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb)
-
 # # 2D forced-dissipative turbulence
+#
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb).
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb).
 #
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the 
 # two-dimensional vorticity equation with linear drag and stochastic excitation.
@@ -9,6 +9,7 @@
 using PyPlot, FourierFlows, Printf
 
 using Random: seed!
+using FFTW: irfft
 
 import GeophysicalFlows.TwoDNavierStokes
 import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy, dissipation, work, drag
@@ -81,6 +82,20 @@ sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 nothing # hide
 
 
+# First let's see how a forcing realization looks like.
+calcF!(v.Fh, sol, 0.0, cl, v, p, g)
+
+fig = figure(figsize=(3, 2), dpi=150)
+pcolormesh(x, y, irfft(v.Fh, g.nx))
+axis("square")
+xticks(-3:1:3)
+yticks(-3:1:3)
+title("a forcing realization")
+colorbar()
+clim(-200, 200)
+gcf() # hide
+
+
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
@@ -89,7 +104,7 @@ TwoDNavierStokes.set_zeta!(prob, 0*x)
 
 # ## Diagnostics
 
-# Create Diagnostics; the diagnostics here will probe the energy budget.
+# Create Diagnostics; the diagnostics are aimed to probe the energy budget.
 E = Diagnostic(energy,      prob, nsteps=nt) # energy
 R = Diagnostic(drag,        prob, nsteps=nt) # dissipation by drag
 D = Diagnostic(dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
@@ -111,10 +126,12 @@ function makeplot(prob, diags)
   t = round(μ*cl.t, digits=2)
   sca(axs[1]); cla()
   pcolormesh(x, y, v.zeta)
+  axis("square")
+  xticks(-3:1:3)
+  yticks(-3:1:3)
   xlabel(L"$x$")
   ylabel(L"$y$")
-  title("\$\\nabla^2\\psi(x,y,\\mu t= $t )\$")
-  axis("square")
+  title("\$\\nabla^2\\psi(x,y,\\mu t= $t)\$")
 
   sca(axs[3]); cla()
 
