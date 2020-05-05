@@ -316,31 +316,40 @@ set_U!(prob, U::Float64) = set_U!(prob.sol, prob.vars, prob.params, prob.grid, U
 
 
 """
-Calculate the domain-averaged kinetic energy.
+    energy(sol, g)
+    energy(prob)
+
+Returns the domain-averaged kinetic energy of sol.
 """
-function energy(prob)
-  sol, g = prob.sol, prob.grid
+function energy(sol, g::AbstactGrid)
   0.5*(parsevalsum2(g.kr.*g.invKrsq.*sol, g)
         + parsevalsum2(g.l.*g.invKrsq.*sol, g))/(g.Lx*g.Ly)
 end
-
+function energy(prob) = energy(prob.sol, prob.grid)
 
 """
-Returns the domain-averaged enstrophy.
+    enstrophy(sol, g)
+    enstrophy(prob)
+
+Returns the domain-averaged enstrophy of sol.
 """
-function enstrophy(prob)
-  sol, v, g = prob.sol, prob.vars, prob.grid
+function enstrophy(sol, g::AbstactGrid)
   @. v.uh = sol
   v.uh[1, 1] = 0
   0.5*parsevalsum2(v.uh, g)/(g.Lx*g.Ly)
 end
+function enstrophy(prob) = enstrophy(prob.sol, prob.grid)
 
 """
+    meanenergy(prob)
+    
 Returns the energy of the domain-averaged U.
 """
 meanenergy(prob) = real(0.5*prob.sol[1, 1].^2)
 
 """
+    meanenstrophy(prob)
+    
 Returns the enstrophy of the domain-averaged U.
 """
 meanenstrophy(prob) = real(prob.params.β*prob.sol[1, 1])
