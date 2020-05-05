@@ -90,6 +90,20 @@ sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 nothing # hide
 
 
+# First let's see how a forcing realization looks like.
+calcFq!(v.Fqh, sol, 0.0, cl, v, p, g)
+
+fig = figure(figsize=(3, 2), dpi=150)
+pcolormesh(x, y, irfft(v.Fqh, g.nx))
+axis("square")
+xticks(-3:1:3)
+yticks(-3:1:3)
+title("a forcing realization")
+colorbar()
+clim(-8, 8)
+gcf() # hide
+
+
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
@@ -98,7 +112,7 @@ BarotropicQG.set_zeta!(prob, 0*x)
 
 # ## Diagnostics
 
-# Create Diagnostic -- "energy" and "enstrophy" are functions imported at the top.
+# Create Diagnostic -- `energy` and `enstrophy` are functions imported at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
@@ -139,8 +153,8 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   cla()
   pcolormesh(x, y, v.q)
   axis("square")
-  xticks(-2:2:2)
-  yticks(-2:2:2)
+  xticks(-3:1:3)
+  yticks(-3:1:3)
   title(L"vorticity $\zeta = \partial_x v - \partial_y u$")
   if drawcolorbar==true
     colorbar()
@@ -153,8 +167,8 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
     contour(x, y, v.psi, colors="k")
   end
   axis("square")
-  xticks(-2:2:2)
-  yticks(-2:2:2)
+  xticks(-3:1:3)
+  yticks(-3:1:3)
   title(L"streamfunction $\psi$")
   if drawcolorbar==true
     colorbar()

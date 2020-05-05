@@ -10,7 +10,7 @@
 using FourierFlows, PyPlot, Printf
 
 import GeophysicalFlows.MultilayerQG
-import GeophysicalFlows.MultilayerQG: energies, fluxes
+import GeophysicalFlows.MultilayerQG: energies
 
 
 # ## Numerical parameters and time-stepping parameters
@@ -61,7 +61,7 @@ nothing # hide
 
 # ## Diagnostics
 
-# Create Diagnostics -- `energy` function is imported at the top.
+# Create Diagnostics -- `energies` function is imported at the top.
 E = Diagnostic(energies, prob; nsteps=nsteps)
 diags = [E] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide

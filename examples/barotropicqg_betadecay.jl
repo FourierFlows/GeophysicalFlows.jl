@@ -37,7 +37,7 @@ Lx = 2π        # domain size
 nν = 1         # viscosity order
  β = 15.0      # planetary PV gradient
  μ = 0.0       # bottom drag
-
+nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments,

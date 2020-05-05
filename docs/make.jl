@@ -40,7 +40,7 @@ end
 Timer(t -> println(" "), 0, interval=240)
 
 format = Documenter.HTML(
-  collapselevel = 1,
+  collapselevel = 2,
      prettyurls = get(ENV, "CI", nothing) == "true",
       canonical = "https://fourierflows.github.io/GeophysicalFlows.jl/dev/"
 )

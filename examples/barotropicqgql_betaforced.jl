@@ -84,6 +84,20 @@ sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 nothing # hide
 
 
+# First let's see how a forcing realization looks like.
+calcF!(v.Fh, sol, 0.0, cl, v, p, g)
+
+fig = figure(figsize=(3, 2), dpi=150)
+pcolormesh(x, y, irfft(v.Fh, g.nx))
+axis("square")
+xticks(-3:1:3)
+yticks(-3:1:3)
+title("a forcing realization")
+colorbar()
+clim(-8, 8)
+gcf() # hide
+
+
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
