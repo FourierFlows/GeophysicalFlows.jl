@@ -1,7 +1,7 @@
 # # Decaying barotropic QG beta-plane turbulence
 #
-#md # You can run this example online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqg_betadecay.ipynb)
-#md # Alternatively, you can also view the example as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqg_betadecay.ipynb)
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqg_betadecay.ipynb). 
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqg_betadecay.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence on a beta plane.
 
@@ -58,11 +58,11 @@ nothing # hide
 Random.seed!(1234)
 E0 = 0.1
 qih = randn(Complex{Float64}, size(sol))
-qih[real.(g.Krsq) .< (8*2π/g.Lx)^2 ] .= 0
-qih[real.(g.Krsq) .> (10*2π/g.Lx)^2] .= 0
+qih[ g.Krsq .< (8*2π /g.Lx)^2] .= 0
+qih[ g.Krsq .> (10*2π/g.Lx)^2] .= 0
 Ein = energy(qih, g) # compute energy of qi
 qih = qih*sqrt(E0/Ein) # normalize qi to have energy E0
-qi = -irfft(qih, g.nx) 
+qi  = irfft(qih, g.nx) 
 
 BarotropicQG.set_zeta!(prob, qi)
 nothing #hide

@@ -1,7 +1,7 @@
 # # 2D forced-dissipative turbulence
 #
-#md # You can run this example online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb)
-#md # Alternatively, you can also view the example as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb)
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb).
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb).
 #
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the 
 # two-dimensional vorticity equation with linear drag and stochastic excitation.
@@ -104,7 +104,7 @@ TwoDNavierStokes.set_zeta!(prob, 0*x)
 
 # ## Diagnostics
 
-# Create Diagnostics; the diagnostics are aimed probe the energy budget.
+# Create Diagnostics; the diagnostics are aimed to probe the energy budget.
 E = Diagnostic(energy,      prob, nsteps=nt) # energy
 R = Diagnostic(drag,        prob, nsteps=nt) # dissipation by drag
 D = Diagnostic(dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
