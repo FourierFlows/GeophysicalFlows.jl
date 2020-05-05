@@ -353,26 +353,31 @@ end
 
 set_zeta!(prob, zeta) = set_zeta!(prob.sol, prob.vars, prob.params, prob.grid, zeta)
 
+"""
+    energy(sol, g)
+    energy(prob)
 
+Returns the domain-averaged kinetic energy of sol.
 """
-Calculate the domain-averaged kinetic energy.
-"""
-function energy(prob)
-  sol, g = prob.sol, prob.grid
+function energy(sol, g::AbstractGrid)
   0.5*(parsevalsum2(g.kr.*g.invKrsq.*sol, g)
         + parsevalsum2(g.l.*g.invKrsq.*sol, g))/(g.Lx*g.Ly)
 end
-
+energy(prob) = energy(prob.sol, prob.grid)
 
 """
-Returns the domain-averaged enstrophy.
+    enstrophy(sol, g)
+    enstrophy(prob)
+
+Returns the domain-averaged enstrophy of sol.
 """
-function enstrophy(prob)
+function enstrophy(sol, g::AbstractGrid)
   sol, v, g = prob.sol, prob.vars, prob.grid
   @. v.uh = sol
   v.uh[1, 1] = 0
   0.5*parsevalsum2(v.uh, g)/(g.Lx*g.Ly)
 end
+enstrophy(prob) = enstrophy(prob.sol, prob.grid)
 
 
 """
