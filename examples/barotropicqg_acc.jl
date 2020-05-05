@@ -1,7 +1,7 @@
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqgtopography.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqgtopography.ipynb)
-
 # # Barotropic QG beta-plane turbulence over topography
+#
+#md # You can run this example online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqgtopography.ipynb).
+#md # Alternatively, you can also view the example as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqgtopography.ipynb).
 #
 # An idealized version of the Southern Ocean. We solve the barotropic 
 # quasi-geostrophic eddy dynamics in a flud with variable depth $H-h(x,y)$. We 
