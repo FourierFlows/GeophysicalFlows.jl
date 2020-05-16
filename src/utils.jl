@@ -8,11 +8,11 @@ function lambdipole(U, R, g::AbstractGrid{T, A}; center=(mean(g.x), mean(g.y))) 
   firstzero = 3.8317059702075123156
   k = firstzero/R # dipole wavenumber for radius R in terms of first zero of besselj
   q0 = -2U*k/besselj(0, k*R) # dipole amplitude for strength U and radius R
-
+  x, y = gridpoints(g)
   xc, yc = center
-  r = @. sqrt( (g.x-xc)^2 + (g.y-yc)^2 )
+  r = @. sqrt( (x-xc)^2 + (y-yc)^2 )
   besselj1 = A([besselj(1, k*r[i, j]) for i=1:g.nx, j=1:g.ny])
-  q = @. q0 * besselj1 * (g.y-yc)/r
+  q = @. q0 * besselj1 * (y-yc)/r
   @. q[r >= R] = 0
   q
 end

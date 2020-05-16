@@ -3,7 +3,7 @@ uuid = "44ee3b1c-bc02-53fa-8355-8e347616e15e"
 license = "MIT"
 authors = ["Navid C. Constantinou <navidcy@gmail.com>", "Gregory L. Wagner <wagner.greg@gmail.com>"]
 version = "0.4.1"
-versions = ["0.1.0", "0.2.0", "0.3.0", "0.3.3",  "0.3.4", "0.4.0", "0.4.1"]
+versions = ["0.1.0", "0.2.0", "0.3.0", "0.3.3", "0.3.4", "0.4.0", "0.4.1"]
 
 [deps]
 CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae"

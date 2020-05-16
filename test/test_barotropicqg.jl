@@ -318,3 +318,9 @@ function test_bqg_meanenergyenstrophy(dev::Device=CPU())
     isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_barotropicQG)
   )
 end
+
+function test_bqg_problemtype(T=Float32)
+  prob = BarotropicQG.Problem(T=T)
+
+  (typeof(prob.sol)==Array{Complex{T},2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)==Array{T,2})
+end

@@ -261,5 +261,5 @@ end
 function test_bqgql_problemtype(T=Float32)
   prob = BarotropicQGQL.Problem(T=T)
 
-  (typeof(prob.sol)==Array{Complex{T},2} && typeof(prob.grid.Lx)==T && typeof(prob.grid.x)==Array{T,2} && typeof(prob.vars.u)==Array{T,2})
+  (typeof(prob.sol)==Array{Complex{T},2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)==Array{T,2})
 end
