@@ -5,8 +5,8 @@
 #
 # A simulations of decaying two-dimensional turbulence.
 
-using FourierFlows, PyPlot, Printf, Random
-
+using FourierFlows, Printf, Random, Plots, LaTeXStrings
+ 
 using Random: seed!
 using FFTW: rfft, irfft
 
@@ -25,13 +25,13 @@ nothing # hide
 #
 # First, we pick some numerical and physical parameters for our model.
 
-n, L  = 128, 2π             # grid resolution and domain length
+n, L  = 256, 2π             # grid resolution and domain length
 nothing # hide
 
 ## Then we pick the time-stepper parameters
-    dt = 1e-2  # timestep
-nsteps = 4000  # total number of steps
- nsubs = 1000  # number of steps between each plot
+    dt = 5e-3  # timestep
+nsteps = 8000  # total number of steps
+ nsubs = 40    # number of steps between each plot
 nothing # hide
 
 
@@ -42,8 +42,8 @@ prob = TwoDNavierStokes.Problem(; nx=n, Lx=L, ny=n, Ly=L, dt=dt, stepper="Filter
 nothing # hide
 
 # Next we define some shortcuts for convenience.
-sol, cl, vs, gr, filter = prob.sol, prob.clock, prob.vars, prob.grid, prob.timestepper.filter
-x, y = gridpoints(gr)
+sol, cl, vs, gr = prob.sol, prob.clock, prob.vars, prob.grid
+x, y = gr.x, gr.y
 nothing # hide
 
 
@@ -52,24 +52,25 @@ nothing # hide
 # Our initial condition closely tries to reproduce the initial condition used
 # in the paper by McWilliams (_JFM_, 1984)
 seed!(1234)
-k0, E0 = 6, 0.5
-zetai  = peakedisotropicspectrum(gr, k0, E0, mask=filter)
-TwoDNavierStokes.set_zeta!(prob, zetai)
+k₀, E₀ = 6, 0.5
+ζ₀ = peakedisotropicspectrum(gr, k₀, E₀, mask=prob.timestepper.filter)
+TwoDNavierStokes.set_zeta!(prob, ζ₀)
 nothing # hide
 
 # Let's plot the initial vorticity field:
-
-fig = figure(figsize=(3, 2), dpi=150)
-pcolormesh(x, y, vs.zeta)
-axis("square")
-xticks(-2:2:2)
-yticks(-2:2:2)
-title(L"initial vorticity $\zeta = \partial_x v - \partial_y u$")
-colorbar()
-clim(-40, 40)
-axis("off")
-gcf() # hide
-
+heatmap(x, y, vs.zeta,
+         aspectratio = 1,
+              c = :balance,
+           clim = (-40, 40),
+          xlims = (-L/2, L/2),
+          ylims = (-L/2, L/2),
+         xticks = -3:3,
+         yticks = -3:3,
+         xlabel = "x",
+         ylabel = "y",
+          title = "initial vorticity",
+     framestyle = :box)
+            
 
 # ## Diagnostics
 
@@ -104,29 +105,33 @@ nothing # hide
 
 # ## Visualizing the simulation
 
-# We define a function that plots the vorticity field and the evolution of
+# We initialize a plot with the vorticity field and the time-series of
 # energy and enstrophy diagnostics.
 
-function plot_output(prob, fig, axs; drawcolorbar=false)
-  TwoDNavierStokes.updatevars!(prob)
-  sca(axs[1])
-  pcolormesh(x, y, vs.zeta)
-  title("Vorticity")
-  clim(-40, 40)
-  axis("off")
-  axis("square")
-  if drawcolorbar==true
-    colorbar()
-  end
+l = @layout grid(1, 2)
 
-  sca(axs[2])
-  cla()
-  plot(E.t[1:E.i], E.data[1:E.i]/E.data[1], label="energy \$E(t)/E(0)\$")
-  plot(Z.t[1:Z.i], Z.data[1:E.i]/Z.data[1], label="enstrophy \$Z(t)/Z(0)\$")
-  xlabel(L"t")
-  ylabel(L"\Delta E, \, \Delta Z")
-end
-nothing # hide
+p1 = heatmap(x, y, vs.zeta,
+          aspectratio = 1,
+               c = :balance,
+            clim = (-40, 40),
+           xlims = (-L/2, L/2),
+           ylims = (-L/2, L/2),
+          xticks = -3:3,
+          yticks = -3:3,
+          xlabel = "x",
+          ylabel = "y",
+           title = "vorticity, t="*@sprintf("%.2f", cl.t),
+      framestyle = :box)
+
+p2 = plot(2, # this means "a plot with two series"
+         label=["energy E(t)/E(0)" "enstrophy Z(t)/Z(0)"],
+         linewidth=2,
+         alpha=0.7,
+         xlabel = "t",
+         xlims = (0, 41),
+         ylims = (0, 1.1))
+
+p = plot(p1, p2, layout=l, size = (900, 400))
 
 
 # ## Time-stepping the `Problem` forward
@@ -134,29 +139,30 @@ nothing # hide
 # We time-step the `Problem` forward in time.
 
 startwalltime = time()
-while cl.step < nsteps
-  stepforward!(prob, diags, nsubs)
-  saveoutput(out)
 
+anim = @animate for j = 0:Int(nsteps/nsubs)
+    
   log = @sprintf("step: %04d, t: %d, ΔE: %.4f, ΔZ: %.4f, walltime: %.2f min",
-    cl.step, cl.t, E.data[E.i]/E.data[1], Z.data[Z.i]/Z.data[1], (time()-startwalltime)/60)
+      cl.step, cl.t, E.data[E.i]/E.data[1], Z.data[Z.i]/Z.data[1], (time()-startwalltime)/60)
+  
+  if j%(1000/nsubs)==0; println(log) end  
 
-  println(log)
+  p[1][1][:z] = vs.zeta
+  p[1][:title] = "vorticity, t="*@sprintf("%.2f", cl.t)
+  push!(p[2][1], E.t[E.i], E.data[E.i]/E.data[1])
+  push!(p[2][2], Z.t[Z.i], Z.data[Z.i]/Z.data[1])
+
+  stepforward!(prob, diags, nsubs)
+  TwoDNavierStokes.updatevars!(prob)  
+  
 end
 println("finished")
 
+mp4(anim, "twodturb.mp4", fps=18)
 
-# ## Plot
-# Now let's see what we got. We plot the output,
 
-fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4), dpi=200)
-plot_output(prob, fig, axs; drawcolorbar=true)
-gcf() # hide
-
-# and finally save the figure
-
-savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
-savefig(savename, dpi=240)
+# Last we save the output.
+saveoutput(out)
 
 
 # ## Radial energy spectrum
@@ -170,26 +176,11 @@ kr, Ehr = FourierFlows.radialspectrum(Eh, gr, refinement=1) # compute radial spe
 nothing # hide
 
 # and we plot it.
-
-fig2, axs = subplots(ncols=2, figsize=(12, 4), dpi=200)
-
-sca(axs[1])
-pcolormesh(x, y, vs.zeta)
-xlabel(L"x")
-ylabel(L"y")
-title("Vorticity")
-colorbar()
-clim(-40, 40)
-axis("off")
-axis("square")
-
-sca(axs[2])
-plot(kr, abs.(Ehr))
-xlabel(L"k_r")
-ylabel(L"\int | \hat{E} | \, k_r \,\mathrm{d} k_{\theta}")
-title("Radial energy spectrum")
-
-axs[2].set_xscale("log")
-axs[2].set_yscale("log")
-axs[2].set_xlim(5e-1, gr.nx)
-gcf() # hide
+plot(kr, abs.(Ehr),
+      linewidth = 2,
+      alpha = 0.7,
+      xlabel = L"$k_r$", ylabel = L"\int \| \hat E \| k_r \mathrm{d} k_{\theta}",
+      xlims = (5e-1, gr.nx),
+      xscale = :log10, yscale = :log10,
+      title = "Radial energy spectrum",
+      legend = false)
