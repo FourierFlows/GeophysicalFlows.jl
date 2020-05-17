@@ -164,8 +164,8 @@ function computetendencies_and_makeplot(prob, diags)
 
   p3 = plot(μ*t, [dEdt_computed[ii], dEdt_numerical],
              label = ["computed W-D" "numerical dE/dt"],
-         linestyle = [:solid :dash],
-         linewidth = [2 3],
+         linestyle = [:solid :dashdotdot],
+         linewidth = 2,
              alpha = 0.8,
             xlabel = "μt",
             ylabel = "dE/dt")
