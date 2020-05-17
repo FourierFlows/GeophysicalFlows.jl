@@ -7,7 +7,7 @@
 # a beta plane under the *quasi-linear approximation*. The dynamics include 
 # linear drag and stochastic excitation.
 
-using FourierFlows, PyPlot, Statistics, Printf, Random
+using FourierFlows, Plots, PyPlot, Statistics, Printf, Random
 
 import GeophysicalFlows.BarotropicQGQL
 import GeophysicalFlows.BarotropicQGQL: energy, enstrophy
