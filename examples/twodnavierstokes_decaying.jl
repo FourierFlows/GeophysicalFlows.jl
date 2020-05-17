@@ -5,7 +5,7 @@
 #
 # A simulations of decaying two-dimensional turbulence.
 
-using FourierFlows, Printf, Random, Plots, LaTeXStrings
+using FourierFlows, Printf, Random, Plots
  
 using Random: seed!
 using FFTW: rfft, irfft
@@ -179,7 +179,7 @@ nothing # hide
 plot(kr, abs.(Ehr),
     linewidth = 2,
         alpha = 0.7,
-       xlabel = L"k_r", ylabel = L"\int \| \hat E \| k_r \mathrm{d} k_{\theta}",
+       xlabel = "kᵣ", ylabel = "∫    \int | Ê | kᵣ dk_θ",
         xlims = (5e-1, gr.nx),
        xscale = :log10, yscale = :log10,
         title = "Radial energy spectrum",
