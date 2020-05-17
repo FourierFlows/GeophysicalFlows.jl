@@ -3,7 +3,7 @@
 #md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_decaying.ipynb).
 #md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_decaying.ipynb).
 #
-# A simulations of decaying two-dimensional turbulence.
+# A simulation of decaying two-dimensional turbulence.
 
 using FourierFlows, Printf, Random, Plots
  
@@ -179,8 +179,9 @@ nothing # hide
 plot(kr, abs.(Ehr),
     linewidth = 2,
         alpha = 0.7,
-       xlabel = "kᵣ", ylabel = "∫ |Ê| kᵣ dk_θ",
+       xlabel = "kᵣ", ylabel = "∫ | Ê | kᵣ dk_θ",
         xlims = (5e-1, gr.nx),
        xscale = :log10, yscale = :log10,
         title = "Radial energy spectrum",
        legend = false)
+       
