@@ -179,7 +179,7 @@ nothing # hide
 plot(kr, abs.(Ehr),
     linewidth = 2,
         alpha = 0.7,
-       xlabel = "kᵣ", ylabel = "∫    \int | Ê | kᵣ dk_θ",
+       xlabel = "kᵣ", ylabel = "∫ |Ê| kᵣ dk_θ",
         xlims = (5e-1, gr.nx),
        xscale = :log10, yscale = :log10,
         title = "Radial energy spectrum",
