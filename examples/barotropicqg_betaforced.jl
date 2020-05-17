@@ -259,6 +259,6 @@ println("finished")
 
 # ## Save
 
-Finally save the last snapshot.
+# Finally save the last snapshot.
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename)
