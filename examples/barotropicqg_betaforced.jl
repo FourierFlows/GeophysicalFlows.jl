@@ -37,6 +37,8 @@ nothing # hide
 Lx = 2π        # domain size
  β = 10.0      # planetary PV gradient
  μ = 0.01      # bottom drag
+ ν = 0e-5      # viscosity
+nν = 1         # viscosity order
 nothing # hide
 
 
