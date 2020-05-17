@@ -173,8 +173,8 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, μ=0.
   β = 0.35
 
   U1, U2 = 0.1, 0.05
-  u1 = @. 0.5sech(gr.y/(Ly/15))^2
-  u2 = @. 0.02cos(3l0*gr.y)
+  u1 = @. 0.5sech(gr.y/(Ly/15))^2; u1 = reshape(u1, (1, gr.ny))
+  u2 = @. 0.02cos(3l0*gr.y); u2 = reshape(u2, (1, gr.ny))
   uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
   uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
 
@@ -256,8 +256,8 @@ function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, μ=0.0, 
   β = 0.35
 
   U1, U2 = 0.1, 0.05
-  u1 = @. 0.5sech(gr.y/(Ly/15))^2
-  u2 = @. 0.02cos(3l0*gr.y)
+  u1 = @. 0.5sech(gr.y/(Ly/15))^2; u1 = reshape(u1, (1, gr.ny))
+  u2 = @. 0.02cos(3l0*gr.y); u2 = reshape(u2, (1, gr.ny))
   uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
   uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
 
@@ -273,7 +273,7 @@ function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, μ=0.0, 
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
-  Ff1 = (β .- uyy1 .-   25*(U2.+u2.-U1.-u1) ).*ψ1x + (U1.+u1).*q1x - ν*Δq1
+  Ff1 = (β .- uyy1 .- 25*(U2.+u2.-U1.-u1) ).*ψ1x + (U1.+u1).*q1x - ν*Δq1
   Ff2 = FourierFlows.jacobian(ψ2, η, gr) + (β .- uyy2 .- 25/4*(U1.+u1.-U2.-u2) ).*ψ2x + (U2.+u2).*(q2x + ηx) + μ*Δψ2 - ν*Δq2
 
   Ff = zeros(gr.nx, gr.ny, nlayers)
@@ -457,5 +457,5 @@ end
 function test_mqg_problemtype(T=Float32)
   prob = MultilayerQG.Problem(nlayers=2, T=T)
 
-  (typeof(prob.sol)==Array{Complex{T},3} && typeof(prob.grid.Lx)==T && typeof(prob.grid.x)==Array{T,2} && typeof(prob.vars.u)==Array{T,3})
+  (typeof(prob.sol)==Array{Complex{T},3} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)==Array{T,3})
 end

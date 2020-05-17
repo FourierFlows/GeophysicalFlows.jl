@@ -213,5 +213,5 @@ end
 function test_twodnavierstokes_problemtype(T=Float32, dev::Device=CPU())
   prob = TwoDNavierStokes.Problem(T=T, dev=dev)
 
-  (typeof(prob.sol)==Array{Complex{T},2} && typeof(prob.grid.Lx)==T && typeof(prob.grid.x)==Array{T,2} && typeof(prob.vars.u)==Array{T,2})
+  (typeof(prob.sol)==Array{Complex{T},2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)==Array{T,2})
 end
