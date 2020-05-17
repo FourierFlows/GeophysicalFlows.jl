@@ -6,7 +6,7 @@
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the 
 # two-dimensional vorticity equation with linear drag and stochastic excitation.
 
-using PyPlot, FourierFlows, Printf
+using FourierFlows, Printf, Plots, LaTeXStrings
 
 using Random: seed!
 using FFTW: irfft
@@ -46,7 +46,7 @@ kf, dkf = 12.0, 2.0     # forcing central wavenumber, wavenumber width
 ε = 0.1                 # energy injection rate
 
 gr   = TwoDGrid(dev, n, L)
-x, y = gridpoints(gr)
+x, y = gr.x, gr.y
 
 Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
 
@@ -62,7 +62,7 @@ nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
 function calcF!(Fh, sol, t, cl, v, p, g)
-  eta = ArrayType(dev)(exp.(2π*im*rand(typeof(gr.Lx), size(sol)))/sqrt(cl.dt))
+  eta = ArrayType(dev)(exp.(2π*im*rand(eltype(gr), size(sol)))/sqrt(cl.dt))
   eta[1, 1] = 0
   @. Fh = eta*sqrt(forcingcovariancespectrum)
   nothing
@@ -73,7 +73,7 @@ nothing # hide
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used.
-prob = TwoDNavierStokes.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper="RK4",
+prob = TwoDNavierStokes.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper="ETDRK4",
                         calcF=calcF!, stochastic=true, dev=dev)
 nothing # hide
 
@@ -85,21 +85,24 @@ nothing # hide
 # First let's see how a forcing realization looks like.
 calcF!(v.Fh, sol, 0.0, cl, v, p, g)
 
-fig = figure(figsize=(3, 2), dpi=150)
-pcolormesh(x, y, irfft(v.Fh, g.nx))
-axis("square")
-xticks(-3:1:3)
-yticks(-3:1:3)
-title("a forcing realization")
-colorbar()
-clim(-200, 200)
-gcf() # hide
+heatmap(x, y, irfft(v.Fh, g.nx),
+       aspectratio = 1,
+            c = :balance,
+         clim = (-200, 200),
+        xlims = (-L/2, L/2),
+        ylims = (-L/2, L/2),
+       xticks = -3:3,
+       yticks = -3:3,
+       xlabel = "x",
+       ylabel = "y",
+        title = "a forcing realization",
+      framestyle = :box)
 
 
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
-TwoDNavierStokes.set_zeta!(prob, 0*x)
+TwoDNavierStokes.set_zeta!(prob, zeros(g.nx, g.ny))
 
 
 # ## Diagnostics
@@ -119,52 +122,66 @@ nothing # hide
 # the diagnostics: energy and all terms involved in the energy budget. Last
 # we confirm whether the energy budget is accurate, i.e., $\mathrm{d}E/\mathrm{d}t = W - R - D$.
 
-function makeplot(prob, diags)
+function computetendencies_and_makeplot(prob, diags)
   TwoDNavierStokes.updatevars!(prob)
   E, D, W, R = diags
 
-  t = round(μ*cl.t, digits=2)
-  sca(axs[1]); cla()
-  pcolormesh(x, y, v.zeta)
-  axis("square")
-  xticks(-3:1:3)
-  yticks(-3:1:3)
-  xlabel(L"$x$")
-  ylabel(L"$y$")
-  title("\$\\nabla^2\\psi(x,y,\\mu t= $t)\$")
-
-  sca(axs[3]); cla()
+  clocktime = round(μ*cl.t, digits=2)
 
   i₀ = 1
-  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt #numerical first-order approximation of energy tendency
+  dEdt_numerical = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt #numerical first-order approximation of energy tendency
   ii = (i₀):E.i-1
   ii2 = (i₀+1):E.i
 
-  total = W[ii2] - D[ii] - R[ii]        # Stratonovich interpretation
-  residual = dEdt - total
+  t = E.t[ii]
+  dEdt_computed = W[ii2] - D[ii] - R[ii]        # Stratonovich interpretation
+  
+  residual = dEdt_computed - dEdt_numerical
 
-  plot(μ*E.t[ii], W[ii2], label=L"work ($W$)")
-  plot(μ*E.t[ii], ε .+ 0*E.t[ii], "--", label=L"ensemble mean  work ($\langle W\rangle $)")
-  plot(μ*E.t[ii], -D[ii], label="dissipation (\$D\$)")
-  plot(μ*E.t[ii], -R[ii], label=L"drag ($D=2\mu E$)")
-  plot(μ*E.t[ii], 0*E.t[ii], "k:", linewidth=0.5)
-  ylabel("Energy sources and sinks")
-  xlabel(L"$\mu t$")
-  legend(fontsize=10)
+  l = @layout grid(2, 2)
 
-  sca(axs[2]); cla()
-  plot(μ*E.t[ii], total[ii], label=L"computed $W-D$")
-  plot(μ*E.t[ii], dEdt, "--k", label=L"numerical $dE/dt$")
-  ylabel(L"$dE/dt$")
-  xlabel(L"$\mu t$")
-  legend(fontsize=10)
+  p1 = heatmap(x, y, v.zeta,
+            aspectratio = 1,
+            legend = false,
+                 c = :viridis,
+              clim = (-25, 25),
+             xlims = (-L/2, L/2),
+             ylims = (-L/2, L/2),
+            xticks = -3:3,
+            yticks = -3:3,
+            xlabel = "x",
+            ylabel = "y",
+             title = "∇²ψ(x, y, t="*@sprintf("%.2f", cl.t)*")",
+        framestyle = :box)
 
-  sca(axs[4]); cla()
-  plot(μ*E.t[ii], residual, "c-", label=L"residual $dE/dt$ = computed $-$ numerical")
-  xlabel(L"$\mu t$")
-  legend(fontsize=10)
+  p2 = plot(μ*t, [W[ii2] ε.+0*t -D[ii] -R[ii]],
+             label = ["work, W" "ensemble mean work, <W>" "dissipation, D" "drag, D=-2μE"],
+         linestyle = [:solid :dash :solid :solid],
+         linewidth = 2,
+             alpha = 0.8,
+            xlabel = "μt",
+            ylabel = "energy sources and sinks")
+
+  p3 = plot(μ*t, [dEdt_computed[ii], dEdt_numerical],
+             label = ["computed W-D" "numerical dE/dt"],
+         linestyle = [:solid :dashdotdot],
+         linewidth = 2,
+             alpha = 0.8,
+            xlabel = "μt",
+            ylabel = "dE/dt")
+
+  p4 = plot(μ*t, residual,
+             label = "residual dE/dt = computed - numerical",
+         linewidth = 2,
+             alpha = 0.7,
+            xlabel = "μt")
+
+  p = plot(p1, p2, p3, p4, layout=l, size = (900, 800))
+  return p
 end
 nothing # hide
+
+
 
 
 # ## Time-stepping the `Problem` forward
@@ -187,6 +204,4 @@ end
 # ## Plot
 # And now let's see what we got. We plot the output.
 
-fig, axs = subplots(ncols=2, nrows=2, figsize=(12, 8), dpi=200)
-makeplot(prob, diags)
-gcf() # hide
+p = computetendencies_and_makeplot(prob, diags)

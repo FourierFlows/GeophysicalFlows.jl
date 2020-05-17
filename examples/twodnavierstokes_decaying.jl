@@ -179,7 +179,7 @@ nothing # hide
 plot(kr, abs.(Ehr),
       linewidth = 2,
       alpha = 0.7,
-      xlabel = L"$k_r$", ylabel = L"\int \| \hat E \| k_r \mathrm{d} k_{\theta}",
+      xlabel = L"k_r", ylabel = L"\int \| \hat E \| k_r \mathrm{d} k_{\theta}",
       xlims = (5e-1, gr.nx),
       xscale = :log10, yscale = :log10,
       title = "Radial energy spectrum",
