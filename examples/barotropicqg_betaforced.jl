@@ -8,6 +8,7 @@
 
 using FourierFlows, Plots, Statistics, Printf, Random
 
+using FourierFlows: parsevalsum
 using FFTW: irfft
 using Statistics: mean
 import Random: seed!
@@ -24,11 +25,11 @@ nothing # hide
 
 # ## Numerical parameters and time-stepping parameters
 
-nx = 128       # 2D resolution = nx^2
-stepper = "FilteredRK4"   # timestepper
-dt  = 0.05     # timestep
-nsteps = 8000  # total number of time-steps
-nsubs  = 10    # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
+     nx = 128            # 2D resolution = nx^2
+stepper = "FilteredRK4"  # timestepper
+     dt = 0.05           # timestep
+ nsteps = 8000           # total number of time-steps
+ nsubs  = 10             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
@@ -37,8 +38,6 @@ nothing # hide
 Lx = 2π        # domain size
  β = 10.0      # planetary PV gradient
  μ = 0.01      # bottom drag
- ν = 0e-5      # viscosity
-nν = 1         # viscosity order
 nothing # hide
 
 
@@ -50,41 +49,41 @@ nothing # hide
 # width $\delta k_f$, and it injects energy per unit area and per unit time equal 
 # to $\varepsilon$.
 
-kf, dkf = 14.0, 1.5     # forcing wavenumber and width of forcing ring in wavenumber space
-ε = 0.001               # energy input rate by the forcing
+forcing_wavenumber = 14.0    # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
+forcing_bandwidth  = 1.5     # the width of the forcing spectrum 
+ε = 0.001                    # energy input rate by the forcing
 
 gr  = TwoDGrid(nx, Lx)
 
-Kr = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl]
-
-forcingcovariancespectrum = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
-@. forcingcovariancespectrum[gr.Krsq < 2.0^2 ] .= 0
-@. forcingcovariancespectrum[gr.Krsq > 20.0^2 ] .= 0
-forcingcovariancespectrum[Kr .< 2π/Lx] .= 0
-ε0 = FourierFlows.parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
-forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum  # normalization so that forcing injects energy ε per domain area per unit time
+forcing_spectrum = @. exp( -(sqrt(gr.Krsq)-forcing_wavenumber)^2 / (2forcing_bandwidth^2) )
+@. forcing_spectrum[gr.Krsq < (2π/Lx*2)^2  ] = 0
+@. forcing_spectrum[gr.Krsq > (2π/Lx*20)^2 ] = 0
+ε0 = parsevalsum(forcing_spectrum .* gr.invKrsq/2, gr)/(gr.Lx*gr.Ly)
+forcing_spectrum .= ε/ε0 * forcing_spectrum  # normalization so that forcing injects energy ε per domain area per unit time
 
 seed!(1234) # reset of the random number generator for reproducibility
 nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
-function calcFq!(Fh, sol, t, cl, vs, pr, gr)
-  ξ = ArrayType(dev)(exp.(2π*im*rand(Float64, size(sol)))/sqrt(cl.dt))
-  ξ[1, 1] = 0
-  @. Fh = ξ*sqrt(forcingcovariancespectrum)
-  Fh[abs.(Kr).==0] .= 0
+function calcFq!(Fh, sol, t, clock, vars, params, grid) where T
+  ξ = ArrayType(dev)(exp.(2π*im*rand(eltype(grid), size(sol)))/sqrt(clock.dt))
+  @. Fh = ξ*sqrt.(forcing_spectrum)
+  Fh[abs.(grid.Krsq).==0] .= 0
   nothing
 end
 nothing # hide
 
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments,
-prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, ν=ν, nν=nν, μ=μ, dt=dt,
-                            stepper=stepper, calcFq=calcFq!, stochastic=true, dev=dev)
+# We initialize a `Problem` by providing a set of keyword arguments. Not providing
+# a viscosity coefficient ν leads to the module's default value: ν=0. In this
+# example numerical instability due to accumulation of enstrophy in high wavenumbers
+# is taken care with the `FilteredTimestepper` we picked. 
+prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, μ=μ, dt=dt, stepper=stepper, 
+                            calcFq=calcFq!, stochastic=true, dev=dev)
 nothing # hide
 
-# and define some shortcuts.
+# Let's define some shortcuts.
 sol, cl, vs, pr, gr = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 x, y = gr.x, gr.y
 nothing # hide
@@ -152,8 +151,8 @@ function plot_output(prob)
   l = @layout grid(2, 3)
   
   pζ = heatmap(x, y, vs.zeta,
-            aspectratio = 1,
-            legend = false
+       aspectratio = 1,
+            legend = false,
                  c = :balance,
               clim = (-8, 8),
              xlims = (-gr.Lx/2, gr.Lx/2),
@@ -166,8 +165,8 @@ function plot_output(prob)
         framestyle = :box)
 
   pψ = contourf(x, y, vs.psi,
-                levels = -0.32:0.04:0.32,
-            aspectratio = 1,
+            levels = -0.32:0.04:0.32,
+       aspectratio = 1,
          linewidth = 1,
             legend = false,
               clim = (-0.22, 0.22),
@@ -182,42 +181,42 @@ function plot_output(prob)
         framestyle = :box)
 
   pζm = plot(mean(vs.zeta, dims=1)', y,
-          legend = false,
-          linewidth = 2,
-          alpha = 0.7,
-          yticks = -3:3,
-          xlims = (-3, 3),
-          xlabel = "zonal mean ζ",
-          ylabel = "y")
+            legend = false,
+         linewidth = 2,
+             alpha = 0.7,
+            yticks = -3:3,
+             xlims = (-3, 3),
+            xlabel = "zonal mean ζ",
+            ylabel = "y")
   plot!(pζm, 0*y, y, linestyle=:dash, linecolor=:black)
 
   pum = plot(mean(vs.u, dims=1)', y,
-          legend = false,
-          linewidth = 2,
-          alpha = 0.7,
-          yticks = -3:3,
-          xlims = (-0.5, 0.5),
-          xlabel = "zonal mean u",
-          ylabel = "y")
+            legend = false,
+         linewidth = 2,
+             alpha = 0.7,
+            yticks = -3:3,
+             xlims = (-0.5, 0.5),
+            xlabel = "zonal mean u",
+            ylabel = "y")
   plot!(pum, 0*y, y, linestyle=:dash, linecolor=:black)
 
   pE = plot(1,
-          label="energy",
-          linewidth = 2,
-          alpha = 0.7,
-          xlims = (-0.1, 4.1),
-          ylims = (0, 0.05),
-          xlabel = "μt")
+             label = "energy",
+         linewidth = 2,
+             alpha = 0.7,
+             xlims = (-0.1, 4.1),
+             ylims = (0, 0.05),
+            xlabel = "μt")
           
   pZ = plot(1,
-          label="enstrophy",
-          linecolor = :red,
-          legend = :bottomright,
-          linewidth = 2,
-          alpha = 0.7,
-          xlims = (-0.1, 4.1),
-          ylims = (0, 2.5),
-          xlabel = "μt")
+             label = "enstrophy",
+         linecolor = :red,
+            legend = :bottomright,
+         linewidth = 2,
+             alpha = 0.7,
+             xlims = (-0.1, 4.1),
+             ylims = (0, 2.5),
+            xlabel = "μt")
 
   p = plot(pζ, pζm, pE, pψ, pum, pZ, layout=l, size = (1000, 600), dpi=150)
 
