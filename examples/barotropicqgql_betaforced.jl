@@ -7,7 +7,7 @@
 # a beta plane under the *quasi-linear approximation*. The dynamics include 
 # linear drag and stochastic excitation.
 
-using FourierFlows, Plots, LaTeXStrings, PyPlot, Statistics, Printf, Random
+using FourierFlows, PyPlot, Statistics, Printf, Random
 
 import GeophysicalFlows.BarotropicQGQL
 import GeophysicalFlows.BarotropicQGQL: energy, enstrophy
@@ -49,6 +49,7 @@ kf, dkf = 14.0, 1.5     # forcing wavenumber and width of forcing ring in wavenu
 
 gr  = TwoDGrid(nx, Lx)
 
+x, y = gridpoints(gr)
 Kr = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl]
 
 forcingcovariancespectrum = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
@@ -80,32 +81,27 @@ nothing # hide
 
 # and define some shortcuts.
 sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-x, y = g.x, g.y
 nothing # hide
 
 
 # First let's see how a forcing realization looks like.
 calcF!(v.Fh, sol, 0.0, cl, v, p, g)
 
-heatmap(x, y, irfft(v.Fh, g.nx),
-     aspectratio = 1,
-               c = :balance,
-            clim = (-8, 8),
-           xlims = (-L/2, L/2),
-           ylims = (-L/2, L/2),
-          xticks = -3:3,
-          yticks = -3:3,
-          xlabel = L"x",
-          ylabel = L"y",
-           title = "a forcing realization",
-   guidefontsize = 15,
-      framestyle = :box)
-      
+fig = figure(figsize=(3, 2), dpi=150)
+pcolormesh(x, y, irfft(v.Fh, g.nx))
+axis("square")
+xticks(-3:1:3)
+yticks(-3:1:3)
+title("a forcing realization")
+colorbar()
+clim(-8, 8)
+gcf() # hide
+
 
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
-BarotropicQGQL.set_zeta!(prob, zeros(g.nx, g.ny))
+BarotropicQGQL.set_zeta!(prob, 0*x)
 nothing # hide
 
 # ## Diagnostics
