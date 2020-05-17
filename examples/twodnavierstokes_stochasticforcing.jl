@@ -6,8 +6,12 @@
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the 
 # two-dimensional vorticity equation with linear drag and stochastic excitation.
 
-using FourierFlows, Printf, Plots, LaTeXStrings
-
+using
+  FourierFlows,
+  Printf,
+  Plots,
+  LaTeXStrings
+  
 using Random: seed!
 using FFTW: irfft
 
@@ -26,7 +30,7 @@ nothing # hide
 # First, we pick some numerical and physical parameters for our model.
 
  n, L  = 256, 2π             # grid resolution and domain length
- ν, nν = 1e-7, 2             # hyperviscosity coefficient and order
+ ν, nν = 2e-7, 2             # hyperviscosity coefficient and order
  μ, nμ = 1e-1, 0             # linear drag coefficient
 dt, tf = 0.005, 0.2/μ        # timestep and final time
     nt = round(Int, tf/dt)   # total timesteps
@@ -86,16 +90,17 @@ nothing # hide
 calcF!(v.Fh, sol, 0.0, cl, v, p, g)
 
 heatmap(x, y, irfft(v.Fh, g.nx),
-       aspectratio = 1,
-            c = :balance,
-         clim = (-200, 200),
-        xlims = (-L/2, L/2),
-        ylims = (-L/2, L/2),
-       xticks = -3:3,
-       yticks = -3:3,
-       xlabel = "x",
-       ylabel = "y",
-        title = "a forcing realization",
+     aspectratio = 1,
+               c = :balance,
+            clim = (-200, 200),
+           xlims = (-L/2, L/2),
+           ylims = (-L/2, L/2),
+          xticks = -3:3,
+          yticks = -3:3,
+          xlabel = L"x",
+          ylabel = L"y",
+           title = "a forcing realization",
+   guidefontsize = 15,
       framestyle = :box)
 
 
@@ -149,9 +154,10 @@ function computetendencies_and_makeplot(prob, diags)
              ylims = (-L/2, L/2),
             xticks = -3:3,
             yticks = -3:3,
-            xlabel = "x",
-            ylabel = "y",
-             title = "∇²ψ(x, y, t="*@sprintf("%.2f", cl.t)*")",
+            xlabel = L"x",
+            ylabel = L"y",
+             # title = L"\nabla^\psi(x, y, t="*@sprintf("%.2f", cl.t)*")",
+     guidefontsize = 15,
         framestyle = :box)
 
   p2 = plot(μ*t, [W[ii2] ε.+0*t -D[ii] -R[ii]],
@@ -159,22 +165,25 @@ function computetendencies_and_makeplot(prob, diags)
          linestyle = [:solid :dash :solid :solid],
          linewidth = 2,
              alpha = 0.8,
-            xlabel = "μt",
-            ylabel = "energy sources and sinks")
+            xlabel = L"\mu t",
+            ylabel = "energy sources and sinks",
+     guidefontsize = 15)
 
   p3 = plot(μ*t, [dEdt_computed[ii], dEdt_numerical],
              label = ["computed W-D" "numerical dE/dt"],
-         linestyle = [:solid :dashdotdot],
-         linewidth = 2,
+         linestyle = [:solid :dash],
+         linewidth = [2 3],
              alpha = 0.8,
-            xlabel = "μt",
-            ylabel = "dE/dt")
+            xlabel = L"\mu t",
+            ylabel = L"\mathrm{d}E/\mathrm{d}t",
+     guidefontsize = 15)
 
   p4 = plot(μ*t, residual,
              label = "residual dE/dt = computed - numerical",
          linewidth = 2,
              alpha = 0.7,
-            xlabel = "μt")
+            xlabel = L"\mu t",
+     guidefontsize = 15)
 
   p = plot(p1, p2, p3, p4, layout=l, size = (900, 800))
   return p
