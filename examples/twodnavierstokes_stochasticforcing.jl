@@ -6,11 +6,7 @@
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the 
 # two-dimensional vorticity equation with linear drag and stochastic excitation.
 
-using
-  FourierFlows,
-  Printf,
-  Plots,
-  LaTeXStrings
+using FourierFlows, Printf, Plots
   
 using Random: seed!
 using FFTW: irfft
@@ -97,10 +93,9 @@ heatmap(x, y, irfft(v.Fh, g.nx),
            ylims = (-L/2, L/2),
           xticks = -3:3,
           yticks = -3:3,
-          xlabel = L"x",
-          ylabel = L"y",
+          xlabel = "x",
+          ylabel = "y",
            title = "a forcing realization",
-   guidefontsize = 15,
       framestyle = :box)
 
 
@@ -154,10 +149,9 @@ function computetendencies_and_makeplot(prob, diags)
              ylims = (-L/2, L/2),
             xticks = -3:3,
             yticks = -3:3,
-            xlabel = L"x",
-            ylabel = L"y",
-             # title = L"\nabla^\psi(x, y, t="*@sprintf("%.2f", cl.t)*")",
-     guidefontsize = 15,
+            xlabel = "μt",
+            ylabel = "y",
+             title = "∇²ψ(x, y, t="*@sprintf("%.2f", cl.t)*")",
         framestyle = :box)
 
   p2 = plot(μ*t, [W[ii2] ε.+0*t -D[ii] -R[ii]],
@@ -165,25 +159,22 @@ function computetendencies_and_makeplot(prob, diags)
          linestyle = [:solid :dash :solid :solid],
          linewidth = 2,
              alpha = 0.8,
-            xlabel = L"\mu t",
-            ylabel = "energy sources and sinks",
-     guidefontsize = 15)
+            xlabel = "μt",
+            ylabel = "energy sources and sinks")
 
   p3 = plot(μ*t, [dEdt_computed[ii], dEdt_numerical],
              label = ["computed W-D" "numerical dE/dt"],
-         linestyle = [:solid :dash],
-         linewidth = [2 3],
+         linestyle = [:solid :dashdotdot],
+         linewidth = 2,
              alpha = 0.8,
-            xlabel = L"\mu t",
-            ylabel = L"\mathrm{d}E/\mathrm{d}t",
-     guidefontsize = 15)
+            xlabel = "μt",
+            ylabel = "dE/dt")
 
   p4 = plot(μ*t, residual,
              label = "residual dE/dt = computed - numerical",
          linewidth = 2,
              alpha = 0.7,
-            xlabel = L"\mu t",
-     guidefontsize = 15)
+            xlabel = "μt")
 
   p = plot(p1, p2, p3, p4, layout=l, size = (900, 800))
   return p
