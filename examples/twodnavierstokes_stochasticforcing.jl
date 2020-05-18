@@ -52,7 +52,7 @@ forcing_bandwidth  = 1.5     # the width of the forcing spectrum
 gr   = TwoDGrid(dev, n, L)
 x, y = gr.x, gr.y
 
-forcing_spectrum = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
+forcing_spectrum = @. exp(-(sqrt(gr.Krsq)-forcing_wavenumber)^2/(2*forcing_bandwidth^2))
 forcing_spectrum[ gr.Krsq .< (2π/L*2)^2 ]  .= 0 # make sure that focing has no power for low wavenumbers
 forcing_spectrum[ gr.Krsq .> (2π/L*20)^2 ] .= 0 # make sure that focing has no power for high wavenumbers
 ε0 = parsevalsum(forcing_spectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
