@@ -25,13 +25,13 @@ nothing # hide
 #
 # First, we pick some numerical and physical parameters for our model.
 
-n, L  = 256, 2π             # grid resolution and domain length
+n, L  = 128, 2π             # grid resolution and domain length
 nothing # hide
 
 ## Then we pick the time-stepper parameters
-    dt = 5e-3  # timestep
-nsteps = 8000  # total number of steps
- nsubs = 40    # number of steps between each plot
+    dt = 1e-2  # timestep
+nsteps = 4000  # total number of steps
+ nsubs = 20    # number of steps between each plot
 nothing # hide
 
 
@@ -123,6 +123,7 @@ p1 = heatmap(x, y, vs.zeta,
 
 p2 = plot(2, # this means "a plot with two series"
                label = ["energy E(t)/E(0)" "enstrophy Z(t)/Z(0)"],
+              legend = :right,
            linewidth = 2,
                alpha = 0.7,
               xlabel = "t",

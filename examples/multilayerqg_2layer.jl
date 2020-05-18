@@ -19,8 +19,8 @@ nx = 128          # 2D resolution = nx^2
 ny = nx
 
 stepper = "FilteredRK4"   # timestepper
-dt = 5e-3       # timestep
-nsteps = 12000  # total number of time-steps
+dt = 6e-3       # timestep
+nsteps = 7000  # total number of time-steps
 nsubs  = 25     # number of time-steps for plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
@@ -55,7 +55,7 @@ nothing # hide
 # ## Setting initial conditions
 
 # Our initial condition is some small amplitude random noise.
-MultilayerQG.set_q!(prob, 1e-3randn((nx, ny, nlayers)))
+MultilayerQG.set_q!(prob, 4e-3randn((nx, ny, nlayers)))
 nothing # hide
 
 
@@ -137,10 +137,10 @@ function plot_output(prob)
             legend = :bottomright,
          linewidth = 2,
              alpha = 0.7,
-             xlims = (-0.1, 3.1),
-             ylims = (5e-11, 1e0),
+             xlims = (-0.1, 2.35),
+             ylims = (5e-10, 1e0),
             yscale = :log10,
-            yticks = 10.0.^(-10:2:0),
+            yticks = 10.0.^(-9:2:0),
             xlabel = "μt")
           
   plot!(p[6], 1,
@@ -149,8 +149,8 @@ function plot_output(prob)
          linecolor = :red,
          linewidth = 2,
              alpha = 0.7,
-             xlims = (-0.1, 3.1),
-             ylims = (1e-11, 1e0),
+             xlims = (-0.1, 2.35),
+             ylims = (1e-10, 1e0),
             yscale = :log10,
             yticks = 10.0.^(-10:2:0),
             xlabel = "μt")
@@ -168,7 +168,10 @@ p = plot_output(prob)
 startwalltime = time()
 
 anim = @animate for j=0:Int(nsteps/nsubs)
-  log = @sprintf("step: %04d, t: %d, KE1: %.4f, KE2: %.4f, PE: %.4f, walltime: %.2f min", cl.step, cl.t, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
+  
+  cfl = cl.dt*maximum([maximum(vs.u)/gr.dx, maximum(vs.v)/gr.dy])
+  
+  log = @sprintf("step: %04d, t: %d, cfl: %.2f, KE1: %.4f, KE2: %.4f, PE: %.4f, walltime: %.2f min", cl.step, cl.t, cfl, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
 
   if j%(1000/nsubs)==0; println(log) end
   

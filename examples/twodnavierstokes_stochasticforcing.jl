@@ -10,6 +10,7 @@
 
 using FourierFlows, Printf, Plots
   
+using FourierFlows: parsevalsum
 using Random: seed!
 using FFTW: irfft
 
@@ -37,24 +38,25 @@ nothing # hide
 
 
 # ## Forcing
-#
+
 # We force the vorticity equation with stochastic excitation that is delta-correlated
 # in time and while spatially homogeneously and isotropically correlated. The forcing
 # has a spectrum with power in a ring in wavenumber space of radious $k_f$ and 
 # width $\delta k_f$, and it injects energy per unit area and per unit time equal 
 # to $\varepsilon$.
 
-kf, dkf = 12.0, 2.0     # forcing central wavenumber, wavenumber width
-ε = 0.1                 # energy injection rate
+forcing_wavenumber = 14.0    # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
+forcing_bandwidth  = 1.5     # the width of the forcing spectrum 
+ε = 0.001                    # energy input rate by the forcing
 
 gr   = TwoDGrid(dev, n, L)
 x, y = gr.x, gr.y
 
-forcingcovariancespectrum = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
-forcingcovariancespectrum[ gr.Krsq .< (2π/L*2)^2 ]  .= 0 # make sure that focing has no power for low wavenumbers
-forcingcovariancespectrum[ gr.Krsq .> (2π/L*20)^2 ] .= 0 # make sure that focing has no power for high wavenumbers
-ε0 = FourierFlows.parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
-forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum # normalize forcing to inject energy ε
+forcing_spectrum = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
+forcing_spectrum[ gr.Krsq .< (2π/L*2)^2 ]  .= 0 # make sure that focing has no power for low wavenumbers
+forcing_spectrum[ gr.Krsq .> (2π/L*20)^2 ] .= 0 # make sure that focing has no power for high wavenumbers
+ε0 = parsevalsum(forcing_spectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+forcing_spectrum .= ε/ε0 * forcing_spectrum # normalize forcing to inject energy ε
 
 seed!(1234)
 nothing # hide
@@ -63,7 +65,7 @@ nothing # hide
 function calcF!(Fh, sol, t, cl, v, p, g)
   ξ = ArrayType(dev)(exp.(2π*im*rand(eltype(gr), size(sol)))/sqrt(cl.dt))
   ξ[1, 1] = 0
-  @. Fh = ξ*sqrt(forcingcovariancespectrum)
+  @. Fh = ξ*sqrt(forcing_spectrum)
   nothing
 end
 nothing # hide
@@ -73,7 +75,7 @@ nothing # hide
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used.
 prob = TwoDNavierStokes.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper="ETDRK4",
-                        calcF=calcF!, stochastic=true, dev=dev)
+                                calcF=calcF!, stochastic=true, dev=dev)
 nothing # hide
 
 # Define some shortcuts for convenience.

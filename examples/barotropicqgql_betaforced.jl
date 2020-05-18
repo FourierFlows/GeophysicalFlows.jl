@@ -37,12 +37,13 @@ nothing # hide
  
 
 # ## Forcing
-#
+
 # We force the vorticity equation with stochastic excitation that is delta-correlated
 # in time and while spatially homogeneously and isotropically correlated. The forcing
 # has a spectrum with power in a ring in wavenumber space of radious $k_f$ and 
 # width $\delta k_f$, and it injects energy per unit area and per unit time equal 
 # to $\varepsilon$.
+
 forcing_wavenumber = 14.0    # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
 forcing_bandwidth  = 1.5     # the width of the forcing spectrum 
 ε = 0.001                    # energy input rate by the forcing
