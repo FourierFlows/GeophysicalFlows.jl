@@ -50,12 +50,9 @@ kf, dkf = 12.0, 2.0     # forcing central wavenumber, wavenumber width
 gr   = TwoDGrid(dev, n, L)
 x, y = gr.x, gr.y
 
-Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
-
 forcingcovariancespectrum = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
-forcingcovariancespectrum[gr.Krsq .< 2.0^2 ] .= 0  # making sure that focing has no power for low wavenumbers
-forcingcovariancespectrum[gr.Krsq .> 20.0^2 ] .= 0 # making sure that focing has no power for high wavenumbers
-forcingcovariancespectrum[Kr .< 2π/L] .= 0
+forcingcovariancespectrum[ gr.Krsq .< (2π/L*2)^2 ]  .= 0 # make sure that focing has no power for low wavenumbers
+forcingcovariancespectrum[ gr.Krsq .> (2π/L*20)^2 ] .= 0 # make sure that focing has no power for high wavenumbers
 ε0 = FourierFlows.parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
 forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum # normalize forcing to inject energy ε
 
@@ -64,9 +61,9 @@ nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
 function calcF!(Fh, sol, t, cl, v, p, g)
-  eta = ArrayType(dev)(exp.(2π*im*rand(eltype(gr), size(sol)))/sqrt(cl.dt))
-  eta[1, 1] = 0
-  @. Fh = eta*sqrt(forcingcovariancespectrum)
+  ξ = ArrayType(dev)(exp.(2π*im*rand(eltype(gr), size(sol)))/sqrt(cl.dt))
+  ξ[1, 1] = 0
+  @. Fh = ξ*sqrt(forcingcovariancespectrum)
   nothing
 end
 nothing # hide

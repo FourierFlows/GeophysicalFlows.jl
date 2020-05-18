@@ -19,7 +19,7 @@ nx = 128          # 2D resolution = nx^2
 ny = nx
 
 stepper = "FilteredAB3"   # timestepper
-dt  = 2e-3      # timestep
+dt = 2e-3       # timestep
 nsteps = 16000  # total number of time-steps
 nsubs  = 4000   # number of time-steps for plotting (nsteps must be multiple of nsubs)
 nothing # hide

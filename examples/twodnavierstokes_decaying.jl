@@ -108,30 +108,29 @@ nothing # hide
 # We initialize a plot with the vorticity field and the time-series of
 # energy and enstrophy diagnostics.
 
-l = @layout grid(1, 2)
-
 p1 = heatmap(x, y, vs.zeta,
-          aspectratio = 1,
-               c = :balance,
-            clim = (-40, 40),
-           xlims = (-L/2, L/2),
-           ylims = (-L/2, L/2),
-          xticks = -3:3,
-          yticks = -3:3,
-          xlabel = "x",
-          ylabel = "y",
-           title = "vorticity, t="*@sprintf("%.2f", cl.t),
-      framestyle = :box)
+         aspectratio = 1,
+                   c = :balance,
+                clim = (-40, 40),
+               xlims = (-L/2, L/2),
+               ylims = (-L/2, L/2),
+              xticks = -3:3,
+              yticks = -3:3,
+              xlabel = "x",
+              ylabel = "y",
+               title = "vorticity, t="*@sprintf("%.2f", cl.t),
+          framestyle = :box)
 
 p2 = plot(2, # this means "a plot with two series"
-         label=["energy E(t)/E(0)" "enstrophy Z(t)/Z(0)"],
-         linewidth=2,
-         alpha=0.7,
-         xlabel = "t",
-         xlims = (0, 41),
-         ylims = (0, 1.1))
+               label = ["energy E(t)/E(0)" "enstrophy Z(t)/Z(0)"],
+           linewidth = 2,
+               alpha = 0.7,
+              xlabel = "t",
+               xlims = (0, 41),
+               ylims = (0, 1.1))
 
-p = plot(p1, p2, layout=l, size = (900, 400))
+l = @layout grid(1, 2)
+p = plot(p1, p2, layout = l, size = (900, 400))
 
 
 # ## Time-stepping the `Problem` forward
@@ -156,7 +155,6 @@ anim = @animate for j = 0:Int(nsteps/nsubs)
   TwoDNavierStokes.updatevars!(prob)  
   
 end
-println("finished")
 
 mp4(anim, "twodturb.mp4", fps=18)
 
