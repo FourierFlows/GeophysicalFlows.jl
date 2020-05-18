@@ -25,7 +25,7 @@ nothing # hide
      nx = 128            # 2D resolution = nx^2
 stepper = "FilteredRK4"  # timestepper
      dt = 0.05           # timestep
- nsteps = 4000           # total number of time-steps
+ nsteps = 3000           # total number of time-steps
  nsubs  = 10             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
@@ -179,7 +179,7 @@ function plot_output(prob)
          linewidth = 2,
              alpha = 0.7,
             yticks = -3:3,
-             xlims = (-2, 2),
+             xlims = (-2.2, 2.2),
             xlabel = "zonal mean ζ",
             ylabel = "y")
   plot!(pζm, 0*y, y, linestyle=:dash, linecolor=:black)
@@ -189,7 +189,7 @@ function plot_output(prob)
          linewidth = 2,
              alpha = 0.7,
             yticks = -3:3,
-             xlims = (-0.5, 0.5),
+             xlims = (-0.55, 0.55),
             xlabel = "zonal mean u",
             ylabel = "y")
   plot!(pum, 0*y, y, linestyle=:dash, linecolor=:black)
