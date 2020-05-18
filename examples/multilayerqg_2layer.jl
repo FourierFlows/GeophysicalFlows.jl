@@ -7,7 +7,7 @@
 # when we impose a vertical mean flow shear as a difference $\Delta U$ in the
 # imposed, domain-averaged, zonal flow at each layer.
 
-using FourierFlows, PyPlot, Printf
+using FourierFlows, Plots, Printf
 
 import GeophysicalFlows.MultilayerQG
 import GeophysicalFlows.MultilayerQG: energies
@@ -18,10 +18,10 @@ import GeophysicalFlows.MultilayerQG: energies
 nx = 128          # 2D resolution = nx^2
 ny = nx
 
-stepper = "FilteredAB3"   # timestepper
-dt = 2e-3       # timestep
-nsteps = 16000  # total number of time-steps
-nsubs  = 4000   # number of time-steps for plotting (nsteps must be multiple of nsubs)
+stepper = "FilteredRK4"   # timestepper
+dt = 5e-3       # timestep
+nsteps = 12000  # total number of time-steps
+nsubs  = 25     # number of time-steps for plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
@@ -48,14 +48,14 @@ nothing # hide
 
 # and define some shortcuts.
 sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
-x, y = gridpoints(gr)
+x, y = gr.x, gr.y
 nothing # hide
 
 
 # ## Setting initial conditions
 
-# Our initial condition is some small amplitude random flow.
-MultilayerQG.set_q!(prob, 1e-2randn((nx, ny, nlayers)))
+# Our initial condition is some small amplitude random noise.
+MultilayerQG.set_q!(prob, 1e-3randn((nx, ny, nlayers)))
 nothing # hide
 
 
@@ -88,7 +88,7 @@ function get_u(prob)
   streamfunctionfrompv!(v.psih, v.qh, p.invS, g)
   @. v.uh = -im*g.l *v.psih
   invtransform!(v.u, v.uh, p)
-  v.u
+  return v.u
 end
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 nothing #hide
@@ -99,51 +99,62 @@ nothing #hide
 # We define a function that plots the potential vorticity field and the evolution 
 # of energy and enstrophy.
 
-function plot_output(prob, fig, axs; drawcolorbar=false, dpi=200)
-
-  sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid
-  MultilayerQG.updatevars!(prob)
-
+function plot_output(prob)
+  
+  l = @layout grid(2, 3)
+  p = plot(layout=l, size = (1000, 600), dpi=150)
+  
   for j in 1:nlayers
-    sca(axs[j])
-    pcolormesh(x, y, v.q[:, :, j])
-    axis("square")
-    xlim(-Lx/2, Lx/2)
-    ylim(-Lx/2, Lx/2)
-    xticks([-2, 0, 2])
-    yticks([-2, 0, 2])
-    title(L"$q_"*string(j)*L"$")
-    if drawcolorbar==true
-      colorbar()
-    end
+    heatmap!(p[(j-1)*3+1], x, y, vs.q[:, :, j],
+         aspectratio = 1,
+              legend = false,
+                   c = :balance,
+               xlims = (-gr.Lx/2, gr.Lx/2),
+               ylims = (-gr.Ly/2, gr.Ly/2),
+              xticks = -3:3,
+              yticks = -3:3,
+              xlabel = "x",
+              ylabel = "y",
+               title = "q_"*string(j),
+          framestyle = :box)
 
-    sca(axs[j+2])
-    cla()
-    contourf(x, y, v.psi[:, :, j])
-    contour(x, y, v.psi[:, :, j], colors="k")
-    axis("square")
-    xlim(-Lx/2, Lx/2)
-    ylim(-Lx/2, Lx/2)
-    xticks([-2, 0, 2])
-    yticks([-2, 0, 2])
-    title(L"$\psi_"*string(j)*L"$")
-    if drawcolorbar==true
-      colorbar()
-    end
+    heatmap!(p[(j-1)*3+2], x, y, vs.psi[:, :, j],
+         aspectratio = 1,
+              legend = false,
+                   c = :viridis,
+               xlims = (-gr.Lx/2, gr.Lx/2),
+               ylims = (-gr.Ly/2, gr.Ly/2),
+              xticks = -3:3,
+              yticks = -3:3,
+              xlabel = "x",
+              ylabel = "y",
+               title = "ψ_"*string(j),
+          framestyle = :box)
   end
 
-  sca(axs[5])
-  cla()
-  semilogy(μ*[E.t[i] for i=1:E.i], [E.data[i][1][1] for i=1:E.i], color="b", label=L"$KE_1$")
-  plot(μ*[E.t[i] for i=1:E.i], [E.data[i][1][2] for i=1:E.i], color="r", label=L"$KE_2$")
-  xlabel(L"\mu t")
-  legend()
+  plot!(p[3], 2,
+             label = ["KE1" "KE2"],
+            legend = :bottomright,
+         linewidth = 2,
+             alpha = 0.7,
+             xlims = (-0.1, 3.1),
+             ylims = (5e-11, 1e0),
+            yscale = :log10,
+            yticks = 10.0.^(-10:2:0),
+            xlabel = "μt")
+          
+  plot!(p[6], 1,
+             label = "PE",
+            legend = :bottomright,
+         linecolor = :red,
+         linewidth = 2,
+             alpha = 0.7,
+             xlims = (-0.1, 3.1),
+             ylims = (1e-11, 1e0),
+            yscale = :log10,
+            yticks = 10.0.^(-10:2:0),
+            xlabel = "μt")
 
-  sca(axs[6])
-  cla()
-  semilogy(μ*[E.t[i] for i=1:E.i], [E.data[i][2][1] for i=1:E.i], color="k", label=L"$PE_{3/2}$")
-  xlabel(L"\mu t")
-  legend()
 end
 nothing # hide
 
@@ -152,25 +163,33 @@ nothing # hide
 
 # Finally, we time-step the `Problem` forward in time.
 
+p = plot_output(prob)
+
 startwalltime = time()
 
-while cl.step < nsteps
-  stepforward!(prob, diags, nsubs)
-
+anim = @animate for j=0:Int(nsteps/nsubs)
   log = @sprintf("step: %04d, t: %d, KE1: %.4f, KE2: %.4f, PE: %.4f, walltime: %.2f min", cl.step, cl.t, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
 
-  println(log)
+  if j%(1000/nsubs)==0; println(log) end
+  
+  for m in 1:nlayers
+    p[m][1][:z] = @. vs.q[:, :, m]
+    p[m+nlayers+1][1][:z] = @. vs.psi[:, :, m]
+  end
+  
+  push!(p[3][1], μ*E.t[E.i], E.data[E.i][1][1])
+  push!(p[3][2], μ*E.t[E.i], E.data[E.i][1][2])
+  push!(p[6][1], μ*E.t[E.i], E.data[E.i][2][1])
+  
+  stepforward!(prob, diags, nsubs)
+  MultilayerQG.updatevars!(prob)
 end
-println("finished")
+
+mp4(anim, "multilayerqg_2layer.mp4", fps=18)
 
 
-# ## Plot
-# Now let's see what we got. We plot the output,
+# ## Save
 
-fig, axs = subplots(ncols=3, nrows=2, figsize=(15, 8), dpi=200)
-plot_output(prob, fig, axs; drawcolorbar=false)
-gcf() #hide
-
-# and finally save the figure
+# Finally save the last snapshot.
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
-savefig(savename, dpi=240)
+savefig(savename)
