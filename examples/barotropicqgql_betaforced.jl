@@ -233,7 +233,7 @@ function plot_output(prob)
              ylims = (0, 5),
             xlabel = "μt")
 
-  l = @layout grid(2, 3)  
+  l = @layout grid(2, 3)
   p = plot(pζ, pζm, pE, pψ, pum, pZ, layout=l, size = (1000, 600), dpi=150)
   
   return p
@@ -255,7 +255,7 @@ anim = @animate for j=0:Int(nsteps/nsubs)
     cl.step, cl.t, cfl, E.data[E.i], Z.data[Z.i],
     (time()-startwalltime)/60)
 
-  if j%(1000/nsubs)==0; println(log) end  
+  if j%(1000/nsubs)==0; println(log) end
 
   p[1][1][:z] = @. vs.zeta + vs.Zeta
   p[1][:title] = "vorticity, μt="*@sprintf("%.2f", μ*cl.t)
