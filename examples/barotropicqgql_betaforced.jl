@@ -7,31 +7,30 @@
 # a beta plane under the *quasi-linear approximation*. The dynamics include 
 # linear drag and stochastic excitation.
 
-using FourierFlows, Plots, PyPlot, Statistics, Printf, Random
+using FourierFlows, Plots, Statistics, Printf, Random
+
+using FourierFlows: parsevalsum
+using FFTW: irfft
+using Random: seed!
+using Statistics: mean
 
 import GeophysicalFlows.BarotropicQGQL
 import GeophysicalFlows.BarotropicQGQL: energy, enstrophy
 
-import FFTW: irfft
-import Random: seed!
-import Statistics: mean
-
 
 # ## Numerical parameters and time-stepping parameters
 
-nx = 128       # 2D resolution = nx^2
-stepper = "FilteredRK4"   # timestepper
-dt  = 0.05     # timestep
-nsteps = 8000  # total number of time-steps
-nsubs  = 2000  # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
+     nx = 128            # 2D resolution = nx^2
+stepper = "FilteredRK4"  # timestepper
+     dt = 0.05           # timestep
+ nsteps = 8000           # total number of time-steps
+ nsubs  = 10             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
 # ## Physical parameters
 
 Lx = 2π        # domain size
- ν = 0.0       # viscosity
-nν = 1         # viscosity order 
  β = 10.0      # planetary PV gradient
  μ = 0.01      # bottom drag
 nothing # hide
@@ -44,64 +43,70 @@ nothing # hide
 # has a spectrum with power in a ring in wavenumber space of radious $k_f$ and 
 # width $\delta k_f$, and it injects energy per unit area and per unit time equal 
 # to $\varepsilon$.
-kf, dkf = 14.0, 1.5     # forcing wavenumber and width of forcing ring in wavenumber space
-ε = 0.001               # energy input rate by the forcing
+forcing_wavenumber = 14.0    # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
+forcing_bandwidth  = 1.5     # the width of the forcing spectrum 
+ε = 0.001                    # energy input rate by the forcing
 
 gr  = TwoDGrid(nx, Lx)
 
-x, y = gridpoints(gr)
-Kr = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl]
+k = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl] # a 2D grid with the zonal wavenumber
 
-forcingcovariancespectrum = @. exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
-@. forcingcovariancespectrum[gr.Krsq < 2.0^2 ] .= 0
-@. forcingcovariancespectrum[gr.Krsq > 20.0^2 ] .= 0
-forcingcovariancespectrum[Kr .< 2π/Lx] .= 0
-ε0 = FourierFlows.parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
-forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum  # normalization so that forcing injects energy ε per domain area per unit time
+forcing_spectrum = @. exp( -(sqrt(gr.Krsq)-forcing_wavenumber)^2 / (2forcing_bandwidth^2) )
+@. forcing_spectrum[gr.Krsq < (2π/Lx*2)^2  ] = 0
+@. forcing_spectrum[gr.Krsq > (2π/Lx*20)^2 ] = 0
+@. forcing_spectrum[k .< 2π/Lx] .= 0 # make sure forcing does not have power at k=0 component
+ε0 = parsevalsum(forcing_spectrum .* gr.invKrsq/2, gr) / (gr.Lx*gr.Ly)
+@. forcing_spectrum = ε/ε0 * forcing_spectrum  # normalization so that forcing injects energy ε per domain area per unit time
 
 seed!(1234) # reset of the random number generator for reproducibility
 nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
-function calcF!(Fh, sol, t, cl, v, p, g)
-  ξ = exp.(2π*im*rand(Float64, size(sol)))/sqrt(cl.dt)
-  ξ[1, 1] = 0
-  @. Fh = ξ*sqrt(forcingcovariancespectrum)
-  Fh[abs.(Kr) .== 0] .= 0
+function calcF!(Fh, sol, t, clock, vars, params, grid)
+  ξ = exp.(2π*im*rand(eltype(grid), size(sol)))/sqrt(clock.dt)
+  @. Fh = ξ*sqrt.(forcing_spectrum)
+  Fh[abs.(grid.Krsq).==0] .= 0
   nothing
 end
 nothing # hide
 
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments,
-prob = BarotropicQGQL.Problem(nx=nx, Lx=Lx, beta=β, nu=ν, nnu=nν, mu=μ, dt=dt, 
-                              stepper=stepper, calcF=calcF!, stochastic=true)
+# We initialize a `Problem` by providing a set of keyword arguments. Not providing
+# a viscosity coefficient ν leads to the module's default value: ν=0. In this
+# example numerical instability due to accumulation of enstrophy in high wavenumbers
+# is taken care with the `FilteredTimestepper` we picked. 
+prob = BarotropicQGQL.Problem(nx=nx, Lx=Lx, beta=β, mu=μ, dt=dt, stepper=stepper, 
+                              calcF=calcF!, stochastic=true)
 nothing # hide
 
 # and define some shortcuts.
-sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+sol, cl, vs, pr, gr = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+x, y = gr.x, gr.y
 nothing # hide
 
 
 # First let's see how a forcing realization looks like.
-calcF!(v.Fh, sol, 0.0, cl, v, p, g)
+calcF!(vs.Fh, sol, 0.0, cl, vs, pr, gr)
 
-fig = figure(figsize=(3, 2), dpi=150)
-pcolormesh(x, y, irfft(v.Fh, g.nx))
-axis("square")
-xticks(-3:1:3)
-yticks(-3:1:3)
-title("a forcing realization")
-colorbar()
-clim(-8, 8)
-gcf() # hide
+heatmap(x, y, irfft(vs.Fh, gr.nx),
+     aspectratio = 1,
+               c = :balance,
+            clim = (-8, 8),
+           xlims = (-gr.Lx/2, gr.Lx/2),
+           ylims = (-gr.Ly/2, gr.Ly/2),
+          xticks = -3:3,
+          yticks = -3:3,
+          xlabel = "x",
+          ylabel = "y",
+           title = "a forcing realization",
+      framestyle = :box)
 
 
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
-BarotropicQGQL.set_zeta!(prob, 0*x)
+BarotropicQGQL.set_zeta!(prob, zeros(gr.nx, gr.ny))
 nothing # hide
 
 # ## Diagnostics
@@ -152,98 +157,124 @@ nothing # hide
 # corresponding zonal-mean vorticity and zonal-mean zonal velocity and timeseries
 # of energy and enstrophy.
 
-function plot_output(prob, fig, axs; drawcolorbar=false)
-  sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid
-  BarotropicQGQL.updatevars!(prob)
+function plot_output(prob)
+  ζ̄, ζ′= prob.vars.Zeta, prob.vars.zeta
+  ζ = @. ζ̄ + ζ′
+  ψ̄, ψ′= prob.vars.Psi,  prob.vars.psi
+  ψ = @. ψ̄ + ψ′
+  ζ̄ₘ = mean(ζ̄, dims=1)'
+  ūₘ = mean(prob.vars.U, dims=1)'
 
-  sca(axs[1])
-  cla()
-  pcolormesh(x, y, v.zeta .+ v.Zeta)
-  axis("square")
-  xticks(-3:1:3)
-  yticks(-3:1:3)
-  title(L"vorticity $\zeta = \partial_x v - \partial_y u$")
-  if drawcolorbar==true
-    colorbar()
-  end
+  pζ = heatmap(x, y, ζ,
+       aspectratio = 1,
+            legend = false,
+                 c = :balance,
+              clim = (-8, 8),
+             xlims = (-gr.Lx/2, gr.Lx/2),
+             ylims = (-gr.Ly/2, gr.Ly/2),
+            xticks = -3:3,
+            yticks = -3:3,
+            xlabel = "x",
+            ylabel = "y",
+             title = "vorticity ζ=∂v/∂x-∂u/∂y",
+        framestyle = :box)
 
-  sca(axs[2])
-  cla()
-  contourf(x, y, v.psi)
-  if maximum(abs.(v.psi))>0
-    contour(x, y, v.psi, colors="k")
-  end
-  axis("square")
-  xticks(-3:1:3)
-  yticks(-3:1:3)
-  title(L"streamfunction $\psi$")
-  if drawcolorbar==true
-    colorbar()
-  end
+  pψ = contourf(x, y, ψ,
+            levels = -0.32:0.04:0.32,
+       aspectratio = 1,
+         linewidth = 1,
+            legend = false,
+              clim = (-0.22, 0.22),
+                 c = :viridis,
+             xlims = (-gr.Lx/2, gr.Lx/2),
+             ylims = (-gr.Ly/2, gr.Ly/2),
+            xticks = -3:3,
+            yticks = -3:3,
+            xlabel = "x",
+            ylabel = "y",
+             title = "streamfunction ψ",
+        framestyle = :box)
 
-  sca(axs[3])
-  cla()
-  plot(Array(transpose(mean(v.Zeta, dims=1))), y[1, :])
-  plot(0*y[1, :], y[1, :], "k--")
-  yticks(-3:1:3)
-  ylim(-Lx/2, Lx/2)
-  xlim(-3, 3)
-  title(L"zonal mean $\zeta$")
+  pζm = plot(ζ̄ₘ, y,
+            legend = false,
+         linewidth = 2,
+             alpha = 0.7,
+            yticks = -3:3,
+             xlims = (-3, 3),
+            xlabel = "zonal mean ζ",
+            ylabel = "y")
+  plot!(pζm, 0*y, y, linestyle=:dash, linecolor=:black)
 
-  sca(axs[4])
-  cla()
-  plot(Array(mean(transpose(v.U), dims=2)), y[1, :])
-  plot(0*y[1, :], y[1, :], "k--")
-  yticks(-3:1:3)
-  ylim(-Lx/2, Lx/2)
-  xlim(-0.5, 0.5)
-  title(L"zonal mean $u$")
+  pum = plot(ūₘ, y,
+            legend = false,
+         linewidth = 2,
+             alpha = 0.7,
+            yticks = -3:3,
+             xlims = (-0.5, 0.5),
+            xlabel = "zonal mean u",
+            ylabel = "y")
+  plot!(pum, 0*y, y, linestyle=:dash, linecolor=:black)
 
-  sca(axs[5])
-  cla()
-  plot(μ*E.t[1:E.i], E.data[1:E.i], label="energy")
-  xlabel(L"\mu t")
-  legend()
+  pE = plot(1,
+             label = "energy",
+         linewidth = 2,
+             alpha = 0.7,
+             xlims = (-0.1, 4.1),
+             ylims = (0, 0.05),
+            xlabel = "μt")
+          
+  pZ = plot(1,
+             label = "enstrophy",
+         linecolor = :red,
+            legend = :bottomright,
+         linewidth = 2,
+             alpha = 0.7,
+             xlims = (-0.1, 4.1),
+             ylims = (0, 5),
+            xlabel = "μt")
 
-  sca(axs[6])
-  cla()
-  plot(μ*Z.t[1:Z.i], Z.data[1:E.i], label="enstrophy")
-  xlabel(L"\mu t")
-  legend()
+  l = @layout grid(2, 3)  
+  p = plot(pζ, pζm, pE, pψ, pum, pZ, layout=l, size = (1000, 600), dpi=150)
+  
+  return p
 end
-nothing # hide
-
 
 # ## Time-stepping the `Problem` forward
 
 # We time-step the `Problem` forward in time.
 
+p = plot_output(prob)
+
 startwalltime = time()
 
-while cl.step < nsteps
-  stepforward!(prob, diags, nsubs)
+anim = @animate for j=0:Int(nsteps/nsubs)
 
-  BarotropicQGQL.updatevars!(prob)
+  cfl = cl.dt*maximum([maximum(vs.v)/gr.dy, maximum(vs.u+vs.U)/gr.dx])
 
-  cfl = cl.dt*maximum([maximum(v.v)/g.dy, maximum(v.u+v.U)/g.dx])
   log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, walltime: %.2f min",
     cl.step, cl.t, cfl, E.data[E.i], Z.data[Z.i],
     (time()-startwalltime)/60)
 
-  println(log)
+  if j%(1000/nsubs)==0; println(log) end  
+
+  p[1][1][:z] = @. vs.zeta + vs.Zeta
+  p[1][:title] = "vorticity, μt="*@sprintf("%.2f", μ*cl.t)
+  p[4][1][:z] = @. vs.psi + vs.Psi
+  p[2][1][:x] = mean(vs.Zeta, dims=1)'
+  p[5][1][:x] = mean(vs.U, dims=1)'
+  push!(p[3][1], μ*E.t[E.i], E.data[E.i])
+  push!(p[6][1], μ*Z.t[Z.i], Z.data[Z.i])
+  
+  stepforward!(prob, diags, nsubs)
+  BarotropicQGQL.updatevars!(prob)
+
 end
-println("finished")
+
+mp4(anim, "barotropicqgql_betaforced.mp4", fps=18)
 
 
-# ## Plot
-# Now let's see what we got. We plot the output,
+# ## Save
 
-fig, axs = subplots(ncols=3, nrows=2, figsize=(14, 8), dpi=200)
-plot_output(prob, fig, axs; drawcolorbar=false)
-gcf() #hide
-
-# and save the figure.
+# Finally save the last snapshot.
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename)
-nothing #hide
- 

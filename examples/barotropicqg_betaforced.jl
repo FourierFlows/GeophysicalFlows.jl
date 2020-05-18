@@ -11,7 +11,7 @@ using FourierFlows, Plots, Statistics, Printf, Random
 using FourierFlows: parsevalsum
 using FFTW: irfft
 using Statistics: mean
-import Random: seed!
+using Random: seed!
 
 import GeophysicalFlows.BarotropicQG
 import GeophysicalFlows.BarotropicQG: energy, enstrophy
@@ -55,17 +55,20 @@ forcing_bandwidth  = 1.5     # the width of the forcing spectrum
 
 gr  = TwoDGrid(nx, Lx)
 
+k = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl] # a 2D grid with the zonal wavenumber
+
 forcing_spectrum = @. exp( -(sqrt(gr.Krsq)-forcing_wavenumber)^2 / (2forcing_bandwidth^2) )
 @. forcing_spectrum[gr.Krsq < (2π/Lx*2)^2  ] = 0
 @. forcing_spectrum[gr.Krsq > (2π/Lx*20)^2 ] = 0
+@. forcing_spectrum[k .< 2π/Lx] .= 0 # make sure forcing does not have power at k=0 component
 ε0 = parsevalsum(forcing_spectrum .* gr.invKrsq/2, gr)/(gr.Lx*gr.Ly)
-forcing_spectrum .= ε/ε0 * forcing_spectrum  # normalization so that forcing injects energy ε per domain area per unit time
+@. forcing_spectrum = ε/ε0 * forcing_spectrum  # normalization so that forcing injects energy ε per domain area per unit time
 
 seed!(1234) # reset of the random number generator for reproducibility
 nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
-function calcFq!(Fh, sol, t, clock, vars, params, grid) where T
+function calcFq!(Fh, sol, t, clock, vars, params, grid)
   ξ = ArrayType(dev)(exp.(2π*im*rand(eltype(grid), size(sol)))/sqrt(clock.dt))
   @. Fh = ξ*sqrt.(forcing_spectrum)
   Fh[abs.(grid.Krsq).==0] .= 0
@@ -148,9 +151,12 @@ nothing # hide
 # corresponding zonal mean structure and timeseries of energy and enstrophy.
 
 function plot_output(prob)
-  l = @layout grid(2, 3)
+  ζ = prob.vars.zeta
+  ψ = prob.vars.psi
+  ζ̄ = mean(ζ, dims=1)'
+  ū = mean(prob.vars.u, dims=1)'
   
-  pζ = heatmap(x, y, vs.zeta,
+  pζ = heatmap(x, y, ζ,
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -164,7 +170,7 @@ function plot_output(prob)
              title = "vorticity ζ=∂v/∂x-∂u/∂y",
         framestyle = :box)
 
-  pψ = contourf(x, y, vs.psi,
+  pψ = contourf(x, y, ψ,
             levels = -0.32:0.04:0.32,
        aspectratio = 1,
          linewidth = 1,
@@ -180,7 +186,7 @@ function plot_output(prob)
              title = "streamfunction ψ",
         framestyle = :box)
 
-  pζm = plot(mean(vs.zeta, dims=1)', y,
+  pζm = plot(ζ̄, y,
             legend = false,
          linewidth = 2,
              alpha = 0.7,
@@ -190,7 +196,7 @@ function plot_output(prob)
             ylabel = "y")
   plot!(pζm, 0*y, y, linestyle=:dash, linecolor=:black)
 
-  pum = plot(mean(vs.u, dims=1)', y,
+  pum = plot(ū, y,
             legend = false,
          linewidth = 2,
              alpha = 0.7,
@@ -218,10 +224,12 @@ function plot_output(prob)
              ylims = (0, 2.5),
             xlabel = "μt")
 
+  l = @layout grid(2, 3)
   p = plot(pζ, pζm, pE, pψ, pum, pZ, layout=l, size = (1000, 600), dpi=150)
 
   return p
 end
+nothing # hide
 
 
 # ## Time-stepping the `Problem` forward
@@ -252,10 +260,10 @@ anim = @animate for j=0:Int(nsteps/nsubs)
   
   stepforward!(prob, diags, nsubs)
   BarotropicQG.updatevars!(prob)
+  
 end
-mp4(anim, "barotropicqg_betaforced.mp4", fps=18)
 
-println("finished")
+mp4(anim, "barotropicqg_betaforced.mp4", fps=18)
 
 
 # ## Save

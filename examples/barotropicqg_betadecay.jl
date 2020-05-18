@@ -5,7 +5,7 @@
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence on a beta plane.
 
-using FourierFlows, PyPlot, Printf, Random
+using FourierFlows, Plots, Printf, Random
 
 using Statistics: mean
 using FFTW: irfft
@@ -22,31 +22,32 @@ nothing # hide
 
 # ## Numerical parameters and time-stepping parameters
 
-nx = 256       # 2D resolution = nx^2
-stepper = "FilteredETDRK4"   # timestepper
-dt = 0.02      # timestep 
-nsteps = 8000  # total number of time-steps
-nsubs  = 2000  # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
+     nx = 128            # 2D resolution = nx^2
+stepper = "FilteredRK4"  # timestepper
+     dt = 0.05           # timestep
+ nsteps = 4000           # total number of time-steps
+ nsubs  = 10             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
 # ## Physical parameters
 
 Lx = 2π        # domain size
- ν = 0e-05     # viscosity
-nν = 1         # viscosity order
- β = 15.0      # planetary PV gradient
+ β = 10.0      # planetary PV gradient
  μ = 0.0       # bottom drag
 nothing # hide
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments,
-prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, dev=dev)
+# We initialize a `Problem` by providing a set of keyword arguments. Not providing
+# a viscosity coefficient ν leads to the module's default value: ν=0. In this
+# example numerical instability due to accumulation of enstrophy in high wavenumbers
+# is taken care with the `FilteredTimestepper` we picked. 
+prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, μ=μ, dt=dt, stepper=stepper, dev=dev)
 nothing # hide
 
 # and define some shortcuts
-sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-x, y = gridpoints(g)
+sol, cl, vs, pr, gr = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+x, y = gr.x, gr.y
 nothing # hide
 
 
@@ -55,41 +56,53 @@ nothing # hide
 # Our initial condition consist of a flow that has power only at wavenumbers with
 # $8<\frac{L}{2\pi}\sqrt{k_x^2+k_y^2}<10$ and initial energy $E_0$:
 
+E0 = 0.1 # energy of initial condition
+
+k = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl] # a 2D grid with the zonal wavenumber
+
 Random.seed!(1234)
-E0 = 0.1
-qih = randn(Complex{Float64}, size(sol))
-qih[ g.Krsq .< (8*2π /g.Lx)^2] .= 0
-qih[ g.Krsq .> (10*2π/g.Lx)^2] .= 0
-Ein = energy(qih, g) # compute energy of qi
+qih = randn(Complex{eltype(gr)}, size(sol))
+qih[ gr.Krsq .< (8*2π /gr.Lx)^2] .= 0
+qih[ gr.Krsq .> (10*2π/gr.Lx)^2] .= 0
+qih[ k .== 0 ] .= 0 # remove any power from k=0 component
+Ein = energy(qih, gr)  # compute energy of qi
 qih = qih*sqrt(E0/Ein) # normalize qi to have energy E0
-qi  = irfft(qih, g.nx) 
+qi  = irfft(qih, gr.nx)
 
 BarotropicQG.set_zeta!(prob, qi)
 nothing #hide
 
 # Let's plot the initial vorticity field:
 
-fig, axs = subplots(ncols=2, nrows=1, figsize=(10, 3.5), dpi=200)
-sca(axs[1])
-cla()
-pcolormesh(x, y, v.q)
-axis("square")
-xticks(-2:2:2)
-yticks(-2:2:2)
-title(L"initial vorticity $\zeta = \partial_x v - \partial_y u$")
-colorbar()
-clim(-15, 15)
-sca(axs[2])
-cla()
-contourf(x, y, v.psi)
-colorbar()
-clim(-0.2, 0.2)
-contour(x, y, v.psi, colors="k")
-axis("square")
-xticks(-2:2:2)
-yticks(-2:2:2)
-title(L"initial streamfunction $\psi$")
-gcf() # hide
+p1 = heatmap(x, y, vs.q,
+         aspectratio = 1,
+              c = :balance,
+           clim = (-12, 12),
+          xlims = (-gr.Lx/2, gr.Lx/2),
+          ylims = (-gr.Ly/2, gr.Ly/2),
+         xticks = -3:3,
+         yticks = -3:3,
+         xlabel = "x",
+         ylabel = "y",
+          title = "initial vorticity ζ=∂v/∂x-∂u/∂y",
+     framestyle = :box)
+
+p2 = contourf(x, y, vs.psi,
+        aspectratio = 1,
+             c = :viridis,
+        levels = range(-0.65, stop=0.65, length=10), 
+          clim = (-0.65, 0.65),
+         xlims = (-gr.Lx/2, gr.Lx/2),
+         ylims = (-gr.Ly/2, gr.Ly/2),
+        xticks = -3:3,
+        yticks = -3:3,
+        xlabel = "x",
+        ylabel = "y",
+         title = "initial streamfunction ψ",
+    framestyle = :box)
+
+l = @layout grid(1, 2)
+p = plot(p1, p2, layout=l, size=(900, 400))
 
 
 # ## Diagnostics
@@ -117,7 +130,7 @@ nothing # hide
 
 # and then create Output.
 get_sol(prob) = sol # extracts the Fourier-transformed solution
-get_u(prob) = irfft(im*g.l.*g.invKrsq.*sol, g.nx)
+get_u(prob) = irfft(im*gr.l.*gr.invKrsq.*sol, gr.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 nothing # hide
 
@@ -127,50 +140,64 @@ nothing # hide
 # We define a function that plots the vorticity and streamfunction fields and 
 # their corresponding zonal mean structure.
 
-function plot_output(prob, fig, axs; drawcolorbar=false)
-  sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid
-  BarotropicQG.updatevars!(prob)
+function plot_output(prob)
+  ζ = prob.vars.zeta
+  ψ = prob.vars.psi
+  ζ̄ = mean(ζ, dims=1)'
+  ū = mean(prob.vars.u, dims=1)'
 
-  sca(axs[1])
-  cla()
-  pcolormesh(x, y, v.q)
-  axis("square")
-  xticks(-2:2:2)
-  yticks(-2:2:2)
-  title(L"vorticity $\zeta = \partial_x v - \partial_y u$")
-  if drawcolorbar==true
-    colorbar()
-  end
+  pζ = heatmap(x, y, ζ,
+       aspectratio = 1,
+            legend = false,
+                 c = :balance,
+              clim = (-12, 12),
+             xlims = (-gr.Lx/2, gr.Lx/2),
+             ylims = (-gr.Ly/2, gr.Ly/2),
+            xticks = -3:3,
+            yticks = -3:3,
+            xlabel = "x",
+            ylabel = "y",
+             title = "vorticity ζ=∂v/∂x-∂u/∂y",
+        framestyle = :box)
 
-  sca(axs[2])
-  cla()
-  contourf(x, y, v.psi)
-  axis("square")
-  if drawcolorbar==true
-    colorbar()
-  end
-  if maximum(abs.(v.psi))>0
-    contour(x, y, v.psi, colors="k")
-  end
-  xticks(-2:2:2)
-  yticks(-2:2:2)
-  title(L"streamfunction $\psi$")
+  pψ = contourf(x, y, ψ,
+       aspectratio = 1,
+                 c = :viridis,
+            levels = range(-0.65, stop=0.65, length=10), 
+              clim = (-0.65, 0.65),
+             xlims = (-gr.Lx/2, gr.Lx/2),
+             ylims = (-gr.Ly/2, gr.Ly/2),
+            xticks = -3:3,
+            yticks = -3:3,
+            xlabel = "x",
+            ylabel = "y",
+             title = "streamfunction ψ",
+        framestyle = :box)
 
-  sca(axs[3])
-  cla()
-  plot(Array(transpose(mean(v.zeta, dims=1))), y[1,:])
-  plot(0*y[1,:], y[1,:], "k--")
-  ylim(-Lx/2, Lx/2)
-  xlim(-2, 2)
-  title(L"zonal mean $\zeta$")
+  pζm = plot(ζ̄, y,
+            legend = false,
+         linewidth = 2,
+             alpha = 0.7,
+            yticks = -3:3,
+             xlims = (-2, 2),
+            xlabel = "zonal mean ζ",
+            ylabel = "y")
+  plot!(pζm, 0*y, y, linestyle=:dash, linecolor=:black)
 
-  sca(axs[4])
-  cla()
-  plot(Array(transpose(mean(v.u, dims=1))), y[1,:])
-  plot(0*y[1,:], y[1,:], "k--")
-  ylim(-Lx/2, Lx/2)
-  xlim(-0.5, 0.5)
-  title(L"zonal mean $u$")
+  pum = plot(ū, y,
+            legend = false,
+         linewidth = 2,
+             alpha = 0.7,
+            yticks = -3:3,
+             xlims = (-0.5, 0.5),
+            xlabel = "zonal mean u",
+            ylabel = "y")
+  plot!(pum, 0*y, y, linestyle=:dash, linecolor=:black)
+
+  l = @layout grid(2, 2)
+  p = plot(pζ, pζm, pψ, pum, layout = l, size = (900, 800))
+  
+  return p
 end
 nothing # hide
 
@@ -181,24 +208,31 @@ nothing # hide
 
 startwalltime = time()
 
-while cl.step < nsteps
-  stepforward!(prob, diags, nsubs)
-  
+p = plot_output(prob)
+
+anim = @animate for j=0:Int(nsteps/nsubs)
+
   log = @sprintf("step: %04d, t: %d, E: %.4f, Q: %.4f, walltime: %.2f min",
     cl.step, cl.t, E.data[E.i], Z.data[Z.i], (time()-startwalltime)/60)
 
-  println(log)
+  if j%(1000/nsubs)==0; println(log) end  
+
+
+  p[1][1][:z] = Array(vs.zeta)
+  p[1][:title] = "vorticity, t="*@sprintf("%.2f", cl.t)
+  p[3][1][:z] = Array(vs.psi)
+  p[2][1][:x] = mean(vs.zeta, dims=1)'
+  p[4][1][:x] = mean(vs.u, dims=1)'
+
+  stepforward!(prob, diags, nsubs)
+  BarotropicQG.updatevars!(prob)
+
 end
-println("finished")
 
+mp4(anim, "barotropicqg_betadecay.mp4", fps=14)
 
-# ## Plot
-# Now let's see what we got. We plot the output,
+# ## Save
 
-fig, axs = subplots(ncols=2, nrows=2, figsize=(10, 7), dpi=200)
-plot_output(prob, fig, axs; drawcolorbar=true)
-gcf() # hide
-
-# and finally save the figure
+# Finally save the last snapshot.
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename)
