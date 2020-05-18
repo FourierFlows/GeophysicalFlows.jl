@@ -13,7 +13,7 @@
 # $\partial_t U = F - \mu U -  \langle\psi\partial_x\eta\rangle$.
 
 
-using FourierFlows, PyPlot, Printf
+using FourierFlows, Plots, Printf
 
 using FFTW: irfft
 
@@ -28,11 +28,11 @@ nothing # hide
 
 
 # ## Numerical parameters and time-stepping parameters
-nx  = 128      # 2D resolution = nx^2
-stepper = "ETDRK4"   # timestepper
-dt  = 1e-1     # timestep
-nsteps = 10000 # total number of time-steps
-nsubs  = 2500  # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
+     nx = 128            # 2D resolution = nx^2
+stepper = "FilteredRK4"  # timestepper
+    dt  = 0.1            # timestep
+ nsteps = 10000          # total number of time-steps
+ nsubs  = 25             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
@@ -48,7 +48,7 @@ f0 = -1.0      # Coriolis parameter
 nothing # hide
 
 # Define the topographic potential vorticity, $f_0 h(x, y)/H$
-topoPV(x, y) = @. 2*cos(4x)*cos(4y)
+topoPV(x, y) = 2cos(4x)*cos(4y)
 nothing # hide
 
 # and the forcing function $F$ (here forcing is constant in time) that acts on the domain-averaged $U$ equation.
@@ -63,15 +63,15 @@ prob = BarotropicQG.Problem(nx=nx, Lx=Lx, f0=f0, β=β, eta=topoPV,
 nothing # hide
 
 # and define some shortcuts.
-sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-x, y = gridpoints(g)
+sol, cl, vs, pr, gr = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+x, y = gr.x, gr.y
 nothing # hide
 
 
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
-BarotropicQG.set_zeta!(prob, 0*x)
+BarotropicQG.set_zeta!(prob, zeros(gr.nx, gr.ny))
 
 
 # ## Diagnostics
@@ -101,7 +101,7 @@ nothing # hide
 
 # and then create Output.
 get_sol(prob) = sol # extracts the Fourier-transformed solution
-get_u(prob) = irfft(im*g.lr.*g.invKrsq.*sol, g.nx)
+get_u(prob) = irfft(im*gr.lr.*gr.invKrsq.*sol, gr.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 nothing # hide
 
@@ -111,38 +111,41 @@ nothing # hide
 # We define a function that plots the potential vorticity field and the evolution 
 # of energy and enstrophy.
 
-function plot_output(prob, fig, axs; drawcolorbar=false)
+function plot_output(prob)
 
-  sol, v, p, g = prob.sol, prob.vars, prob.params, prob.grid
-  BarotropicQG.updatevars!(prob)
+  pq = heatmap(x, y, vs.q,
+                 c = :balance,
+              clim = (-2, 2),
+       aspectratio = 1,
+             xlims = (-gr.Lx/2, gr.Lx/2),
+             ylims = (-gr.Ly/2, gr.Ly/2),
+            xticks = -3:3,
+            yticks = -3:3,
+            xlabel = "x",
+            ylabel = "y",
+             title = "∇²ψ + η",
+        framestyle = :box)
 
-  sca(axs[1])
-  pcolormesh(x, y, v.q)
-  axis("square")
-  xticks(-2:2)
-  yticks(-2:2)
-  title(L"$\nabla^2\psi + \eta$")
-  if drawcolorbar==true
-    colorbar()
-  end
+  pE = plot(2,
+             label = ["eddy energy" "mean energy"],
+         linewidth = 2,
+             alpha = 0.7,
+             xlims = (-0.1, 10.1),
+             ylims = (0, 0.0008),
+            xlabel = "μt")
+          
+  pQ = plot(2,
+             label = ["eddy enstrophy" "mean enstrophy"],
+         linewidth = 2,
+             alpha = 0.7,
+             xlims = (-0.1, 10.1),
+             ylims = (-0.02, 0.12),
+            xlabel = "μt")
 
-  sca(axs[2])
-  cla()
-  plot(μ*E.t[1:E.i], E.data[1:E.i], label=L"$E_{\psi}$")
-  plot(μ*E.t[1:Emean.i], Emean.data[1:Emean.i], label=L"$E_U$")
+  l = @layout [ a{0.5w} grid(2, 1) ]
+  p = plot(pq, pE, pQ, layout=l, size = (900, 600))
 
-  xlabel(L"\mu t")
-  ylabel("energy")
-  legend()
-
-  sca(axs[3])
-  cla()
-  plot(μ*Q.t[1:Q.i], Q.data[1:Q.i], label=L"$Q_{\psi}$")
-  plot(μ*Qmean.t[1:Qmean.i], Qmean.data[1:Qmean.i], label=L"$Q_U$")
-  xlabel(L"\mu t")
-  ylabel("potential enstrophy")
-  legend()
-  tight_layout(w_pad=0.1)
+  return p
 end
 nothing # hide
 
@@ -151,29 +154,38 @@ nothing # hide
 
 # We time-step the `Problem` forward in time.
 
+p = plot_output(prob)
+
 startwalltime = time()
 
-while cl.step < nsteps
-  stepforward!(prob, diags, nsubs)
+anim = @animate for j=0:Int(nsteps/nsubs)
   
-  cfl = cl.dt*maximum([maximum(v.U.+v.u)/g.dx, maximum(v.v)/g.dy])
+  cfl = cl.dt*maximum([maximum(vs.U.+vs.u)/gr.dx, maximum(vs.v)/gr.dy])
   
   log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, walltime: %.2f min",
     cl.step, cl.t, cfl, E.data[E.i], Q.data[Q.i], (time()-startwalltime)/60)
+  
+  if j%(2000/nsubs)==0; println(log) end
+  
+  p[1][1][:z] = Array(vs.q)
+  p[1][:title] = "∇²ψ + η, μt="*@sprintf("%.2f", μ*cl.t)
+  push!(p[2][1], μ*E.t[E.i], E.data[E.i])
+  push!(p[2][2], μ*Emean.t[Emean.i], Emean.data[Emean.i])
+  push!(p[3][1], μ*Q.t[Q.i], Q.data[Q.i])
+  push!(p[3][2], μ*Qmean.t[Qmean.i], Qmean.data[Qmean.i])
 
-  println(log)
+  stepforward!(prob, diags, nsubs)
+  BarotropicQG.updatevars!(prob)
+
 end
-println("finished")
 
-
-# ## Plot
-# Now let's see what we got. We plot the output,
-
-fig, axs = subplots(ncols=3, nrows=1, figsize=(15, 4), dpi=200)
-plot_output(prob, fig, axs; drawcolorbar=true)
-gcf() # hide
+mp4(anim, "barotropicqg_acc.mp4", fps=18)
 
 # Note that since mean flow enstrophy is $Q_U = \beta U$ it can attain negative values. 
-# Finally we save the figure.
+
+
+# ## Save
+
+# Finally save the last snapshot.
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
 savefig(savename)

@@ -62,8 +62,8 @@ k = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl] # a 2D grid with the zonal wavenumber
 
 Random.seed!(1234)
 qih = randn(Complex{eltype(gr)}, size(sol))
-qih[ gr.Krsq .< (8*2π /gr.Lx)^2] .= 0
-qih[ gr.Krsq .> (10*2π/gr.Lx)^2] .= 0
+qih[ gr.Krsq .< (8*2π /gr.Lx)^2 ] .= 0
+qih[ gr.Krsq .> (10*2π/gr.Lx)^2 ] .= 0
 qih[ k .== 0 ] .= 0 # remove any power from k=0 component
 Ein = energy(qih, gr)  # compute energy of qi
 qih = qih*sqrt(E0/Ein) # normalize qi to have energy E0
@@ -162,6 +162,7 @@ function plot_output(prob)
 
   pψ = contourf(x, y, ψ,
        aspectratio = 1,
+            legend = false,
                  c = :viridis,
             levels = range(-0.65, stop=0.65, length=10), 
               clim = (-0.65, 0.65),
