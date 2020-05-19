@@ -3,7 +3,7 @@
 #md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_decaying.ipynb).
 #md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_decaying.ipynb).
 #
-# A simulations of decaying two-dimensional turbulence.
+# A simulation of decaying two-dimensional turbulence.
 
 using FourierFlows, Printf, Random, Plots
  
@@ -25,13 +25,13 @@ nothing # hide
 #
 # First, we pick some numerical and physical parameters for our model.
 
-n, L  = 256, 2π             # grid resolution and domain length
+n, L  = 128, 2π             # grid resolution and domain length
 nothing # hide
 
 ## Then we pick the time-stepper parameters
-    dt = 5e-3  # timestep
-nsteps = 8000  # total number of steps
- nsubs = 40    # number of steps between each plot
+    dt = 1e-2  # timestep
+nsteps = 4000  # total number of steps
+ nsubs = 20    # number of steps between each plot
 nothing # hide
 
 
@@ -108,30 +108,30 @@ nothing # hide
 # We initialize a plot with the vorticity field and the time-series of
 # energy and enstrophy diagnostics.
 
-l = @layout grid(1, 2)
-
 p1 = heatmap(x, y, vs.zeta,
-          aspectratio = 1,
-               c = :balance,
-            clim = (-40, 40),
-           xlims = (-L/2, L/2),
-           ylims = (-L/2, L/2),
-          xticks = -3:3,
-          yticks = -3:3,
-          xlabel = "x",
-          ylabel = "y",
-           title = "vorticity, t="*@sprintf("%.2f", cl.t),
-      framestyle = :box)
+         aspectratio = 1,
+                   c = :balance,
+                clim = (-40, 40),
+               xlims = (-L/2, L/2),
+               ylims = (-L/2, L/2),
+              xticks = -3:3,
+              yticks = -3:3,
+              xlabel = "x",
+              ylabel = "y",
+               title = "vorticity, t="*@sprintf("%.2f", cl.t),
+          framestyle = :box)
 
 p2 = plot(2, # this means "a plot with two series"
-         label=["energy E(t)/E(0)" "enstrophy Z(t)/Z(0)"],
-         linewidth=2,
-         alpha=0.7,
-         xlabel = "t",
-         xlims = (0, 41),
-         ylims = (0, 1.1))
+               label = ["energy E(t)/E(0)" "enstrophy Z(t)/Z(0)"],
+              legend = :right,
+           linewidth = 2,
+               alpha = 0.7,
+              xlabel = "t",
+               xlims = (0, 41),
+               ylims = (0, 1.1))
 
-p = plot(p1, p2, layout=l, size = (900, 400))
+l = @layout grid(1, 2)
+p = plot(p1, p2, layout = l, size = (900, 400))
 
 
 # ## Time-stepping the `Problem` forward
@@ -156,7 +156,6 @@ anim = @animate for j = 0:Int(nsteps/nsubs)
   TwoDNavierStokes.updatevars!(prob)  
   
 end
-println("finished")
 
 mp4(anim, "twodturb.mp4", fps=18)
 
@@ -179,8 +178,9 @@ nothing # hide
 plot(kr, abs.(Ehr),
     linewidth = 2,
         alpha = 0.7,
-       xlabel = "kᵣ", ylabel = "∫ |Ê| kᵣ dk_θ",
+       xlabel = "kᵣ", ylabel = "∫ |Ê| kᵣ dk_θ",
         xlims = (5e-1, gr.nx),
        xscale = :log10, yscale = :log10,
         title = "Radial energy spectrum",
        legend = false)
+       

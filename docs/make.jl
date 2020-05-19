@@ -4,7 +4,6 @@ using
   Documenter,
   Literate,
   Plots,  # to not capture precompilation output
-  PyPlot, # to not capture precompilation output
   GeophysicalFlows,
   GeophysicalFlows.TwoDNavierStokes
 
