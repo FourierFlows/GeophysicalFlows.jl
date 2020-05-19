@@ -134,11 +134,13 @@ struct Vars{Ascalar, Aphys, Atrans, F, P} <: BarotropicQGVars
       psi :: Aphys
         u :: Aphys
         v :: Aphys
+     temp :: Aphys
        qh :: Atrans
     zetah :: Atrans
      psih :: Atrans
        uh :: Atrans
        vh :: Atrans
+    temph :: Atrans
       Fqh :: F
   prevsol :: P
 end
@@ -153,9 +155,9 @@ Returns the vars for unforced two-dimensional barotropic QG problem on device de
 """
 function Vars(dev::Dev, g::AbstractGrid{T}) where {Dev, T}
   U = ArrayType(dev, T, 0)(undef, ); U[] = 0
-  @devzeros Dev T (g.nx, g.ny) q u v psi zeta
-  @devzeros Dev Complex{T} (g.nkr, g.nl) qh uh vh psih zetah
-  Vars(U, q, zeta, psi, u, v, qh, zetah, psih, uh, vh, nothing, nothing)
+  @devzeros Dev T (g.nx, g.ny) q u v psi zeta temp
+  @devzeros Dev Complex{T} (g.nkr, g.nl) qh uh vh psih zetah temph
+  Vars(U, q, zeta, psi, u, v, temp, qh, zetah, psih, uh, vh, temph, nothing, nothing)
 end
 
 """
@@ -165,9 +167,9 @@ Returns the vars for forced two-dimensional barotropic QG problem on device dev 
 """
 function ForcedVars(dev::Dev, g::AbstractGrid{T}) where {Dev, T}
   U = ArrayType(dev, T, 0)(undef, ); U[] = 0
-  @devzeros Dev T (g.nx, g.ny) q u v psi zeta
-  @devzeros Dev Complex{T} (g.nkr, g.nl) qh uh vh psih zetah Fqh
-  Vars(U, q, zeta, psi, u, v, qh, zetah, psih, uh, vh, Fqh, nothing)
+  @devzeros Dev T (g.nx, g.ny) q u v psi zeta temp
+  @devzeros Dev Complex{T} (g.nkr, g.nl) qh uh vh psih zetah temph Fqh
+  Vars(U, q, zeta, psi, u, v, temp, qh, zetah, psih, uh, vh, temph, Fqh, nothing)
 end
 
 """
@@ -177,9 +179,9 @@ Returns the vars for stochastically forced two-dimensional barotropic QG problem
 """
 function StochasticForcedVars(dev::Dev, g::AbstractGrid{T}) where {Dev, T}
   U = ArrayType(dev, T, 0)(undef, ); U[] = 0
-  @devzeros Dev T (g.nx, g.ny) q u v psi zeta
-  @devzeros Dev Complex{T} (g.nkr, g.nl) qh uh vh psih zetah Fqh prevsol
-  Vars(U, q, zeta, psi, u, v, qh, zetah, psih, uh, vh, Fqh, prevsol)
+  @devzeros Dev T (g.nx, g.ny) q u v psi zeta temp
+  @devzeros Dev Complex{T} (g.nkr, g.nl) qh uh vh psih zetah temph Fqh prevsol
+  Vars(U, q, zeta, psi, u, v, temp, qh, zetah, psih, uh, vh, temph, Fqh, prevsol)
 end
 
 
@@ -198,18 +200,22 @@ function calcN_advection!(N, sol, t, cl, v, p, g)
 
   ldiv!(v.zeta, g.rfftplan, v.zetah)
   ldiv!(v.u, g.rfftplan, v.uh)
-  v.psih .= v.vh # FFTW's irfft destroys its input; v.vh is needed for N[1, 1]
-  ldiv!(v.v, g.rfftplan, v.psih)
+  v.temph .= v.vh # FFTW's irfft destroys its input; v.vh is needed for N[1, 1]
+  ldiv!(v.v, g.rfftplan, v.temph)
 
   @. v.q = v.zeta + p.eta
-  @. v.u = (v.U[] + v.u)*v.q # (U+u)*q
-  @. v.v = v.v*v.q # v*q
-
-  mul!(v.uh, g.rfftplan, v.u) # \hat{(u+U)*q}
+  
+  @. v.temp = (v.U[] + v.u)*v.q # (U+u)*q
+  mul!(v.temph, g.rfftplan, v.temp) # \hat{(u+U)*q}
+  
   # Nonlinear advection term for q (part 1)
-  @. N = -im*g.kr*v.uh # -∂[(U+u)q]/∂x
-  mul!(v.uh, g.rfftplan, v.v) # \hat{v*q}
-  @. N += - im*g.l*v.uh # -∂[vq]/∂y
+  @. N = -im*g.kr*v.temph # -∂[(U+u)q]/∂x
+
+  @. v.temp = v.v*v.q # v*q
+  mul!(v.temph, g.rfftplan, v.temp) # \hat{v*q}
+  
+  # Nonlinear advection term for q (part 2)
+  @. N += - im*g.l*v.temph # -∂[vq]/∂y
 end
 
 function calcN!(N, sol, t, cl, v, p, g)
@@ -217,9 +223,9 @@ function calcN!(N, sol, t, cl, v, p, g)
   addforcing!(N, sol, t, cl, v, p, g)
   if p.calcFU != nothingfunction
     # 'Nonlinear' term for U with topographic correlation.
-    # Note: < v*eta > = sum( conj(vh)*eta ) / (nx^2*ny^2) if fft is used
-    # while < v*eta > = 2*sum( conj(vh)*eta ) / (nx^2*ny^2) if rfft is used
-    N[1, 1] = p.calcFU(t) + 2*sum(conj(v.vh).*p.etah).re / (g.nx^2.0*g.ny^2.0)
+    # Note: < v*η > = sum( conj(vh)*η ) / (nx^2*ny^2) if fft is used
+    # while < v*η > = 2*sum( conj(vh)*η ) / (nx^2*ny^2) if rfft is used
+    N[1, 1] = p.calcFU(t) + 2*sum(conj(v.vh).*p.etah).re / (g.nx^2*g.ny^2)
   end
   nothing
 end
@@ -380,7 +386,7 @@ Returns the domain-averaged rate of work of energy by the forcing Fqh.
 end
 
 @inline function work(sol, v::StochasticForcedVars, g)
-  @. v.uh = g.invKrsq * (v.prevsol + sol)/2.0 * conj(v.Fqh) # Stratonovich
+  @. v.uh = g.invKrsq * (v.prevsol + sol)/2 * conj(v.Fqh) # Stratonovich
   # @. v.uh = g.invKrsq * v.prevsol * conj(v.Fqh)             # Ito
   1/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
 end
