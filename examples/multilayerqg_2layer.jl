@@ -54,8 +54,14 @@ nothing # hide
 
 # ## Setting initial conditions
 
-# Our initial condition is some small amplitude random noise.
-MultilayerQG.set_q!(prob, 4e-3randn((nx, ny, nlayers)))
+# Our initial condition is some small amplitude random noise. We smooth our initial
+# condidtion using the `timestepper`'s high-wavenumber `filter`.
+
+q_i  = 4e-3randn((nx, ny, nlayers))
+qh_i = prob.timestepper.filter .* rfft(q_i, (1, 2)) # only apply rfft in dims=1, 2
+q_i  = irfft(qh_i, gr.nx, (1, 2)) # only apply irfft in dims=1, 2
+
+MultilayerQG.set_q!(prob, q_i)
 nothing # hide
 
 
@@ -104,8 +110,8 @@ function plot_output(prob)
   l = @layout grid(2, 3)
   p = plot(layout=l, size = (1000, 600), dpi=150)
   
-  for j in 1:nlayers
-    heatmap!(p[(j-1)*3+1], x, y, vs.q[:, :, j],
+  for m in 1:nlayers
+    heatmap!(p[(m-1)*3+1], x, y, vs.q[:, :, m],
          aspectratio = 1,
               legend = false,
                    c = :balance,
@@ -115,10 +121,10 @@ function plot_output(prob)
               yticks = -3:3,
               xlabel = "x",
               ylabel = "y",
-               title = "q_"*string(j),
+               title = "q_"*string(m),
           framestyle = :box)
 
-    heatmap!(p[(j-1)*3+2], x, y, vs.psi[:, :, j],
+    heatmap!(p[(m-1)*3+2], x, y, vs.psi[:, :, m],
          aspectratio = 1,
               legend = false,
                    c = :viridis,
@@ -128,7 +134,7 @@ function plot_output(prob)
               yticks = -3:3,
               xlabel = "x",
               ylabel = "y",
-               title = "ψ_"*string(j),
+               title = "ψ_"*string(m),
           framestyle = :box)
   end
 
@@ -176,8 +182,8 @@ anim = @animate for j=0:Int(nsteps/nsubs)
   if j%(1000/nsubs)==0; println(log) end
   
   for m in 1:nlayers
-    p[m][1][:z] = @. vs.q[:, :, m]
-    p[m+nlayers+1][1][:z] = @. vs.psi[:, :, m]
+    p[(m-1)*3+1][1][:z] = @. vs.q[:, :, m]
+    p[(m-1)*3+2][1][:z] = @. vs.psi[:, :, m]
   end
   
   push!(p[3][1], μ*E.t[E.i], E.data[E.i][1][1])
