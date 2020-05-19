@@ -340,9 +340,9 @@ energy(prob) = energy(prob.sol, prob.grid)
 Returns the domain-averaged enstrophy of sol.
 """
 function enstrophy(sol, g::AbstractGrid, v::AbstractVars)
-  @. v.uh = sol
-  v.uh[1, 1] = 0
-  0.5*parsevalsum2(v.uh, g)/(g.Lx*g.Ly)
+  @. v.temph = sol
+  v.temph[1, 1] = 0
+  0.5*parsevalsum2(v.temph, g)/(g.Lx*g.Ly)
 end
 enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
 
@@ -367,9 +367,9 @@ meanenstrophy(prob) = real(prob.params.β*prob.sol[1, 1])
 Returns the domain-averaged dissipation rate. nν must be >= 1.
 """
 @inline function dissipation(sol, v, p, g)
-  @. v.uh = g.Krsq^(p.nν-1) * abs2(sol)
-  v.uh[1, 1] = 0
-  p.ν/(g.Lx*g.Ly)*parsevalsum(v.uh, g)
+  @. v.temph = g.Krsq^(p.nν-1) * abs2(sol)
+  v.temph[1, 1] = 0
+  p.ν/(g.Lx*g.Ly)*parsevalsum(v.temph, g)
 end
 
 @inline dissipation(prob) = dissipation(prob.sol, prob.vars, prob.params, prob.grid)
