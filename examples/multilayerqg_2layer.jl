@@ -125,7 +125,8 @@ function plot_output(prob)
                title = "q_"*string(m),
           framestyle = :box)
 
-    heatmap!(p[(m-1)*3+2], x, y, vs.psi[:, :, m],
+    contourf!(p[(m-1)*3+2], x, y, vs.psi[:, :, m],
+              levels = 8,
          aspectratio = 1,
               legend = false,
                    c = :viridis,
