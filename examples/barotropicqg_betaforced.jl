@@ -67,10 +67,12 @@ forcing_spectrum = @. exp( -(sqrt(gr.Krsq)-forcing_wavenumber)^2 / (2forcing_ban
 seed!(1234) # reset of the random number generator for reproducibility
 nothing # hide
 
+# const temp = ArrayType(dev)(zeros(size(forcing_spectrum)))
+
 # Next we construct function `calcF!` that computes a forcing realization every timestep
 function calcFq!(Fh, sol, t, clock, vars, params, grid)
-  rand!(vars.temp)
-  @. Fh = sqrt(forcing_spectrum) * exp(2π*im*temp) / sqrt(clock.dt)
+  randn!(vars.temph)
+  @. Fh = sqrt(forcing_spectrum) * vars.temph / sqrt(clock.dt)
   nothing
 end
 nothing # hide
