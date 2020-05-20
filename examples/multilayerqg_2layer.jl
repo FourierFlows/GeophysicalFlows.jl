@@ -9,6 +9,7 @@
 
 using FourierFlows, Plots, Printf
 
+using FFTW: rfft, irfft
 import GeophysicalFlows.MultilayerQG
 import GeophysicalFlows.MultilayerQG: energies
 
