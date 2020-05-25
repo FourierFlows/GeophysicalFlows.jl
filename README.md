@@ -16,8 +16,10 @@
     <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/">
         <img src="https://img.shields.io/badge/docs-dev-blue.svg">
     </a>
+    <!-- removes coveralls since it does not report GPU coverage via gitlab/JuliaGPU
     <a href='https://coveralls.io/github/FourierFlows/GeophysicalFlows.jl?branch=master'><img src='https://coveralls.io/repos/github/FourierFlows/GeophysicalFlows.jl/badge.svg?branch=master' alt='Coverage Status' />
     </a>
+    -->
     <a href="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl">
         <img src="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl/branch/master/graph/badge.svg" />
     </a>
