@@ -50,7 +50,6 @@ format = Documenter.HTML(
       canonical = "https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/"
 )
 
-
 makedocs(
  modules = [GeophysicalFlows],
  doctest = false,
@@ -93,6 +92,6 @@ sitename = "GeophysicalFlows.jl",
 withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
   deploydocs(        repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
                 versions = ["stable" => "v^", "v#.#.#"],
-            push_preview = true,
+            push_preview = true
             )
 end
