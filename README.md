@@ -10,10 +10,10 @@
     <a href="https://ci.appveyor.com/project/navidcy/geophysicalflows-jl">
         <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/geophysicalflows-jl/master?label=Window&logo=appveyor&logoColor=white&style=flat-square">
     </a>
-    <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation.jl/stable/">
+    <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/">
         <img src="https://img.shields.io/badge/docs-stable-blue.svg">
     </a>
-    <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation.jl/dev/">
+    <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/">
         <img src="https://img.shields.io/badge/docs-dev-blue.svg">
     </a>
     <a href='https://coveralls.io/github/FourierFlows/GeophysicalFlows.jl?branch=master'><img src='https://coveralls.io/repos/github/FourierFlows/GeophysicalFlows.jl/badge.svg?branch=master' alt='Coverage Status' />
