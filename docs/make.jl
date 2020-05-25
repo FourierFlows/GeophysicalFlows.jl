@@ -47,9 +47,8 @@ Timer(t -> println(" "), 0, interval=240)
 format = Documenter.HTML(
   collapselevel = 2,
      prettyurls = get(ENV, "CI", nothing) == "true",
-      canonical = "https://fourierflows.github.io/GeophysicalFlows.jl/dev/"
+      canonical = "https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/"
 )
-
 
 makedocs(
  modules = [GeophysicalFlows],
@@ -90,6 +89,9 @@ sitename = "GeophysicalFlows.jl",
            ]
 )
 
-deploydocs(        repo = "github.com/FourierFlows/GeophysicalFlows.jl.git",
-               versions = ["stable" => "v^", "v#.#.#"]
-           )
+withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
+  deploydocs(        repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
+                versions = ["stable" => "v^", "v#.#.#"],
+            push_preview = true
+            )
+end
