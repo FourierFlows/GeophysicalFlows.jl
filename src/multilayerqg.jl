@@ -167,7 +167,7 @@ function Params(nlayers, g, f0, β, ρ, H, U::Array{T,1}, eta, μ, ν, nν, grid
     U = reshape(U, (1, nlayers))
     U = repeat(U, outer=(grid.ny, 1))
   else
-    U = reshape(U, (ny, 1))
+    U = reshape(U, (grid.ny, 1))
   end
   
   return Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=calcFq, effort=effort)
@@ -182,24 +182,22 @@ numberoflayers(params::P) where P = P<:SingleLayerParams ? 1 : params.nlayers
 # Equations
 # ---------
 
-function hyperdissipation(ν, nν, Krsq, nkr, nl, nlayers, T)
-  L = Array{Complex{T}}(undef, (nkr, nl, nlayers))
-  @. L = -ν*Krsq^nν
+function hyperdissipation(params, grid::AbstractGrid{T}) where T
+  L = Array{Complex{T}}(undef, (grid.nkr, grid.nl, numberoflayers(params)))
+  @. L = - params.ν * grid.Krsq^params.nν
   @views @. L[1, 1, :] = 0
   return L
 end
 
-hyperdissipation(params, grid::AbstractGrid{T}) where T = hyperdissipation(params.ν, params.nν, grid.Krsq, grid.nkr, grid.nl, numberoflayers(params), T)
-
 function LinearEquation(params, grid::AbstractGrid{T}) where T
   nlayers = numberoflayers(params)
-  L = hyperdissipation(params.ν, params.nν, grid.Krsq, grid.nkr, grid.nl, nlayers, T)
+  L = hyperdissipation(params, grid)
   return FourierFlows.Equation(L, calcNlinear!, grid)
 end
 
 function Equation(params, grid::AbstractGrid{T}) where T
   nlayers = numberoflayers(params)
-  L = hyperdissipation(params.ν, params.nν, grid.Krsq, grid.nkr, grid.nl, nlayers, T)
+  L = hyperdissipation(params, grid)
   return FourierFlows.Equation(L, calcN!, grid)
 end
 
