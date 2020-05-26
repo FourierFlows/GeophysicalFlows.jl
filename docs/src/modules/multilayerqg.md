@@ -10,7 +10,7 @@ The QGPV in each layer is
 \mathrm{QGPV}_j = q_j  + \underbrace{f_0+\beta y}_{\textrm{planetary PV}} + \delta_{j,n}\underbrace{\frac{f_0 h}{H_n}}_{\textrm{topographic PV}},\quad j=1,...,n.
 ```
 
-where
+where $q_j$ incorporate the relative vorticity in each layer $\nabla^2\psi_j$ and the vortex stretching terms:
 
 ```math
 q_1 = \nabla^2\psi_1 + F_{3/2, 1} (\psi_2-\psi_1),\\
@@ -25,7 +25,7 @@ F_{j+1/2, k} = \frac{f_0^2}{g'_{j+1/2} H_k}\quad\text{and}\quad
 g'_{j+1/2} = g\frac{\rho_{j+1}-\rho_j}{\rho_{j+1}} .
 ```
 
-Therefore, in Fourier space the $q$'s and $\psi$'s are related through
+In view of the relationships above, when we convert to Fourier space $q$'s and $\psi$'s are related via the matrix equation
 
 ```math
 \begin{pmatrix} \widehat{q}_{\boldsymbol{k},1}\\\vdots\\\widehat{q}_{\boldsymbol{k},n} \end{pmatrix} =
@@ -86,14 +86,13 @@ while the vertical fluxes accros fluid interfaces are:
 
 ### Implementation
 
-Matrices $\mathbb{S}_{\boldsymbol{k}}$ as well as $\mathbb{S}^{-1}_{\boldsymbol{k}}$ are included in `params` as `params.S` and `params.invS` respectively.
+Matrices $\mathbb{S}_{\boldsymbol{k}}$ as well as $\mathbb{S}^{-1}_{\boldsymbol{k}}$ are included in `params` as `params.S` and `params.invS` respectively. Additionally, 
+the background PV gradients $\partial_x Q$ and $\partial_y Q$ are also included in the `params` as `params.Qx` and `params.Qy`.
 
-You can get $\widehat{\psi}_j$ from $\widehat{q}_j$ with `streamfunctionfrompv!(psih, qh, params, grid)`, while to go from $\widehat{\psi}_j$ back to $\widehat{q}_j$ `pvfromstreamfunction!(qh, psih, params, grid)`.
+You can get $\widehat{\psi}_j$ from $\widehat{q}_j$ with `streamfunctionfrompv!(psih, qh, params, grid)`, while to get $\widehat{q}_j$ from $\widehat{\psi}_j$ you need to call `pvfromstreamfunction!(qh, psih, params, grid)`.
 
 
-
-
-The equations are time-stepped forward in Fourier space:
+The equations of motion are time-stepped forward in Fourier space:
 
 ```math
 \partial_t \widehat{q}_j = - \widehat{\mathsf{J}(\psi_j, q_j)}  - \widehat{U_j \partial_x Q_j} - \widehat{U_j \partial_x q_j}
@@ -103,6 +102,7 @@ The equations are time-stepped forward in Fourier space:
 In doing so the Jacobian is computed in the conservative form: $\mathsf{J}(f,g) =
 \partial_y [ (\partial_x f) g] -\partial_x[ (\partial_y f) g]$.
 
+Equations are formulated using $q_j$ as the state variables, i.e., `sol=qh`.
 
 Thus:
 
@@ -113,4 +113,4 @@ $$\mathcal{N}(\widehat{q}_j) = - \widehat{\mathsf{J}(\psi_j, q_j)} - \widehat{U_
 
  ## Examples
 
- - `examples/multilayerqg_2layer.jl`: A script that simulates baroclinic eddy turbulence growth and equilibration of the Phillips 2-layer model..
+ - `examples/multilayerqg_2layer.jl`: A script that simulates baroclinic eddy turbulence growth and equilibration of the Phillips 2-layer model.
