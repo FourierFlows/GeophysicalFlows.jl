@@ -274,10 +274,6 @@ function streamfunctionfrompv!(ψh, qh, params::SingleLayerParams, grid)
   @. ψh = -grid.invKrsq * qh
 end
 
-function pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
-  @. qh = -grid.Krsq * ψh
-end
-
 """
     calcS!(S, Fp, Fm, grid)
 
