@@ -93,7 +93,7 @@ get_sol(prob) = sol # extracts the Fourier-transformed solution
 function get_u(prob)
   @. v.qh = sol
   streamfunctionfrompv!(v.ψh, v.qh, p, g)
-  @. v.uh = -im*g.l *v.ψh
+  @. v.uh = -im * g.l * v.ψh
   invtransform!(v.u, v.uh, p)
   return v.u
 end
