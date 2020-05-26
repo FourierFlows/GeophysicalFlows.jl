@@ -501,7 +501,7 @@ function test_mqg_rossbywave(stepper, dt, nsteps)
      q0 = @. ampl * cos(kwave*x) * cos(lwave*y)
      ψ0 = @. - q0 / (kwave^2+lwave^2)
 
-  MultilayerQG.set_q!(prob, reshape(q0, (g.nx, g.ny, nlayers)))
+  MultilayerQG.set_q!(prob, q0)
 
   stepforward!(prob, nsteps)
   dealias!(sol, g)
