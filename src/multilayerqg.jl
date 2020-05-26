@@ -138,11 +138,10 @@ function Params(nlayers, g, f0, β, ρ, H, U::Array{T,2}, eta, μ, ν, nν, grid
     ρ = reshape(ρ, (1,  1, nlayers))
     H = reshape(H, (1,  1, nlayers))
 
-  # g′ = g*(ρ[2:nlayers]-ρ[1:nlayers-1]) ./ ρ[1:nlayers-1] # definition match PYQG
-    g′ = g * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # correct definition
+    g′ = g * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface
 
-    Fm = @. f0^2 / ( g′*H[2:nlayers  ] )
-    Fp = @. f0^2 / ( g′*H[1:nlayers-1] )
+    Fm = @. f0^2 / ( g′ * H[2:nlayers  ] )
+    Fp = @. f0^2 / ( g′ * H[1:nlayers-1] )
 
     @views @. Qy[:, :, 1] -= Fp[1] * ( U[:, :, 2] - U[:, :, 1] )
     for j = 2:nlayers-1
@@ -306,7 +305,7 @@ function calcinvS!(invS, Fp, Fm, grid)
     @views invS[m, n, :, :] .= I / Skl
   end
   @views invS[1, 1, :, :] .= 0
-  nothing
+  return nothing
 end
 
 
@@ -319,7 +318,7 @@ function calcN!(N, sol, t, clock, vars, params, grid)
   calcN_advection!(N, sol, vars, params, grid)
   @views @. N[:, :, nlayers] += params.μ * grid.Krsq * vars.ψh[:, :, nlayers]   # bottom linear drag
   addforcing!(N, sol, t, clock, vars, params, grid)
-  nothing
+  return nothing
 end
 
 function calcNlinear!(N, sol, t, clock, vars, params, grid)
@@ -327,7 +326,7 @@ function calcNlinear!(N, sol, t, clock, vars, params, grid)
   calcN_linearadvection!(N, sol, vars, params, grid)
   @views @. N[:, :, nlayers] += params.μ * grid.Krsq * vars.ψh[:, :, nlayers]   # bottom linear drag
   addforcing!(N, sol, t, clock, vars, params, grid)
-  nothing
+  return nothing
 end
 
 """
@@ -400,7 +399,7 @@ function calcN_linearadvection!(N, sol, vars, params, grid)
 
   @. N -= im * grid.kr * vars.uh           # -∂[U*q]/∂x
 
-  nothing
+  return nothing
 end
 
 addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
@@ -408,7 +407,7 @@ addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
 function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
   params.calcFq!(vars.Fqh, sol, t, clock, vars, params, grid)
   @. N += vars.Fqh
-  nothing
+  return nothing
 end
 
 
@@ -417,13 +416,12 @@ end
 # ----------------
 
 """
+    updatevars!(params, vars, grid, sol)
     updatevars!(prob)
 
-Update `prob.vars` using `prob.sol`.
+Update all problem variables using `sol`.
 """
-function updatevars!(prob)
-  params, vars, grid, sol = prob.params, prob.vars, prob.grid, prob.sol
-
+function updatevars!(params, vars, grid, sol)
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
   @. vars.uh = -im * grid.l  * vars.ψh
@@ -436,47 +434,62 @@ function updatevars!(prob)
   return nothing
 end
 
+updatevars!(prob) = updatevars!(prob.params, prob.vars, prob.grid, prob.sol)
+
 
 """
+    set_q!(params, vars, grid, sol, q)
     set_q!(prob)
 
 Set the solution `prob.sol` as the transform of `q` and updates variables.
 """
-function set_q!(prob, q)
-  params, vars, sol = prob.params, prob.vars, prob.sol
-
+function set_q!(params, vars, grid, sol, q)
   fwdtransform!(vars.qh, q, params)
   @. vars.qh[1, 1, :] = 0
   @. sol = vars.qh
-
-  updatevars!(prob)
+  updatevars!(params, vars, grid, sol)
   return nothing
 end
 
+function set_q!(params::SingleLayerParams, vars, grid, sol, q::Array{T, 2}) where T
+  q_3D = reshape(q, (grid.nx, grid.ny, 1))
+  set_q!(params, vars, grid, sol, q_3D)
+  return nothing
+end
+
+set_q!(prob, q) = set_q!(prob.params, prob.vars, prob.grid, prob.sol, q)
+
 
 """
+    set_ψ!(params, vars, grid, sol, ψ)
     set_ψ!(prob)
 
-Set the solution `prob.sol` to correspond to a streamfunction `ψ` and
+Set the solution `prob.sol` to correspond to the transform of streamfunction `ψ` and
 updates variables.
 """
-function set_ψ!(prob, ψ)
-  params, vars, grid = prob.params, prob.vars, prob.grid
-
+function set_ψ!(params, vars, grid, sol, ψ)
   fwdtransform!(vars.ψh, ψ, params)
   pvfromstreamfunction!(vars.qh, vars.ψh, params, grid)
   invtransform!(vars.q, vars.qh, params)
-  set_q!(prob, vars.q)
-
+  set_q!(params, vars, grid, sol, vars.q)
   return nothing
 end
+
+function set_ψ!(params::SingleLayerParams, vars, grid, sol, ψ::Array{T, 2}) where T 
+  ψ_3D = reshape(ψ, (grid.nx, grid.ny, 1))
+  set_ψ!(params, vars, grid, sol, ψ_3D)
+  return nothing  
+end
+
+set_ψ!(prob, ψ) = set_ψ!(prob.params, prob.vars, prob.grid, prob.sol, ψ)
 
 
 """
     energies(prob)
 
-Returns the kinetic energy of each fluid layer KE_1,...,KE_nlayers, and the
-potential energy of each fluid interface PE_{3/2},...,PE_{nlayers-1/2}.
+Returns the kinetic energy of each fluid layer KE_1, ..., KE_nlayers, and the
+potential energy of each fluid interface PE_{3/2}, ..., PE_{nlayers-1/2}.
+(When `nlayers=1` only kinetic energy is returned.)
 """
 function energies(vars, params, grid, sol)
   nlayers = numberoflayers(params)
@@ -512,21 +525,21 @@ energies(prob) = energies(prob.vars, prob.params, prob.grid, prob.sol)
     fluxes(prob)
 
 Returns the lateral eddy fluxes within each fluid layer
-lateralfluxes_1,...,lateralfluxes_nlayers and also the vertical eddy fluxes for
-each fluid interface verticalfluxes_{3/2},...,verticalfluxes_{nlayers-1/2}
+lateralfluxes_1, ..., lateralfluxes_nlayers and also the vertical eddy fluxes for
+each fluid interface verticalfluxes_{3/2}, ..., verticalfluxes_{nlayers-1/2}.
+(When `nlayers=1` only the lateral fluxes are returned.)
 """
-function fluxes(prob)
-  vars, params, grid, sol = prob.vars, prob.params, prob.grid, prob.sol
+function fluxes(vars, params, grid, sol)
   nlayers = numberoflayers(params)
   
   lateralfluxes, verticalfluxes = zeros(nlayers), zeros(nlayers-1)
 
-  updatevars!(prob)
+  updatevars!(params, vars, grid, sol)
 
-  @. vars.uh = im * grid.l * vars.uh
+  @. vars.uh = im * grid.l * vars.uh      # ∂u/∂y
   invtransform!(vars.u, vars.uh, params)
 
-  lateralfluxes = (sum( @. params.H * params.U * vars.v * vars.u; dims=(1,2) ))[1, 1, :]
+  lateralfluxes = (sum( @. params.H * params.U * vars.v * vars.u; dims=(1, 2) ))[1, 1, :]
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   for j=1:nlayers-1
@@ -534,7 +547,21 @@ function fluxes(prob)
     verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
   end
 
-  lateralfluxes, verticalfluxes
+  return lateralfluxes, verticalfluxes
 end
+
+function fluxes(vars, params::SingleLayerParams, grid, sol)
+  updatevars!(params, vars, grid, sol)
+
+  @. vars.uh = im * grid.l * vars.uh
+  invtransform!(vars.u, vars.uh, params)
+
+  lateralfluxes = (sum( @. params.U * vars.v * vars.u; dims=(1, 2) ))[1, 1, :]
+  lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly)
+
+  return lateralfluxes
+end
+
+fluxes(prob) = fluxes(prob.vars, prob.params, prob.grid, prob.sol)
 
 end # module
