@@ -102,14 +102,16 @@ end
 
 @testset "MultilayerQG" begin
   include("test_multilayerqg.jl")
+  @test test_mqg_rossbywave("RK4", 1e-2, 20)
 
   @test test_pvtofromstreamfunction_2layer()
   @test test_pvtofromstreamfunction_3layer()
+  @test test_mqg_rossbywave("RK4", 1e-2, 20)
   @test test_mqg_nonlinearadvection(0.001, "ForwardEuler")
   @test test_mqg_linearadvection(0.001, "ForwardEuler")
   @test test_mqg_energies()
   @test test_mqg_fluxes()
-  @test test_mqg_setqsetpsi()
+  @test test_mqg_setqsetψ()
   @test test_mqg_paramsconstructor()
   @test test_mqg_problemtype(Float32)
   @test MultilayerQG.nothingfunction() == nothing

@@ -85,19 +85,19 @@ function test_pvtofromstreamfunction_2layer()
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
-  vs.psih[:, :, 1] .= rfft(ψ1)
-  vs.psih[:, :, 2] .= rfft(ψ2)
+  vs.ψh[:, :, 1] .= rfft(ψ1)
+  vs.ψh[:, :, 2] .= rfft(ψ2)
 
-  MultilayerQG.pvfromstreamfunction!(vs.qh, vs.psih, pr.S, gr)
+  MultilayerQG.pvfromstreamfunction!(vs.qh, vs.ψh, pr, gr)
   MultilayerQG.invtransform!(vs.q, vs.qh, pr)
 
   vs.qh[:, :, 1] .= rfft(q1)
   vs.qh[:, :, 2] .= rfft(q2)
 
-  MultilayerQG.streamfunctionfrompv!(vs.psih, vs.qh, pr.invS, gr)
-  MultilayerQG.invtransform!(vs.psi, vs.psih, pr)
+  MultilayerQG.streamfunctionfrompv!(vs.ψh, vs.qh, pr, gr)
+  MultilayerQG.invtransform!(vs.ψ, vs.ψh, pr)
 
-  isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) && isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) && isapprox(ψ1, vs.psi[:, :, 1], rtol=rtol_multilayerqg) && isapprox(ψ2, vs.psi[:, :, 2], rtol=rtol_multilayerqg)
+  isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) && isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) && isapprox(ψ1, vs.ψ[:, :, 1], rtol=rtol_multilayerqg) && isapprox(ψ2, vs.ψ[:, :, 2], rtol=rtol_multilayerqg)
 end
 
 
@@ -126,21 +126,21 @@ function test_pvtofromstreamfunction_3layer()
 
   ψ1, ψ2, ψ3, q1, q2, q3 = constructtestfields_3layer(gr)
 
-  vs.psih[:, :, 1] .= rfft(ψ1)
-  vs.psih[:, :, 2] .= rfft(ψ2)
-  vs.psih[:, :, 3] .= rfft(ψ3)
+  vs.ψh[:, :, 1] .= rfft(ψ1)
+  vs.ψh[:, :, 2] .= rfft(ψ2)
+  vs.ψh[:, :, 3] .= rfft(ψ3)
 
-  MultilayerQG.pvfromstreamfunction!(vs.qh, vs.psih, pr.S, gr)
+  MultilayerQG.pvfromstreamfunction!(vs.qh, vs.ψh, pr, gr)
   MultilayerQG.invtransform!(vs.q, vs.qh, pr)
 
   vs.qh[:, :, 1] .= rfft(q1)
   vs.qh[:, :, 2] .= rfft(q2)
   vs.qh[:, :, 3] .= rfft(q3)
 
-  MultilayerQG.streamfunctionfrompv!(vs.psih, vs.qh, pr.invS, gr)
-  MultilayerQG.invtransform!(vs.psi, vs.psih, pr)
+  MultilayerQG.streamfunctionfrompv!(vs.ψh, vs.qh, pr, gr)
+  MultilayerQG.invtransform!(vs.ψ, vs.ψh, pr)
 
-  isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) && isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) && isapprox(q3, vs.q[:, :, 3], rtol=rtol_multilayerqg) && isapprox(ψ1, vs.psi[:, :, 1], rtol=rtol_multilayerqg) && isapprox(ψ2, vs.psi[:, :, 2], rtol=rtol_multilayerqg) && isapprox(ψ3, vs.psi[:, :, 3], rtol=rtol_multilayerqg)
+  isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) && isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) && isapprox(q3, vs.q[:, :, 3], rtol=rtol_multilayerqg) && isapprox(ψ1, vs.ψ[:, :, 1], rtol=rtol_multilayerqg) && isapprox(ψ2, vs.ψ[:, :, 2], rtol=rtol_multilayerqg) && isapprox(ψ3, vs.ψ[:, :, 3], rtol=rtol_multilayerqg)
 end
 
 
@@ -185,13 +185,13 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, μ=0.
   μ, ν, nν = 0.1, 0.05, 1
 
   η0, σx, σy = 1.0, Lx/25, Ly/20
-  η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
+   η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
   ηx = @. -(x+Lx/8)/(σx^2) * η
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
-  Ff1 = FourierFlows.jacobian(ψ1, q1, gr)     + (β .- uyy1 .-   25*(U2.+u2.-U1.-u1) ).*ψ1x + (U1.+u1).*q1x - ν*Δq1
-  Ff2 = FourierFlows.jacobian(ψ2, q2 + η, gr) + (β .- uyy2 .- 25/4*(U1.+u1.-U2.-u2) ).*ψ2x + (U2.+u2).*(q2x + ηx) + μ*Δψ2 - ν*Δq2
+  Ff1 = FourierFlows.jacobian(ψ1, q1, gr)     + @. (β - uyy1 -   25*(U2+u2-U1-u1) )*ψ1x + (U1+u1)*q1x - ν*Δq1
+  Ff2 = FourierFlows.jacobian(ψ2, q2 + η, gr) + @. (β - uyy2 - 25/4*(U1+u1-U2-u2) )*ψ2x + (U2+u2)*(q2x + ηx) + μ*Δψ2 - ν*Δq2
 
   Ff = zeros(gr.nx, gr.ny, nlayers)
   Ff[:, :, 1] .= Ff1
@@ -223,7 +223,7 @@ function test_mqg_nonlinearadvection(dt, stepper; n=128, L=2π, nlayers=2, μ=0.
   stepforward!(prob, round(Int, nt))
   MultilayerQG.updatevars!(prob)
 
-  isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.psi, ψf, rtol=rtol_multilayerqg)
+  isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)
 end
 
 """
@@ -307,7 +307,7 @@ function test_mqg_linearadvection(dt, stepper; n=128, L=2π, nlayers=2, μ=0.0, 
   stepforward!(prob, round(Int, nt))
   MultilayerQG.updatevars!(prob)
 
-  isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.psi, ψf, rtol=rtol_multilayerqg)
+  isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)
 end
 
 """
@@ -374,19 +374,19 @@ function test_mqg_fluxes(; dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlaye
   ψ = zeros(gr.nx, gr.ny, nlayers)
   ψ[:, :, 1] .= ψ1
   ψ[:, :, 2] .= ψ2
-  MultilayerQG.set_psi!(prob, ψ)
+  MultilayerQG.set_ψ!(prob, ψ)
   lateralfluxes, verticalfluxes = MultilayerQG.fluxes(prob)
 
   isapprox(lateralfluxes[1], 0, atol=1e-12) && isapprox(lateralfluxes[2], 0, atol=1e-12) && isapprox(verticalfluxes[1], -0.04763511558, rtol=1e-6)
 end
 
 """
-    test_setqsetpsi(dt, stepper; kwargs...)
+    test_setqsetψ(dt, stepper; kwargs...)
 
-Tests the set_q!() and set_psi!() functions that initialize sol with a flow with
-given `q` or `psi` respectively.
+Tests the set_q!() and set_ψ!() functions that initialize sol with a flow with
+given `q` or `ψ` respectively.
 """
-function test_mqg_setqsetpsi(; dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+function test_mqg_setqsetψ(; dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 32, 34
   L = 2π
   gr = TwoDGrid(nx, L, ny, L)
@@ -409,10 +409,10 @@ function test_mqg_setqsetpsi(; dt=0.001, stepper="ForwardEuler", n=64, L=2π, nl
   f[:, :, 2] .= f2
 
   ψtest = zeros(size(f))
-  MultilayerQG.set_psi!(prob, f)
+  MultilayerQG.set_ψ!(prob, f)
   @. vs.qh = sol
-  MultilayerQG.streamfunctionfrompv!(vs.psih, vs.qh, pr.invS, gr)
-  MultilayerQG.invtransform!(ψtest, vs.psih, pr)
+  MultilayerQG.streamfunctionfrompv!(vs.ψh, vs.qh, pr, gr)
+  MultilayerQG.invtransform!(ψtest, vs.ψh, pr)
 
   qtest = zeros(size(f))
   MultilayerQG.set_q!(prob, f)
@@ -458,4 +458,33 @@ function test_mqg_problemtype(T=Float32)
   prob = MultilayerQG.Problem(nlayers=2, T=T)
 
   (typeof(prob.sol)==Array{Complex{T},3} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)==Array{T,3})
+end
+
+function test_mqg_rossbywave(stepper, dt, nsteps)
+  nx = 64
+  Lx = 2π
+   β = 2.0
+   U = 0.5
+
+  prob = MultilayerQG.Problem(nlayers=1, nx=nx, Lx=Lx, U=U, β=β, stepper=stepper, dt=dt)
+  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+
+  x, y = gridpoints(g)
+
+  # the Rossby wave initial condition
+   ampl = 1e-2
+  kwave, lwave = 3*2π/g.Lx, 2*2π/g.Ly
+      ω = kwave * ( U - p.β/(kwave^2 + lwave^2) ) # Doppler-shifted Rossby frequency
+     q0 = @. ampl*cos(kwave*x)*cos(lwave*y)
+    q0h = rfft(q0)
+
+  MultilayerQG.set_q!(prob, reshape(q0, (g.nx, g.ny, 1)))
+
+  stepforward!(prob, nsteps)
+  dealias!(sol, g)
+  MultilayerQG.updatevars!(prob)
+
+  q_theory = @. ampl*cos(kwave*(x - ω/kwave*cl.t)) * cos(lwave*y)
+
+  isapprox(q_theory, v.q, rtol=g.nx*g.ny*nsteps*1e-12)
 end

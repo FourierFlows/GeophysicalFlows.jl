@@ -88,7 +88,7 @@ while the vertical fluxes accros fluid interfaces are:
 
 Matrices $\mathbb{S}_{\boldsymbol{k}}$ as well as $\mathbb{S}^{-1}_{\boldsymbol{k}}$ are included in `params` as `params.S` and `params.invS` respectively.
 
-You can get $\widehat{\psi}_j$ from $\widehat{q}_j$ with `streamfunctionfrompv!(psih, qh, invS, grid)`, while to go from $\widehat{\psi}_j$ back to $\widehat{q}_j$ `pvfromstreamfunction!(qh, psih, S, grid)`.
+You can get $\widehat{\psi}_j$ from $\widehat{q}_j$ with `streamfunctionfrompv!(psih, qh, params, grid)`, while to go from $\widehat{\psi}_j$ back to $\widehat{q}_j$ `pvfromstreamfunction!(qh, psih, params, grid)`.
 
 
 

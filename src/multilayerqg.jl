@@ -1,5 +1,3 @@
-# TODO make sure that setting nlayers=1 works
-
 module MultilayerQG
 
 export
@@ -10,7 +8,7 @@ export
   updatevars!,
 
   set_q!,
-  set_psi!,
+  set_ψ!,
   energies,
   fluxes
 
@@ -59,7 +57,7 @@ function Problem(;
            T = Float64)
 
    grid = TwoDGrid(nx, Lx, ny, Ly; T=T)
-   params = Params(nlayers, g, f0, β, Array{T}(ρ), Array{T}(H), Array{T}(U), Array{T}(eta), μ, ν, nν, grid, calcFq=calcFq)
+   params = Params(nlayers, T.(g), T.(f0), T.(β), T.(ρ), T.(H), T.(U), T.(eta), T.(μ), T.(ν), nν, grid, calcFq=calcFq)
    vars = calcFq == nothingfunction ? Vars(grid, params) : ForcedVars(grid, params)
    eqn = linear ? LinearEquation(params, grid) : Equation(params, grid)
 
@@ -94,12 +92,8 @@ end
 
 struct SingleLayerParams{T} <: BarotropicParams
   # prescribed params
-         g :: T              # Gravitational constant
-        f0 :: T              # Constant planetary vorticity
          β :: T              # Planetary vorticity y-gradient
-         ρ :: T              # Fluid layer density
-         H :: T              # Fluid layer rest height
-         U :: Array{T,1}     # Imposed constant zonal flow U(y)
+         U :: Array{T,3}     # Imposed constant zonal flow U(y)
        eta :: Array{T,2}     # Array containing topographic PV
          μ :: T              # Linear bottom drag
          ν :: T              # Viscosity coefficient
@@ -107,9 +101,9 @@ struct SingleLayerParams{T} <: BarotropicParams
    calcFq! :: Function       # Function that calculates the forcing on QGPV q
 
   # derived params
-        Qx :: Array{T,2}     # Array containing x-gradient of PV due to eta in each fluid layer
-        Qy :: Array{T,2}     # Array containing meridional PV gradient due to β, U, and eta in each fluid layer
-  rfftplan :: FFTW.rFFTWPlan{T,-1,false,2}  # rfft plan for FFTs
+        Qx :: Array{T,3}     # Array containing x-gradient of PV due to eta
+        Qy :: Array{T,3}     # Array containing meridional PV gradient due to β, U, and eta
+  rfftplan :: FFTW.rFFTWPlan{T,-1,false,3}  # rfft plan for FFTs
 end
 
 function Params(nlayers, g, f0, β, ρ, H, U::Array{T,2}, eta, μ, ν, nν, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
@@ -119,54 +113,69 @@ function Params(nlayers, g, f0, β, ρ, H, U::Array{T,2}, eta, μ, ν, nν, grid
    kr, l  = grid.kr , grid.l
 
   U = reshape(U, (1, ny, nlayers))
-
-  # g′ = g*(ρ[2:nlayers]-ρ[1:nlayers-1]) ./ ρ[1:nlayers-1] # definition match PYQG
-  g′ = g*(ρ[2:nlayers]-ρ[1:nlayers-1]) ./ ρ[2:nlayers] # correct definition
-
-  Fm = @. f0^2 / ( g′*H[2:nlayers  ] )
-  Fp = @. f0^2 / ( g′*H[1:nlayers-1] )
-
-   ρ = reshape(ρ, (1,  1, nlayers))
-   H = reshape(H, (1,  1, nlayers))
-
+  
   Uyy = repeat(irfft( -l.^2 .* rfft(U, [1, 2]),  1, [1, 2]), outer=(1, 1, 1))
   Uyy = repeat(Uyy, outer=(nx, 1, 1))
 
   etah = rfft(eta)
-  etax = irfft(im*kr.*etah, nx)
-  etay = irfft(im*l .*etah, nx)
+  etax = irfft(im * kr .* etah, nx)
+  etay = irfft(im * l  .* etah, nx)
 
   Qx = zeros(nx, ny, nlayers)
   @views @. Qx[:, :, nlayers] += etax
 
   Qy = zeros(nx, ny, nlayers)
-  Qy[:, :, 1] = @. β - Uyy[:, :, 1] - Fp[1]*( U[:, :, 2] - U[:, :, 1] )
-  for j = 2:nlayers-1
-    Qy[:, :, j] = @. β - Uyy[:, :, j] - Fp[j]*( U[:, :, j+1] - U[:, :, j] ) - Fm[j-1]*( U[:, :, j-1] - U[:, :, j] )
-  end
-  @views Qy[:, :, nlayers] = @. β - Uyy[:, :, nlayers] - Fm[nlayers-1]*( U[:, :, nlayers-1] - U[:, :, nlayers] )
+  Qy = @. β - Uyy
   @views @. Qy[:, :, nlayers] += etay
 
-  S = Array{T}(undef, (nkr, nl, nlayers, nlayers))
-  calcS!(S, Fp, Fm, grid)
-
-  invS = Array{T}(undef, (nkr, nl, nlayers, nlayers))
-  calcinvS!(invS, Fp, Fm, grid)
-
   rfftplanlayered = plan_rfft(Array{T,3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
+  
+  if nlayers==1
+    return SingleLayerParams{T}(β, U, eta, μ, ν, nν, calcFq, Qx, Qy, rfftplanlayered)
+  
+  else # if nlayers≥2
+    
+    ρ = reshape(ρ, (1,  1, nlayers))
+    H = reshape(H, (1,  1, nlayers))
 
-  if nlayers == 1
-    SingleLayerParams{T}(g, f0, β, ρ, H, U, eta, μ, ν, nν, calcFq, Qx, Qy, grid.rfftplan)
-  else
-    Params{T}(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, calcFq, g′, Qx, Qy, S, invS, rfftplanlayered)
+  # g′ = g*(ρ[2:nlayers]-ρ[1:nlayers-1]) ./ ρ[1:nlayers-1] # definition match PYQG
+    g′ = g * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # correct definition
+
+    Fm = @. f0^2 / ( g′*H[2:nlayers  ] )
+    Fp = @. f0^2 / ( g′*H[1:nlayers-1] )
+
+    @views @. Qy[:, :, 1] -= Fp[1] * ( U[:, :, 2] - U[:, :, 1] )
+    for j = 2:nlayers-1
+      @. Qy[:, :, j] -= Fp[j] * ( U[:, :, j+1] - U[:, :, j] ) + Fm[j-1] * ( U[:, :, j-1] - U[:, :, j] )
+    end
+    @views @. Qy[:, :, nlayers] -= Fm[nlayers-1] * ( U[:, :, nlayers-1] - U[:, :, nlayers] )
+
+    S = Array{T}(undef, (nkr, nl, nlayers, nlayers))
+    calcS!(S, Fp, Fm, grid)
+
+    invS = Array{T}(undef, (nkr, nl, nlayers, nlayers))
+    calcinvS!(invS, Fp, Fm, grid)
+
+    return Params{T}(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, calcFq, g′, Qx, Qy, S, invS, rfftplanlayered)
+  
   end
 end
 
 function Params(nlayers, g, f0, β, ρ, H, U::Array{T,1}, eta, μ, ν, nν, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T
-  U = reshape(U, (1, nlayers))
-  U = repeat(U, outer=(grid.ny, 1))
-  Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=calcFq, effort=effort)
+  
+  if length(U) == nlayers
+    U = reshape(U, (1, nlayers))
+    U = repeat(U, outer=(grid.ny, 1))
+  else
+    U = reshape(U, (ny, 1))
+  end
+  
+  return Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=calcFq, effort=effort)
 end
+
+Params(nlayers, g, f0, β, ρ, H, U::T, eta, μ, ν, nν, grid::AbstractGrid{T}; calcFq=nothingfunction, effort=FFTW.MEASURE) where T = Params(nlayers, g, f0, β, ρ, H, repeat([U], outer=(grid.ny, 1)), eta, μ, ν, nν, grid; calcFq=calcFq, effort=effort)
+
+numberoflayers(params::P) where P = P<:SingleLayerParams ? 1 : params.nlayers
 
 
 # ---------
@@ -177,23 +186,21 @@ function hyperdissipation(ν, nν, Krsq, nkr, nl, nlayers, T)
   L = Array{Complex{T}}(undef, (nkr, nl, nlayers))
   @. L = -ν*Krsq^nν
   @views @. L[1, 1, :] = 0
-  L
+  return L
 end
 
-function LinearEquation(p, gr::AbstractGrid{T}) where T
-  L = hyperdissipation(p.ν, p.nν, gr.Krsq, gr.nkr, gr.nl, p.nlayers, T)
-  FourierFlows.Equation(L, calcNlinear!, gr)
+hyperdissipation(params, grid::AbstractGrid{T}) where T = hyperdissipation(params.ν, params.nν, grid.Krsq, grid.nkr, grid.nl, numberoflayers(params), T)
+
+function LinearEquation(params, grid::AbstractGrid{T}) where T
+  nlayers = numberoflayers(params)
+  L = hyperdissipation(params.ν, params.nν, grid.Krsq, grid.nkr, grid.nl, nlayers, T)
+  return FourierFlows.Equation(L, calcNlinear!, grid)
 end
 
-function Equation(p, gr::AbstractGrid{T}) where T
-  L = hyperdissipation(p.ν, p.nν, gr.Krsq, gr.nkr, gr.nl, p.nlayers, T)
-  FourierFlows.Equation(L, calcN!, gr)
-end
-
-function Equation(p::SingleLayerParams, gr::AbstractGrid{T}) where T
-  L = @. -p.μ - p.ν*gr.Krsq^p.nν + im*p.β*gr.kr*gr.invKrsq
-  L[1, 1] = 0
-  FourierFlows.Equation(L, calcN!, gr)
+function Equation(params, grid::AbstractGrid{T}) where T
+  nlayers = numberoflayers(params)
+  L = hyperdissipation(params.ν, params.nν, grid.Krsq, grid.nkr, grid.nl, nlayers, T)
+  return FourierFlows.Equation(L, calcN!, grid)
 end
 
 
@@ -203,7 +210,7 @@ end
 
 abstract type BarotropicVars <: AbstractVars end
 
-const physicalvars = [:q, :psi, :u, :v]
+const physicalvars = [:q, :ψ, :u, :v]
 const fouriervars = [ Symbol(var, :h) for var in physicalvars ]
 const forcedfouriervars = cat(fouriervars, [:Fqh], dims=1)
 
@@ -217,25 +224,24 @@ forcedvarspecs = cat(
   getfieldspecs(forcedfouriervars, :(Array{Complex{T},3})),
   dims=1)
 
-singlelayervarsspecs = cat(
-  getfieldspecs(physicalvars, :(Array{T,2})),
-  getfieldspecs(fouriervars, :(Array{Complex{T},2})),
-  dims=1)
-
 # Construct Vars types
 eval(varsexpression(:Vars, physicalvars, fouriervars))
 eval(varsexpression(:ForcedVars, physicalvars, forcedfouriervars))
-eval(varsexpression(:SingleLayerVars, singlelayervarsspecs; parent=:BarotropicVars, typeparams=:T))
 
 """
     Vars(g)
 
 Returns the vars for unforced multi-layer QG problem with grid gr.
 """
-function Vars(gr::AbstractGrid{T}, p) where T
-  @zeros T (gr.nx, gr.ny, p.nlayers) q psi u v
-  @zeros Complex{T} (gr.nkr, gr.nl, p.nlayers) qh psih uh vh
-  Vars(q, psi, u, v, qh, psih, uh, vh)
+function Vars(grid::AbstractGrid{T}, params) where T
+  nx , ny = grid.nx , grid.ny
+  nkr, nl = grid.nkr, grid.nl
+  nlayers = numberoflayers(params)
+  
+  @zeros T (nx, ny, nlayers) q ψ u v
+  @zeros Complex{T} (nkr, nl, nlayers) qh ψh uh vh
+  
+  return Vars(q, ψ, u, v, qh, ψh, uh, vh)
 end
 
 """
@@ -243,63 +249,67 @@ end
 
 Returns the vars for forced multi-layer QG problem with grid gr.
 """
-function ForcedVars(gr::AbstractGrid{T}, p) where T
-  v = Vars(gr, p)
-  Fqh = zeros(Complex{T}, (gr.nkr, gr.nl, p.nlayers))
-  ForcedVars(getfield.(Ref(v), fieldnames(typeof(v)))..., Fqh)
+function ForcedVars(grid::AbstractGrid{T}, params) where T
+  vars = Vars(grid, params)
+  nlayers = numberoflayers(params)
+  Fqh = zeros(Complex{T}, (grid.nkr, grid.nl, nlayers))
+  
+  return ForcedVars(getfield.(Ref(vars), fieldnames(typeof(vars)))..., Fqh)
 end
 
-function SingleLayerVars(gr::AbstractGrid{T}) where T
-  @zeros T (gr.nx, gr.ny) q psi u v
-  @zeros Complex{T} (gr.nkr, gr.nl) qh psih uh vh
-  SingleLayerParams(q, psi, u, v, qh, psih, uh, vh)
-end
+fwdtransform!(varh, var, params::AbstractParams) = mul!(varh, params.rfftplan, var)
+invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, varh)
 
-fwdtransform!(varh, var, p::AbstractParams) = mul!(varh, p.rfftplan, var)
-invtransform!(var, varh, p::AbstractParams) = ldiv!(var, p.rfftplan, varh)
-
-function streamfunctionfrompv!(psih, qh, invS, gr)
-  for j=1:gr.nl, i=1:gr.nkr
-    @views psih[i, j, :] .= invS[i, j, :, :]*qh[i, j, :]
+function streamfunctionfrompv!(ψh, qh, params, grid)
+  for j=1:grid.nl, i=1:grid.nkr
+    @views ψh[i, j, :] .= params.invS[i, j, :, :] * qh[i, j, :]
   end
 end
 
-function pvfromstreamfunction!(qh, psih, S, gr)
-  for j=1:gr.nl, i=1:gr.nkr
-    @views qh[i, j, :] .= S[i, j, :, :]*psih[i, j, :]
+function pvfromstreamfunction!(qh, ψh, params, grid)
+  for j=1:grid.nl, i=1:grid.nkr
+    @views qh[i, j, :] .= params.S[i, j, :, :] * ψh[i, j, :]
   end
+end
+
+function streamfunctionfrompv!(ψh, qh, params::SingleLayerParams, grid)
+  @. ψh = -grid.invKrsq * qh
+end
+
+function pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
+  @. qh = -grid.Krsq * ψh
 end
 
 """
-    calcS!(S, Fp, Fm, gr)
+    calcS!(S, Fp, Fm, grid)
 
 Constructs the stretching matrix S that connects q and ψ: q_{k,l} = S * ψ_{k,l}.
 """
-function calcS!(S, Fp, Fm, gr)
+function calcS!(S, Fp, Fm, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
-  for n=1:gr.nl, m=1:gr.nkr
-     k2 = gr.Krsq[m, n]
-    Skl = -k2*I + F
+  for n=1:grid.nl, m=1:grid.nkr
+     k² = grid.Krsq[m, n]
+    Skl = - k²*I + F
     @views S[m, n, :, :] .= Skl
   end
-  nothing
+  return nothing
 end
 
 """
-    calcinvS!(S, Fp, Fm, g)
+    calcinvS!(S, Fp, Fm, grid)
 
 Constructs the inverse of the stretching matrix S that connects q and ψ:
 ψ_{k,l} = invS * q_{k,l}.
 """
-function calcinvS!(invS, Fp, Fm, gr)
+function calcinvS!(invS, Fp, Fm, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
-  for n=1:gr.nl, m=1:gr.nkr
-    k2 = gr.Krsq[m, n]
-    if k2 == 0
-      k2 = 1
+  for n=1:grid.nl, m=1:grid.nkr
+    k² = grid.Krsq[m, n]
+    if k² == 0
+      k² = 1
     end
-    Skl = -k2*I + F
-    @views invS[m, n, :, :] .= I/Skl
+    Skl = - k²*I + F
+    @views invS[m, n, :, :] .= I / Skl
   end
   @views invS[1, 1, :, :] .= 0
   nothing
@@ -310,55 +320,57 @@ end
 # Solvers
 # -------
 
-function calcN!(N, sol, t, cl, v, p, gr)
-  calcN_advection!(N, sol, v, p, gr)
-  @views @. N[:, :, p.nlayers] += p.μ*gr.Krsq*v.psih[:, :, p.nlayers]   # bottom linear drag
-  addforcing!(N, sol, t, cl, v, p, gr)
+function calcN!(N, sol, t, clock, vars, params, grid)
+  nlayers = numberoflayers(params)
+  calcN_advection!(N, sol, vars, params, grid)
+  @views @. N[:, :, nlayers] += params.μ * grid.Krsq * vars.ψh[:, :, nlayers]   # bottom linear drag
+  addforcing!(N, sol, t, clock, vars, params, grid)
   nothing
 end
 
-function calcNlinear!(N, sol, t, cl, v, p, gr)
-  calcN_linearadvection!(N, sol, v, p, gr)
-  @views @. N[:, :, p.nlayers] += p.μ*gr.Krsq*v.psih[:, :, p.nlayers]   # bottom linear drag
-  addforcing!(N, sol, t, cl, v, p, gr)
+function calcNlinear!(N, sol, t, clock, vars, params, grid)
+  nlayers = numberoflayers(params)
+  calcN_linearadvection!(N, sol, vars, params, grid)
+  @views @. N[:, :, nlayers] += params.μ * grid.Krsq * vars.ψh[:, :, nlayers]   # bottom linear drag
+  addforcing!(N, sol, t, clock, vars, params, grid)
   nothing
 end
 
 """
-    calcN_advection!(N, sol, v, p, g)
+    calcN_advection!(N, sol, vars, params, gir)
 
 Calculates the advection term.
 """
-function calcN_advection!(N, sol, v, p, gr)
-  @. v.qh = sol
+function calcN_advection!(N, sol, vars, params, grid)
+  @. vars.qh = sol
 
-  streamfunctionfrompv!(v.psih, v.qh, p.invS, gr)
+  streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
 
-  @. v.uh = -im*gr.l *v.psih
-  @. v.vh =  im*gr.kr*v.psih
+  @. vars.uh = -im * grid.l  * vars.ψh
+  @. vars.vh =  im * grid.kr * vars.ψh
 
-  invtransform!(v.u, v.uh, p)
-  @. v.u += p.U                         # add the imposed zonal flow U
-  @. v.q = v.u*p.Qx
-  fwdtransform!(v.uh, v.q, p)
-  @. N = -v.uh                          # -(U+u)*∂Q/∂x
+  invtransform!(vars.u, vars.uh, params)
+  @. vars.u += params.U                    # add the imposed zonal flow U
+  @. vars.q  = vars.u * params.Qx
+  fwdtransform!(vars.uh, vars.q, params)
+  @. N = -vars.uh                          # -(U+u)*∂Q/∂x
 
-  invtransform!(v.v, v.vh, p)
-  @. v.q = v.v*p.Qy
-  fwdtransform!(v.vh, v.q, p)
-  @. N -= v.vh                          # -v*∂Q/∂y
+  invtransform!(vars.v, vars.vh, params)
+  @. vars.q = vars.v * params.Qy
+  fwdtransform!(vars.vh, vars.q, params)
+  @. N -= vars.vh                          # -v*∂Q/∂y
 
-  invtransform!(v.q, v.qh, p)
+  invtransform!(vars.q, vars.qh, params)
 
-  @. v.u *= v.q # u*q
-  @. v.v *= v.q # v*q
+  @. vars.u *= vars.q                      # u*q
+  @. vars.v *= vars.q                      # v*q
 
-  fwdtransform!(v.uh, v.u, p)
-  fwdtransform!(v.vh, v.v, p)
+  fwdtransform!(vars.uh, vars.u, params)
+  fwdtransform!(vars.vh, vars.v, params)
 
-  @. N -= im*gr.kr*v.uh + im*gr.l*v.vh    # -∂[(U+u)q]/∂x-∂[vq]/∂y
+  @. N -= im * grid.kr * vars.uh + im * grid.l * vars.vh    # -∂[(U+u)q]/∂x-∂[vq]/∂y
 
-  nothing
+  return nothing
 end
 
 
@@ -367,41 +379,41 @@ end
 
 Calculates the advection term of the linearized equations.
 """
-function calcN_linearadvection!(N, sol, v, p, gr)
-  @. v.qh = sol
+function calcN_linearadvection!(N, sol, vars, params, grid)
+  @. vars.qh = sol
 
-  streamfunctionfrompv!(v.psih, v.qh, p.invS, gr)
+  streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
 
-  @. v.uh = -im*gr.l *v.psih
-  @. v.vh =  im*gr.kr*v.psih
+  @. vars.uh = -im * grid.l  * vars.ψh
+  @. vars.vh =  im * grid.kr * vars.ψh
 
-  invtransform!(v.u, v.uh, p)
-  @. v.u += p.U                        # add the imposed zonal flow U
-  @. v.q = v.u*p.Qx
-  fwdtransform!(v.uh, v.q, p)
-  @. N = -v.uh                         # -(U+u)*∂Q/∂x
+  invtransform!(vars.u, vars.uh, params)
+  @. vars.u += params.U                    # add the imposed zonal flow U
+  @. vars.q  = vars.u * params.Qx
+  fwdtransform!(vars.uh, vars.q, params)
+  @. N = -vars.uh                          # -(U+u)*∂Q/∂x
 
-  invtransform!(v.v, v.vh, p)
-  @. v.q = v.v*p.Qy
-  fwdtransform!(v.vh, v.q, p)
-  @. N -= v.vh                         # -v*∂Q/∂y
+  invtransform!(vars.v, vars.vh, params)
+  @. vars.q = vars.v * params.Qy
+  fwdtransform!(vars.vh, vars.q, params)
+  @. N -= vars.vh                          # -v*∂Q/∂y
 
-  invtransform!(v.q, v.qh, p)
-  @. v.u = p.U
-  @. v.u *= v.q # u*q
+  invtransform!(vars.q, vars.qh, params)
+  @. vars.u  = params.U
+  @. vars.u *= vars.q                      # u*q
 
-  fwdtransform!(v.uh, v.u, p)
+  fwdtransform!(vars.uh, vars.u, params)
 
-  @. N -= im*gr.kr*v.uh                 # -∂[U*q]/∂x
+  @. N -= im * grid.kr * vars.uh           # -∂[U*q]/∂x
 
   nothing
 end
 
-addforcing!(N, sol, t, cl, v::Vars, p, gr) = nothing
+addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
 
-function addforcing!(N, sol, t, cl, v::ForcedVars, p, gr)
-  p.calcFq!(v.Fqh, sol, t, cl, v, p, gr)
-  @. N += v.Fqh
+function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
+  params.calcFq!(vars.Fqh, sol, t, clock, vars, params, grid)
+  @. N += vars.Fqh
   nothing
 end
 
@@ -416,18 +428,18 @@ end
 Update `prob.vars` using `prob.sol`.
 """
 function updatevars!(prob)
-  p, v, gr, sol = prob.params, prob.vars, prob.grid, prob.sol
+  params, vars, grid, sol = prob.params, prob.vars, prob.grid, prob.sol
 
-  @. v.qh = sol
-  streamfunctionfrompv!(v.psih, v.qh, p.invS, gr)
-  @. v.uh = -im*gr.l*v.psih
-  @. v.vh =  im*gr.kr*v.psih
+  @. vars.qh = sol
+  streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
+  @. vars.uh = -im * grid.l  * vars.ψh
+  @. vars.vh =  im * grid.kr * vars.ψh
 
-  invtransform!(v.q, deepcopy(v.qh), p)
-  invtransform!(v.psi, deepcopy(v.psih), p)
-  invtransform!(v.u, deepcopy(v.uh), p)
-  invtransform!(v.v, deepcopy(v.vh), p)
-  nothing
+  invtransform!(vars.q, deepcopy(vars.qh), params)
+  invtransform!(vars.ψ, deepcopy(vars.ψh), params)
+  invtransform!(vars.u, deepcopy(vars.uh), params)
+  invtransform!(vars.v, deepcopy(vars.vh), params)
+  return nothing
 end
 
 
@@ -437,32 +449,32 @@ end
 Set the solution `prob.sol` as the transform of `q` and updates variables.
 """
 function set_q!(prob, q)
-  p, v, sol = prob.params, prob.vars, prob.sol
+  params, vars, sol = prob.params, prob.vars, prob.sol
 
-  fwdtransform!(v.qh, q, p)
-  @. v.qh[1, 1, :] = 0
-  @. sol = v.qh
+  fwdtransform!(vars.qh, q, params)
+  @. vars.qh[1, 1, :] = 0
+  @. sol = vars.qh
 
   updatevars!(prob)
-  nothing
+  return nothing
 end
 
 
 """
-    set_psi!(prob)
+    set_ψ!(prob)
 
-Set the solution `prob.sol` to correspond to a streamfunction `psi` and
+Set the solution `prob.sol` to correspond to a streamfunction `ψ` and
 updates variables.
 """
-function set_psi!(prob, psi)
-  p, v, gr = prob.params, prob.vars, prob.grid
+function set_ψ!(prob, ψ)
+  params, vars, grid = prob.params, prob.vars, prob.grid
 
-  fwdtransform!(v.psih, psi, p)
-  pvfromstreamfunction!(v.qh, v.psih, p.S, gr)
-  invtransform!(v.q, v.qh, p)
-  set_q!(prob, v.q)
+  fwdtransform!(vars.ψh, ψ, params)
+  pvfromstreamfunction!(vars.qh, vars.ψh, params, grid)
+  invtransform!(vars.q, vars.qh, params)
+  set_q!(prob, vars.q)
 
-  nothing
+  return nothing
 end
 
 
@@ -472,25 +484,35 @@ end
 Returns the kinetic energy of each fluid layer KE_1,...,KE_nlayers, and the
 potential energy of each fluid interface PE_{3/2},...,PE_{nlayers-1/2}.
 """
-function energies(prob)
-  v, p, gr, sol = prob.vars, prob.params, prob.grid, prob.sol
-  KE, PE = zeros(p.nlayers), zeros(p.nlayers-1)
+function energies(vars, params, grid, sol)
+  nlayers = numberoflayers(params)
+  KE, PE = zeros(nlayers), zeros(nlayers-1)
 
-  @. v.qh = sol
-  streamfunctionfrompv!(v.psih, v.qh, p.invS, gr)
+  @. vars.qh = sol
+  streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
 
-  @. v.uh = gr.Krsq * abs2(v.psih)
-  for j=1:p.nlayers
-    KE[j] = 1/(2*gr.Lx*gr.Ly)*parsevalsum(v.uh[:, :, j], gr)*p.H[j]/sum(p.H)
+  @. vars.uh = grid.Krsq * abs2(vars.ψh)
+  for j=1:nlayers
+    KE[j] = 1/(2*grid.Lx*grid.Ly)*parsevalsum(vars.uh[:, :, j], grid)*params.H[j]/sum(params.H)
   end
 
-  for j=1:p.nlayers-1
-    PE[j] = 1/(2*gr.Lx*gr.Ly)*p.f0^2/p.g′[j]*parsevalsum(abs2.(v.psih[:, :, j+1].-v.psih[:, :, j]), gr)
+  for j=1:nlayers-1
+    PE[j] = 1/(2*grid.Lx*grid.Ly)*params.f0^2/params.g′[j]*parsevalsum(abs2.(vars.ψh[:, :, j+1].-vars.ψh[:, :, j]), grid)
   end
 
-  KE, PE
+  return KE, PE
 end
 
+function energies(vars, params::SingleLayerParams, grid, sol)
+  @. vars.qh = sol
+  streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
+  
+  KE = 1/(2*grid.Lx*grid.Ly)*parsevalsum(grid.Krsq .* abs2.(vars.ψh), grid)
+  
+  return KE
+end
+
+energies(prob) = energies(prob.vars, prob.params, prob.grid, prob.sol)
 
 """
     fluxes(prob)
@@ -500,20 +522,22 @@ lateralfluxes_1,...,lateralfluxes_nlayers and also the vertical eddy fluxes for
 each fluid interface verticalfluxes_{3/2},...,verticalfluxes_{nlayers-1/2}
 """
 function fluxes(prob)
-  v, p, gr, sol = prob.vars, prob.params, prob.grid, prob.sol
-  lateralfluxes, verticalfluxes = zeros(p.nlayers), zeros(p.nlayers-1)
+  vars, params, grid, sol = prob.vars, prob.params, prob.grid, prob.sol
+  nlayers = numberoflayers(params)
+  
+  lateralfluxes, verticalfluxes = zeros(nlayers), zeros(nlayers-1)
 
   updatevars!(prob)
 
-  @. v.uh = im*gr.l*v.uh
-  invtransform!(v.u, v.uh, p)
+  @. vars.uh = im * grid.l * vars.uh
+  invtransform!(vars.u, vars.uh, params)
 
-  lateralfluxes = (sum(@. p.H*p.U*v.v*v.u; dims=(1,2)))[1, 1, :]
-  lateralfluxes *= gr.dx*gr.dy/(gr.Lx*gr.Ly*sum(p.H))
+  lateralfluxes = (sum( @. params.H * params.U * vars.v * vars.u; dims=(1,2) ))[1, 1, :]
+  lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
-  for j=1:p.nlayers-1
-    verticalfluxes[j] = sum( @views @. p.f0^2/p.g′[j] * (p.U[: ,:, j] - p.U[:, :, j+1])*v.v[:, :, j+1]*v.psi[:, :, j] ; dims=(1,2) )[1]
-    verticalfluxes[j] *= gr.dx*gr.dy/(gr.Lx*gr.Ly*sum(p.H))
+  for j=1:nlayers-1
+    verticalfluxes[j] = sum( @views @. params.f0^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j] ; dims=(1,2) )[1]
+    verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
   end
 
   lateralfluxes, verticalfluxes
