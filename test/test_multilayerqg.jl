@@ -345,6 +345,28 @@ function test_mqg_energies(; dt=0.001, stepper="ForwardEuler", n=128, L=2π, nla
   isapprox(KE[1], 61/640*1e-6, rtol=rtol_multilayerqg) && isapprox(KE[2], 3*1e-6, rtol=rtol_multilayerqg) && isapprox(PE[1], 1025/1152*1e-6, rtol=rtol_multilayerqg) && MultilayerQG.addforcing!(prob.timestepper.RHS₁, sol, cl.t, cl, vs, pr, gr)==nothing
 end
 
+function test_mqg_energysinglelayer(; dt=0.001, stepper="ForwardEuler", nlayers=1, μ=0.0, ν=0.0, nν=1)
+  nx, Lx  = 64, 2π
+  ny, Ly  = 64, 3π
+  g  = TwoDGrid(nx, Lx, ny, Ly)
+  
+  x, y = gridpoints(g)
+  k0, l0 = g.k[2], g.l[2] # fundamental wavenumbers
+  
+  energy_calc = 29/9
+
+  ψ0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
+  q0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
+
+  prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper=stepper, U=zeros(ny))
+
+  MultilayerQG.set_q!(prob, reshape(q0, (nx, ny, nlayers)))
+
+  energyq0 = MultilayerQG.energies(prob)
+
+  isapprox(energyq0, energy_calc, rtol=rtol_multilayerqg)
+end
+
 """
     test_mqg_fluxes(dt, stepper; kwargs...)
 
@@ -461,12 +483,13 @@ function test_mqg_problemtype(T=Float32)
 end
 
 function test_mqg_rossbywave(stepper, dt, nsteps)
-  nx = 64
-  Lx = 2π
-   β = 2.0
-   U = 0.5
+  nlayers = 1
+       nx = 64
+       Lx = 2π
+        β = 2.0
+        U = 0.5
 
-  prob = MultilayerQG.Problem(nlayers=1, nx=nx, Lx=Lx, U=U, β=β, stepper=stepper, dt=dt)
+  prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, Lx=Lx, U=U, β=β, stepper=stepper, dt=dt)
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
   x, y = gridpoints(g)
@@ -475,16 +498,16 @@ function test_mqg_rossbywave(stepper, dt, nsteps)
    ampl = 1e-2
   kwave, lwave = 3*2π/g.Lx, 2*2π/g.Ly
       ω = kwave * ( U - p.β/(kwave^2 + lwave^2) ) # Doppler-shifted Rossby frequency
-     q0 = @. ampl*cos(kwave*x)*cos(lwave*y)
-    q0h = rfft(q0)
+     q0 = @. ampl * cos(kwave*x) * cos(lwave*y)
+     ψ0 = @. - q0 / (kwave^2+lwave^2)
 
-  MultilayerQG.set_q!(prob, reshape(q0, (g.nx, g.ny, 1)))
+  MultilayerQG.set_q!(prob, reshape(q0, (g.nx, g.ny, nlayers)))
 
   stepforward!(prob, nsteps)
   dealias!(sol, g)
   MultilayerQG.updatevars!(prob)
 
-  q_theory = @. ampl*cos(kwave*(x - ω/kwave*cl.t)) * cos(lwave*y)
+  q_theory = @. ampl * cos(kwave*(x - ω/kwave*cl.t)) * cos(lwave*y)
 
   isapprox(q_theory, v.q, rtol=g.nx*g.ny*nsteps*1e-12)
 end
