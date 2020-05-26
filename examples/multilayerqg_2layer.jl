@@ -92,8 +92,8 @@ nothing # hide
 get_sol(prob) = sol # extracts the Fourier-transformed solution
 function get_u(prob)
   @. v.qh = sol
-  streamfunctionfrompv!(v.psih, v.qh, p, g)
-  @. v.uh = -im*g.l *v.psih
+  streamfunctionfrompv!(v.ψh, v.qh, p, g)
+  @. v.uh = -im*g.l *v.ψh
   invtransform!(v.u, v.uh, p)
   return v.u
 end
@@ -125,7 +125,7 @@ function plot_output(prob)
                title = "q_"*string(m),
           framestyle = :box)
 
-    contourf!(p[(m-1)*3+2], x, y, vs.psi[:, :, m],
+    contourf!(p[(m-1)*3+2], x, y, vs.ψ[:, :, m],
               levels = 8,
          aspectratio = 1,
               legend = false,
@@ -185,7 +185,7 @@ anim = @animate for j=0:Int(nsteps/nsubs)
   
   for m in 1:nlayers
     p[(m-1)*3+1][1][:z] = @. vs.q[:, :, m]
-    p[(m-1)*3+2][1][:z] = @. vs.psi[:, :, m]
+    p[(m-1)*3+2][1][:z] = @. vs.ψ[:, :, m]
   end
   
   push!(p[3][1], μ*E.t[E.i], E.data[E.i][1][1])
