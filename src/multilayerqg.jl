@@ -161,11 +161,10 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
   Qy = T(β) .- Uyy  # T(β) is needed to ensure that Qy remains same type as U
   @views @. Qy[:, :, nlayers] += etay
   
-  # TODO: generalize plan_rfft in CuFourierFlows.jl so it can accept dims as argument
   rfftplanlayered = plan_rfft(A{T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]) #; flags=effort)
   
   if nlayers==1
-    return SingleLayerParams(β, U, eta, μ, ν, nν, calcFq, Qx, Qy, rfftplanlayered)
+    return SingleLayerParams(T(β), U, eta, T(μ), T(ν), nν, calcFq, Qx, Qy, rfftplanlayered)
   
   else # if nlayers≥2
     
@@ -192,7 +191,7 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
     end
     @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * ( U[:, :, nlayers-1] - U[:, :, nlayers] )
 
-    return Params(nlayers, g, f0, β, A(ρ), A(H), U, eta, μ, ν, nν, calcFq, A(g′), Qx, Qy, S, invS, rfftplanlayered)
+    return Params(nlayers, T(g), T(f0), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, invS, rfftplanlayered)
   end
 end
 
