@@ -155,6 +155,9 @@ that a solution to the problem forced by this Ff is then qf.
 (This solution may not be realized, at least at long times, if it is unstable.)
 """
 function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+  
+  A = ArrayType(dev)
+
   tf = 0.5
   nt = round(Int, tf/dt)
 
@@ -169,12 +172,12 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
   f0, g = 1.0, 1.0  # desired PV-streamfunction relations
   H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
   ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
-
+  
   β = 0.35
-
+  
   U1, U2 = 0.1, 0.05
-  u1 = @. 0.5sech(gr.y/(Ly/15))^2; u1 = reshape(u1, (1, gr.ny))
-  u2 = @. 0.02cos(3l0*gr.y); u2 = reshape(u2, (1, gr.ny))
+  u1 = @. 0.5sech(gr.y/(Ly/15))^2; u1 = A(reshape(u1, (1, gr.ny)))
+  u2 = @. 0.02cos(3l0*gr.y);       u2 = A(reshape(u2, (1, gr.ny)))
   uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
   uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
 
@@ -185,8 +188,8 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
   μ, ν, nν = 0.1, 0.05, 1
 
   η0, σx, σy = 1.0, Lx/25, Ly/20
-   η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
-  ηx = @. -(x+Lx/8)/(σx^2) * η
+   η = @. η0*exp( -(x + Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
+  ηx = @. -(x + Lx/8)/(σx^2) * η
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
@@ -196,12 +199,12 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
   T = eltype(gr)
 
   Ff = zeros(dev, T, (gr.nx, gr.ny, nlayers))
-  Ff[:, :, 1] .= Ff1
-  Ff[:, :, 2] .= Ff2
+  @views Ff[:, :, 1] = Ff1
+  @views Ff[:, :, 2] = Ff2
 
   Ffh = zeros(dev, Complex{T}, (gr.nkr, gr.nl, nlayers))
-  Ffh[:, :, 1] .= rfft(Ff1)
-  Ffh[:, :, 2] .= rfft(Ff2)
+  @views Ffh[:, :, 1] = rfft(Ff1)
+  @views Ffh[:, :, 2] = rfft(Ff2)
 
   function calcFq!(Fqh, sol, t, cl, v, p, g)
     Fqh .= Ffh
@@ -209,20 +212,20 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
   end
 
   prob = MultilayerQG.Problem(dev, nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly,
-   f0=f0, g=g, H=H, ρ=ρ, U=U, eta=η, β=β, μ=μ, ν=ν, nν=nν, calcFq=calcFq!)
+   f0=f0, g=g, H=H, ρ=ρ, U=U, eta=η, β=β, μ=μ, ν=ν, nν=nν, calcFq=calcFq!, stepper=stepper, dt=dt)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   qf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
-  qf[:, :, 1] .= q1
-  qf[:, :, 2] .= q2
+  @views qf[:, :, 1] = q1
+  @views qf[:, :, 2] = q2
 
   ψf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
-  ψf[:, :, 1] .= ψ1
-  ψf[:, :, 2] .= ψ2
+  @views ψf[:, :, 1] = ψ1
+  @views ψf[:, :, 2] = ψ2
 
   MultilayerQG.set_q!(prob, qf)
 
-  stepforward!(prob, round(Int, nt))
+  stepforward!(prob, nt)
   MultilayerQG.updatevars!(prob)
 
   return isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)
@@ -240,6 +243,9 @@ Ff is then qf. (This solution may not be realized, at least at long times, if it
 is unstable.)
 """
 function test_mqg_linearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+  
+  A = ArrayType(dev)
+  
   tf = 0.5
   nt = round(Int, tf/dt)
 
@@ -258,8 +264,8 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, 
   β = 0.35
 
   U1, U2 = 0.1, 0.05
-  u1 = @. 0.5sech(gr.y/(Ly/15))^2; u1 = reshape(u1, (1, gr.ny))
-  u2 = @. 0.02cos(3l0*gr.y); u2 = reshape(u2, (1, gr.ny))
+  u1 = @. 0.5sech(gr.y/(Ly/15))^2; u1 = A(reshape(u1, (1, gr.ny)))
+  u2 = @. 0.02cos(3l0*gr.y);       u2 = A(reshape(u2, (1, gr.ny)))
   uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
   uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
 
@@ -270,8 +276,8 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, 
   μ, ν, nν = 0.1, 0.05, 1
 
   η0, σx, σy = 1.0, Lx/25, Ly/20
-  η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
-  ηx = @. -(x+Lx/8)/(σx^2) * η
+  η = @. η0*exp( -(x + Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
+  ηx = @. -(x + Lx/8)/(σx^2) * η
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
@@ -281,33 +287,32 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, 
   T = eltype(gr)
   
   Ff = zeros(dev, T, (gr.nx, gr.ny, nlayers))
-  Ff[:, :, 1] .= Ff1
-  Ff[:, :, 2] .= Ff2
+  @views Ff[:, :, 1] = Ff1
+  @views Ff[:, :, 2] = Ff2
 
   Ffh = zeros(dev, Complex{T}, (gr.nkr, gr.nl, nlayers))
-  Ffh[:, :, 1] .= rfft(Ff1)
-  Ffh[:, :, 2] .= rfft(Ff2)
+  @views Ffh[:, :, 1] = rfft(Ff1)
+  @views Ffh[:, :, 2] = rfft(Ff2)
 
   function calcFq!(Fqh, sol, t, cl, v, p, g)
     Fqh .= Ffh
     nothing
   end
 
-  prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0,
-          g=g, H=H, ρ=ρ, U=U, eta=η, β=β, μ=μ, ν=ν, nν=nν, calcFq=calcFq!, linear=true)
+  prob = MultilayerQG.Problem(dev; nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, ρ=ρ, U=U, eta=η, β=β, μ=μ, ν=ν, nν=nν, calcFq=calcFq!, stepper=stepper, dt=dt, linear=true)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   qf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
-  qf[:, :, 1] .= q1
-  qf[:, :, 2] .= q2
+  @views qf[:, :, 1] = q1
+  @views qf[:, :, 2] = q2
 
   ψf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
-  ψf[:, :, 1] .= ψ1
-  ψf[:, :, 2] .= ψ2
+  @views ψf[:, :, 1] = ψ1
+  @views ψf[:, :, 2] = ψ2
 
   MultilayerQG.set_q!(prob, qf)
 
-  stepforward!(prob, round(Int, nt))
+  stepforward!(prob, nt)
   MultilayerQG.updatevars!(prob)
 
   return isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)
@@ -456,19 +461,21 @@ function test_mqg_setqsetψ(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler",
   prob = MultilayerQG.Problem(dev; nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, ρ=ρ)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
+  T = eltype(gr)
+  
   f1 = @. 2cos(k0*x)*cos(l0*y)
   f2 = @.  cos(k0*x+π/10)*cos(2l0*y)
-  f = zeros(gr.nx, gr.ny, nlayers)
+  f = zeros(dev, T, (gr.nx, gr.ny, nlayers))
   f[:, :, 1] .= f1
   f[:, :, 2] .= f2
 
-  ψtest = zeros(size(f))
+  ψtest = zeros(dev, T, size(f))
   MultilayerQG.set_ψ!(prob, f)
   @. vs.qh = sol
   MultilayerQG.streamfunctionfrompv!(vs.ψh, vs.qh, pr, gr)
   MultilayerQG.invtransform!(ψtest, vs.ψh, pr)
 
-  qtest = zeros(size(f))
+  qtest = zeros(dev, T, size(f))
   MultilayerQG.set_q!(prob, f)
   @. vs.qh = sol
   MultilayerQG.invtransform!(qtest, vs.qh, pr)
@@ -513,8 +520,9 @@ end
 function test_mqg_problemtype(dev::Device=CPU(), T=Float32)
   prob1 = MultilayerQG.Problem(dev, T; nlayers=1)
   prob2 = MultilayerQG.Problem(dev, T; nlayers=2)
-
-  return (typeof(prob1.sol)==ArrayType(dev){Complex{T}, 3} && typeof(prob1.grid.Lx)==T && typeof(prob1.vars.u)==ArrayType(dev){T, 3}) && (typeof(prob2.sol)==ArrayType(dev){Complex{T}, 3} && typeof(prob2.grid.Lx)==T && typeof(prob2.vars.u)==ArrayType(dev){T, 3})
+  
+  A = ArrayType(dev)
+  return (typeof(prob1.sol)<:A{Complex{T}, 3} && typeof(prob1.grid.Lx)==T && typeof(prob1.vars.u)<:A{T, 3}) && (typeof(prob2.sol)<:A{Complex{T}, 3} && typeof(prob2.grid.Lx)==T && typeof(prob2.vars.u)<:A{T, 3})
 end
 
 """
