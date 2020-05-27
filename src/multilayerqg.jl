@@ -30,7 +30,7 @@ nothingfunction(args...) = nothing
 
 Construct a multi-layer QG problem.
 """
-function Problem(T = Float64;
+function Problem(dev = CPU(), T = Float64;
     # Numerical parameters
           nx = 128,
           Lx = 2π,
@@ -38,14 +38,14 @@ function Problem(T = Float64;
           Ly = Lx,
           dt = 0.01,
     # Physical parameters
-     nlayers = 2,                       # number of fluid layers
-          f0 = 1.0,                     # Coriolis parameter
-           β = 0.0,                     # y-gradient of Coriolis parameter
-           g = 1.0,                     # gravitational constant
-           U = zeros(ny, nlayers),      # imposed zonal flow U(y) in each layer
-           H = [0.2, 0.8],              # rest fluid height of each layer
-           ρ = [4.0, 5.0],              # density of each layer
-         eta = zeros(T, nx, ny),           # topographic PV
+     nlayers = 2,                             # number of fluid layers
+          f0 = 1.0,                           # Coriolis parameter
+           β = 0.0,                           # y-gradient of Coriolis parameter
+           g = 1.0,                           # gravitational constant
+           U = zeros(dev, T, (ny, nlayers)),  # imposed zonal flow U(y) in each layer
+           H = [0.2, 0.8],                    # rest fluid height of each layer
+           ρ = [4.0, 5.0],                    # density of each layer
+         eta = zeros(dev, T, (nx, ny)),       # topographic PV
     # Bottom Drag and/or (hyper)-viscosity
            μ = 0.0,
            ν = 0.0,
@@ -55,66 +55,89 @@ function Problem(T = Float64;
       calcFq = nothingfunction,
       linear = false)
 
-   grid = TwoDGrid(nx, Lx, ny, Ly; T=T)
-   params = Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq)
+   grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
+   params = Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq, dev=dev)
    vars = calcFq == nothingfunction ? Vars(grid, params) : ForcedVars(grid, params)
-   eqn = linear ? LinearEquation(params, grid) : Equation(params, grid)
+   eqn = linear ? LinearEquation(dev, params, grid) : Equation(dev, params, grid)
 
-  FourierFlows.Problem(eqn, stepper, dt, grid, vars, params)
+  FourierFlows.Problem(eqn, stepper, dt, grid, vars, params, dev)
 end
 
 abstract type BarotropicParams <: AbstractParams end
 
-struct Params{T} <: AbstractParams
+struct Params{T, TFFT, Aphys3D, Aphys2D, Aphys1D, Atrans4D} <: AbstractParams
   # prescribed params
    nlayers :: Int            # Number of fluid layers
          g :: T              # Gravitational constant
         f0 :: T              # Constant planetary vorticity
          β :: T              # Planetary vorticity y-gradient
-         ρ :: Array{T, 3}    # Array with density of each fluid layer
-         H :: Array{T, 3}    # Array with rest height of each fluid layer
-         U :: Array{T, 3}    # Array with imposed constant zonal flow U(y) in each fluid layer
-       eta :: Array{T, 2}    # Array containing topographic PV
+         ρ :: Aphys3D    # Array with density of each fluid layer
+         H :: Aphys3D    # Array with rest height of each fluid layer
+         U :: Aphys3D    # Array with imposed constant zonal flow U(y) in each fluid layer
+       eta :: Aphys2D    # Array containing topographic PV
          μ :: T              # Linear bottom drag
          ν :: T              # Viscosity coefficient
         nν :: Int            # Hyperviscous order (nν=1 is plain old viscosity)
    calcFq! :: Function       # Function that calculates the forcing on QGPV q
 
   # derived params
-        g′ :: Array{T, 1}    # Array with the reduced gravity constants for each fluid interface
-        Qx :: Array{T, 3}    # Array containing x-gradient of PV due to eta in each fluid layer
-        Qy :: Array{T, 3}    # Array containing y-gradient of PV due to β, U, and eta in each fluid layer
-         S :: Array{T, 4}    # Array containing coeffients for getting PV from  streamfunction
-      invS :: Array{T, 4}    # Array containing coeffients for inverting PV to streamfunction
-  rfftplan :: FFTW.rFFTWPlan{T, -1, false, 3}  # rfft plan for FFTs
+        g′ :: Aphys1D    # Array with the reduced gravity constants for each fluid interface
+        Qx :: Aphys3D    # Array containing x-gradient of PV due to eta in each fluid layer
+        Qy :: Aphys3D    # Array containing y-gradient of PV due to β, U, and eta in each fluid layer
+         S :: Atrans4D    # Array containing coeffients for getting PV from  streamfunction
+      invS :: Atrans4D    # Array containing coeffients for inverting PV to streamfunction
+  rfftplan :: FFTW.rFFTWPlan{TFFT, -1, false, 3}  # rfft plan for FFTs
 end
 
-struct SingleLayerParams{T} <: BarotropicParams
+struct SingleLayerParams{T, TFFT, Aphys3D, Aphys2D} <: BarotropicParams
   # prescribed params
          β :: T              # Planetary vorticity y-gradient
-         U :: Array{T, 3}    # Imposed constant zonal flow U(y)
-       eta :: Array{T, 2}    # Array containing topographic PV
+         U :: Aphys3D    # Imposed constant zonal flow U(y)
+       eta :: Aphys2D    # Array containing topographic PV
          μ :: T              # Linear bottom drag
          ν :: T              # Viscosity coefficient
         nν :: Int            # Hyperviscous order (nν=1 is plain old viscosity)
    calcFq! :: Function       # Function that calculates the forcing on QGPV q
 
   # derived params
-        Qx :: Array{T, 3}    # Array containing x-gradient of PV due to eta
-        Qy :: Array{T, 3}    # Array containing meridional PV gradient due to β, U, and eta
-  rfftplan :: FFTW.rFFTWPlan{T, -1, false, 3}  # rfft plan for FFTs
+        Qx :: Aphys3D    # Array containing x-gradient of PV due to eta
+        Qy :: Aphys3D    # Array containing meridional PV gradient due to β, U, and eta
+  rfftplan :: FFTW.rFFTWPlan{TFFT, -1, false, 3}  # rfft plan for FFTs
 end
 
-function Params(nlayers, g, f0, β, ρ, H, U::Array{TU, 2}, eta, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE) where TU
+function convert_U_to_U3D(nlayers, grid, U::AbstractArray{TU, 1}) where TU
+  if length(U) == nlayers
+    U = reshape(U, (1, nlayers))
+    U = repeat(U, outer=(grid.ny, 1))
+  else
+    U = reshape(U, (grid.ny, 1))
+  end
+  
+  U_3D = reshape(U, (1, grid.ny, nlayers))
+  return U_3D
+end
+
+function convert_U_to_U3D(nlayers, grid, U::AbstractArray{TU, 2}) where TU
+  U_3D = reshape(U, (1, grid.ny, nlayers))
+  return U_3D
+end
+
+function convert_U_to_U3D(nlayers, grid, U::Number)
+  U_3D =  reshape(repeat([U], outer=(grid.ny, 1)), (1, grid.ny, nlayers))
+  return U_3D
+end
+
+
+function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE, dev::Device=CPU()) where TU
   
   T = eltype(grid)
 
    ny, nx = grid.ny , grid.nx
   nkr, nl = grid.nkr, grid.nl
    kr, l  = grid.kr , grid.l
-
-  U = reshape(U, (1, ny, nlayers))
   
+    U = convert_U_to_U3D(nlayers, grid, U)
+    
   Uyy = repeat(irfft( -l.^2 .* rfft(U, [1, 2]),  1, [1, 2]), outer=(1, 1, 1))
   Uyy = repeat(Uyy, outer=(nx, 1, 1))
 
@@ -122,24 +145,24 @@ function Params(nlayers, g, f0, β, ρ, H, U::Array{TU, 2}, eta, μ, ν, nν, gr
   etax = irfft(im * kr .* etah, nx)
   etay = irfft(im * l  .* etah, nx)
 
-  Qx = zeros(nx, ny, nlayers)
+  Qx = zeros(dev, T, (nx, ny, nlayers))
   @views @. Qx[:, :, nlayers] += etax
 
-  Qy = zeros(nx, ny, nlayers)
-  Qy = @. β - Uyy
+  Qy = zeros(dev, T, (nx, ny, nlayers))
+  Qy = @. T(β) - Uyy  # T(β) is needed to ensure that Qy remains same type as U
   @views @. Qy[:, :, nlayers] += etay
 
-  rfftplanlayered = plan_rfft(Array{T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
+  rfftplanlayered = plan_rfft(ArrayType(dev){T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
   
   if nlayers==1
-    return SingleLayerParams{T}(β, U, eta, μ, ν, nν, calcFq, Qx, Qy, rfftplanlayered)
+    return SingleLayerParams(β, U, eta, μ, ν, nν, calcFq, Qx, Qy, rfftplanlayered)
   
   else # if nlayers≥2
     
     ρ = reshape(ρ, (1,  1, nlayers))
     H = reshape(H, (1,  1, nlayers))
 
-    g′ = g * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface
+    g′ = g * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface;
 
     Fm = @. f0^2 / ( g′ * H[2:nlayers  ] )
     Fp = @. f0^2 / ( g′ * H[1:nlayers-1] )
@@ -150,30 +173,15 @@ function Params(nlayers, g, f0, β, ρ, H, U::Array{TU, 2}, eta, μ, ν, nν, gr
     end
     @views @. Qy[:, :, nlayers] -= Fm[nlayers-1] * ( U[:, :, nlayers-1] - U[:, :, nlayers] )
 
-    S = Array{T}(undef, (nkr, nl, nlayers, nlayers))
+    S = ArrayType(dev){T}(undef, (nkr, nl, nlayers, nlayers))
     calcS!(S, Fp, Fm, grid)
 
-    invS = Array{T}(undef, (nkr, nl, nlayers, nlayers))
+    invS = ArrayType(dev){T}(undef, (nkr, nl, nlayers, nlayers))
     calcinvS!(invS, Fp, Fm, grid)
 
-    return Params{T}(nlayers, g, f0, β, T.(ρ), T.(H), T.(U), T.(eta), μ, ν, nν, calcFq, g′, Qx, Qy, S, invS, rfftplanlayered)
-  
+    return Params(nlayers, g, f0, β, T.(ρ), T.(H), U, eta, μ, ν, nν, calcFq, T.(g′), Qx, Qy, S, invS, rfftplanlayered)  
   end
 end
-
-function Params(nlayers, g, f0, β, ρ, H, U::Array{TU, 1}, eta, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE) where TU
-    
-  if length(U) == nlayers
-    U = reshape(U, (1, nlayers))
-    U = repeat(U, outer=(grid.ny, 1))
-  else
-    U = reshape(U, (grid.ny, 1))
-  end
-  
-  return Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=calcFq, effort=effort)
-end
-
-Params(nlayers, g, f0, β, ρ, H, U::Number, eta, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE) = Params(nlayers, g, f0, β, ρ, H, repeat([U], outer=(grid.ny, 1)), eta, μ, ν, nν, grid; calcFq=calcFq, effort=effort)
 
 numberoflayers(params) = params.nlayers
 numberoflayers(::SingleLayerParams) = 1
@@ -182,22 +190,21 @@ numberoflayers(::SingleLayerParams) = 1
 # Equations
 # ---------
 
-function hyperdissipation(params, grid)
-  L = Array{Complex{eltype(grid)}}(undef, (grid.nkr, grid.nl, numberoflayers(params)))
+function hyperdissipation(dev, params, grid)
+  T = eltype(grid)
+  L = ArrayType(dev){T}(undef, (grid.nkr, grid.nl, numberoflayers(params)))
   @. L = - params.ν * grid.Krsq^params.nν
   @views @. L[1, 1, :] = 0
   return L
 end
 
-function LinearEquation(params, grid)
-  nlayers = numberoflayers(params)
-  L = hyperdissipation(params, grid)
+function LinearEquation(dev, params, grid)
+  L = hyperdissipation(dev, params, grid)
   return FourierFlows.Equation(L, calcNlinear!, grid)
 end
 
-function Equation(params, grid)
-  nlayers = numberoflayers(params)
-  L = hyperdissipation(params, grid)
+function Equation(dev, params, grid)
+  L = hyperdissipation(dev, params, grid)
   return FourierFlows.Equation(L, calcN!, grid)
 end
 

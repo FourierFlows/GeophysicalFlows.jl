@@ -32,11 +32,10 @@ cfl(prob) = cfl(prob.vars.u, prob.vars.v, prob.clock.dt, prob.grid.dx)
 
 # Run tests
 testtime = @elapsed begin
-
 for dev in devices
   
   println("testing on "*string(typeof(dev)))
-  
+  #=  
   @testset "Utils" begin
     include("test_utils.jl")
 
@@ -76,10 +75,28 @@ for dev in devices
     @test test_bqg_problemtype(Float32)
     @test BarotropicQG.nothingfunction() == nothing
   end
-
+=#  
+  @testset "MultilayerQG" begin
+    include("test_multilayerqg.jl")
+    
+    @test test_pvtofromstreamfunction_2layer(dev)
+    @test test_pvtofromstreamfunction_3layer(dev)
+    @test test_mqg_rossbywave("RK4", 1e-2, 20, dev)
+    @test test_mqg_nonlinearadvection(0.001, "ForwardEuler", dev)
+    @test test_mqg_linearadvection(0.001, "ForwardEuler", dev)
+    @test test_mqg_energies(dev)
+    @test test_mqg_energysinglelayer(dev)
+    @test test_mqg_fluxes(dev)
+    @test test_mqg_fluxessinglelayer(dev)
+    @test test_mqg_setqsetψ(dev)
+    @test test_mqg_paramsconstructor(dev)
+    @test test_mqg_problemtype(dev, Float32)
+    @test MultilayerQG.nothingfunction() == nothing
+  end
+  
 end
 
-
+#=
 println("rest of tests only on CPU")
 
 @testset "BarotropicQGQL" begin
@@ -100,25 +117,7 @@ println("rest of tests only on CPU")
   @test test_bqgql_problemtype(Float32)
   @test BarotropicQGQL.nothingfunction() == nothing
 end
-
-@testset "MultilayerQG" begin
-  include("test_multilayerqg.jl")
-  
-  @test test_pvtofromstreamfunction_2layer()
-  @test test_pvtofromstreamfunction_3layer()
-  @test test_mqg_rossbywave("RK4", 1e-2, 20)
-  @test test_mqg_energysinglelayer()
-  @test test_mqg_nonlinearadvection(0.001, "ForwardEuler")
-  @test test_mqg_linearadvection(0.001, "ForwardEuler")
-  @test test_mqg_energies()
-  @test test_mqg_fluxes()
-  @test test_mqg_fluxessinglelayer()
-  @test test_mqg_setqsetψ()
-  @test test_mqg_paramsconstructor()
-  @test test_mqg_problemtype(Float32)
-  @test MultilayerQG.nothingfunction() == nothing
-end
-
+=#
 end # time
 
 println("Total test time: ", testtime)
