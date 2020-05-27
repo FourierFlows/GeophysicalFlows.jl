@@ -129,7 +129,7 @@ function Params(nlayers, g, f0, β, ρ, H, U::Array{TU, 2}, eta, μ, ν, nν, gr
   Qy = @. β - Uyy
   @views @. Qy[:, :, nlayers] += etay
 
-  rfftplanlayered = plan_rfft(Array{T,3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
+  rfftplanlayered = plan_rfft(Array{T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
   
   if nlayers==1
     return SingleLayerParams{T}(β, U, eta, μ, ν, nν, calcFq, Qx, Qy, rfftplanlayered)
@@ -272,6 +272,10 @@ end
 
 function streamfunctionfrompv!(ψh, qh, params::SingleLayerParams, grid)
   @. ψh = -grid.invKrsq * qh
+end
+
+function pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
+  @. qh = -grid.Krsq * ψh
 end
 
 """
