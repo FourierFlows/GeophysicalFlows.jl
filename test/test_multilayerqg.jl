@@ -477,7 +477,7 @@ function test_mqg_paramsconstructor(; dt=0.001, stepper="ForwardEuler")
 end
 
 function test_mqg_problemtype(T=Float32)
-  prob = MultilayerQG.Problem(nlayers=2, T=T)
+  prob = MultilayerQG.Problem(T; nlayers=2)
 
   (typeof(prob.sol)==Array{Complex{T},3} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)==Array{T,3})
 end
