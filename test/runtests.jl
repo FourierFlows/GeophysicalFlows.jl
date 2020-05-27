@@ -90,6 +90,7 @@ for dev in devices
     @test test_mqg_fluxessinglelayer(dev)
     @test test_mqg_setqsetψ(dev)
     @test test_mqg_paramsconstructor(dev)
+    @test test_mqg_stochasticforcedproblemconstructor(dev)
     @test test_mqg_problemtype(dev, Float32)
     @test MultilayerQG.nothingfunction() == nothing
   end

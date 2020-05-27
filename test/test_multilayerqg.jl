@@ -567,3 +567,15 @@ function test_numberoflayers(dev::Device=CPU())
   
   return MultilayerQG.numberoflayers(prob_nlayers1)==1 && MultilayerQG.numberoflayers(prob_nlayers2)==2
 end
+
+function test_mqg_stochasticforcedproblemconstructor(dev::Device=CPU())
+  
+  function calcFq!(Fqh, sol, t, clock, vars, params, grid)
+    Fqh .= Ffh
+    return nothing
+  end
+       
+  prob = MultilayerQG.Problem(dev; calcFq=calcFq!, stochastic=true)
+  
+  return typeof(prob.vars.prevsol)==typeof(prob.sol)
+end
