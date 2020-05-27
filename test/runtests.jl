@@ -20,9 +20,10 @@ devices = (CPU(),)
 @has_cuda using CuArrays
 
 const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
-const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
 const rtol_twodnavierstokes = 1e-13 # tolerance for twodnavierstokes forcing tests
 const rtol_barotropicQG = 1e-13 # tolerance for barotropicqg forcing tests
+const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
+
 
 "Get the CFL number, assuming a uniform grid with `dx=dy`."
 cfl(u, v, dt, dx) = maximum([maximum(abs.(u)), maximum(abs.(v))]*dt/dx)
@@ -102,14 +103,17 @@ end
 
 @testset "MultilayerQG" begin
   include("test_multilayerqg.jl")
-
+  
   @test test_pvtofromstreamfunction_2layer()
   @test test_pvtofromstreamfunction_3layer()
+  @test test_mqg_rossbywave("RK4", 1e-2, 20)
+  @test test_mqg_energysinglelayer()
   @test test_mqg_nonlinearadvection(0.001, "ForwardEuler")
   @test test_mqg_linearadvection(0.001, "ForwardEuler")
   @test test_mqg_energies()
   @test test_mqg_fluxes()
-  @test test_mqg_setqsetpsi()
+  @test test_mqg_fluxessinglelayer()
+  @test test_mqg_setqsetψ()
   @test test_mqg_paramsconstructor()
   @test test_mqg_problemtype(Float32)
   @test MultilayerQG.nothingfunction() == nothing
