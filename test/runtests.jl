@@ -112,6 +112,7 @@ end
   @test test_mqg_linearadvection(0.001, "ForwardEuler")
   @test test_mqg_energies()
   @test test_mqg_fluxes()
+  @test test_mqg_fluxessinglelayer()
   @test test_mqg_setqsetψ()
   @test test_mqg_paramsconstructor()
   @test test_mqg_problemtype(Float32)
