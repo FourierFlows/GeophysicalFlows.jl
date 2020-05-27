@@ -490,7 +490,7 @@ function set_q!(params, vars, grid, sol, q)
 end
 
 function set_q!(params::SingleLayerParams, vars, grid, sol, q::AbstractArray{T, 2}) where T
-  A = typeof(vars.q)
+  A = typeof(vars.q[:, :, 1])
   q_3D = vars.q
   @views q_3D[:, :, 1] = A(q)
   set_q!(params, vars, grid, sol, q_3D)
@@ -517,7 +517,7 @@ function set_ψ!(params, vars, grid, sol, ψ)
 end
 
 function set_ψ!(params::SingleLayerParams, vars, grid, sol, ψ::AbstractArray{T, 2}) where T
-  A = typeof(vars.ψ)
+  A = typeof(vars.ψ[:, :, 1])
   ψ_3D = vars.ψ
   @views ψ_3D[:, :, 1] = A(ψ)
   set_ψ!(params, vars, grid, sol, ψ_3D)
