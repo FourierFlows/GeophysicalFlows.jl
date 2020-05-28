@@ -50,7 +50,7 @@ forcing_bandwidth  = 1.5     # the width of the forcing spectrum
 
 gr  = TwoDGrid(nx, Lx)
 
-k = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl] # a 2D grid with the zonal wavenumber
+k = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl ] # a 2D grid with the zonal wavenumber
 
 forcing_spectrum = @. exp( -(sqrt(gr.Krsq)-forcing_wavenumber)^2 / (2forcing_bandwidth^2) )
 @. forcing_spectrum[ gr.Krsq < (2π/Lx*2)^2  ] = 0

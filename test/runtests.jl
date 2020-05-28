@@ -54,7 +54,7 @@ for dev in devices
     @test test_twodnavierstokes_problemtype(Float32)
     @test TwoDNavierStokes.nothingfunction() == nothing
   end
-
+  
   @testset "BarotropicQG" begin
     include("test_barotropicqg.jl")
 
@@ -76,6 +76,25 @@ for dev in devices
     @test BarotropicQG.nothingfunction() == nothing
   end
   
+  @testset "BarotropicQGQL" begin
+    include("test_barotropicqgql.jl")
+
+    @test test_bqgql_rossbywave("ETDRK4", 1e-2, 20, dev)
+    @test test_bqgql_rossbywave("FilteredETDRK4", 1e-2, 20, dev)
+    @test test_bqgql_rossbywave("RK4", 1e-2, 20, dev)
+    @test test_bqgql_rossbywave("FilteredRK4", 1e-2, 20, dev)
+    @test test_bqgql_rossbywave("AB3", 1e-3, 200, dev)
+    @test test_bqgql_rossbywave("FilteredAB3", 1e-3, 200, dev)
+    @test test_bqgql_rossbywave("ForwardEuler", 1e-4, 2000, dev)
+    @test test_bqgql_rossbywave("FilteredForwardEuler", 1e-4, 2000, dev)
+    @test test_bqgql_deterministicforcingbudgets(dev)
+    @test test_bqgql_stochasticforcingbudgets(dev)
+    @test test_bqgql_advection(0.0005, "ForwardEuler", dev)
+    @test test_bqgql_energyenstrophy(dev)
+    @test test_bqgql_problemtype(dev, Float32)
+    @test BarotropicQGQL.nothingfunction() == nothing
+  end
+  
   @testset "MultilayerQG" begin
     include("test_multilayerqg.jl")
     
@@ -95,28 +114,6 @@ for dev in devices
     @test MultilayerQG.nothingfunction() == nothing
   end
   
-end
-
-
-println("rest of tests only on CPU")
-
-@testset "BarotropicQGQL" begin
-  include("test_barotropicqgql.jl")
-
-  @test test_bqgql_rossbywave("ETDRK4", 1e-2, 20)
-  @test test_bqgql_rossbywave("FilteredETDRK4", 1e-2, 20)
-  @test test_bqgql_rossbywave("RK4", 1e-2, 20)
-  @test test_bqgql_rossbywave("FilteredRK4", 1e-2, 20)
-  @test test_bqgql_rossbywave("AB3", 1e-3, 200)
-  @test test_bqgql_rossbywave("FilteredAB3", 1e-3, 200)
-  @test test_bqgql_rossbywave("ForwardEuler", 1e-4, 2000)
-  @test test_bqgql_rossbywave("FilteredForwardEuler", 1e-4, 2000)
-  @test test_bqgql_deterministicforcingbudgets()
-  @test test_bqgql_stochasticforcingbudgets()
-  @test test_bqgql_advection(0.0005, "ForwardEuler")
-  @test test_bqgql_energyenstrophy()
-  @test test_bqgql_problemtype(Float32)
-  @test BarotropicQGQL.nothingfunction() == nothing
 end
 
 end # time
