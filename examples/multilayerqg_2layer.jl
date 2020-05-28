@@ -31,10 +31,10 @@ Lx = 2π         # domain size
  μ = 5e-2       # bottom drag
  β = 5          # the y-gradient of planetary PV
  
-nlayers = 2     # number of layers
-f0, g = 1, 1    # Coriolis parameter and gravitational constant
- H = [0.2, 0.8] # the rest depths of each layer
- ρ = [4.0, 5.0] # the density of each layer
+nlayers = 2      # number of layers
+f0, g = 1.0, 1.0 # Coriolis parameter and gravitational constant
+ H = [0.2, 0.8]  # the rest depths of each layer
+ ρ = [4.0, 5.0]  # the density of each layer
  
  U = zeros(nlayers) # the imposed mean zonal flow in each layer
  U[1] = 1.0
