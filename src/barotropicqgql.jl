@@ -60,15 +60,19 @@ function Problem(dev::Device=CPU();
   x, y = gridpoints(grid)
 
   # topographic PV
-  if eta==nothing
-    eta = zeros(dev, T, (nx, ny))
-  end
+  eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
 
-  params = !(typeof(eta)<:ArrayType(dev)) ? Params(grid, β, eta, μ, ν, nν, calcF) : Params(β, eta, rfft(eta), μ, ν, nν, calcF)
+  params = !(typeof(eta)<:ArrayType(dev)) ?
+           Params(grid, β, eta, μ, ν, nν, calcF) :
+           Params(β, eta, rfft(eta), μ, ν, nν, calcF)
 
-  vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
+  vars = calcF == nothingfunction ?
+         Vars(dev, grid) : stochastic ?
+                           StochasticForcedVars(dev, grid) :
+                           ForcedVars(dev, grid)
 
   equation = BarotropicQGQL.Equation(params, grid)
+  
   FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end
 
