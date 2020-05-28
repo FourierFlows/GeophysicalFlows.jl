@@ -31,7 +31,7 @@ nothingfunction(args...) = nothing
 Construct a BarotropicQG turbulence problem.
 """
 
-function Problem(;
+function Problem(dev::Device=CPU();
     # Numerical parameters
           nx = 256,
           Lx = 2π,
@@ -39,7 +39,6 @@ function Problem(;
           Ly = Lx,
           dt = 0.01,
   # Physical parameters
-          f0 = 1.0,
            β = 0.0,
          eta = nothing,
   # Drag and/or hyper-/hypo-viscosity
@@ -51,8 +50,7 @@ function Problem(;
       calcFU = nothingfunction,
       calcFq = nothingfunction,
   stochastic = false,
-           T = Float64,
-         dev = CPU())
+           T = Float64)
 
   # the grid
     gr = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
@@ -63,7 +61,8 @@ function Problem(;
      eta = zeros(dev, T, (nx, ny))
   end
 
-  pr = !(typeof(eta)<:ArrayType(dev)) ? Params(gr, f0, β, eta, μ, ν, nν, calcFU, calcFq) : Params(f0, β, eta, rfft(eta), μ, ν, nν, calcFU, calcFq)
+  pr = !(typeof(eta)<:ArrayType(dev)) ? Params(gr, β, eta, μ, ν, nν, calcFU, calcFq) : Params(β, eta, rfft(eta), μ, ν, nν, calcFU, calcFq)
+  pr = !(typeof(eta)<:ArrayType(dev)) ? Params(gr, β, eta, μ, ν, nν, calcFU, calcFq) : Params(β, eta, rfft(eta), μ, ν, nν, calcFU, calcFq)
 
   vs = (calcFq == nothingfunction && calcFU == nothingfunction) ? Vars(dev, gr) : (stochastic ? StochasticForcedVars(dev, gr) : ForcedVars(dev, gr))
   
@@ -72,18 +71,16 @@ function Problem(;
 end
 
 
-
 # ----------
 # Parameters
 # ----------
 
 """
-    Params(g::TwoDGrid, f0, β, FU, eta, μ, ν, nν, calcFU, calcFq)
+    Params(g::TwoDGrid, β, FU, eta, μ, ν, nν, calcFU, calcFq)
 
 Returns the params for an unforced two-dimensional barotropic QG problem.
 """
 struct Params{T, Aphys, Atrans} <: AbstractParams
-       f0 :: T            # Constant planetary vorticity
         β :: T            # Planetary vorticity y-gradient
       eta :: Aphys        # Topographic PV
      etah :: Atrans       # FFT of Topographic PV
@@ -96,14 +93,14 @@ struct Params{T, Aphys, Atrans} <: AbstractParams
 end
 
 """
-    Params(g::TwoDGrid, f0, β, eta::Function, μ, ν, nν, calcFU, calcFq)
+    Params(g::TwoDGrid, β, eta::Function, μ, ν, nν, calcFU, calcFq)
 
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function Params(g::AbstractGrid{T, A}, f0, β, eta::Function, μ, ν, nν::Int, calcFU, calcFq) where {T, A}
+function Params(g::AbstractGrid{T, A}, β, eta::Function, μ, ν, nν::Int, calcFU, calcFq) where {T, A}
   etagrid = A([eta(g.x[i], g.y[j]) for i=1:g.nx, j=1:g.ny])
      etah = rfft(etagrid)
-  Params(f0, β, etagrid, etah, μ, ν, nν, calcFU, calcFq)
+  Params(β, etagrid, etah, μ, ν, nν, calcFU, calcFq)
 end
 
 
