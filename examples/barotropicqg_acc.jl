@@ -57,8 +57,8 @@ nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments,
-prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, eta=topoPV,
-                  calcFU=calcFU, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, dev=dev)
+prob = BarotropicQG.Problem(dev; nx=nx, Lx=Lx, β=β, eta=topoPV,
+                  calcFU=calcFU, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper)
 nothing # hide
 
 # and define some shortcuts.

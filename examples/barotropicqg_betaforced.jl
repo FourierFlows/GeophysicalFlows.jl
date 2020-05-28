@@ -82,8 +82,8 @@ nothing # hide
 # a viscosity coefficient ν leads to the module's default value: ν=0. In this
 # example numerical instability due to accumulation of enstrophy in high wavenumbers
 # is taken care with the `FilteredTimestepper` we picked. 
-prob = BarotropicQG.Problem(nx=nx, Lx=Lx, β=β, μ=μ, dt=dt, stepper=stepper, 
-                            calcFq=calcFq!, stochastic=true, dev=dev)
+prob = BarotropicQG.Problem(dev; nx=nx, Lx=Lx, β=β, μ=μ, dt=dt, stepper=stepper, 
+                            calcFq=calcFq!, stochastic=true)
 nothing # hide
 
 # Let's define some shortcuts.
