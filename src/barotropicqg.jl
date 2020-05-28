@@ -21,8 +21,6 @@ using FFTW: rfft
 using LinearAlgebra: mul!, ldiv!
 using FourierFlows: getfieldspecs, parsevalsum, parsevalsum2
 
-abstract type BarotropicQGVars <: AbstractVars end
-
 nothingfunction(args...) = nothing
 
 """
@@ -123,6 +121,8 @@ end
 # ----
 # Vars
 # ----
+
+abstract type BarotropicQGVars <: AbstractVars end
 
 struct Vars{Ascalar, Aphys, Atrans, F, P} <: BarotropicQGVars
         U :: Ascalar
