@@ -72,7 +72,7 @@ for dev in devices
     @test test_bqg_formstress(0.01, "ForwardEuler", dev)
     @test test_bqg_energyenstrophy(dev)
     @test test_bqg_meanenergyenstrophy(dev)
-    @test test_bqg_problemtype(Float32)
+    @test test_bqg_problemtype(dev, Float32)
     @test BarotropicQG.nothingfunction() == nothing
   end
   

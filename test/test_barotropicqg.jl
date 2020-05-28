@@ -1,5 +1,5 @@
 """
-    test_bqg_rossbywave(; kwargs...)
+    test_bqg_rossbywave(stepper, dt, nsteps, dev; kwargs...)
 
 Evolves a Rossby wave and compares with the analytic solution.
 """
@@ -19,7 +19,7 @@ function test_bqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
     eta(x, y) = 0*x
   end
 
-  prob = BarotropicQG.Problem(nx=nx, Lx=Lx, eta=eta, β=β, μ=μ, ν=ν, stepper=stepper, dt=dt, dev=dev)
+  prob = BarotropicQG.Problem(dev; nx=nx, Lx=Lx, eta=eta, β=β, μ=μ, ν=ν, stepper=stepper, dt=dt)
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
   x, y = gridpoints(g)
@@ -40,13 +40,13 @@ function test_bqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
 
   ζ_theory = @. ampl*cos(kwave*(x - ω/kwave*cl.t)) * cos(lwave*y)
 
-  isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
+  return isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
 end
 
 """
-    test_stochasticforcingbudgets(; kwargs...)
+    test_bqg_stochasticforcingbudgets(dev; kwargs...)
 
-Tests if the energy budgets are closed for BarotropicQG with stochastic forcing.
+Tests if the energy budget is closed for BarotropicQG problem with stochastic forcing.
 """
 function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, T=Float64)
   n, L  = 256, 2π
@@ -54,13 +54,13 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
   μ = 1e-1
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
-   
+
+    gr = TwoDGrid(dev, n, L)
+  x, y = gridpoints(gr)
+
   # Forcing
   kf, dkf = 12.0, 2.0
   ε = 0.1
-
-  gr = TwoDGrid(dev, n, L)
-  x, y = gridpoints(gr)
 
   Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
 
@@ -78,11 +78,11 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
     eta = ArrayType(dev)(exp.(2π*im*rand(T, size(sol)))/sqrt(cl.dt))
     eta[1, 1] = 0
     @. Fqh = eta * sqrt(forcingcovariancespectrum)
-    nothing
+    return nothing
   end
 
-  prob = BarotropicQG.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
-   stepper="RK4", calcFq=calcFq!, stochastic=true, dev=dev)
+  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
+   stepper="RK4", calcFq=calcFq!, stochastic=true)
 
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
@@ -95,7 +95,7 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
 
   # Step forward
 
-  stepforward!(prob, diags, round(Int, nt))
+  stepforward!(prob, diags, nt)
 
   BarotropicQG.updatevars!(prob)
 
@@ -120,9 +120,9 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
 end
 
 """
-    test_stochasticforcingbudgets(; kwargs...)
+    test_bqg_deterministicforcingbudgets(dev; kwargs...)
 
-Tests if the energy budgets are closed for BarotropicQG with stochastic forcing.
+Tests if the energy budget is closed for BarotropicQG problem with deterministic forcing.
 """
 function test_bqg_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1)
   n, L  = 256, 2π
@@ -133,18 +133,20 @@ function test_bqg_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01,
 
   gr  = TwoDGrid(dev, n, L)
   x, y = gridpoints(gr)
-  k0, l0 = gr.kr[2], gr.l[2]
+  k0, l0 = 2π/gr.Lx, 2π/gr.Ly
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
-  f = @. 0.01*cos(4k0*x)*cos(5l0*y)
+  f = @. 0.01 * cos(4k0*x) * cos(5l0*y)
   fh = rfft(f)
+  
   function calcFq!(Fqh, sol, t, cl, v, p, g)
-    Fqh = fh*cos(2t)
-    nothing
+    cos2t = cos(2*t)
+    @. Fqh = fh*cos2t
+    return nothing
   end
 
-  prob = BarotropicQG.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
-   stepper="RK4", calcFq=calcFq!, stochastic=false, dev=dev)
+  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
+   stepper="RK4", calcFq=calcFq!, stochastic=false)
 
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
@@ -175,13 +177,13 @@ function test_bqg_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01,
 
   residual = dEdt - total
 
-  isapprox(mean(abs.(residual)), 0, atol=1e-8)
+  return isapprox(mean(abs.(residual)), 0, atol=1e-8)
 end
 
 """
-    test_bqg_nonlinearadvection(dt, stepper; kwargs...)
+    test_bqg_nonlinearadvection(dt, stepper, dev; kwargs...)
 
-Tests the advection term in the TwoDNavierStokes module by timestepping a
+Tests the advection term in the BarotropicQG module by timestepping a
 test problem with timestep dt and timestepper identified by the string stepper.
 The test problem is derived by picking a solution ζf (with associated
 streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
@@ -192,7 +194,7 @@ be realized, at least at long times, if it is unstable.)
 function test_bqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1, μ=0.0)
   n, L  = 128, 2π
   ν, nν = 1e-2, 1
-  μ = 0.0
+   μ = 0.0
   tf = 1.0
   nt = round(Int, tf/dt)
 
@@ -212,10 +214,10 @@ function test_bqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
   # Forcing
   function calcFq!(Fqh, sol, t, cl, v, p, g)
     Fqh .= Ffh
-    nothing
+    return nothing
   end
 
-  prob = BarotropicQG.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcFq=calcFq!, dev=dev)
+  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcFq=calcFq!)
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
   BarotropicQG.set_zeta!(prob, qf)
 
@@ -223,11 +225,11 @@ function test_bqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
   stepforward!(prob, round(Int, nt))
   BarotropicQG.updatevars!(prob)
   
-  isapprox(v.q, qf, rtol=rtol_barotropicQG)
+  return isapprox(v.q, qf, rtol=rtol_barotropicQG)
 end
 
 """
-    test_bqg_formstress(dt, stepper; kwargs...)
+    test_bqg_formstress(dt, stepper, dev; kwargs...)
 
 Tests the form stress term that forces the domain-averaged zonal flow U(t).
 """
@@ -247,15 +249,20 @@ function test_bqg_formstress(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=0.
 
   answer = 0.25 # this is what <v*eta> should be
 
-  prob = BarotropicQG.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, eta=topoPV, calcFU=F, dev=dev)
+  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, eta=topoPV, calcFU=F)
   BarotropicQG.set_zeta!(prob, zetai)
   BarotropicQG.updatevars!(prob)
 
   # Step forward
   stepforward!(prob, nt)
-  isapprox(prob.timestepper.N[1, 1], answer, rtol=rtol_barotropicQG)
+  return isapprox(prob.timestepper.N[1, 1], answer, rtol=rtol_barotropicQG)
 end
 
+"""
+    test_bqg_energyenstrophy(dev)
+
+Tests the energy and enstrophy function for a BarotropicQG problem.
+"""
 function test_bqg_energyenstrophy(dev::Device=CPU())
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
@@ -270,7 +277,7 @@ function test_bqg_energyenstrophy(dev::Device=CPU())
    psi0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
   zeta0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
 
-  prob = BarotropicQG.Problem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta = eta, stepper="ForwardEuler", dev=dev)
+  prob = BarotropicQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta = eta, stepper="ForwardEuler")
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
   BarotropicQG.set_zeta!(prob, zeta0)
   BarotropicQG.updatevars!(prob)
@@ -278,10 +285,15 @@ function test_bqg_energyenstrophy(dev::Device=CPU())
   energyzeta0 = BarotropicQG.energy(prob)
   enstrophyzeta0 = BarotropicQG.enstrophy(prob)
 
-  isapprox(energyzeta0, energy_calc, rtol=rtol_barotropicQG) && isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_barotropicQG) &&
+  return isapprox(energyzeta0, energy_calc, rtol=rtol_barotropicQG) && isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_barotropicQG) &&
   BarotropicQG.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing
 end
 
+"""
+    test_bqg_energyenstrophy(dev)
+
+Tests the mean flow U(t) energy and enstrophy function for a BarotropicQG problem.
+"""
 function test_bqg_meanenergyenstrophy(dev::Device=CPU())
   nx, Lx  = 64, 2π
   ny, Ly  = 96, 3π
@@ -299,8 +311,8 @@ function test_bqg_meanenergyenstrophy(dev::Device=CPU())
   energy_calc = 29/9
   enstrophy_calc = 2701/162
 
-  prob = BarotropicQG.Problem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, β=β, eta=eta, calcFU = calcFU,
-                                    stepper="ForwardEuler", dev=dev)
+  prob = BarotropicQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, β=β, eta=eta, calcFU = calcFU,
+                                    stepper="ForwardEuler")
 
   BarotropicQG.set_zeta!(prob, zeta0)
   BarotropicQG.set_U!(prob, U)
@@ -312,15 +324,22 @@ function test_bqg_meanenergyenstrophy(dev::Device=CPU())
   energyzeta0 = BarotropicQG.energy(prob)
   enstrophyzeta0 = BarotropicQG.enstrophy(prob)
 
-  (isapprox(energyU, 0.5*U^2, rtol=rtol_barotropicQG) &&
+  return (isapprox(energyU, 0.5*U^2, rtol=rtol_barotropicQG) &&
     isapprox(enstrophyU, β*U, rtol=rtol_barotropicQG) &&
     isapprox(energyzeta0, energy_calc, rtol=rtol_barotropicQG) &&
     isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_barotropicQG)
   )
 end
 
-function test_bqg_problemtype(T=Float32)
-  prob = BarotropicQG.Problem(T=T)
+"""
+    test_bqg_problemtype(dev, T)
 
-  (typeof(prob.sol)==Array{Complex{T},2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)==Array{T,2})
+Tests the BarotropicQG problem constructor for different DataType `T`.
+"""
+function test_bqg_problemtype(dev, T)
+  prob = BarotropicQG.Problem(dev; T=T)
+
+  A = ArrayType(dev)
+  
+  return (typeof(prob.sol)<:A{Complex{T}, 2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T, 2})
 end

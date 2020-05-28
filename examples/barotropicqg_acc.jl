@@ -41,7 +41,6 @@ nothing # hide
 Lx = 2π        # domain size
  ν = 4e-15     # viscosity
 nν = 4         # viscosity order
-f0 = -1.0      # Coriolis parameter
  β = 1.4015    # the y-gradient of planetary PV
  μ = 1e-2      # linear drag
  F = 0.0012    # normalized wind stress forcing on domain-averaged zonal flow U(t) flow
@@ -58,8 +57,8 @@ nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments,
-prob = BarotropicQG.Problem(nx=nx, Lx=Lx, f0=f0, β=β, eta=topoPV,
-                  calcFU=calcFU, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, dev=dev)
+prob = BarotropicQG.Problem(dev; nx=nx, Lx=Lx, β=β, eta=topoPV,
+                  calcFU=calcFU, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper)
 nothing # hide
 
 # and define some shortcuts.

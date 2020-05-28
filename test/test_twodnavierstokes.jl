@@ -1,6 +1,6 @@
 function test_twodnavierstokes_lambdipole(n, dt, dev::Device=CPU(); L=2π, Ue=1, Re=L/20, ν=0.0, nν=1, ti=L/Ue*0.01, nm=3)
   nt = round(Int, ti/dt)
-  prob = TwoDNavierStokes.Problem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4", dev=dev)
+  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4")
   zeta₀ = lambdipole(Ue, Re, prob.grid)
   TwoDNavierStokes.set_zeta!(prob, zeta₀)
 
@@ -49,8 +49,8 @@ function test_twodnavierstokes_stochasticforcingbudgets(dev::Device=CPU(); n=256
     nothing
   end
 
-  prob = TwoDNavierStokes.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
-   stepper="RK4", calcF=calcF!, stochastic=true, dev=dev)
+  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
+   stepper="RK4", calcF=calcF!, stochastic=true)
 
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
 
@@ -101,8 +101,8 @@ function test_twodnavierstokes_deterministicforcingbudgets(dev::Device=CPU(); n=
     nothing
   end
 
-  prob = TwoDNavierStokes.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
-   stepper="RK4", calcF=calcF!, stochastic=false, dev=dev)
+  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
+   stepper="RK4", calcF=calcF!, stochastic=false)
 
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
@@ -170,7 +170,7 @@ function test_twodnavierstokes_advection(dt, stepper, dev::Device=CPU(); n=128, 
     nothing
   end
 
-  prob = TwoDNavierStokes.Problem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper=stepper, calcF=calcF!, stochastic=false, dev=dev)
+  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper=stepper, calcF=calcF!, stochastic=false)
   sol, cl, p, v, g = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
   TwoDNavierStokes.set_zeta!(prob, zetaf)
 
@@ -193,7 +193,7 @@ function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
   energy_calc = 29/9
   enstrophy_calc = 2701/162
 
-  prob = TwoDNavierStokes.Problem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler", dev=dev)
+  prob = TwoDNavierStokes.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
   
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
 
@@ -211,7 +211,7 @@ function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
 end
 
 function test_twodnavierstokes_problemtype(T=Float32, dev::Device=CPU())
-  prob = TwoDNavierStokes.Problem(T=T, dev=dev)
+  prob = TwoDNavierStokes.Problem(dev; T=T)
 
   (typeof(prob.sol)==Array{Complex{T},2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)==Array{T,2})
 end
