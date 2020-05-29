@@ -21,7 +21,7 @@ using
 
 using LinearAlgebra: mul!, ldiv!
 using FFTW: rfft, irfft
-using FourierFlows: getfieldspecs, varsexpression, parsevalsum, parsevalsum2, superzeros
+using FourierFlows: getfieldspecs, varsexpression, parsevalsum, parsevalsum2, superzeros, plan_flows_rfft
 
 nothingfunction(args...) = nothing
 
@@ -30,32 +30,36 @@ nothingfunction(args...) = nothing
 
 Construct a multi-layer QG problem.
 """
-function Problem(dev = CPU(), T = Float64;
-    # Numerical parameters
-          nx = 128,
-          Lx = 2π,
-          ny = nx,
-          Ly = Lx,
-          dt = 0.01,
-    # Physical parameters
-     nlayers = 2,                             # number of fluid layers
-          f0 = 1.0,                           # Coriolis parameter
-           β = 0.0,                           # y-gradient of Coriolis parameter
-           g = 1.0,                           # gravitational constant
-           U = zeros(dev, T, (ny, nlayers)),  # imposed zonal flow U(y) in each layer
-           H = [0.2, 0.8],                    # rest fluid height of each layer
-           ρ = [4.0, 5.0],                    # density of each layer
-         eta = zeros(dev, T, (nx, ny)),       # topographic PV
-    # Bottom Drag and/or (hyper)-viscosity
-           μ = 0.0,
-           ν = 0.0,
-          nν = 1,
-    # Timestepper and eqn options
-     stepper = "RK4",
-      calcFq = nothingfunction,
-  stochastic = false,
-      linear = false)
+function Problem(nlayers::Int,                        # number of fluid layers
+                     dev = CPU();
+              # Numerical parameters
+                      nx = 128,
+                      Lx = 2π,
+                      ny = nx,
+                      Ly = Lx,
+                      dt = 0.01,
+              # Physical parameters
+                      f0 = 1.0,                       # Coriolis parameter
+                       β = 0.0,                       # y-gradient of Coriolis parameter
+                       g = 1.0,                       # gravitational constant
+                       U = zeros(nlayers),            # imposed zonal flow U(y) in each layer
+                       H = 1/nlayers * ones(nlayers), # rest fluid height of each layer
+                       ρ = Array{Float64}(1:nlayers), # density of each layer
+                     eta = nothing,                   # topographic PV
+              # Bottom Drag and/or (hyper)-viscosity
+                       μ = 0,
+                       ν = 0,
+                      nν = 1,
+              # Timestepper and equation options
+                 stepper = "RK4",
+                  calcFq = nothingfunction,
+              stochastic = false,
+                  linear = false,
+                       T = Float64)
 
+   # topographic PV
+   eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
+           
    grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
    params = Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq, dev=dev)   
    vars = calcFq == nothingfunction ? Vars(dev, grid, params) : (stochastic ? StochasticForcedVars(dev, grid, params) : ForcedVars(dev, grid, params))
@@ -68,52 +72,52 @@ abstract type BarotropicParams <: AbstractParams end
 
 struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
   # prescribed params
-   nlayers :: Int            # Number of fluid layers
-         g :: T              # Gravitational constant
-        f0 :: T              # Constant planetary vorticity
-         β :: T              # Planetary vorticity y-gradient
+   nlayers :: Int        # Number of fluid layers
+         g :: T          # Gravitational constant
+        f0 :: T          # Constant planetary vorticity
+         β :: T          # Planetary vorticity y-gradient
          ρ :: Aphys3D    # Array with density of each fluid layer
          H :: Aphys3D    # Array with rest height of each fluid layer
          U :: Aphys3D    # Array with imposed constant zonal flow U(y) in each fluid layer
        eta :: Aphys2D    # Array containing topographic PV
-         μ :: T              # Linear bottom drag
-         ν :: T              # Viscosity coefficient
-        nν :: Int            # Hyperviscous order (nν=1 is plain old viscosity)
-   calcFq! :: Function       # Function that calculates the forcing on QGPV q
+         μ :: T          # Linear bottom drag
+         ν :: T          # Viscosity coefficient
+        nν :: Int        # Hyperviscous order (nν=1 is plain old viscosity)
+   calcFq! :: Function   # Function that calculates the forcing on QGPV q
 
   # derived params
         g′ :: Aphys1D    # Array with the reduced gravity constants for each fluid interface
         Qx :: Aphys3D    # Array containing x-gradient of PV due to eta in each fluid layer
         Qy :: Aphys3D    # Array containing y-gradient of PV due to β, U, and eta in each fluid layer
-         S :: Atrans4D    # Array containing coeffients for getting PV from  streamfunction
-      invS :: Atrans4D    # Array containing coeffients for inverting PV to streamfunction
-  rfftplan :: Trfft  # rfft plan for FFTs
+         S :: Atrans4D   # Array containing coeffients for getting PV from  streamfunction
+      invS :: Atrans4D   # Array containing coeffients for inverting PV to streamfunction
+  rfftplan :: Trfft      # rfft plan for FFTs
 end
 
 struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: BarotropicParams
   # prescribed params
-         β :: T              # Planetary vorticity y-gradient
+         β :: T          # Planetary vorticity y-gradient
          U :: Aphys3D    # Imposed constant zonal flow U(y)
        eta :: Aphys2D    # Array containing topographic PV
-         μ :: T              # Linear bottom drag
-         ν :: T              # Viscosity coefficient
-        nν :: Int            # Hyperviscous order (nν=1 is plain old viscosity)
-   calcFq! :: Function       # Function that calculates the forcing on QGPV q
+         μ :: T          # Linear bottom drag
+         ν :: T          # Viscosity coefficient
+        nν :: Int        # Hyperviscous order (nν=1 is plain old viscosity)
+   calcFq! :: Function   # Function that calculates the forcing on QGPV q
 
   # derived params
         Qx :: Aphys3D    # Array containing x-gradient of PV due to eta
         Qy :: Aphys3D    # Array containing meridional PV gradient due to β, U, and eta
-  rfftplan :: Trfft  # rfft plan for FFTs
+  rfftplan :: Trfft      # rfft plan for FFTs
 end
 
 function convert_U_to_U3D(dev, nlayers, grid, U::AbstractArray{TU, 1}) where TU
   T = eltype(grid)
   if length(U) == nlayers
-    U_2D = zeros(dev, T,  (1, nlayers))
+    U_2D = zeros(dev, T, (1, nlayers))
     U_2D[:] = U
     U_2D = repeat(U_2D, outer=(grid.ny, 1))
   else
-    U_2D = zeros(dev, T,  (grid.ny, 1))
+    U_2D = zeros(dev, T, (grid.ny, 1))
     U_2D[:] = U
   end
   U_3D = zeros(dev, T, (1, grid.ny, nlayers))
@@ -150,7 +154,7 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
   Uyy = real.(ifft(-l.^2 .* fft(U)))
   Uyy = repeat(Uyy, outer=(nx, 1, 1))
 
-  etah = rfft(eta)
+  etah = rfft(A(eta))
   etax = irfft(im * kr .* etah, nx)
   etay = irfft(im * l  .* etah, nx)
 
@@ -161,7 +165,7 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
   Qy = T(β) .- Uyy  # T(β) is needed to ensure that Qy remains same type as U
   @views @. Qy[:, :, nlayers] += etay
   
-  rfftplanlayered = plan_rfft(A{T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]) #; flags=effort)
+  rfftplanlayered = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
   
   if nlayers==1
     return SingleLayerParams(T(β), U, eta, T(μ), T(ν), nν, calcFq, Qx, Qy, rfftplanlayered)
@@ -171,7 +175,7 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
     ρ = reshape(T.(ρ), (1,  1, nlayers))
     H = reshape(T.(H), (1,  1, nlayers))
 
-    g′ = g * T.(ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface;
+    g′ = T(g) * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface;
 
     Fm = @. T( f0^2 / (g′ * H[2:nlayers]) )
     Fp = @. T( f0^2 / (g′ * H[1:nlayers-1]) )

@@ -26,9 +26,9 @@ function test_bqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
 
   # the Rossby wave initial condition
    ampl = 1e-2
-  kwave = 3.0*2π/g.Lx
-  lwave = 2.0*2π/g.Ly
-      ω = -p.β*kwave/(kwave^2.0 + lwave^2.0)
+  kwave = 3 * 2π/g.Lx
+  lwave = 2 * 2π/g.Ly
+      ω = -p.β*kwave/(kwave^2 + lwave^2)
      ζ0 = @. ampl*cos(kwave*x)*cos(lwave*y)
     ζ0h = rfft(ζ0)
 
@@ -62,14 +62,14 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
   kf, dkf = 12.0, 2.0
   ε = 0.1
 
-  Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
+  Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl ])
 
   forcingcovariancespectrum = zeros(dev, T, (gr.nkr, gr.nl))
-  @. forcingcovariancespectrum = exp.(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
-  @. forcingcovariancespectrum[gr.Krsq .< 2.0^2 ] = 0
-  @. forcingcovariancespectrum[gr.Krsq .> 20.0^2 ] = 0
+  @. forcingcovariancespectrum = exp.( -(sqrt(gr.Krsq)-kf)^2 / (2*dkf^2) )
+  @. forcingcovariancespectrum[gr.Krsq .< 2^2 ] = 0
+  @. forcingcovariancespectrum[gr.Krsq .> 20^2 ] = 0
   @. forcingcovariancespectrum[Kr .< 2π/L] = 0
-  ε0 = parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+  ε0 = parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2, gr)/(gr.Lx*gr.Ly)
   forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum
 
   Random.seed!(1234)
@@ -131,12 +131,12 @@ function test_bqg_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01,
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  gr  = TwoDGrid(dev, n, L)
+  gr = TwoDGrid(dev, n, L)
   x, y = gridpoints(gr)
-  k0, l0 = 2π/gr.Lx, 2π/gr.Ly
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
-  f = @. 0.01 * cos(4k0*x) * cos(5l0*y)
+  f = @. 0.01 * cos(4k₀*x) * cos(5l₀*y)
   fh = rfft(f)
   
   function calcFq!(Fqh, sol, t, cl, v, p, g)
@@ -198,16 +198,16 @@ function test_bqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
   tf = 1.0
   nt = round(Int, tf/dt)
 
-  gr  = TwoDGrid(dev, n, L)
+  gr = TwoDGrid(dev, n, L)
   x, y = gridpoints(gr)
 
-  psif = @. sin(2x)*cos(2y) + 2sin(x)*cos(3y)
-    qf = @. -8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
+  psif = @. sin(2x) * cos(2y) + 2sin(x) * cos(3y)
+    qf = @. -8sin(2x) * cos(2y) - 20sin(x) * cos(3y)
 
   Ff = @. -(
-    ν*( 64sin(2x)*cos(2y) + 200sin(x)*cos(3y) )
-    + 8*( cos(x)*cos(3y)*sin(2x)*sin(2y) - 3cos(2x)*cos(2y)*sin(x)*sin(3y) )
-  )
+    ν*( 64sin(2x) * cos(2y) + 200sin(x) * cos(3y) )
+    + 8 * ( cos(x) * cos(3y) * sin(2x) * sin(2y) - 3cos(2x) * cos(2y) * sin(x) * sin(3y) )
+    )
 
   Ffh = rfft(Ff)
 
@@ -243,14 +243,14 @@ function test_bqg_formstress(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=0.
   gr  = TwoDGrid(dev, n, L)
   x, y = gridpoints(gr)
 
-  zetai = @. -20*sin(10x)*cos(10y)
-  topoPV(x, y) = @. cos(10x)*cos(10y)
+  ζ₀ = @. -20 * sin(10x) * cos(10y)
+  topoPV(x, y) = @. cos(10x) * cos(10y)
   F(t) = 0 #no forcing
 
   answer = 0.25 # this is what <v*eta> should be
 
   prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, eta=topoPV, calcFU=F)
-  BarotropicQG.set_zeta!(prob, zetai)
+  BarotropicQG.set_zeta!(prob, ζ₀)
   BarotropicQG.updatevars!(prob)
 
   # Step forward
@@ -267,15 +267,15 @@ function test_bqg_energyenstrophy(dev::Device=CPU())
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
   g  = TwoDGrid(dev, nx, Lx, ny, Ly)
-  k0, l0 = g.k[2], g.l[2] # fundamental wavenumbers
+  k₀, l₀ = g.k[2], g.l[2] # fundamental wavenumbers
   x, y = gridpoints(g)
 
   energy_calc = 29/9
   enstrophy_calc = 2701/162
 
-    eta = @. cos(10k0*x)*cos(10l0*y)
-   psi0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
-  zeta0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
+    eta = @. cos(10k₀*x) * cos(10l₀*y)
+   psi0 = @. sin(2k₀*x) * cos(2l₀*y) + 2sin(k₀*x) * cos(3l₀*y)
+  zeta0 = @. - ((2k₀)^2+(2l₀)^2) * sin(2k₀*x) * cos(2l₀*y) - (k₀^2+(3l₀)^2) * 2sin(k₀*x) * cos(3l₀*y)
 
   prob = BarotropicQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta = eta, stepper="ForwardEuler")
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
@@ -298,13 +298,13 @@ function test_bqg_meanenergyenstrophy(dev::Device=CPU())
   nx, Lx  = 64, 2π
   ny, Ly  = 96, 3π
   g = TwoDGrid(dev, nx, Lx, ny, Ly)
-  k0, l0 = g.k[2], g.l[2] # fundamental wavenumbers
+  k₀, l₀ = g.k[2], g.l[2] # fundamental wavenumbers
   x, y = gridpoints(g)
 
   calcFU(t) = 0.0
-  eta(x, y) = @. cos(10x)*cos(10y)
-  psi0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
- zeta0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
+  eta(x, y) = @. cos(10x) * cos(10y)
+  psi0 = @. sin(2k₀*x) * cos(2l₀*y) + 2sin(k₀*x) * cos(3l₀*y)
+ zeta0 = @. - ((2k₀)^2+(2l₀)^2) * sin(2k₀*x) * cos(2l₀*y) - (k₀^2+(3l₀)^2) * 2sin(k₀*x) * cos(3l₀*y)
   β = 10.0
   U = 1.2
 

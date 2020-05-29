@@ -18,6 +18,12 @@ import GeophysicalFlows.BarotropicQGQL
 import GeophysicalFlows.BarotropicQGQL: energy, enstrophy
 
 
+# ## Choosing a device: CPU or GPU
+
+dev = CPU()     # Device (CPU/GPU)
+nothing # hide
+
+
 # ## Numerical parameters and time-stepping parameters
 
      nx = 128            # 2D resolution = nx^2
@@ -64,7 +70,7 @@ nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
 function calcF!(Fh, sol, t, clock, vars, params, grid)
-  ξ = exp.(2π*im*rand(eltype(grid), size(sol)))/sqrt(clock.dt)
+  ξ = ArrayType(dev)(exp.(2π*im*rand(eltype(grid), size(sol)))/sqrt(clock.dt))
   @. Fh = ξ*sqrt.(forcing_spectrum)
   Fh[abs.(grid.Krsq).==0] .= 0
   nothing
@@ -77,7 +83,7 @@ nothing # hide
 # a viscosity coefficient ν leads to the module's default value: ν=0. In this
 # example numerical instability due to accumulation of enstrophy in high wavenumbers
 # is taken care with the `FilteredTimestepper` we picked. 
-prob = BarotropicQGQL.Problem(nx=nx, Lx=Lx, β=β, μ=μ, dt=dt, stepper=stepper, 
+prob = BarotropicQGQL.Problem(dev; nx=nx, Lx=Lx, β=β, μ=μ, dt=dt, stepper=stepper, 
                               calcF=calcF!, stochastic=true)
 nothing # hide
 

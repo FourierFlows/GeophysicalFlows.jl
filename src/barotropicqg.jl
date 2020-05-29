@@ -30,7 +30,7 @@ Construct a BarotropicQG turbulence problem.
 """
 
 function Problem(dev::Device=CPU();
-    # Numerical parameters
+  # Numerical parameters
           nx = 256,
           Lx = 2π,
           ny = nx,
@@ -43,7 +43,7 @@ function Problem(dev::Device=CPU();
            ν = 0.0,
           nν = 1,
            μ = 0.0,
-  # Timestepper and eqn options
+  # Timestepper and equation options
      stepper = "RK4",
       calcFU = nothingfunction,
       calcFq = nothingfunction,
@@ -55,9 +55,7 @@ function Problem(dev::Device=CPU();
   x, y = gridpoints(grid)
 
   # topographic PV
-  if eta==nothing
-     eta = zeros(dev, T, (nx, ny))
-  end
+  eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
 
   params = !(typeof(eta)<:ArrayType(dev)) ? Params(grid, β, eta, μ, ν, nν, calcFU, calcFq) : Params(β, eta, rfft(eta), μ, ν, nν, calcFU, calcFq)
 
@@ -379,7 +377,7 @@ Returns the domain-averaged rate of work of energy by the forcing Fqh.
 end
 
 @inline function work(sol, vars::StochasticForcedVars, grid)
-  @. vars.uh = grid.invKrsq * (vars.prevsol + sol)/2.0 * conj(vars.Fqh) # Stratonovich
+  @. vars.uh = grid.invKrsq * (vars.prevsol + sol)/2 * conj(vars.Fqh) # Stratonovich
   # @. vars.uh = grid.invKrsq * vars.prevsol * conj(vars.Fqh)             # Ito
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
