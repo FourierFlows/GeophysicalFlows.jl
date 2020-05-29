@@ -517,7 +517,7 @@ function test_mqg_paramsconstructor(dev::Device=CPU(); dt=0.001, stepper="Forwar
   return isapprox(probUfloats.params.U, probUvectors.params.U, rtol=rtol_multilayerqg)
 end
 
-function test_mqg_problemtype(dev::Device=CPU(), T=Float32)
+function test_mqg_problemtype(dev::Device=CPU(), T)
   prob1 = MultilayerQG.Problem(dev; T=T, nlayers=1)
   prob2 = MultilayerQG.Problem(dev; T=T, nlayers=2)
   
