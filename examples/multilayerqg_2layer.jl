@@ -14,6 +14,12 @@ import GeophysicalFlows.MultilayerQG
 import GeophysicalFlows.MultilayerQG: energies
 
 
+# ## Choosing a device: CPU or GPU
+
+dev = CPU()     # Device (CPU/GPU)
+nothing # hide
+
+
 # ## Numerical parameters and time-stepping parameters
 
 nx = 128          # 2D resolution = nx^2
@@ -44,7 +50,7 @@ nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments,
-prob = MultilayerQG.Problem(nlayers=nlayers, nx=nx, Lx=Lx, f0=f0, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
+prob = MultilayerQG.Problem(dev; nlayers=nlayers, nx=nx, Lx=Lx, f0=f0, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
 nothing # hide
 
 # and define some shortcuts.

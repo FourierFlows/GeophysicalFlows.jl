@@ -30,7 +30,7 @@ nothingfunction(args...) = nothing
 
 Construct a multi-layer QG problem.
 """
-function Problem(dev = CPU(), T = Float64;
+function Problem(dev = CPU();
     # Numerical parameters
           nx = 128,
           Lx = 2π,
@@ -54,7 +54,8 @@ function Problem(dev = CPU(), T = Float64;
      stepper = "RK4",
       calcFq = nothingfunction,
   stochastic = false,
-      linear = false)
+      linear = false,
+           T = Float64)
 
    grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
    params = Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq, dev=dev)   
@@ -161,7 +162,7 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
   Qy = T(β) .- Uyy  # T(β) is needed to ensure that Qy remains same type as U
   @views @. Qy[:, :, nlayers] += etay
   
-  rfftplanlayered = plan_rfft(A{T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]) #; flags=effort)
+  rfftplanlayered = plan_flows_fft(A{T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
   
   if nlayers==1
     return SingleLayerParams(T(β), U, eta, T(μ), T(ν), nν, calcFq, Qx, Qy, rfftplanlayered)
@@ -171,7 +172,7 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
     ρ = reshape(T.(ρ), (1,  1, nlayers))
     H = reshape(T.(H), (1,  1, nlayers))
 
-    g′ = g * T.(ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface;
+    g′ = T(g) * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface;
 
     Fm = @. T( f0^2 / (g′ * H[2:nlayers]) )
     Fp = @. T( f0^2 / (g′ * H[1:nlayers-1]) )
