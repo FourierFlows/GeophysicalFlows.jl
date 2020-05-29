@@ -18,8 +18,8 @@ ny = nx
 
 stepper = "FilteredRK4"   # timestepper
 min_time_step = 1e-2      # timestep
-nsteps = 1000             # total number of time-steps
-nsubs  = 1                # number of time-steps for plotting (nsteps must be multiple of nsubs)
+nsteps = 1000            # total number of time-steps
+nsubs  = 10               # number of time-steps for plotting (nsteps must be multiple of nsubs)
 
 # ## Physical parameters
 Lx = 2π         # domain size
@@ -29,9 +29,9 @@ Lx = 2π         # domain size
 f₀ = 4.0
  
 # Vertical grid
-nlayers = 4     # number of layers
+nlayers = 6     # number of layers
+
 total_depth = 1
-Δh = total_depth / nlayers
 z = [ (i - 1/2) * Δh for i = nlayers:-1:1 ] .- total_depth
 H = [ Δh for i = 1:nlayers ]
 
@@ -52,6 +52,13 @@ N² = 2
 ΔU = 1 / (nlayers - 1)
 U = [ i * ΔU for i = nlayers - 1 : -1 : 0 ]
 
+twod_grid = TwoDGrid(nx, Lx)
+
+x, y = gridpoints(twod_grid)
+
+#eta(x, y) = 20 * f₀ * Δh / total_depth * exp(-y^2 / 0.125)
+eta(x, y) = 40 * exp(-(x - y)^2 / 0.125) #cos(10y) * cos(10x)
+
 # ## Problem setup
 # 
 # We initialize a `Problem` by providing a set of keyword arguments,
@@ -64,8 +71,9 @@ prob = MultilayerQG.Problem(nlayers = nlayers,
                                   H = H,
                                   ρ = ρ,
                                   U = U,
-                                 dt = dt,
+                                 dt = min_time_step,
                             stepper = stepper,
+                                eta = eta.(x, y),
                                   μ = μ, 
                                   β = β
                            )
@@ -121,7 +129,6 @@ end
 
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 nothing # hide
-
 
 # ## Visualizing the simulation
 
