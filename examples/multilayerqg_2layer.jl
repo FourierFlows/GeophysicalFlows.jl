@@ -22,13 +22,13 @@ nothing # hide
 
 # ## Numerical parameters and time-stepping parameters
 
-nx = 128          # 2D resolution = nx^2
+nx = 128        # 2D resolution = nx^2
 ny = nx
 
-stepper = "FilteredRK4"   # timestepper
-dt = 6e-3       # timestep
-nsteps = 7000  # total number of time-steps
-nsubs  = 25     # number of time-steps for plotting (nsteps must be multiple of nsubs)
+stepper = "FilteredRK4"  # timestepper
+dt = 6e-3                # timestep
+nsteps = 7000            # total number of time-steps
+nsubs  = 25              # number of time-steps for plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
@@ -38,7 +38,7 @@ Lx = 2π         # domain size
  β = 5          # the y-gradient of planetary PV
  
 nlayers = 2      # number of layers
-f0, g = 1.0, 1.0 # Coriolis parameter and gravitational constant
+f0, g = 1, 1     # Coriolis parameter and gravitational constant
  H = [0.2, 0.8]  # the rest depths of each layer
  ρ = [4.0, 5.0]  # the density of each layer
  
@@ -50,7 +50,7 @@ nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments,
-prob = MultilayerQG.Problem(dev; nlayers=nlayers, nx=nx, Lx=Lx, f0=f0, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
+prob = MultilayerQG.Problem(nlayers, dev; nx=nx, Lx=Lx, f0=f0, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
 nothing # hide
 
 # and define some shortcuts.

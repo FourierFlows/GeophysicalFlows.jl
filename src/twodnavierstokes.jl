@@ -26,18 +26,18 @@ nothingfunction(args...) = nothing
 Construct a 2D turbulence problem.
 """
 function Problem(dev::Device=CPU();
-    # Numerical parameters
+  # Numerical parameters
           nx = 256,
           Lx = 2π,
           ny = nx,
           Ly = Lx,
           dt = 0.01,
-    # Drag and/or hyper-/hypo-viscosity
+  # Drag and/or hyper-/hypo-viscosity
            ν = 0,
           nν = 1,
            μ = 0,
           nμ = 0,
-    # Timestepper and equation options
+  # Timestepper and equation options
      stepper = "RK4",
        calcF = nothingfunction,
   stochastic = false,

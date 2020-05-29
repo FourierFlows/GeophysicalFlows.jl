@@ -34,10 +34,10 @@ function test_twodnavierstokes_stochasticforcingbudgets(dev::Device=CPU(); n=256
 
   forcingcovariancespectrum = ArrayType(dev)(zero(gr.Krsq))
   @. forcingcovariancespectrum = exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
-  @. forcingcovariancespectrum[gr.Krsq .< 2.0^2 ] = 0
-  @. forcingcovariancespectrum[gr.Krsq .> 20.0^2 ] = 0
+  @. forcingcovariancespectrum[gr.Krsq .< 2^2 ] = 0
+  @. forcingcovariancespectrum[gr.Krsq .> 20^2 ] = 0
   @. forcingcovariancespectrum[Kr .< 2π/L] = 0
-  ε0 = parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+  ε0 = parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2, gr)/(gr.Lx*gr.Ly)
   forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum
 
   Random.seed!(1234)
@@ -186,9 +186,9 @@ function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
   gr = TwoDGrid(dev, nx, Lx, ny, Ly)
   x, y = gridpoints(gr)
 
-  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
-    psi0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
-   zeta0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
+   ψ₀ = @. sin(2k₀*x)*cos(2l₀*y) + 2sin(k₀*x)*cos(3l₀*y)
+   ζ₀ = @. -((2k₀)^2+(2l₀)^2)*sin(2k₀*x)*cos(2l₀*y) - (k₀^2+(3l₀)^2)*2sin(k₀*x)*cos(3l₀*y)
 
   energy_calc = 29/9
   enstrophy_calc = 2701/162
@@ -197,16 +197,16 @@ function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
   
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
 
-  TwoDNavierStokes.set_zeta!(prob, zeta0)
+  TwoDNavierStokes.set_zeta!(prob, ζ₀)
   TwoDNavierStokes.updatevars!(prob)
 
-  energyzeta0 = TwoDNavierStokes.energy(prob)
-  enstrophyzeta0 = TwoDNavierStokes.enstrophy(prob)
+  energyζ₀ = TwoDNavierStokes.energy(prob)
+  enstrophyζ₀ = TwoDNavierStokes.enstrophy(prob)
   
   params = TwoDNavierStokes.Params(p.ν, p.nν)
 
-  (isapprox(energyzeta0, energy_calc, rtol=rtol_twodnavierstokes) &&
-   isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_twodnavierstokes) &&
+  (isapprox(energyζ₀, energy_calc, rtol=rtol_twodnavierstokes) &&
+   isapprox(enstrophyζ₀, enstrophy_calc, rtol=rtol_twodnavierstokes) &&
    TwoDNavierStokes.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
 end
 

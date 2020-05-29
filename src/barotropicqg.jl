@@ -30,7 +30,7 @@ Construct a BarotropicQG turbulence problem.
 """
 
 function Problem(dev::Device=CPU();
-    # Numerical parameters
+  # Numerical parameters
           nx = 256,
           Lx = 2π,
           ny = nx,
@@ -43,7 +43,7 @@ function Problem(dev::Device=CPU();
            ν = 0.0,
           nν = 1,
            μ = 0.0,
-  # Timestepper and eqn options
+  # Timestepper and equation options
      stepper = "RK4",
       calcFU = nothingfunction,
       calcFq = nothingfunction,
@@ -55,9 +55,7 @@ function Problem(dev::Device=CPU();
   x, y = gridpoints(grid)
 
   # topographic PV
-  if eta==nothing
-     eta = zeros(dev, T, (nx, ny))
-  end
+  eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
 
   params = !(typeof(eta)<:ArrayType(dev)) ? Params(grid, β, eta, μ, ν, nν, calcFU, calcFq) : Params(β, eta, rfft(eta), μ, ν, nν, calcFU, calcFq)
 

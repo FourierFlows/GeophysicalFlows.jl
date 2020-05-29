@@ -7,26 +7,26 @@ Constructs flow fields for a 2-layer problem with parameters such that
 """
 function constructtestfields_2layer(gr)
   x, y = gridpoints(gr)
-  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   # a set of streafunctions ψ1 and ψ2, ...
-  ψ1 = @. 1e-3 * ( 1/4*cos(2k0*x)*cos(5l0*y) + 1/3*cos(3k0*x)*cos(3l0*y) )
-  ψ2 = @. 1e-3 * (     cos(3k0*x)*cos(4l0*y) + 1/2*cos(4k0*x)*cos(2l0*y) )
+  ψ1 = @. 1e-3 * ( 1/4*cos(2k₀*x)*cos(5l₀*y) + 1/3*cos(3k₀*x)*cos(3l₀*y) )
+  ψ2 = @. 1e-3 * (     cos(3k₀*x)*cos(4l₀*y) + 1/2*cos(4k₀*x)*cos(2l₀*y) )
 
   # ... their corresponding PVs q1, q2,
-  q1 = @. 1e-3 * ( 1/6 *(   75cos(4k0*x)*cos(2l0*y) +   2cos(3k0*x)*( -43cos(3l0*y) + 75cos(4l0*y) ) - 81cos(2k0*x)*cos(5l0*y) ) )
-  q2 = @. 1e-3 * ( 1/48*( -630cos(4k0*x)*cos(2l0*y) + 100cos(3k0*x)*(    cos(3l0*y) - 15cos(4l0*y) ) + 75cos(2k0*x)*cos(5l0*y) ) )
+  q1 = @. 1e-3 * ( 1/6 *(   75cos(4k₀*x)*cos(2l₀*y) +   2cos(3k₀*x)*( -43cos(3l₀*y) + 75cos(4l₀*y) ) - 81cos(2k₀*x)*cos(5l₀*y) ) )
+  q2 = @. 1e-3 * ( 1/48*( -630cos(4k₀*x)*cos(2l₀*y) + 100cos(3k₀*x)*(    cos(3l₀*y) - 15cos(4l₀*y) ) + 75cos(2k₀*x)*cos(5l₀*y) ) )
 
   # ... and various derived fields, e.g., ∂ψ1/∂x,
-  ψ1x = @. 1e-3 * (     -k0/2*sin(2k0*x)*cos(5l0*y) -       k0*sin(3k0*x)*cos(3l0*y) )
-  ψ2x = @. 1e-3 * (      -3k0*sin(3k0*x)*cos(4l0*y) -      2k0*sin(4k0*x)*cos(2l0*y) )
-  Δψ2 = @. 1e-3 * ( -25*k0*l0*cos(3k0*x)*cos(4l0*y) - 10*k0*l0*cos(4k0*x)*cos(2l0*y) )
+  ψ1x = @. 1e-3 * (     -k₀/2*sin(2k₀*x)*cos(5l₀*y) -       k₀*sin(3k₀*x)*cos(3l₀*y) )
+  ψ2x = @. 1e-3 * (      -3k₀*sin(3k₀*x)*cos(4l₀*y) -      2k₀*sin(4k₀*x)*cos(2l₀*y) )
+  Δψ2 = @. 1e-3 * ( -25*k₀*l₀*cos(3k₀*x)*cos(4l₀*y) - 10*k₀*l₀*cos(4k₀*x)*cos(2l₀*y) )
 
-  q1x = @. 1e-3 * ( 1/6 *( -4k0*75sin(4k0*x)*cos(2l0*y) - 3k0*2sin(3k0*x)*( -43cos(3l0*y) + 75cos(4l0*y) ) + 2k0*81sin(2k0*x)*cos(5l0*y) ) )
-  q2x = @. 1e-3 * ( 1/48*( 4k0*630sin(4k0*x)*cos(2l0*y) - 3k0*100sin(3k0*x)*(    cos(3l0*y) - 15cos(4l0*y) ) - 2k0*75sin(2k0*x)*cos(5l0*y) ) )
+  q1x = @. 1e-3 * ( 1/6 *( -4k₀*75sin(4k₀*x)*cos(2l₀*y) - 3k₀*2sin(3k₀*x)*( -43cos(3l₀*y) + 75cos(4l₀*y) ) + 2k₀*81sin(2k₀*x)*cos(5l₀*y) ) )
+  q2x = @. 1e-3 * ( 1/48*( 4k₀*630sin(4k₀*x)*cos(2l₀*y) - 3k₀*100sin(3k₀*x)*(    cos(3l₀*y) - 15cos(4l₀*y) ) - 2k₀*75sin(2k₀*x)*cos(5l₀*y) ) )
 
-  Δq1 = @. 1e-3 * (k0*l0)*( 1/6 *( -20* 75cos(4k0*x)*cos(2l0*y) +   2cos(3k0*x)*( +18*43cos(3l0*y) - 25*75cos(4l0*y) ) +29*81cos(2k0*x)*cos(5l0*y) ) )
-  Δq2 = @. 1e-3 * (k0*l0)*( 1/48*( +20*630cos(4k0*x)*cos(2l0*y) + 100cos(3k0*x)*(    -18cos(3l0*y) + 25*15cos(4l0*y) ) -29*75cos(2k0*x)*cos(5l0*y) ) )
+  Δq1 = @. 1e-3 * (k₀*l₀)*( 1/6 *( -20* 75cos(4k₀*x)*cos(2l₀*y) +   2cos(3k₀*x)*( +18*43cos(3l₀*y) - 25*75cos(4l₀*y) ) +29*81cos(2k₀*x)*cos(5l₀*y) ) )
+  Δq2 = @. 1e-3 * (k₀*l₀)*( 1/48*( +20*630cos(4k₀*x)*cos(2l₀*y) + 100cos(3k₀*x)*(    -18cos(3l₀*y) + 25*15cos(4l₀*y) ) -29*75cos(2k₀*x)*cos(5l₀*y) ) )
 
   return ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2
 end
@@ -42,16 +42,16 @@ Constructs flow fields for a 3-layer problem with parameters such that
 """
 function constructtestfields_3layer(gr)
   x, y = gridpoints(gr)
-  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   # a set of streafunctions ψ1, ψ2, ψ3, ...
-  ψ1 = @. 1e-3 * ( 1/4*cos(2k0*x)*cos(5l0*y) + 1/3*cos(3k0*x)*cos(3l0*y) )
-  ψ2 = @. 1e-3 * (     cos(3k0*x)*cos(4l0*y) + 1/2*cos(4k0*x)*cos(2l0*y) )
-  ψ3 = @. 1e-3 * (     cos(1k0*x)*cos(3l0*y) + 1/2*cos(2k0*x)*cos(2l0*y) )
+  ψ1 = @. 1e-3 * ( 1/4*cos(2k₀*x)*cos(5l₀*y) + 1/3*cos(3k₀*x)*cos(3l₀*y) )
+  ψ2 = @. 1e-3 * (     cos(3k₀*x)*cos(4l₀*y) + 1/2*cos(4k₀*x)*cos(2l₀*y) )
+  ψ3 = @. 1e-3 * (     cos(1k₀*x)*cos(3l₀*y) + 1/2*cos(2k₀*x)*cos(2l₀*y) )
   
-  Δψ1 = @. -1e-3 * ( 1/4*((2k0)^2+(5l0)^2)*cos(2k0*x)*cos(5l0*y) + 1/3*((3k0)^2+(3l0)^2)*cos(3k0*x)*cos(3l0*y) )
-  Δψ2 = @. -1e-3 * (     ((3k0)^2+(4l0)^2)*cos(3k0*x)*cos(4l0*y) + 1/2*((4k0)^2+(2l0)^2)*cos(4k0*x)*cos(2l0*y) )
-  Δψ3 = @. -1e-3 * (     ((1k0)^2+(3l0)^2)*cos(1k0*x)*cos(3l0*y) + 1/2*((2k0)^2+(2l0)^2)*cos(2k0*x)*cos(2l0*y) )
+  Δψ1 = @. -1e-3 * ( 1/4*((2k₀)^2+(5l₀)^2)*cos(2k₀*x)*cos(5l₀*y) + 1/3*((3k₀)^2+(3l₀)^2)*cos(3k₀*x)*cos(3l₀*y) )
+  Δψ2 = @. -1e-3 * (     ((3k₀)^2+(4l₀)^2)*cos(3k₀*x)*cos(4l₀*y) + 1/2*((4k₀)^2+(2l₀)^2)*cos(4k₀*x)*cos(2l₀*y) )
+  Δψ3 = @. -1e-3 * (     ((1k₀)^2+(3l₀)^2)*cos(1k₀*x)*cos(3l₀*y) + 1/2*((2k₀)^2+(2l₀)^2)*cos(2k₀*x)*cos(2l₀*y) )
 
   # ... their corresponding PVs q1, q2, q3,
   q1 = @. Δψ1 + 20ψ2 - 20ψ1
@@ -80,7 +80,7 @@ function test_pvtofromstreamfunction_2layer(dev::Device=CPU())
   H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
   ρ = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  prob = MultilayerQG.Problem(dev; nlayers=nlayers, nx=n, Lx=L, f0=f0, g=g, H=H, ρ=ρ)
+  prob = MultilayerQG.Problem(nlayers, dev; nx=n, Lx=L, f0=f0, g=g, H=H, ρ=ρ)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
@@ -121,7 +121,7 @@ function test_pvtofromstreamfunction_3layer(dev::Device=CPU())
   ρ = [4.0, 5.0, 6.0]    # q2 = Δψ2 + 20ψ1 - 44ψ2 + 24ψ3,
                          # q3 = Δψ3        + 12ψ2 - 12ψ3.
 
-  prob = MultilayerQG.Problem(dev; nlayers=nlayers, nx=n, Lx=L, f0=f0, g=g, H=H, ρ=ρ)
+  prob = MultilayerQG.Problem(nlayers, dev; nx=n, Lx=L, f0=f0, g=g, H=H, ρ=ρ)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1, ψ2, ψ3, q1, q2, q3 = constructtestfields_3layer(gr)
@@ -166,7 +166,7 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
   gr = TwoDGrid(dev, nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
-  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   nlayers = 2       # these choice of parameters give the
   f0, g = 1, 1      # desired PV-streamfunction relations
@@ -177,7 +177,7 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
   
   U1, U2 = 0.1, 0.05
   u1 = @. 0.5sech(gr.y/(Ly/15))^2; u1 = A(reshape(u1, (1, gr.ny)))
-  u2 = @. 0.02cos(3l0*gr.y);       u2 = A(reshape(u2, (1, gr.ny)))
+  u2 = @. 0.02cos(3l₀*gr.y);       u2 = A(reshape(u2, (1, gr.ny)))
   uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
   uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
 
@@ -188,7 +188,7 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
   μ, ν, nν = 0.1, 0.05, 1
 
   η0, σx, σy = 1.0, Lx/25, Ly/20
-   η = @. η0*exp( -(x + Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
+   η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) - (y-Ly/8)^2/(2σy^2) )
   ηx = @. -(x + Lx/8)/(σx^2) * η
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
@@ -211,7 +211,7 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
     nothing
   end
 
-  prob = MultilayerQG.Problem(dev, nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly,
+  prob = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly,
    f0=f0, g=g, H=H, ρ=ρ, U=U, eta=η, β=β, μ=μ, ν=ν, nν=nν, calcFq=calcFq!, stepper=stepper, dt=dt)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
@@ -254,7 +254,7 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, 
   gr = TwoDGrid(dev, nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
-  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   nlayers = 2       # these choice of parameters give the
   f0, g = 1, 1      # desired PV-streamfunction relations
@@ -265,7 +265,7 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, 
 
   U1, U2 = 0.1, 0.05
   u1 = @. 0.5sech(gr.y/(Ly/15))^2; u1 = A(reshape(u1, (1, gr.ny)))
-  u2 = @. 0.02cos(3l0*gr.y);       u2 = A(reshape(u2, (1, gr.ny)))
+  u2 = @. 0.02cos(3l₀*gr.y);       u2 = A(reshape(u2, (1, gr.ny)))
   uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
   uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
 
@@ -299,7 +299,7 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, 
     nothing
   end
 
-  prob = MultilayerQG.Problem(dev; nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, ρ=ρ, U=U, eta=η, β=β, μ=μ, ν=ν, nν=nν, calcFq=calcFq!, stepper=stepper, dt=dt, linear=true)
+  prob = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, ρ=ρ, U=U, eta=η, β=β, μ=μ, ν=ν, nν=nν, calcFq=calcFq!, stepper=stepper, dt=dt, linear=true)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   qf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
@@ -330,14 +330,14 @@ function test_mqg_energies(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", 
   gr = TwoDGrid(dev, nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
-  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   nlayers = 2       # these choice of parameters give the
   f0, g = 1, 1      # desired PV-streamfunction relations
   H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
   ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  prob = MultilayerQG.Problem(dev; nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, ρ=ρ)
+  prob = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, ρ=ρ)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
@@ -359,14 +359,14 @@ function test_mqg_energysinglelayer(dev::Device=CPU(); dt=0.001, stepper="Forwar
   g  = TwoDGrid(dev, nx, Lx, ny, Ly)
   
   x, y = gridpoints(g)
-  k0, l0 = g.k[2], g.l[2] # fundamental wavenumbers
+  k₀, l₀ = g.k[2], g.l[2] # fundamental wavenumbers
   
   energy_calc = 29/9
 
-  ψ0 = @. sin(2k0*x)*cos(2l0*y) + 2sin(k0*x)*cos(3l0*y)
-  q0 = @. -((2k0)^2+(2l0)^2)*sin(2k0*x)*cos(2l0*y) - (k0^2+(3l0)^2)*2sin(k0*x)*cos(3l0*y)
+  ψ0 = @. sin(2k₀*x)*cos(2l₀*y) + 2sin(k₀*x)*cos(3l₀*y)
+  q0 = @. -((2k₀)^2+(2l₀)^2)*sin(2k₀*x)*cos(2l₀*y) - (k₀^2+(3l₀)^2)*2sin(k₀*x)*cos(3l₀*y)
 
-  prob = MultilayerQG.Problem(dev; nlayers=nlayers, nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper=stepper, U=zeros(ny))
+  prob = MultilayerQG.Problem(nlayers, dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper=stepper, U=zeros(ny))
 
   MultilayerQG.set_q!(prob, reshape(q0, (nx, ny, nlayers)))
 
@@ -387,7 +387,7 @@ function test_mqg_fluxes(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=
   gr = TwoDGrid(dev, nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
-  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   nlayers = 2       # these choice of parameters give the
   f0, g = 1, 1      # desired PV-streamfunction relations
@@ -396,11 +396,11 @@ function test_mqg_fluxes(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=
   U = zeros(ny, nlayers)
   U[:, 1] = @. sech(gr.y/0.2)^2
 
-  prob = MultilayerQG.Problem(dev; nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, ρ=ρ, U=U)
+  prob = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, ρ=ρ, U=U)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
-  ψ1 = @. cos(k0*x)*cos(l0*y) + sin(k0*x)
-  ψ2 = @. cos(k0*x+π/10)*cos(l0*y)
+  ψ1 = @. cos(k₀*x)*cos(l₀*y) + sin(k₀*x)
+  ψ2 = @. cos(k₀*x+π/10)*cos(l₀*y)
   ψ = zeros(gr.nx, gr.ny, nlayers)
   ψ[:, :, 1] .= ψ1
   ψ[:, :, 2] .= ψ2
@@ -424,15 +424,15 @@ function test_mqg_fluxessinglelayer(dev::Device=CPU(); dt=0.001, stepper="Forwar
   gr = TwoDGrid(dev, nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
-  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   U = zeros(ny, nlayers)
   U = @. sech(gr.y/0.2)^2
 
-  prob = MultilayerQG.Problem(dev; nlayers=nlayers, nx=nx, ny=ny, Lx=Lx, Ly=Ly, U=U)
+  prob = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly, U=U)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
-  ψ = @. cos(k0*x) * cos(l0*y) + sin(k0*x)
+  ψ = @. cos(k₀*x) * cos(l₀*y) + sin(k₀*x)
   MultilayerQG.set_ψ!(prob, ψ)
   lateralfluxes = MultilayerQG.fluxes(prob)
 
@@ -451,20 +451,20 @@ function test_mqg_setqsetψ(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler",
   gr = TwoDGrid(dev, nx, L, ny, L)
 
   x, y = gridpoints(gr)
-  k0, l0 = gr.k[2], gr.l[2] # fundamental wavenumbers
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   nlayers = 2       # these choice of parameters give the
   f0, g = 1, 1      # desired PV-streamfunction relations
   H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
   ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  prob = MultilayerQG.Problem(dev; nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, ρ=ρ)
+  prob = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, ρ=ρ)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   T = eltype(gr)
   
-  f1 = @. 2cos(k0*x)*cos(l0*y)
-  f2 = @.  cos(k0*x+π/10)*cos(2l0*y)
+  f1 = @. 2cos(k₀*x)*cos(l₀*y)
+  f2 = @.  cos(k₀*x+π/10)*cos(2l₀*y)
   f = zeros(dev, T, (gr.nx, gr.ny, nlayers))
   f[:, :, 1] .= f1
   f[:, :, 2] .= f2
@@ -511,15 +511,15 @@ function test_mqg_paramsconstructor(dev::Device=CPU(); dt=0.001, stepper="Forwar
   Ufloats[1] = U1
   Ufloats[2] = U2
 
-  probUvectors = MultilayerQG.Problem(dev; nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, ρ=ρ, U=Uvectors)
-  probUfloats = MultilayerQG.Problem(dev; nlayers=nlayers, nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, ρ=ρ, U=Ufloats)
+  probUvectors = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, ρ=ρ, U=Uvectors)
+  probUfloats = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, ρ=ρ, U=Ufloats)
 
   return isapprox(probUfloats.params.U, probUvectors.params.U, rtol=rtol_multilayerqg)
 end
 
-function test_mqg_problemtype(dev::Device=CPU(), T)
-  prob1 = MultilayerQG.Problem(dev; T=T, nlayers=1)
-  prob2 = MultilayerQG.Problem(dev; T=T, nlayers=2)
+function test_mqg_problemtype(dev, T)
+  prob1 = MultilayerQG.Problem(1, dev; T=T)
+  prob2 = MultilayerQG.Problem(2, dev; T=T)
   
   A = ArrayType(dev)
   return (typeof(prob1.sol)<:A{Complex{T}, 3} && typeof(prob1.grid.Lx)==T && typeof(prob1.vars.u)<:A{T, 3}) && (typeof(prob2.sol)<:A{Complex{T}, 3} && typeof(prob2.grid.Lx)==T && typeof(prob2.vars.u)<:A{T, 3})
@@ -538,7 +538,7 @@ function test_mqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
         β = 2
         U = 0.5
 
-  prob = MultilayerQG.Problem(dev; nlayers=nlayers, nx=nx, Lx=Lx, U=U, β=β, stepper=stepper, dt=dt)
+  prob = MultilayerQG.Problem(nlayers, dev; nx=nx, Lx=Lx, U=U, β=β, stepper=stepper, dt=dt)
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
   x, y = gridpoints(g)
@@ -562,8 +562,8 @@ function test_mqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
 end
 
 function test_numberoflayers(dev::Device=CPU())
-  prob_nlayers1 = MultilayerQG.Problem(dev; nlayers=1)
-  prob_nlayers2 = MultilayerQG.Problem(dev; nlayers=2)
+  prob_nlayers1 = MultilayerQG.Problem(1, dev)
+  prob_nlayers2 = MultilayerQG.Problem(2, dev)
   
   return MultilayerQG.numberoflayers(prob_nlayers1)==1 && MultilayerQG.numberoflayers(prob_nlayers2)==2
 end
@@ -575,7 +575,7 @@ function test_mqg_stochasticforcedproblemconstructor(dev::Device=CPU())
     return nothing
   end
        
-  prob = MultilayerQG.Problem(dev; calcFq=calcFq!, stochastic=true)
+  prob = MultilayerQG.Problem(2, dev; calcFq=calcFq!, stochastic=true)
   
   return typeof(prob.vars.prevsol)==typeof(prob.sol)
 end

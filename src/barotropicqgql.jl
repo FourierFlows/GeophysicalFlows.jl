@@ -36,20 +36,20 @@ nothingfunction(args...) = nothing
 Construct a BarotropicQGQL turbulence problem on device `dev`.
 """
 function Problem(dev::Device=CPU();
-    # Numerical parameters
+  # Numerical parameters
             nx = 256,
             Lx = 2π,
             ny = nx,
             Ly = Lx,
             dt = 0.01,
-    # Physical parameters
+  # Physical parameters
              β = 0.0,
            eta = nothing,
-    # Drag and/or hyper-/hypo-viscosity
+  # Drag and/or hyper-/hypo-viscosity
              ν = 0.0,
             nν = 1,
              μ = 0.0,
-   # Timestepper and eqn options
+  # Timestepper and equation options
        stepper = "RK4",
          calcF = nothingfunction,
     stochastic = false,
@@ -218,23 +218,23 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   ldiv!(vars.Zeta, grid.rfftplan, vars.Zetah)
   ldiv!(vars.U, grid.rfftplan, vars.Uh)
 
-  @. vars.uzeta = vars.u * vars.zeta # u*ζ
-  @. vars.vzeta = vars.v * vars.zeta # v*ζ
+  @. vars.uzeta = vars.u * vars.zeta           # u*ζ
+  @. vars.vzeta = vars.v * vars.zeta           # v*ζ
 
-  mul!(vars.uh, grid.rfftplan, vars.uzeta) # \hat{u*q}
-  @. vars.NZ = -im * grid.kr * vars.uh # -∂[u*q]/∂x
-  mul!(vars.vh, grid.rfftplan, vars.vzeta) # \hat{v*q}
-  @. vars.NZ += - im * grid.l * vars.vh # -∂[v*q]/∂y
+  mul!(vars.uh, grid.rfftplan, vars.uzeta)     # \hat{u*q}
+  @. vars.NZ = -im * grid.kr * vars.uh         # -∂[u*q]/∂x
+  mul!(vars.vh, grid.rfftplan, vars.vzeta)     # \hat{v*q}
+  @. vars.NZ += - im * grid.l * vars.vh        # -∂[v*q]/∂y
   @. vars.NZ[abs.(Kr) .> 0] = 0
 
-  @. vars.U = vars.U * vars.zeta # U*ζ
-  @. vars.u = vars.u * vars.Zeta # u*Ζ
-  @. vars.v = vars.v * vars.Zeta # v*Ζ
+  @. vars.U = vars.U * vars.zeta                # U*ζ
+  @. vars.u = vars.u * vars.Zeta                # u*Ζ
+  @. vars.v = vars.v * vars.Zeta                # v*Ζ
 
   mul!(vars.uh, grid.rfftplan, vars.U + vars.u) # \hat{U*ζ + u*Ζ}
-  @. vars.Nz = -im * grid.kr*vars.uh # -∂[U*ζ + u*Ζ]/∂x
-  mul!(vars.vh, grid.rfftplan, vars.v) # \hat{v*Z}
-  @. vars.Nz += - im * grid.l*vars.vh # -∂[v*Z]/∂y
+  @. vars.Nz = -im * grid.kr*vars.uh            # -∂[U*ζ + u*Ζ]/∂x
+  mul!(vars.vh, grid.rfftplan, vars.v)          # \hat{v*Z}
+  @. vars.Nz += - im * grid.l*vars.vh           # -∂[v*Z]/∂y
   @. vars.Nz[abs.(Kr) .== 0] = 0
 
   @. N = vars.NZ + vars.Nz
