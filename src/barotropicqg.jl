@@ -377,7 +377,7 @@ Returns the domain-averaged rate of work of energy by the forcing Fqh.
 end
 
 @inline function work(sol, vars::StochasticForcedVars, grid)
-  @. vars.uh = grid.invKrsq * (vars.prevsol + sol)/2.0 * conj(vars.Fqh) # Stratonovich
+  @. vars.uh = grid.invKrsq * (vars.prevsol + sol)/2 * conj(vars.Fqh) # Stratonovich
   # @. vars.uh = grid.invKrsq * vars.prevsol * conj(vars.Fqh)             # Ito
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end

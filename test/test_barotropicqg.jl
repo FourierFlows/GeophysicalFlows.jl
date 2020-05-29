@@ -66,10 +66,10 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
 
   forcingcovariancespectrum = zeros(dev, T, (gr.nkr, gr.nl))
   @. forcingcovariancespectrum = exp.( -(sqrt(gr.Krsq)-kf)^2 / (2*dkf^2) )
-  @. forcingcovariancespectrum[gr.Krsq .< 2.0^2 ] = 0
-  @. forcingcovariancespectrum[gr.Krsq .> 20.0^2 ] = 0
+  @. forcingcovariancespectrum[gr.Krsq .< 2^2 ] = 0
+  @. forcingcovariancespectrum[gr.Krsq .> 20^2 ] = 0
   @. forcingcovariancespectrum[Kr .< 2π/L] = 0
-  ε0 = parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+  ε0 = parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2, gr)/(gr.Lx*gr.Ly)
   forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum
 
   Random.seed!(1234)
