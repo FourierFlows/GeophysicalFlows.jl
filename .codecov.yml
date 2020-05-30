@@ -10,10 +10,8 @@ coverage:
     - "examples"
     - "test"
   status:
-    project:
-      default:
-        target: auto
-        threshold: 50
-        base: auto
+    patch: false
+    project: false
+    changes: false
 
 comment: false
