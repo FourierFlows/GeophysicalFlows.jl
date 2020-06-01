@@ -4,9 +4,8 @@ using
   Documenter,
   Literate,
   Plots,  # to not capture precompilation output
-  GeophysicalFlows,
-  GeophysicalFlows.TwoDNavierStokes
-
+  GeophysicalFlows
+  
 # Gotta set this environment variable when using the GR run-time on Travis CI.
 # This happens as examples will use Plots.jl to make plots and movies.
 # See: https://github.com/jheinen/GR.jl/issues/278
@@ -31,9 +30,12 @@ examples = [
 
 for example in examples
   example_filepath = joinpath(EXAMPLES_DIR, example)
-  Literate.markdown(example_filepath, OUTPUT_DIR, documenter=true)
-  Literate.notebook(example_filepath, OUTPUT_DIR, documenter=true)
-  Literate.script(example_filepath, OUTPUT_DIR, documenter=true)
+  withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
+    example_filepath = joinpath(EXAMPLES_DIR, example)
+    Literate.markdown(example_filepath, OUTPUT_DIR, documenter=true)
+    Literate.notebook(example_filepath, OUTPUT_DIR, documenter=true)
+    Literate.script(example_filepath, OUTPUT_DIR, documenter=true)
+  end
 end
 
 #####
