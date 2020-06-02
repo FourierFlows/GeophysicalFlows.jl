@@ -15,6 +15,7 @@ export
 using
   FFTW,
   LinearAlgebra,
+  StaticArrays,
   Reexport
 
 @reexport using FourierFlows
@@ -175,16 +176,18 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
     ρ = reshape(T.(ρ), (1,  1, nlayers))
     H = reshape(T.(H), (1,  1, nlayers))
 
-    g′ = T(g) * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface;
+    g′ = T(g) * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface
 
     Fm = @. T( f0^2 / (g′ * H[2:nlayers]) )
     Fp = @. T( f0^2 / (g′ * H[1:nlayers-1]) )
 
-    S = Array{T}(undef, (nkr, nl, nlayers, nlayers))
-    calcS!(S, Fp, Fm, grid)
+    typeofSkl = SArray{Tuple{nlayers, nlayers}, T, 2, nlayers^2} # StaticArrays of type T and dims = (nlayers x nlayers)
+    
+    S = Array{typeofSkl, 2}(undef, (nkr, nl))
+    calcS!(S, Fp, Fm, nlayers, grid)
 
-    invS = Array{T}(undef, (nkr, nl, nlayers, nlayers))
-    calcinvS!(invS, Fp, Fm, grid)
+    invS = Array{typeofSkl, 2}(undef, (nkr, nl))
+    calcinvS!(invS, Fp, Fm, nlayers, grid)
     
     S, invS = A(S), A(invS)     # convert S and invS to appropriate ArrayType
     Fp, Fm = A(Fp), A(Fm)       # convert S and invS to appropriate ArrayType
@@ -295,13 +298,13 @@ invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, v
 
 function streamfunctionfrompv!(ψh, qh, params, grid)
   for j=1:grid.nl, i=1:grid.nkr
-    @views ψh[i, j, :] .= params.invS[i, j, :, :] * qh[i, j, :]
+    @views ψh[i, j, :] .= params.invS[i, j] * qh[i, j, :]
   end
 end
 
 function pvfromstreamfunction!(qh, ψh, params, grid)
   for j=1:grid.nl, i=1:grid.nkr
-    @views qh[i, j, :] .= params.S[i, j, :, :] * ψh[i, j, :]
+    @views qh[i, j, :] .= params.S[i, j] * ψh[i, j, :]    
   end
 end
 
@@ -314,27 +317,29 @@ function pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
 end
 
 """
-    calcS!(S, Fp, Fm, grid)
+    calcS!(S, Fp, Fm, nlayers, grid)
 
-Constructs the stretching matrix S that connects q and ψ: q_{k,l} = S * ψ_{k,l}.
+Constructs the matrix S, which consists of nlayer x nlayer matrices S_kl that 
+relate the q's and ψ's at every wavenumber: q̂_{k,l} = S_kl * ψ̂_{k,l}.
 """
-function calcS!(S, Fp, Fm, grid)
+function calcS!(S, Fp, Fm, nlayers, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   for n=1:grid.nl, m=1:grid.nkr
      k² = grid.Krsq[m, n]
-    Skl = - k²*I + F
-    @views S[m, n, :, :] .= Skl
+    Skl = SMatrix{nlayers, nlayers}( - k² * I + F )
+    S[m, n] = Skl
   end
   return nothing
 end
 
 """
-    calcinvS!(S, Fp, Fm, grid)
+    calcinvS!(S, Fp, Fm, nlayers, grid)
 
-Constructs the inverse of the stretching matrix S that connects q and ψ:
-ψ_{k,l} = invS * q_{k,l}.
+Constructs the matrix invS, which consists of nlayer x nlayer matrices (S_kl)⁻¹ 
+that relate the q's and ψ's at every wavenumber: ψ̂_{k,l} = (S_kl)⁻¹ * q̂_{k,l}.
 """
-function calcinvS!(invS, Fp, Fm, grid)
+function calcinvS!(invS, Fp, Fm, nlayers, grid)
+  T = eltype(grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   for n=1:grid.nl, m=1:grid.nkr
     k² = grid.Krsq[m, n]
@@ -342,9 +347,9 @@ function calcinvS!(invS, Fp, Fm, grid)
       k² = 1
     end
     Skl = - k²*I + F
-    @views invS[m, n, :, :] .= I / Skl
+    invS[m, n] = SMatrix{nlayers, nlayers}( I / Skl )
   end
-  @views invS[1, 1, :, :] .= 0
+  invS[1, 1] = SMatrix{nlayers, nlayers}( zeros(T, (nlayers, nlayers)) )
   return nothing
 end
 
