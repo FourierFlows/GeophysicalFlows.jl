@@ -112,6 +112,8 @@ nothing #hide
 # We define a function that plots the potential vorticity field and the evolution 
 # of energy and enstrophy.
 
+symlims(data) = maximum(abs.(extrema(data))) |> q -> (-q, q)
+
 function plot_output(prob)
   
   l = @layout grid(2, 3)
@@ -124,6 +126,7 @@ function plot_output(prob)
                    c = :balance,
                xlims = (-gr.Lx/2, gr.Lx/2),
                ylims = (-gr.Ly/2, gr.Ly/2),
+               clims = symlims,
               xticks = -3:3,
               yticks = -3:3,
               xlabel = "x",
@@ -138,6 +141,7 @@ function plot_output(prob)
                    c = :viridis,
                xlims = (-gr.Lx/2, gr.Lx/2),
                ylims = (-gr.Ly/2, gr.Ly/2),
+               clims = symlims,
               xticks = -3:3,
               yticks = -3:3,
               xlabel = "x",
@@ -185,7 +189,7 @@ anim = @animate for j=0:Int(nsteps/nsubs)
   
   cfl = cl.dt*maximum([maximum(vs.u)/gr.dx, maximum(vs.v)/gr.dy])
   
-  log = @sprintf("step: %04d, t: %d, cfl: %.2f, KE1: %.4f, KE2: %.4f, PE: %.4f, walltime: %.2f min", cl.step, cl.t, cfl, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
+  log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, KE1: %.4f, KE2: %.4f, PE: %.4f, walltime: %.2f min", cl.step, cl.t, cfl, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
 
   if j%(1000/nsubs)==0; println(log) end
   
