@@ -12,7 +12,9 @@ using FourierFlows, Printf, Random, Plots
 
 using FourierFlows: parsevalsum
 using Random: seed!
-using FFTW: irfft
+using FFTW: rfft, irfft
+
+using MAT
 
 import GeophysicalFlows.TwoDNavierStokes
 import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy, dissipation, work, drag
@@ -34,7 +36,8 @@ nothing # hide
  μ, nμ = 1e-1, 0             # linear drag coefficient
 dt, tf = 0.005, 0.2/μ        # timestep and final time
     nt = round(Int, tf/dt)   # total timesteps
-    ns = 4                   # how many intermediate times we want to plot
+    ns = 4                  # how many intermediate times we want to plot
+    nsubs = round(Int, nt/ns)
 nothing # hide
 
 
@@ -113,8 +116,9 @@ TwoDNavierStokes.set_zeta!(prob, zeros(g.nx, g.ny))
 E = Diagnostic(energy,      prob, nsteps=nt) # energy
 R = Diagnostic(drag,        prob, nsteps=nt) # dissipation by drag
 D = Diagnostic(dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
-W = Diagnostic(work,        prob, nsteps=nt) # work input by forcing
-diags = [E, D, W, R] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
+W = Diagnostic(work,        prob, nsteps=nt) # work input by
+Z = Diagnostic(enstrophy, prob; nsteps=nt)
+diags = [E, D, W, R, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 
 
@@ -126,7 +130,7 @@ nothing # hide
 
 function computetendencies_and_makeplot(prob, diags)
   TwoDNavierStokes.updatevars!(prob)
-  E, D, W, R = diags
+  E, D, W, R, Z = diags
 
   clocktime = round(μ*cl.t, digits=2)
 
@@ -215,6 +219,7 @@ filepath = "."
 plotpath = "/Users/brodiepearson/GitHub/GeophysicalFlows.jl/examples/2D_Paper/Plots/Inverse_Cascade"
 plotname = "snapshots"
 filename = joinpath(filepath, "Inverse_Cascade.jld2")
+matfilename = joinpath(filepath, "Inverse_Cascade.mat")
 nothing # hide
 
 # Do some basic file management
@@ -227,6 +232,18 @@ get_sol(prob) = Array(prob.sol) # extracts the Fourier-transformed solution
 get_u(prob) = Array(irfft(im*gr.l.*gr.invKrsq.*sol, gr.nx))
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 saveproblem(out)
+matfile = matopen(matfilename)
+u_temp = (:u, get_u)
+write(matfile, "zeta", v.zeta)
+write(matfile, "u", v.u)
+write(matfile, "v", v.v)
+write(matfile, "nx", gr.nx)
+write(matfile, "ny", gr.ny)
+write(matfile, "dx", gr.dx)
+write(matfile, "dy", gr.dy)
+write(matfile, "Lx", gr.Lx)
+write(matfile, "Ly", gr.Ly)
+close(matfile)
 nothing # hide
 
 # ## Visualizing the simulation
@@ -266,14 +283,14 @@ p = plot(p1, p2, layout = l, size = (900, 400))
 
 startwalltime = time()
 
-anim = @animate for j = 0:Int(nsteps/nsubs)
+anim = @animate for j = 0:Int(nt/nsubs)
 
   log = @sprintf("step: %04d, t: %d, ΔE: %.4f, ΔZ: %.4f, walltime: %.2f min",
       cl.step, cl.t, E.data[E.i]/E.data[1], Z.data[Z.i]/Z.data[1], (time()-startwalltime)/60)
 
   if j%(1000/nsubs)==0; println(log) end
 
-  p[1][1][:z] = vs.zeta
+  p[1][1][:z] = v.zeta
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", cl.t)
   push!(p[2][1], E.t[E.i], E.data[E.i]/E.data[1])
   push!(p[2][2], Z.t[Z.i], Z.data[Z.i]/Z.data[1])
@@ -295,7 +312,7 @@ saveoutput(out)
 # After the simulation is done we plot the radial energy spectrum to illustrate
 # how `FourierFlows.radialspectrum` can be used,
 
-E  = @. 0.5*(vs.u^2 + vs.v^2) # energy density
+E  = @. 0.5*(v.u^2 + v.v^2) # energy density
 Eh = rfft(E)                  # Fourier transform of energy density
 kr, Ehr = FourierFlows.radialspectrum(Eh, gr, refinement=1) # compute radial specturm of `Eh`
 nothing # hide
