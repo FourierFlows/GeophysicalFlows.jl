@@ -38,3 +38,4 @@ coverage/
 
 # MacOS stuff
 *.DS_Store
+*.mat
