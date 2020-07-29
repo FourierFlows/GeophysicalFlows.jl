@@ -9,7 +9,8 @@ export
   enstrophy,
   dissipation,
   work,
-  drag
+  drag,
+  drag_ens
 
 using Reexport
 
@@ -44,13 +45,13 @@ function Problem(dev::Device=CPU();
            T = Float64)
 
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
-  
+
   params = Params{T}(ν, nν, μ, nμ, calcF)
-  
+
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
-  
+
   equation = Equation(params, grid)
-  
+
   return FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end
 
@@ -126,7 +127,7 @@ end
 """
     ForcedVars(dev, grid)
 
-Returns the vars for forced two-dimensional turbulence on device dev and with 
+Returns the vars for forced two-dimensional turbulence on device dev and with
 `grid`.
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
@@ -298,6 +299,18 @@ Returns the extraction of domain-averaged energy by drag/hypodrag μ.
 @inline function drag(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   @. vars.uh = grid.Krsq^(params.nμ-1) * abs2(sol)
+  vars.uh[1, 1] = 0
+  return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+end
+
+"""
+    drag_ens(prob)
+
+Returns the extraction of domain-averaged enstrophy by drag/hypodrag μ.
+"""
+@inline function drag_ens(prob)
+  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
+  @. vars.uh = grid.Krsq^params.nμ * abs2(sol)
   vars.uh[1, 1] = 0
   return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
