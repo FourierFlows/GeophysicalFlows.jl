@@ -10,7 +10,9 @@ export
   dissipation,
   work,
   drag,
-  drag_ens
+  drag_ens,
+  work_ens,
+  dissipation_ens
 
 using Reexport
 
@@ -273,6 +275,18 @@ Returns the domain-averaged dissipation rate. nν must be >= 1.
 end
 
 """
+    dissipation_ens(prob)
+
+Returns the domain-averaged dissipation rate of enstrophy. nν must be >= 1.
+"""
+@inline function dissipation_ens(prob)
+  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
+  @. vars.uh = grid.Krsq^params.nν * abs2(sol)
+  vars.uh[1, 1] = 0
+  return params.ν / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+end
+
+"""
     work(prob)
     work(sol, v, grid)
 
@@ -290,6 +304,25 @@ end
 end
 
 @inline work(prob) = work(prob.sol, prob.vars, prob.grid)
+
+"""
+    work_ens(prob)
+    work_ens(sol, v, grid)
+
+Returns the domain-averaged rate of work of enstrophy by the forcing Fh.
+"""
+@inline function work_ens(sol, vars::ForcedVars, grid)
+  @. vars.uh = sol * conj(vars.Fh)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+end
+
+@inline function work_ens(sol, vars::StochasticForcedVars, grid)
+  @. vars.uh = (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
+  # @. vars.uh = grid.invKrsq * vars.prevsol * conj(vars.Fh)           # Ito
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+end
+
+@inline work_ens(prob) = work_ens(prob.sol, prob.vars, prob.grid)
 
 """
     drag(prob)
