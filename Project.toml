@@ -22,7 +22,7 @@ FourierFlows = "^0.5"
 JLD2 = "^0.1"
 Reexport = "^0.2"
 SpecialFunctions = "^0.8, 0.10, ^1"
-julia = "^1"
+julia = "^1.4"
 
 [extras]
 Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
