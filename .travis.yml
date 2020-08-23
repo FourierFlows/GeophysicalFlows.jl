@@ -7,10 +7,12 @@ os:
 julia:
   - 1.0
   - 1.4
+  - 1.5
   - nightly
 
 jobs:
   allow_failures:
+    - julia: 1.5
     - julia: nightly
 
 notifications:

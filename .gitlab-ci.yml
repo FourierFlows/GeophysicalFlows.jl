@@ -18,6 +18,16 @@ julia:1.4:
   variables:
     CI_THOROUGH: 'true'
 
+julia:1.5:
+  extends:
+    - .julia:1.5
+    - .test
+  tags:
+    - nvidia
+  variables:
+    CI_THOROUGH: 'true'
+  allow_failure: true
+
 test:nightly:
   extends:
     - .julia:nightly
