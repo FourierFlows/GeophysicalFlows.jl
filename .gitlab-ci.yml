@@ -8,6 +8,13 @@ variables:
 include:
   - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml'
 
+julia:1.0:
+  extends:
+    - .julia:1.0
+    - .test
+  tags:
+    - nvidia
+  
 # the "primary" target, where we require a new GPU to make sure all tests are run
 julia:1.4:
   extends:
