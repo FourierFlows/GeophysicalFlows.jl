@@ -38,7 +38,7 @@ function test_bqgql_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
   dealias!(sol, g)
   BarotropicQGQL.updatevars!(prob)
 
-  ζ_theory = @. ampl*cos(kwave*(x - ω/kwave*cl.t))*cos(lwave*y)
+  ζ_theory = @. ampl * cos(kwave * (x - ω/kwave * cl.t)) * cos(lwave*y)
 
   return isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
 end
@@ -62,22 +62,22 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   kf, dkf = 12.0, 2.0
   ε = 0.1
   
-  Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
+  CUDA.@allowscalar Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
 
   forcingcovariancespectrum = zeros(dev, T, (gr.nkr, gr.nl))
-  @. forcingcovariancespectrum = exp.(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
-  @. forcingcovariancespectrum[gr.Krsq .< 2^2 ] = 0
-  @. forcingcovariancespectrum[gr.Krsq .> 20^2 ] = 0
-  @. forcingcovariancespectrum[Kr .< 2π/L] = 0
-  ε0 = parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2, gr)/(gr.Lx*gr.Ly)
-  forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum
+  @. forcingcovariancespectrum = exp(-(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2))
+  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .< 2^2] = 0
+  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .> 20^2] = 0
+  CUDA.@allowscalar @. forcingcovariancespectrum[Kr .< 2π/L] = 0
+  ε0 = parsevalsum(forcingcovariancespectrum .* gr.invKrsq / 2, gr) / (gr.Lx * gr.Ly)
+  forcingcovariancespectrum .= ε / ε0 * forcingcovariancespectrum
 
   Random.seed!(1234)
 
   function calcF!(F, sol, t, cl, v, p, g)
-    eta = ArrayType(dev)(exp.(2π*im*rand(T, size(sol)))/sqrt(cl.dt))
-    eta[1, 1] = 0
-    @. F = eta*sqrt(forcingcovariancespectrum)
+    eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(cl.dt))
+    CUDA.@allowscalar eta[1, 1] = 0
+    @. F = eta * sqrt(forcingcovariancespectrum)
     return nothing
   end
 
@@ -238,7 +238,7 @@ function test_bqgql_energyenstrophy(dev::Device=CPU())
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
   gr = TwoDGrid(dev, nx, Lx, ny, Ly)
-  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
+  k₀, l₀ = 2π/Lx, 2π/Ly # fundamental wavenumbers
   x, y = gridpoints(gr)
 
   energy_calc = 29/9

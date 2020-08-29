@@ -14,6 +14,7 @@ export
 
 using
   FFTW,
+  CUDA,
   LinearAlgebra,
   Reexport
 
@@ -189,11 +190,11 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
     S, invS = A(S), A(invS)     # convert S and invS to appropriate ArrayType
     Fp, Fm = A(Fp), A(Fm)       # convert S and invS to appropriate ArrayType
 
-    @views Qy[:, :, 1] = @. Qy[:, :, 1] - Fp[1] * ( U[:, :, 2] - U[:, :, 1] )
+    CUDA.@allowscalar @views Qy[:, :, 1] = @. Qy[:, :, 1] - Fp[1] * ( U[:, :, 2] - U[:, :, 1] )
     for j = 2:nlayers-1
-      @views Qy[:, :, j] = @. Qy[:, :, j] - Fp[j] * ( U[:, :, j+1] - U[:, :, j] ) + Fm[j-1] * ( U[:, :, j-1] - U[:, :, j] )
+      CUDA.@allowscalar @views Qy[:, :, j] = @. Qy[:, :, j] - Fp[j] * ( U[:, :, j+1] - U[:, :, j] ) + Fm[j-1] * ( U[:, :, j-1] - U[:, :, j] )
     end
-    @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * ( U[:, :, nlayers-1] - U[:, :, nlayers] )
+    CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * ( U[:, :, nlayers-1] - U[:, :, nlayers] )
 
     return Params(nlayers, T(g), T(f0), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, invS, rfftplanlayered)
   end
@@ -295,13 +296,13 @@ invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, v
 
 function streamfunctionfrompv!(ψh, qh, params, grid)
   for j=1:grid.nl, i=1:grid.nkr
-    @views ψh[i, j, :] .= params.invS[i, j, :, :] * qh[i, j, :]
+    CUDA.@allowscalar @views ψh[i, j, :] .= params.invS[i, j, :, :] * qh[i, j, :]
   end
 end
 
 function pvfromstreamfunction!(qh, ψh, params, grid)
   for j=1:grid.nl, i=1:grid.nkr
-    @views qh[i, j, :] .= params.S[i, j, :, :] * ψh[i, j, :]
+    CUDA.@allowscalar @views qh[i, j, :] .= params.S[i, j, :, :] * ψh[i, j, :]
   end
 end
 
@@ -321,9 +322,9 @@ Constructs the stretching matrix S that connects q and ψ: q_{k,l} = S * ψ_{k,l
 function calcS!(S, Fp, Fm, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   for n=1:grid.nl, m=1:grid.nkr
-     k² = grid.Krsq[m, n]
+    CUDA.@allowscalar k² = grid.Krsq[m, n]
     Skl = - k²*I + F
-    @views S[m, n, :, :] .= Skl
+    CUDA.@allowscalar @views S[m, n, :, :] .= Skl
   end
   return nothing
 end
@@ -337,14 +338,14 @@ Constructs the inverse of the stretching matrix S that connects q and ψ:
 function calcinvS!(invS, Fp, Fm, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   for n=1:grid.nl, m=1:grid.nkr
-    k² = grid.Krsq[m, n]
+    CUDA.@allowscalar k² = grid.Krsq[m, n]
     if k² == 0
       k² = 1
     end
     Skl = - k²*I + F
-    @views invS[m, n, :, :] .= I / Skl
+    CUDA.@allowscalar @views invS[m, n, :, :] .= I / Skl
   end
-  @views invS[1, 1, :, :] .= 0
+  CUDA.@allowscalar @views invS[1, 1, :, :] .= 0
   return nothing
 end
 
@@ -401,7 +402,7 @@ function calcN_advection!(N, sol, vars, params, grid)
   fwdtransform!(vars.uh, vars.u, params)
   fwdtransform!(vars.vh, vars.v, params)
 
-  @. N -= im * grid.kr * vars.uh + im * grid.l * vars.vh    # -∂[(U+u)q]/∂x-∂[vq]/∂y
+  @. N -= im * grid.kr * vars.uh + im * grid.l * vars.vh    # -∂[(U+u)q]/∂x - ∂[vq]/∂y
 
   return nothing
 end
@@ -546,11 +547,11 @@ function energies(vars, params, grid, sol)
 
   @. vars.uh = grid.Krsq * abs2(vars.ψh)
   for j=1:nlayers
-    KE[j] = 1/(2*grid.Lx*grid.Ly)*parsevalsum(vars.uh[:, :, j], grid)*params.H[j]/sum(params.H)
+    CUDA.@allowscalar KE[j] = 1/(2*grid.Lx*grid.Ly)*parsevalsum(vars.uh[:, :, j], grid)*params.H[j]/sum(params.H)
   end
 
   for j=1:nlayers-1
-    PE[j] = 1/(2*grid.Lx*grid.Ly)*params.f0^2/params.g′[j]*parsevalsum(abs2.(vars.ψh[:, :, j+1].-vars.ψh[:, :, j]), grid)
+    CUDA.@allowscalar PE[j] = 1/(2*grid.Lx*grid.Ly)*params.f0^2/params.g′[j]*parsevalsum(abs2.(vars.ψh[:, :, j+1].-vars.ψh[:, :, j]), grid)
   end
 
   return KE, PE
@@ -560,9 +561,7 @@ function energies(vars, params::SingleLayerParams, grid, sol)
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
   
-  KE = 1/(2*grid.Lx*grid.Ly)*parsevalsum(grid.Krsq .* abs2.(vars.ψh), grid)
-  
-  return KE
+  return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(grid.Krsq .* abs2.(vars.ψh), grid)
 end
 
 energies(prob) = energies(prob.vars, prob.params, prob.grid, prob.sol)
@@ -589,8 +588,8 @@ function fluxes(vars, params, grid, sol)
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   for j=1:nlayers-1
-    verticalfluxes[j] = sum( @views @. params.f0^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j] ; dims=(1,2) )[1]
-    verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
+    CUDA.@allowscalar verticalfluxes[j] = sum( @views @. params.f0^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j] ; dims=(1,2) )[1]
+    CUDA.@allowscalar verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
   end
 
   return lateralfluxes, verticalfluxes

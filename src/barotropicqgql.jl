@@ -13,6 +13,7 @@ export
 
 using
   FFTW,
+  CUDA,
   Reexport
 
 @reexport using FourierFlows
@@ -119,8 +120,8 @@ end
 Returns the equation for two-dimensional barotropic QG QL problem with parameters `params` and on `grid`.
 """
 function Equation(params::Params, grid::AbstractGrid)
-  L = @. -params.μ - params.ν * grid.Krsq^params.nν + im*params.β * grid.kr * grid.invKrsq
-  L[1, 1] = 0
+  L = @. -params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq
+  CUDA.@allowscalar L[1, 1] = 0
   FourierFlows.Equation(L, calcN!, grid)
 end
 
@@ -201,11 +202,11 @@ end
 # -------
 
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
-  Kr = [ grid.kr[i] for i=1:grid.nkr, j=1:grid.nl]
+  Kr = CUDA.@allowscalar [ grid.kr[i] for i=1:grid.nkr, j=1:grid.nl ]
   @. vars.zetah = sol
-  @. vars.zetah[Kr .== 0] = 0
+  CUDA.@allowscalar @. vars.zetah[Kr .== 0] = 0
   @. vars.Zetah = sol
-  @. vars.Zetah[abs.(Kr) .> 0] = 0
+  CUDA.@allowscalar @. vars.Zetah[abs.(Kr) .> 0] = 0
 
   @. vars.uh =  im * grid.l  * grid.invKrsq * vars.zetah
   @. vars.vh = -im * grid.kr * grid.invKrsq * vars.zetah
@@ -225,7 +226,7 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.NZ = -im * grid.kr * vars.uh         # -∂[u*q]/∂x
   mul!(vars.vh, grid.rfftplan, vars.vzeta)     # \hat{v*q}
   @. vars.NZ += - im * grid.l * vars.vh        # -∂[v*q]/∂y
-  @. vars.NZ[abs.(Kr) .> 0] = 0
+  CUDA.@allowscalar @. vars.NZ[abs.(Kr) .> 0] = 0
 
   @. vars.U = vars.U * vars.zeta                # U*ζ
   @. vars.u = vars.u * vars.Zeta                # u*Ζ
@@ -235,7 +236,7 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.Nz = -im * grid.kr*vars.uh            # -∂[U*ζ + u*Ζ]/∂x
   mul!(vars.vh, grid.rfftplan, vars.v)          # \hat{v*Z}
   @. vars.Nz += - im * grid.l*vars.vh           # -∂[v*Z]/∂y
-  @. vars.Nz[abs.(Kr) .== 0] = 0
+  CUDA.@allowscalar @. vars.Nz[abs.(Kr) .== 0] = 0
 
   @. N = vars.NZ + vars.Nz
 end
@@ -275,12 +276,12 @@ end
 Update the `vars` of a problem `prob` that has `grid` and `params` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
-  Kr = [ grid.kr[i] for i=1:grid.nkr, j=1:grid.nl]
-  sol[1, 1] = 0
+  Kr = CUDA.@allowscalar [ grid.kr[i] for i=1:grid.nkr, j=1:grid.nl ]
+  CUDA.@allowscalar sol[1, 1] = 0
   @. vars.zetah = sol
-  @. vars.zetah[Kr .== 0] = 0
+  CUDA.@allowscalar @. vars.zetah[Kr .== 0] = 0
   @. vars.Zetah = sol
-  @. vars.Zetah[abs.(Kr) .> 0] = 0
+  CUDA.@allowscalar @. vars.Zetah[abs.(Kr) .> 0] = 0
 
   @. vars.Psih = -vars.Zetah * grid.invKrsq
   @. vars.psih = -vars.zetah * grid.invKrsq
@@ -310,7 +311,7 @@ on the `grid`.
 """
 function set_zeta!(sol, vars, params, grid, zeta)
   mul!(vars.zetah, grid.rfftplan, zeta)
-  vars.zetah[1, 1] = 0.0
+  CUDA.@allowscalar vars.zetah[1, 1] = 0.0
   @. sol = vars.zetah
 
   updatevars!(sol, vars, params, grid)
@@ -339,7 +340,7 @@ Returns the domain-averaged enstrophy of sol.
 """
 function enstrophy(sol, grid::AbstractGrid, vars::AbstractVars)
   @. vars.uh = sol
-  vars.uh[1, 1] = 0
+  CUDA.@allowscalar vars.uh[1, 1] = 0
   return 0.5 * parsevalsum2(vars.uh, grid) / (grid.Lx * grid.Ly)
 end
 enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
@@ -352,9 +353,9 @@ enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
 Returns the domain-averaged dissipation rate. nν must be >= 1.
 """
 @inline function dissipation(sol, vars, params, grid)
-  @. vars.uh = grid.Krsq^(params.nν-1) * abs(sol)^2
-  vars.uh[1, 1] = 0
-  params.ν / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+  @. vars.uh = grid.Krsq^(params.nν - 1) * abs(sol)^2
+  CUDA.@allowscalar vars.uh[1, 1] = 0
+  return params.ν / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
 @inline dissipation(prob) = dissipation(prob.sol, prob.vars, prob.params, prob.grid)
@@ -367,13 +368,13 @@ Returns the domain-averaged rate of work of energy by the forcing Fh.
 """
 @inline function work(sol, vars::ForcedVars, grid)
   @. vars.uh = grid.invKrsq * sol * conj(vars.Fh)
-  1/(grid.Lx * grid.Ly)*parsevalsum(vars.uh, grid)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
 @inline function work(sol, vars::StochasticForcedVars, grid)
-  @. vars.uh = grid.invKrsq * (vars.prevsol + sol)/2 * conj(vars.Fh) # Stratonovich
+  @. vars.uh = grid.invKrsq * (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
   # @. vars.uh = grid.invKrsq * vars.prevsol * conj(vars.Fh)             # Ito
-  1/(grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
 @inline work(prob) = work(prob.sol, prob.vars, prob.grid)
@@ -387,8 +388,8 @@ Returns the extraction of domain-averaged energy by drag μ.
 @inline function drag(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   @. vars.uh = grid.invKrsq * abs(sol)^2
-  vars.uh[1, 1] = 0
-  params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+  CUDA.@allowscalar vars.uh[1, 1] = 0
+  return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
 end # module
