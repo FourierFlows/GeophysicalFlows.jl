@@ -65,9 +65,9 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
   CUDA.@allowscalar Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl ])
 
   forcingcovariancespectrum = zeros(dev, T, (gr.nkr, gr.nl))
-  @. forcingcovariancespectrum = exp.( -(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2) )
-  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .< 2^2 ] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .> 20^2 ] = 0
+  @. forcingcovariancespectrum = exp( -(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2) )
+  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .< 2^2] = 0
+  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .> 20^2] = 0
   CUDA.@allowscalar @. forcingcovariancespectrum[Kr .< 2π/L] = 0
   ε0 = parsevalsum(forcingcovariancespectrum .* gr.invKrsq / 2, gr) / (gr.Lx * gr.Ly)
   forcingcovariancespectrum .= ε / ε0 * forcingcovariancespectrum
