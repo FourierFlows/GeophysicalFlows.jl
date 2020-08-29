@@ -18,7 +18,7 @@ export
 @reexport using FourierFlows
 
 using LinearAlgebra: mul!, ldiv!
-using FourierFlows: getfieldspecs, parsevalsum
+using FourierFlows: parsevalsum
 
 nothingfunction(args...) = nothing
 
