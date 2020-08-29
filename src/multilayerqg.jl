@@ -21,7 +21,7 @@ using
 
 using LinearAlgebra: mul!, ldiv!
 using FFTW: rfft, irfft
-using FourierFlows: getfieldspecs, parsevalsum, parsevalsum2, superzeros, plan_flows_rfft
+using FourierFlows: parsevalsum, parsevalsum2, superzeros, plan_flows_rfft
 
 nothingfunction(args...) = nothing
 
