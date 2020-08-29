@@ -13,13 +13,12 @@ export
   work,
   drag
 
-  using
-    CUDA,
-    Reexport
+using
+  CUDA,
+  Reexport
 
 @reexport using FourierFlows
 
-using CUDA
 using FFTW: rfft
 using LinearAlgebra: mul!, ldiv!
 using FourierFlows: getfieldspecs, parsevalsum, parsevalsum2
