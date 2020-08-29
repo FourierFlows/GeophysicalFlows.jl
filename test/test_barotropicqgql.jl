@@ -38,7 +38,7 @@ function test_bqgql_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
   dealias!(sol, g)
   BarotropicQGQL.updatevars!(prob)
 
-  ζ_theory = @. ampl * cos(kwave * (x - ω/kwave * cl.t)) * cos(lwave*y)
+  ζ_theory = @. ampl * cos(kwave * (x - ω/kwave * cl.t)) * cos(lwave * y)
 
   return isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
 end
@@ -185,9 +185,8 @@ end
 """
     test_bqgql_nonlinearadvection(dt, stepper, dev; kwargs...)
 
-Tests the advection term in the TwoDNavierStokes module by timestepping a
-test problem with timestep dt and timestepper identified by the string stepper.
-The test problem is derived by picking a solution ζf (with associated
+Tests the advection term by timestepping a test problem with timestep `dt` and timestepper 
+`stepper`. The test problem is derived by picking a solution ζf (with associated
 streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
 forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - νΔζf. One solution
 to the vorticity equation forced by this Ff is then ζf. (This solution may not

@@ -199,9 +199,9 @@ end
 
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.zetah = sol
-  CUDA.@allowscalar @. vars.zetah[:, 1] = 0
+  CUDA.@allowscalar @. vars.zetah[1, :] = 0
   @. vars.Zetah = sol
-  CUDA.@allowscalar @. vars.Zetah[:, 2:end] = 0
+  CUDA.@allowscalar @. vars.Zetah[2:end, :] = 0
 
   @. vars.uh =  im * grid.l  * grid.invKrsq * vars.zetah
   @. vars.vh = -im * grid.kr * grid.invKrsq * vars.zetah
@@ -221,7 +221,7 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.NZ = -im * grid.kr * vars.uh         # -∂[u*q]/∂x
   mul!(vars.vh, grid.rfftplan, vars.vzeta)     # \hat{v*q}
   @. vars.NZ += - im * grid.l * vars.vh        # -∂[v*q]/∂y
-  CUDA.@allowscalar @. vars.NZ[:, 2:end] = 0
+  CUDA.@allowscalar @. vars.NZ[2:end, :] = 0
 
   @. vars.U = vars.U * vars.zeta                # U*ζ
   @. vars.u = vars.u * vars.Zeta                # u*Ζ
@@ -231,7 +231,7 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.Nz = -im * grid.kr*vars.uh            # -∂[U*ζ + u*Ζ]/∂x
   mul!(vars.vh, grid.rfftplan, vars.v)          # \hat{v*Z}
   @. vars.Nz += - im * grid.l*vars.vh           # -∂[v*Z]/∂y
-  CUDA.@allowscalar @. vars.Nz[:, 1] = 0
+  CUDA.@allowscalar @. vars.Nz[1, :] = 0
 
   @. N = vars.NZ + vars.Nz
   
@@ -277,9 +277,9 @@ Update the `vars` of a problem `prob` that has `grid` and `params` with the solu
 function updatevars!(sol, vars, params, grid)
   CUDA.@allowscalar sol[1, 1] = 0
   @. vars.zetah = sol
-  CUDA.@allowscalar @. vars.zetah[:, 1] = 0
+  CUDA.@allowscalar @. vars.zetah[1, :] = 0
   @. vars.Zetah = sol
-  CUDA.@allowscalar @. vars.Zetah[:, 2:end] = 0
+  CUDA.@allowscalar @. vars.Zetah[2:end, :] = 0
 
   @. vars.Psih = -vars.Zetah * grid.invKrsq
   @. vars.psih = -vars.zetah * grid.invKrsq
