@@ -4,7 +4,7 @@
 Return the 2D vorticity field of the Lamb dipole with strength `U` and radius `R`, centered on
 `center=(xc, yc)` and on the `grid`. The default value of `center` is the middle of the grid.
 """
-function lambdipole(U, R, grid::TwoDGrid{T, A}; center=(mean(g.x), mean(g.y))) where {T, A}
+function lambdipole(U, R, grid::TwoDGrid{T, A}; center=(mean(grid.x), mean(grids.y))) where {T, A}
   firstzero = 3.8317059702075123156
   k = firstzero / R # dipole wavenumber for radius R in terms of first zero of besselj
   q0 = -2U * k / besselj(0, k * R) # dipole amplitude for strength U and radius R
