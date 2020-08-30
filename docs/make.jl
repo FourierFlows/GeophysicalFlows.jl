@@ -62,6 +62,7 @@ checkdocs = :all,
 sitename = "GeophysicalFlows.jl",
    pages = Any[
             "Home"    => "index.md",
+            "Forcing" => "forcing.md",
             "Modules" => Any[
               "modules/twodnavierstokes.md",
               "modules/barotropicqg.md",
