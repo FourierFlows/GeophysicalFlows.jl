@@ -299,13 +299,13 @@ invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, v
 
 function streamfunctionfrompv!(ψh, qh, params, grid)
   for j=1:grid.nl, i=1:grid.nkr
-    @views ψh[i, j, :] .= params.invS[i, j] * qh[i, j, :]
+    CUDA.@allowscalar @views ψh[i, j, :] .= params.invS[i, j] * qh[i, j, :]
   end
 end
 
 function pvfromstreamfunction!(qh, ψh, params, grid)
   for j=1:grid.nl, i=1:grid.nkr
-    @views qh[i, j, :] .= params.S[i, j] * ψh[i, j, :]    
+    CUDA.@allowscalar @views qh[i, j, :] .= params.S[i, j] * ψh[i, j, :]    
   end
 end
 
@@ -320,13 +320,13 @@ end
 """
     calcS!(S, Fp, Fm, nlayers, grid)
 
-Constructs the matrix S, which consists of nlayer x nlayer matrices S_kl that 
-relate the q's and ψ's at every wavenumber: q̂_{k,l} = S_kl * ψ̂_{k,l}.
+Constructs the array S, which consists of nlayer x nlayer static arrays S_kl that relate 
+the q's and ψ's at every wavenumber: q̂_{k, l} = S_kl * ψ̂_{k, l}.
 """
 function calcS!(S, Fp, Fm, nlayers, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   for n=1:grid.nl, m=1:grid.nkr
-     k² = grid.Krsq[m, n]
+    CUDA.@allowscalar k² = grid.Krsq[m, n]
     Skl = SMatrix{nlayers, nlayers}( - k² * I + F )
     S[m, n] = Skl
   end
@@ -336,17 +336,14 @@ end
 """
     calcinvS!(S, Fp, Fm, nlayers, grid)
 
-Constructs the matrix invS, which consists of nlayer x nlayer matrices (S_kl)⁻¹ 
-that relate the q's and ψ's at every wavenumber: ψ̂_{k,l} = (S_kl)⁻¹ * q̂_{k,l}.
+Constructs the array invS, which consists of nlayer x nlayer static arrays (S_kl)⁻¹ that 
+relate the q's and ψ's at every wavenumber: ψ̂_{k, l} = (S_kl)⁻¹ * q̂_{k, l}.
 """
 function calcinvS!(invS, Fp, Fm, nlayers, grid)
   T = eltype(grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   for n=1:grid.nl, m=1:grid.nkr
-    CUDA.@allowscalar k² = grid.Krsq[m, n]
-    if k² == 0
-      k² = 1
-    end
+    CUDA.@allowscalar k² = grid.Krsq[m, n] == 0 ? 1 : grid.Krsq[m, n]
     Skl = - k²*I + F
     invS[m, n] = SMatrix{nlayers, nlayers}( I / Skl )
   end
