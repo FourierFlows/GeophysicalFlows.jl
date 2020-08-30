@@ -1,4 +1,5 @@
 using
+  CUDA,
   FourierFlows,
   Statistics,
   Random,
@@ -17,7 +18,6 @@ using GeophysicalFlows: lambdipole, peakedisotropicspectrum
 # the devices on which tests will run
 devices = (CPU(),)
 @has_cuda devices = (CPU(), GPU())
-@has_cuda using CuArrays
 
 const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
 const rtol_twodnavierstokes = 1e-13 # tolerance for twodnavierstokes forcing tests
@@ -51,7 +51,7 @@ for dev in devices
     @test test_twodnavierstokes_stochasticforcingbudgets(dev)
     @test test_twodnavierstokes_deterministicforcingbudgets(dev)
     @test test_twodnavierstokes_energyenstrophy(dev)
-    @test test_twodnavierstokes_problemtype(Float32)
+    @test test_twodnavierstokes_problemtype(dev, Float32)
     @test TwoDNavierStokes.nothingfunction() == nothing
   end
   
