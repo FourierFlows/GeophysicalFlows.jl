@@ -190,8 +190,7 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
     invS = Array{typeofSkl, 2}(undef, (nkr, nl))
     calcinvS!(invS, Fp, Fm, nlayers, grid)
     
-    S, invS = A(S), A(invS)     # convert S and invS to appropriate ArrayType
-    Fp, Fm = A(Fp), A(Fm)       # convert S and invS to appropriate ArrayType
+    S, invS, Fp, Fm  = A(S), A(invS), A(Fp), A(Fm)     # convert to appropriate ArrayType
 
     CUDA.@allowscalar @views Qy[:, :, 1] = @. Qy[:, :, 1] - Fp[1] * ( U[:, :, 2] - U[:, :, 1] )
     for j = 2:nlayers-1
