@@ -406,12 +406,12 @@ end
 Returns the domain-averaged rate of work of enstrophy by the forcing Fh.
 """
 @inline function work_ens(sol, vars::ForcedVars, grid)
-  @. vars.uh = sol * conj(vars.Fh)
+  @. vars.uh = sol * conj(vars.Fqh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
 @inline function work_ens(sol, vars::StochasticForcedVars, grid)
-  @. vars.uh = (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
+  @. vars.uh = (vars.prevsol + sol) / 2 * conj(vars.Fqh) # Stratonovich
   # @. vars.uh = grid.invKrsq * vars.prevsol * conj(vars.Fh)           # Ito
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
