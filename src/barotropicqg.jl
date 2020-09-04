@@ -11,7 +11,10 @@ export
   meanenstrophy,
   dissipation,
   work,
-  drag
+  drag,
+  drag_ens,
+  work_ens,
+  dissipation_ens
 
 using Reexport
 
@@ -60,9 +63,9 @@ function Problem(dev::Device=CPU();
   params = !(typeof(eta)<:ArrayType(dev)) ? Params(grid, β, eta, μ, ν, nν, calcFU, calcFq) : Params(β, eta, rfft(eta), μ, ν, nν, calcFU, calcFq)
 
   vars = (calcFq == nothingfunction && calcFU == nothingfunction) ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
-  
+
   equation = Equation(params, grid)
-  
+
   return FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end
 
@@ -204,7 +207,7 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.v = vars.v * vars.q # v*q
 
   mul!(vars.uh, grid.rfftplan, vars.u)      # \hat{(u+U)*q}
-  
+
   # Nonlinear advection term for q (part 1)
   @. N = -im * grid.kr * vars.uh            # -∂[(U+u)q]/∂x
   mul!(vars.uh, grid.rfftplan, vars.v)      # \hat{v*q}
@@ -339,17 +342,29 @@ enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
 
 """
     meanenergy(prob)
-    
+
 Returns the energy of the domain-averaged U.
 """
 meanenergy(prob) = real(0.5 * prob.sol[1, 1].^2)
 
 """
     meanenstrophy(prob)
-    
+
 Returns the enstrophy of the domain-averaged U.
 """
 meanenstrophy(prob) = real(prob.params.β * prob.sol[1, 1])
+
+"""
+    dissipation_ens(prob)
+
+Returns the domain-averaged dissipation rate of enstrophy. nν must be >= 1.
+"""
+@inline function dissipation_ens(prob)
+  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
+  @. vars.uh = grid.Krsq^params.nν * abs2(sol)
+  vars.uh[1, 1] = 0
+  return params.ν / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+end
 
 """
     dissipation(prob)
@@ -385,6 +400,25 @@ end
 @inline work(prob) = work(prob.sol, prob.vars, prob.grid)
 
 """
+    work_ens(prob)
+    work_ens(sol, v, grid)
+
+Returns the domain-averaged rate of work of enstrophy by the forcing Fh.
+"""
+@inline function work_ens(sol, vars::ForcedVars, grid)
+  @. vars.uh = sol * conj(vars.Fh)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+end
+
+@inline function work_ens(sol, vars::StochasticForcedVars, grid)
+  @. vars.uh = (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
+  # @. vars.uh = grid.invKrsq * vars.prevsol * conj(vars.Fh)           # Ito
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+end
+
+@inline work_ens(prob) = work_ens(prob.sol, prob.vars, prob.grid)
+
+"""
     drag(prob)
     drag(sol, vars, params, grid)
 
@@ -393,6 +427,18 @@ Returns the extraction of domain-averaged energy by drag μ.
 @inline function drag(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   @. vars.uh = grid.invKrsq * abs2(sol)
+  vars.uh[1, 1] = 0
+  return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+end
+
+"""
+    drag_ens(prob)
+
+Returns the extraction of domain-averaged enstrophy by drag/hypodrag μ.
+"""
+@inline function drag_ens(prob)
+  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
+  @. vars.uh = grid.Krsq^0.0 * abs2(sol)
   vars.uh[1, 1] = 0
   return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
