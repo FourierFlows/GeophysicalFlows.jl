@@ -9,7 +9,10 @@ export
   enstrophy,
   dissipation,
   work,
-  drag
+  drag,
+  drag_ens,
+  work_ens,
+  dissipation_ens
 
   using
     CUDA,
@@ -46,13 +49,13 @@ function Problem(dev::Device=CPU();
            T = Float64)
 
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
-  
+
   params = Params{T}(ν, nν, μ, nμ, calcF)
-  
+
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
-  
+
   equation = Equation(params, grid)
-  
+
   return FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end
 
@@ -128,7 +131,7 @@ end
 """
     ForcedVars(dev, grid)
 
-Returns the vars for forced two-dimensional turbulence on device dev and with 
+Returns the vars for forced two-dimensional turbulence on device dev and with
 `grid`.
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
@@ -274,6 +277,18 @@ Returns the domain-averaged dissipation rate. nν must be >= 1.
 end
 
 """
+    dissipation_ens(prob)
+
+Returns the domain-averaged dissipation rate of enstrophy. nν must be >= 1.
+"""
+@inline function dissipation_ens(prob)
+  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
+  @. vars.uh = grid.Krsq^params.nν * abs2(sol)
+  vars.uh[1, 1] = 0
+  return params.ν / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+end
+
+"""
     work(prob)
     work(sol, v, grid)
 
@@ -293,6 +308,25 @@ end
 @inline work(prob) = work(prob.sol, prob.vars, prob.grid)
 
 """
+    work_ens(prob)
+    work_ens(sol, v, grid)
+
+Returns the domain-averaged rate of work of enstrophy by the forcing Fh.
+"""
+@inline function work_ens(sol, vars::ForcedVars, grid)
+  @. vars.uh = sol * conj(vars.Fh)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+end
+
+@inline function work_ens(sol, vars::StochasticForcedVars, grid)
+  @. vars.uh = (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
+  # @. vars.uh = grid.invKrsq * vars.prevsol * conj(vars.Fh)           # Ito
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+end
+
+@inline work_ens(prob) = work_ens(prob.sol, prob.vars, prob.grid)
+
+"""
     drag(prob)
 
 Returns the extraction of domain-averaged energy by drag/hypodrag μ.
@@ -301,6 +335,18 @@ Returns the extraction of domain-averaged energy by drag/hypodrag μ.
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   @. vars.uh = grid.Krsq^(params.nμ - 1) * abs2(sol)
   CUDA.@allowscalar vars.uh[1, 1] = 0
+  return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+end
+
+"""
+    drag_ens(prob)
+
+Returns the extraction of domain-averaged enstrophy by drag/hypodrag μ.
+"""
+@inline function drag_ens(prob)
+  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
+  @. vars.uh = grid.Krsq^params.nμ * abs2(sol)
+  vars.uh[1, 1] = 0
   return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
