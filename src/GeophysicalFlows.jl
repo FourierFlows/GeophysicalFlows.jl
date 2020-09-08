@@ -13,5 +13,6 @@ include("twodnavierstokes.jl")
 include("barotropicqg.jl")
 include("barotropicqgql.jl")
 include("multilayerqg.jl")
+include("surfaceqg.jl")
 
 end # module
