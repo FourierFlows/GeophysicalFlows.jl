@@ -99,7 +99,7 @@ end
 
 abstract type SurfaceQGVars <: AbstractVars end
 
-struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
+struct Vars{Aphys, Atrans, F, P} <: SurfaceQGVars
         b :: Aphys
         u :: Aphys
         v :: Aphys
