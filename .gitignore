@@ -19,6 +19,7 @@ docs/Manifest.toml
 # Model output
 **/*.jld
 **/*.jld2
+**/*.mat
 
 # Plots and movies
 **/*.png
@@ -38,4 +39,3 @@ coverage/
 
 # MacOS stuff
 *.DS_Store
-*.mat
