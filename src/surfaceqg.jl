@@ -240,12 +240,12 @@ function set_b!(prob, b)
 end
 
 """
-    kineticenergy(prob)
+    kinetic_energy(prob)
 
 Returns the domain-averaged surface kinetic energy. In SQG flows this is
 identical to half the domain-averaged surface buoyancy variance
 """
-@inline function kineticenergy(prob)
+@inline function kinetic_energy(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
   @. vars.uh = abs2(sol)
   return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
@@ -283,12 +283,12 @@ end
 
 Returns the domain-averaged rate of work of buoyancy variance by the forcing Fh.
 """
-@inline function work(sol, vars::ForcedVars, grid)
+@inline function work_bb(sol, vars::ForcedVars, grid)
   @. vars.uh =  sol * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
-@inline function work(sol, vars::StochasticForcedVars, grid)
+@inline function work_bb(sol, vars::StochasticForcedVars, grid)
   @. vars.uh =  (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
   # @. vars.uh = grid.invKrsq * vars.prevsol * conj(vars.Fh)           # Ito
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
