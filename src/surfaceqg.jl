@@ -283,7 +283,8 @@ end
 
 Returns the domain-averaged rate of work of buoyancy variance by the forcing Fh.
 """
-@inline function work_bb(sol, vars::ForcedVars, grid)
+@inline function work_bb(prob)
+  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   @. vars.uh =  sol * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
