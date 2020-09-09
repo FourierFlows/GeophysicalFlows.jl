@@ -3,19 +3,20 @@
 #md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb).
 #md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb).
 #
-# A simulation of forced-dissipative two-dimensional turbulence. We solve the 
+# A simulation of forced-dissipative two-dimensional turbulence. We solve the
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
-# the form of linear drag and hyperviscosity. As a demonstration, we compute how 
+# the form of linear drag and hyperviscosity. As a demonstration, we compute how
 # each of the forcing and dissipation terms contribute to the energy budget.
 
 using FourierFlows, Printf, Plots
-  
+
 using FourierFlows: parsevalsum
 using Random: seed!
 using FFTW: irfft
 
 import GeophysicalFlows.TwoDNavierStokes
 import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy, dissipation, work, drag
+import GeophysicalFlows.TwoDNavierStokes: dissipation_ens, work_ens, drag_ens
 
 
 # ## Choosing a device: CPU or GPU
@@ -41,12 +42,12 @@ nothing # hide
 
 # We force the vorticity equation with stochastic excitation that is delta-correlated
 # in time and while spatially homogeneously and isotropically correlated. The forcing
-# has a spectrum with power in a ring in wavenumber space of radious $k_f$ and 
-# width $\delta k_f$, and it injects energy per unit area and per unit time equal 
+# has a spectrum with power in a ring in wavenumber space of radious $k_f$ and
+# width $\delta k_f$, and it injects energy per unit area and per unit time equal
 # to $\varepsilon$.
 
 forcing_wavenumber = 14.0    # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
-forcing_bandwidth  = 1.5     # the width of the forcing spectrum 
+forcing_bandwidth  = 1.5     # the width of the forcing spectrum
 ε = 0.001                    # energy input rate by the forcing
 
 gr   = TwoDGrid(dev, n, L)
@@ -113,7 +114,11 @@ E = Diagnostic(energy,      prob, nsteps=nt) # energy
 R = Diagnostic(drag,        prob, nsteps=nt) # dissipation by drag
 D = Diagnostic(dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
 W = Diagnostic(work,        prob, nsteps=nt) # work input by forcing
-diags = [E, D, W, R] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
+Z = Diagnostic(enstrophy,      prob, nsteps=nt) # energy
+RZ = Diagnostic(drag_ens,        prob, nsteps=nt) # dissipation by drag
+DZ = Diagnostic(dissipation_ens, prob, nsteps=nt) # dissipation by hyperviscosity
+WZ = Diagnostic(work_ens,        prob, nsteps=nt) # work input by forcing
+diags = [E, D, W, R, Z, DZ, WZ, RZ] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 
 
@@ -125,23 +130,28 @@ nothing # hide
 
 function computetendencies_and_makeplot(prob, diags)
   TwoDNavierStokes.updatevars!(prob)
-  E, D, W, R = diags
+  E, D, W, R, Z, DZ, WZ, RZ = diags
 
   clocktime = round(μ*cl.t, digits=2)
 
   i₀ = 1
   dEdt_numerical = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt #numerical first-order approximation of energy tendency
+  dZdt_numerical = (Z[(i₀+1):Z.i] - Z[i₀:Z.i-1])/cl.dt #numerical first-order approximation of enstrophy tendency
   ii = (i₀):E.i-1
   ii2 = (i₀+1):E.i
 
   t = E.t[ii]
   dEdt_computed = W[ii2] - D[ii] - R[ii]        # Stratonovich interpretation
-  
-  residual = dEdt_computed - dEdt_numerical
+  dZdt_computed = WZ[ii2] - DZ[ii] - RZ[ii]
 
-  l = @layout grid(2, 2)
+  residual_E = dEdt_computed - dEdt_numerical
+  residual_Z = dZdt_computed - dZdt_numerical
 
-  p1 = heatmap(x, y, v.zeta,
+  εZ = ε*(forcing_wavenumber^2)  # Estimate of mean enstrophy injection rate
+
+  l = @layout grid(2,3)
+
+  pzeta = heatmap(x, y, v.zeta,
             aspectratio = 1,
             legend = false,
                  c = :viridis,
@@ -155,7 +165,9 @@ function computetendencies_and_makeplot(prob, diags)
              title = "∇²ψ(x, y, t="*@sprintf("%.2f", cl.t)*")",
         framestyle = :box)
 
-  p2 = plot(μ*t, [W[ii2] ε.+0*t -D[ii] -R[ii]],
+  pζ = plot(pzeta, size = (400, 400))
+
+  p1 = plot(μ*t, [W[ii2] ε.+0*t -D[ii] -R[ii]],
              label = ["work, W" "ensemble mean work, <W>" "dissipation, D" "drag, D=-2μE"],
          linestyle = [:solid :dash :solid :solid],
          linewidth = 2,
@@ -163,22 +175,47 @@ function computetendencies_and_makeplot(prob, diags)
             xlabel = "μt",
             ylabel = "energy sources and sinks")
 
-  p3 = plot(μ*t, [dEdt_computed[ii], dEdt_numerical],
-             label = ["computed W-D" "numerical dE/dt"],
-         linestyle = [:solid :dashdotdot],
-         linewidth = 2,
-             alpha = 0.8,
-            xlabel = "μt",
-            ylabel = "dE/dt")
+  p2 = plot(μ*t, [dEdt_computed[ii], dEdt_numerical],
+           label = ["computed W-D" "numerical dE/dt"],
+       linestyle = [:solid :dashdotdot],
+       linewidth = 2,
+           alpha = 0.8,
+          xlabel = "μt",
+          ylabel = "dE/dt")
 
-  p4 = plot(μ*t, residual,
-             label = "residual dE/dt = computed - numerical",
-         linewidth = 2,
-             alpha = 0.7,
-            xlabel = "μt")
+  p3 = plot(μ*t, residual_E,
+           label = "residual dE/dt = computed - numerical",
+       linewidth = 2,
+           alpha = 0.7,
+          xlabel = "μt")
 
-  p = plot(p1, p2, p3, p4, layout=l, size = (900, 800))
-  return p
+  p4 = plot(μ*t, [WZ[ii2] εZ.+0*t -DZ[ii] -RZ[ii]],
+           label = ["Enstrophy work, WZ" "mean enstrophy work, <WZ>" "enstrophy dissipation, DZ" "enstrophy drag, D=-2μZ"],
+       linestyle = [:solid :dash :solid :solid],
+       linewidth = 2,
+           alpha = 0.8,
+          xlabel = "μt",
+          ylabel = "enstrophy sources and sinks")
+
+
+  p5 = plot(μ*t, [dZdt_computed[ii], dZdt_numerical],
+         label = ["computed WZ-DZ" "numerical dZ/dt"],
+     linestyle = [:solid :dashdotdot],
+     linewidth = 2,
+         alpha = 0.8,
+        xlabel = "μt",
+        ylabel = "dZ/dt")
+
+  p6 = plot(μ*t, residual_Z,
+         label = "residual dZ/dt = computed - numerical",
+     linewidth = 2,
+         alpha = 0.7,
+        xlabel = "μt")
+
+
+  pbudgets = plot(p1, p2, p3, p4, p5, p6, layout=l, size = (1300, 900))
+
+  return pζ, pbudgets
 end
 nothing # hide
 
@@ -198,11 +235,11 @@ for i = 1:ns
   log = @sprintf("step: %04d, t: %.1f, cfl: %.3f, walltime: %.2f min", cl.step, cl.t,
         cfl, (time()-startwalltime)/60)
 
-  println(log)        
+  println(log)
 end
 
 
 # ## Plot
 # And now let's see what we got. We plot the output.
 
-p = computetendencies_and_makeplot(prob, diags)
+pζ, pbudgets = computetendencies_and_makeplot(prob, diags)
