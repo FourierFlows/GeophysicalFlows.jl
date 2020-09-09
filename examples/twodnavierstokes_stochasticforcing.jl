@@ -15,8 +15,8 @@ using Random: seed!
 using FFTW: irfft
 
 import GeophysicalFlows.TwoDNavierStokes
-import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy, dissipation, work, drag
-import GeophysicalFlows.TwoDNavierStokes: dissipation_ens, work_ens, drag_ens
+import GeophysicalFlows.TwoDNavierStokes: energy, energy_dissipation, energy_work, energy_drag
+import GeophysicalFlows.TwoDNavierStokes: enstrophy, enstrophy_dissipation, enstrophy_work, enstrophy_drag
 
 
 # ## Choosing a device: CPU or GPU
@@ -111,13 +111,13 @@ TwoDNavierStokes.set_zeta!(prob, zeros(g.nx, g.ny))
 
 # Create Diagnostics; the diagnostics are aimed to probe the energy budget.
 E = Diagnostic(energy,      prob, nsteps=nt) # energy
-R = Diagnostic(drag,        prob, nsteps=nt) # dissipation by drag
-D = Diagnostic(dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
-W = Diagnostic(work,        prob, nsteps=nt) # work input by forcing
+R = Diagnostic(energy_drag,        prob, nsteps=nt) # dissipation by drag
+D = Diagnostic(energy_dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
+W = Diagnostic(energy_work,        prob, nsteps=nt) # work input by forcing
 Z = Diagnostic(enstrophy,      prob, nsteps=nt) # energy
-RZ = Diagnostic(drag_ens,        prob, nsteps=nt) # dissipation by drag
-DZ = Diagnostic(dissipation_ens, prob, nsteps=nt) # dissipation by hyperviscosity
-WZ = Diagnostic(work_ens,        prob, nsteps=nt) # work input by forcing
+RZ = Diagnostic(enstrophy_drag,        prob, nsteps=nt) # dissipation by drag
+DZ = Diagnostic(enstrophy_dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
+WZ = Diagnostic(enstrophy_work,        prob, nsteps=nt) # work input by forcing
 diags = [E, D, W, R, Z, DZ, WZ, RZ] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 
@@ -243,3 +243,5 @@ end
 # And now let's see what we got. We plot the output.
 
 pζ, pbudgets = computetendencies_and_makeplot(prob, diags)
+
+pbudgets
