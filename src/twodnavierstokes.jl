@@ -14,12 +14,14 @@ export
   enstrophy_work,
   enstrophy_drag
 
-using Reexport
+  using
+    CUDA,
+    Reexport
 
 @reexport using FourierFlows
 
 using LinearAlgebra: mul!, ldiv!
-using FourierFlows: getfieldspecs, parsevalsum
+using FourierFlows: parsevalsum
 
 nothingfunction(args...) = nothing
 
@@ -83,13 +85,13 @@ Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
 # ---------
 
 """
-    Equation(p, grid)
+    Equation(params, grid)
 
 Returns the equation for two-dimensional turbulence with params p and `grid`.
 """
 function Equation(params::Params, grid::AbstractGrid)
   L = @. - params.ν * grid.Krsq^params.nν - params.μ * grid.Krsq^params.nμ
-  L[1, 1] = 0
+  CUDA.@allowscalar L[1, 1] = 0
   return FourierFlows.Equation(L, calcN!, grid)
 end
 
@@ -212,7 +214,7 @@ end
 """
     updatevars!(prob)
 
-Update variables in `vars` with solution in `sol`.
+Update variables in `vars` with solution i`n `sol`.
 """
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
@@ -234,7 +236,7 @@ on the grid grid.
 function set_zeta!(prob, zeta)
   params, vars, grid, sol = prob.params, prob.vars, prob.grid, prob.sol
   mul!(sol, grid.rfftplan, zeta)
-  sol[1, 1] = 0 # zero domain average
+  CUDA.@allowscalar sol[1, 1] = 0 # zero domain average
   updatevars!(prob)
   return nothing
 end
@@ -269,8 +271,8 @@ Returns the domain-averaged dissipation rate. nν must be >= 1.
 """
 @inline function energy_dissipation(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  @. vars.uh = grid.Krsq^(params.nν-1) * abs2(sol)
-  vars.uh[1, 1] = 0
+  @. vars.uh = grid.Krsq^(params.nν - 1) * abs2(sol)
+  CUDA.@allowscalar vars.uh[1, 1] = 0
   return params.ν / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
@@ -331,8 +333,8 @@ Returns the extraction of domain-averaged energy by drag/hypodrag μ.
 """
 @inline function energy_drag(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  @. vars.uh = grid.Krsq^(params.nμ-1) * abs2(sol)
-  vars.uh[1, 1] = 0
+  @. vars.uh = grid.Krsq^(params.nμ - 1) * abs2(sol)
+  CUDA.@allowscalar vars.uh[1, 1] = 0
   return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 

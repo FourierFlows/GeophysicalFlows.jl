@@ -182,8 +182,8 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
   uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
 
   U = zeros(ny, nlayers)
-  U[:, 1] = u1 .+ U1
-  U[:, 2] = u2 .+ U2
+  CUDA.@allowscalar U[:, 1] = u1 .+ U1
+  CUDA.@allowscalar U[:, 2] = u2 .+ U2
 
   μ, ν, nν = 0.1, 0.05, 1
 
@@ -270,8 +270,8 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, 
   uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
 
   U = zeros(ny, nlayers)
-  U[:, 1] = u1 .+ U1
-  U[:, 2] = u2 .+ U2
+  CUDA.@allowscalar U[:, 1] = u1 .+ U1
+  CUDA.@allowscalar U[:, 2] = u2 .+ U2
 
   μ, ν, nν = 0.1, 0.05, 1
 
@@ -343,8 +343,8 @@ function test_mqg_energies(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
   qf = zeros(gr.nx, gr.ny, nlayers)
-  qf[:, :, 1] .= q1
-  qf[:, :, 2] .= q2
+  CUDA.@allowscalar @views qf[:, :, 1] .= q1
+  CUDA.@allowscalar @views qf[:, :, 2] .= q2
 
   MultilayerQG.set_q!(prob, qf)
 
@@ -356,10 +356,10 @@ end
 function test_mqg_energysinglelayer(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", nlayers=1, μ=0.0, ν=0.0, nν=1)
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
-  g  = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
   
-  x, y = gridpoints(g)
-  k₀, l₀ = g.k[2], g.l[2] # fundamental wavenumbers
+  x, y = gridpoints(gr)
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
   
   energy_calc = 29/9
 
@@ -394,20 +394,20 @@ function test_mqg_fluxes(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=
   H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
   ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
   U = zeros(ny, nlayers)
-  U[:, 1] = @. sech(gr.y/0.2)^2
+  U[:, 1] = @. sech(gr.y / 0.2)^2
 
   prob = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly, f0=f0, g=g, H=H, ρ=ρ, U=U)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
-  ψ1 = @. cos(k₀*x)*cos(l₀*y) + sin(k₀*x)
-  ψ2 = @. cos(k₀*x+π/10)*cos(l₀*y)
+  ψ1 = @. cos(k₀*x) * cos(l₀*y) + sin(k₀*x)
+  ψ2 = @. cos(k₀*x + π/10) * cos(l₀*y)
   ψ = zeros(gr.nx, gr.ny, nlayers)
-  ψ[:, :, 1] .= ψ1
-  ψ[:, :, 2] .= ψ2
+  CUDA.@allowscalar @views ψ[:, :, 1] .= ψ1
+  CUDA.@allowscalar @views ψ[:, :, 2] .= ψ2
   MultilayerQG.set_ψ!(prob, ψ)
   lateralfluxes, verticalfluxes = MultilayerQG.fluxes(prob)
 
-  return isapprox(lateralfluxes[1], 0.00626267, rtol=1e-6) && isapprox(lateralfluxes[2], 0, atol=1e-12) && isapprox(verticalfluxes[1], -0.196539, rtol=1e-6)
+  return CUDA.@allowscalar isapprox(lateralfluxes[1], 0.00626267, rtol=1e-6) && CUDA.@allowscalar isapprox(lateralfluxes[2], 0, atol=1e-12) && CUDA.@allowscalar isapprox(verticalfluxes[1], -0.196539, rtol=1e-6)
 end
 
 """
@@ -427,7 +427,7 @@ function test_mqg_fluxessinglelayer(dev::Device=CPU(); dt=0.001, stepper="Forwar
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   U = zeros(ny, nlayers)
-  U = @. sech(gr.y/0.2)^2
+  U = @. sech(gr.y / 0.2)^2
 
   prob = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly, U=U)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
@@ -436,7 +436,7 @@ function test_mqg_fluxessinglelayer(dev::Device=CPU(); dt=0.001, stepper="Forwar
   MultilayerQG.set_ψ!(prob, ψ)
   lateralfluxes = MultilayerQG.fluxes(prob)
 
-  return isapprox(lateralfluxes[1], 0.0313134, atol=1e-7)
+  return CUDA.@allowscalar isapprox(lateralfluxes[1], 0.0313134, atol=1e-7)
 end
 
 """
@@ -508,8 +508,8 @@ function test_mqg_paramsconstructor(dev::Device=CPU(); dt=0.001, stepper="Forwar
   Uvectors[:, 2] .= U2
 
   Ufloats = zeros(dev, T, nlayers)
-  Ufloats[1] = U1
-  Ufloats[2] = U2
+  CUDA.@allowscalar Ufloats[1] = U1
+  CUDA.@allowscalar Ufloats[2] = U2
 
   probUvectors = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, ρ=ρ, U=Uvectors)
   probUfloats = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=L, f0=f0, g=g, H=H, ρ=ρ, U=Ufloats)
@@ -522,6 +522,7 @@ function test_mqg_problemtype(dev, T)
   prob2 = MultilayerQG.Problem(2, dev; T=T)
   
   A = ArrayType(dev)
+  
   return (typeof(prob1.sol)<:A{Complex{T}, 3} && typeof(prob1.grid.Lx)==T && typeof(prob1.vars.u)<:A{T, 3}) && (typeof(prob2.sol)<:A{Complex{T}, 3} && typeof(prob2.grid.Lx)==T && typeof(prob2.vars.u)<:A{T, 3})
 end
 
@@ -545,10 +546,10 @@ function test_mqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
 
   # the Rossby wave initial condition
    ampl = 1e-2
-  kwave, lwave = 3*2π/g.Lx, 2*2π/g.Ly
-      ω = kwave * ( U - p.β/(kwave^2 + lwave^2) ) # Doppler-shifted Rossby frequency
-     q0 = @. ampl * cos(kwave*x) * cos(lwave*y)
-     ψ0 = @. - q0 / (kwave^2+lwave^2)
+  kwave, lwave = 3 * 2π/g.Lx, 2 * 2π/g.Ly
+      ω = kwave * ( U - p.β / (kwave^2 + lwave^2) ) # Doppler-shifted Rossby frequency
+     q0 = @. ampl * cos(kwave * x) * cos(lwave * y)
+     ψ0 = @. - q0 / (kwave^2 + lwave^2)
 
   MultilayerQG.set_q!(prob, q0)
 
@@ -556,7 +557,7 @@ function test_mqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
   dealias!(sol, g)
   MultilayerQG.updatevars!(prob)
 
-  q_theory = @. ampl * cos(kwave*(x - ω/kwave*cl.t)) * cos(lwave*y)
+  q_theory = @. ampl * cos(kwave * (x - ω / kwave * cl.t)) * cos(lwave * y)
 
   return isapprox(q_theory, v.q, rtol=g.nx*g.ny*nsteps*1e-12)
 end

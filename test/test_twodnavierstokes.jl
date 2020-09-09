@@ -30,21 +30,21 @@ function test_twodnavierstokes_stochasticforcingbudgets(dev::Device=CPU(); n=256
   gr  = TwoDGrid(dev, n, L)
   x, y = gridpoints(gr)
 
-  Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
+  Kr = ArrayType(dev)([CUDA.@allowscalar gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
 
   forcingcovariancespectrum = ArrayType(dev)(zero(gr.Krsq))
-  @. forcingcovariancespectrum = exp(-(sqrt(gr.Krsq)-kf)^2/(2*dkf^2))
-  @. forcingcovariancespectrum[gr.Krsq .< 2^2 ] = 0
-  @. forcingcovariancespectrum[gr.Krsq .> 20^2 ] = 0
-  @. forcingcovariancespectrum[Kr .< 2π/L] = 0
-  ε0 = parsevalsum(forcingcovariancespectrum.*gr.invKrsq/2, gr)/(gr.Lx*gr.Ly)
-  forcingcovariancespectrum .= ε/ε0 * forcingcovariancespectrum
+  @. forcingcovariancespectrum = exp(-(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2))
+  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .< 2^2] = 0
+  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .> 20^2] = 0
+  CUDA.@allowscalar @. forcingcovariancespectrum[Kr .< 2π/L] = 0
+  ε0 = parsevalsum(forcingcovariancespectrum .* gr.invKrsq / 2, gr) / (gr.Lx * gr.Ly)
+  forcingcovariancespectrum .= ε / ε0 * forcingcovariancespectrum
 
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, cl, v, p, g)
-    eta = ArrayType(dev)(exp.(2π*im*rand(Float64, size(sol)))/sqrt(cl.dt))
-    eta[1, 1] = 0.0
+    eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(cl.dt))
+    CUDA.@allowscalar eta[1, 1] = 0.0
     @. Fh = eta * sqrt(forcingcovariancespectrum)
     nothing
   end
@@ -103,10 +103,10 @@ function test_twodnavierstokes_deterministicforcingbudgets(dev::Device=CPU(); n=
   x, y = gridpoints(gr)
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
-  f = @. 0.01cos(4x)*cos(5y)
+  f = @. 0.01cos(4x) * cos(5y)
   fh = rfft(f)
   function calcF!(Fh, sol, t, cl, v, p, g::AbstractGrid{T, A}) where {T, A}
-    Fh = fh*cos(2t)
+    Fh = fh * cos(2t)
     nothing
   end
 
@@ -184,7 +184,7 @@ function test_twodnavierstokes_advection(dt, stepper, dev::Device=CPU(); n=128, 
   # Forcing
   function calcF!(Fh, sol, t, cl, v, p, g)
     Fh .= Ffh
-    nothing
+    return nothing
   end
 
   prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper=stepper, calcF=calcF!, stochastic=false)
@@ -227,8 +227,10 @@ function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
    TwoDNavierStokes.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
 end
 
-function test_twodnavierstokes_problemtype(T=Float32, dev::Device=CPU())
+function test_twodnavierstokes_problemtype(dev, T)
   prob = TwoDNavierStokes.Problem(dev; T=T)
 
-  (typeof(prob.sol)==Array{Complex{T},2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)==Array{T,2})
+  A = ArrayType(dev)
+  
+  (typeof(prob.sol)<:A{Complex{T},2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T,2})
 end

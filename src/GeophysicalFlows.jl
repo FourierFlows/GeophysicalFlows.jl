@@ -1,6 +1,7 @@
 module GeophysicalFlows
 
 using
+  CUDA,
   FourierFlows,
   Statistics,
   SpecialFunctions
