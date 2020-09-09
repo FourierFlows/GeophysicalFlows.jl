@@ -56,19 +56,24 @@ function test_twodnavierstokes_stochasticforcingbudgets(dev::Device=CPU(); n=256
 
   TwoDNavierStokes.set_zeta!(prob, 0*x)
   E = Diagnostic(TwoDNavierStokes.energy,      prob, nsteps=nt)
-  D = Diagnostic(TwoDNavierStokes.dissipation, prob, nsteps=nt)
-  R = Diagnostic(TwoDNavierStokes.drag,        prob, nsteps=nt)
-  W = Diagnostic(TwoDNavierStokes.work,        prob, nsteps=nt)
-  diags = [E, D, W, R]
+  D = Diagnostic(TwoDNavierStokes.energy_dissipation, prob, nsteps=nt)
+  R = Diagnostic(TwoDNavierStokes.energy_drag,        prob, nsteps=nt)
+  W = Diagnostic(TwoDNavierStokes.energy_work,        prob, nsteps=nt)
+  Z = Diagnostic(TwoDNavierStokes.enstrophy,      prob, nsteps=nt)
+  DZ = Diagnostic(TwoDNavierStokes.enstrophy_dissipation, prob, nsteps=nt)
+  RZ = Diagnostic(TwoDNavierStokes.enstrophy_drag,        prob, nsteps=nt)
+  WZ = Diagnostic(TwoDNavierStokes.enstrophy_work,        prob, nsteps=nt)
+  diags = [E, D, W, R, Z, DZ, WZ, RZ]
 
   stepforward!(prob, diags, nt)
   TwoDNavierStokes.updatevars!(prob)
 
-  E, D, W, R = diags
+  E, D, W, R, Z, DZ, WZ, RZ = diags
   t = round(μ*cl.t, digits=2)
 
   i₀ = 1
   dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
+  dZdt = (Z[(i₀+1):Z.i] - Z[i₀:Z.i-1])/cl.dt
   ii = (i₀):E.i-1
   ii2 = (i₀+1):E.i
 
@@ -77,9 +82,13 @@ function test_twodnavierstokes_stochasticforcingbudgets(dev::Device=CPU(); n=256
   # then we need to add the drift term
   # total = W[ii2]+ε - D[ii] - R[ii]      # Ito
   total = W[ii2] - D[ii] - R[ii]        # Stratonovich
+  totalZ = WZ[ii2] - DZ[ii] - RZ[ii]
 
   residual = dEdt - total
   isapprox(mean(abs.(residual)), 0, atol=1e-4)
+
+  residualZ = dZdt - totalZ
+  isapprox(mean(abs.(residualZ)), 0, atol=(kf^2)*1e-4)
 end
 
 
@@ -89,7 +98,7 @@ function test_twodnavierstokes_deterministicforcingbudgets(dev::Device=CPU(); n=
   μ, nμ = 1e-1, 0
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
-  
+
   gr  = TwoDGrid(dev, n, L)
   x, y = gridpoints(gr)
 
@@ -109,28 +118,36 @@ function test_twodnavierstokes_deterministicforcingbudgets(dev::Device=CPU(); n=
   TwoDNavierStokes.set_zeta!(prob, 0*x)
 
   E = Diagnostic(TwoDNavierStokes.energy,      prob, nsteps=nt)
-  D = Diagnostic(TwoDNavierStokes.dissipation, prob, nsteps=nt)
-  R = Diagnostic(TwoDNavierStokes.drag,        prob, nsteps=nt)
-  W = Diagnostic(TwoDNavierStokes.work,        prob, nsteps=nt)
-  diags = [E, D, W, R]
+  D = Diagnostic(TwoDNavierStokes.energy_dissipation, prob, nsteps=nt)
+  R = Diagnostic(TwoDNavierStokes.energy_drag,        prob, nsteps=nt)
+  W = Diagnostic(TwoDNavierStokes.energy_work,        prob, nsteps=nt)
+  Z = Diagnostic(TwoDNavierStokes.enstrophy,      prob, nsteps=nt)
+  DZ = Diagnostic(TwoDNavierStokes.enstrophy_dissipation, prob, nsteps=nt)
+  RZ = Diagnostic(TwoDNavierStokes.enstrophy_drag,        prob, nsteps=nt)
+  WZ = Diagnostic(TwoDNavierStokes.enstrophy_work,        prob, nsteps=nt)
+  diags = [E, D, W, R, Z, DZ, WZ, RZ]
 
   # Step forward
   stepforward!(prob, diags, nt)
   TwoDNavierStokes.updatevars!(prob)
 
-  E, D, W, R = diags
+  E, D, W, R, Z, DZ, WZ, RZ = diags
   t = round(μ*cl.t, digits=2)
 
   i₀ = 1
   dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
+  dZdt = (Z[(i₀+1):Z.i] - Z[i₀:Z.i-1])/cl.dt
   ii = (i₀):E.i-1
   ii2 = (i₀+1):E.i
 
   # dEdt = W - D - R?
   total = W[ii2] - D[ii] - R[ii]
+  totalZ = WZ[ii2] - DZ[ii] - RZ[ii]
   residual = dEdt - total
+  residualZ = dZdt - totalZ
 
   isapprox(mean(abs.(residual)), 0, atol=1e-8)
+  isapprox(mean(abs.(residualZ)), 0, atol=1e-8)
 end
 
 """
@@ -194,7 +211,7 @@ function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
   enstrophy_calc = 2701/162
 
   prob = TwoDNavierStokes.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
-  
+
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
 
   TwoDNavierStokes.set_zeta!(prob, ζ₀)
@@ -202,7 +219,7 @@ function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
 
   energyζ₀ = TwoDNavierStokes.energy(prob)
   enstrophyζ₀ = TwoDNavierStokes.enstrophy(prob)
-  
+
   params = TwoDNavierStokes.Params(p.ν, p.nν)
 
   (isapprox(energyζ₀, energy_calc, rtol=rtol_twodnavierstokes) &&
