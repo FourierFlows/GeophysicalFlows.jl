@@ -95,19 +95,14 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
 
   BarotropicQG.updatevars!(prob)
 
-  i₀ = 1
-  dEdt_numerical = (E[(i₀+1):E.i] - E[i₀:E.i-1]) / prob.clock.dt
-  ii = (i₀):E.i-1
-  ii2 = (i₀+1):E.i
+  dEdt_numerical = (E[2:E.i] - E[1:E.i-1]) / prob.clock.dt
 
   # If the Ito interpretation was used for the work
   # then we need to add the drift term
-  # dEdt_computed = W[ii2] + ε - D[ii] - R[ii]    # Ito
-  dEdt_computed = W[ii2] - D[ii] - R[ii]        # Stratonovich
+  # dEdt_computed = W[2:E.i] + ε - D[1:E.i-1] - R[1:E.i-1]      # Ito
+  dEdt_computed = W[2:E.i] - D[1:E.i-1] - R[1:E.i-1]        # Stratonovich
 
-  residual = dEdt_numerical - dEdt_computed
-
-  isapprox(mean(abs.(residual)), 0, atol=1e-4)
+  return isapprox(mean(abs.(dEdt_numerical)), mean(abs.(dEdt_computed)), atol=1e-4)
 end
 
 """
@@ -150,16 +145,12 @@ function test_bqg_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01,
 
   BarotropicQG.updatevars!(prob)
 
-  i₀ = 1
-  dEdt_numerical = (E[(i₀+1):E.i] - E[i₀:E.i-1]) / prob.clock.dt
-  ii = (i₀):E.i-1
-  ii2 = (i₀+1):E.i
-
-  dEdt_computed = W[ii2] - D[ii] - R[ii]
-
+  dEdt_numerical = (E[3:E.i] - E[1:E.i-2]) / (2 * prob.clock.dt)
+  dEdt_computed  = W[2:E.i-1] - D[2:E.i-1] - R[2:E.i-1]
+  
   residual = dEdt_numerical - dEdt_computed
 
-  return isapprox(mean(abs.(residual)), 0, atol=1e-8)
+  return isapprox(mean(abs.(dEdt_numerical)), mean(abs.(dEdt_computed)), atol=1e-10)
 end
 
 """
