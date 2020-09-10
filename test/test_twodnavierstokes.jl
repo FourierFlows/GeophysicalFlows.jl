@@ -42,19 +42,18 @@ function test_twodnavierstokes_stochasticforcingbudgets(dev::Device=CPU(); n=256
 
   Random.seed!(1234)
 
-  function calcF!(Fh, sol, t, cl, v, p, g)
-    eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(cl.dt))
+  function calcF!(Fh, sol, t, clock, vars, params, grid)
+    eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
     @. Fh = eta * sqrt(forcingcovariancespectrum)
-    nothing
+    return nothing
   end
 
   prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=true)
 
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
-
   TwoDNavierStokes.set_zeta!(prob, 0*x)
+  
   E = Diagnostic(TwoDNavierStokes.energy,      prob, nsteps=nt)
   D = Diagnostic(TwoDNavierStokes.dissipation, prob, nsteps=nt)
   R = Diagnostic(TwoDNavierStokes.drag,        prob, nsteps=nt)
@@ -62,23 +61,20 @@ function test_twodnavierstokes_stochasticforcingbudgets(dev::Device=CPU(); n=256
   diags = [E, D, W, R]
 
   stepforward!(prob, diags, nt)
+  
   TwoDNavierStokes.updatevars!(prob)
 
-  E, D, W, R = diags
-  t = round(μ*cl.t, digits=2)
-
   i₀ = 1
-  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
+  dEdt_numerical = (E[(i₀+1):E.i] - E[i₀:E.i-1]) / prob.clock.dt
   ii  = (i₀):E.i-1
   ii2 = (i₀+1):E.i
 
-  # dEdt = W - D - R?
   # If the Ito interpretation was used for the work
   # then we need to add the drift term
-  # total = W[ii2]+ε - D[ii] - R[ii]      # Ito
-  total = W[ii2] - D[ii] - R[ii]        # Stratonovich
+  # dEdt_computed = W[ii2] + ε - D[ii] - R[ii]      # Ito
+  dEdt_computed = W[ii2] - D[ii] - R[ii]        # Stratonovich
 
-  residual = dEdt - total
+  residual = dEdt_numerical - dEdt_computed
   isapprox(mean(abs.(residual)), 0, atol=1e-4)
 end
 
@@ -96,15 +92,13 @@ function test_twodnavierstokes_deterministicforcingbudgets(dev::Device=CPU(); n=
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
   f = @. 0.01cos(4x) * cos(5y)
   fh = rfft(f)
-  function calcF!(Fh, sol, t, cl, v, p, g::AbstractGrid{T, A}) where {T, A}
-    Fh = fh * cos(2t)
-    nothing
+  function calcF!(Fh, sol, t, clock, vars, params, grid)
+    @. Fh = fh * cos(2t)
+    return nothing
   end
 
   prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=false)
-
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
   TwoDNavierStokes.set_zeta!(prob, 0*x)
 
@@ -114,23 +108,20 @@ function test_twodnavierstokes_deterministicforcingbudgets(dev::Device=CPU(); n=
   W = Diagnostic(TwoDNavierStokes.work,        prob, nsteps=nt)
   diags = [E, D, W, R]
 
-  # Step forward
   stepforward!(prob, diags, nt)
+  
   TwoDNavierStokes.updatevars!(prob)
 
-  E, D, W, R = diags
-  t = round(μ*cl.t, digits=2)
-
   i₀ = 1
-  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
+  dEdt_numerical = (E[(i₀+1):E.i] - E[i₀:E.i-1]) / prob.clock.dt
   ii  = (i₀):E.i-1
   ii2 = (i₀+1):E.i
 
-  # dEdt = W - D - R?
-  total = W[ii2] - D[ii] - R[ii]
-  residual = dEdt - total
-
-  isapprox(mean(abs.(residual)), 0, atol=1e-8)
+  dEdt_computed = W[ii2] - D[ii] - R[ii]
+  
+  residual = dEdt_numerical - dEdt_computed
+  
+  return isapprox(mean(abs.(residual)), 0, atol=1e-8)
 end
 
 """
