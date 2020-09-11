@@ -124,7 +124,7 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
   # dZdt_computed = W[2:Z.i] + εᶻ - D[1:Z.i-1] - R[1:Z.i-1]      # Ito
   dZdt_computed = W[2:Z.i] - D[1:Z.i-1] - R[1:Z.i-1]        # Stratonovich
 
-  return isapprox(dZdt_numerical, dZdt_computed, rtol = 1e-4)
+  return isapprox(dZdt_numerical, dZdt_computed, rtol = 1e-3)
 end
 
 function test_twodnavierstokes_deterministicforcing_energybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, nμ=0)
