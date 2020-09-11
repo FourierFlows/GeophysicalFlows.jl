@@ -174,8 +174,8 @@ function test_bqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
   gr = TwoDGrid(dev, n, L)
   x, y = gridpoints(gr)
 
-  psif = @. sin(2x) * cos(2y) + 2sin(x) * cos(3y)
-    qf = @. -8sin(2x) * cos(2y) - 20sin(x) * cos(3y)
+  ψf = @. sin(2x) * cos(2y) + 2sin(x) * cos(3y)
+  qf = @. -8sin(2x) * cos(2y) - 20sin(x) * cos(3y)
 
   Ff = @. -(
     ν*( 64sin(2x) * cos(2y) + 200sin(x) * cos(3y) )
@@ -191,14 +191,14 @@ function test_bqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
   end
 
   prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcFq=calcFq!)
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+
   BarotropicQG.set_zeta!(prob, qf)
 
-  # Step forward
   stepforward!(prob, round(Int, nt))
+
   BarotropicQG.updatevars!(prob)
   
-  return isapprox(v.q, qf, rtol=rtol_barotropicQG)
+  return isapprox(prob.vars.q, qf, rtol=rtol_barotropicQG)
 end
 
 """

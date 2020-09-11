@@ -12,7 +12,7 @@ function test_bqgql_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
    T = Float64
 
   # the following if statement is called so that all the cases of
-  # Problem() fuction are tested
+  # Problem() function are tested
   if stepper=="ForwardEuler"
     eta = zeros(dev, T, (nx, nx))
   else
@@ -20,27 +20,26 @@ function test_bqgql_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
   end
 
   prob = BarotropicQGQL.Problem(dev; nx=nx, Lx=Lx, eta=eta, β=β, μ=μ, ν=ν, stepper=stepper, dt=dt)
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+  sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
-  x, y = gridpoints(g)
+  x, y = gridpoints(grid)
 
   # the Rossby wave initial condition
    ampl = 1e-2
-  kwave = 3*2π/g.Lx
-  lwave = 2*2π/g.Ly
-      ω = - p.β * kwave / (kwave^2 + lwave^2)
-     ζ0 = @. ampl * cos(kwave*x) * cos(lwave*y)
+  kwave, lwave = 3 * 2π / grid.Lx, 2 * 2π / grid.Ly
+      ω = - params.β * kwave / (kwave^2 + lwave^2)
+     ζ0 = @. ampl * cos(kwave * x) * cos(lwave * y)
     ζ0h = rfft(ζ0)
 
   BarotropicQGQL.set_zeta!(prob, ζ0)
 
   stepforward!(prob, nsteps)
-  dealias!(sol, g)
+  dealias!(sol, grid)
   BarotropicQGQL.updatevars!(prob)
 
-  ζ_theory = @. ampl * cos(kwave * (x - ω/kwave * cl.t)) * cos(lwave * y)
+  ζ_theory = @. ampl * cos(kwave * (x - ω / kwave * clock.t)) * cos(lwave * y)
 
-  return isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
+  return isapprox(ζ_theory, vars.zeta, rtol = grid.nx * grid.ny * nsteps * 1e-12)
 end
 
 """
@@ -55,7 +54,7 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-    gr = TwoDGrid(dev, n, L)
+  gr = TwoDGrid(dev, n, L)
   x, y = gridpoints(gr)
 
   # Forcing
@@ -102,7 +101,7 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   # dEdt_computed = W[2:E.i] + ε - D[1:E.i-1] - R[1:E.i-1]      # Ito
   dEdt_computed = W[2:E.i] - D[1:E.i-1] - R[1:E.i-1]        # Stratonovich
 
-  return isapprox(dEdt_numerical, dEdt_computed, atol=1e-4)
+  return isapprox(dEdt_numerical, dEdt_computed, rtol=1e-3)
 end
 
 """
@@ -173,8 +172,8 @@ function test_bqgql_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1
   gr = TwoDGrid(dev, n, L)
   x, y = gridpoints(gr)
 
-  psif = @.    cos(3y) +  sin(2x)*cos(2y) +  2sin(x)*cos(3y)
-    qf = @. - 9cos(3y) - 8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
+  ψf = @.    cos(3y) +  sin(2x)*cos(2y) +  2sin(x)*cos(3y)
+  qf = @. - 9cos(3y) - 8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
 
   Ff = @. ν*( 81cos(3y) + 200cos(3y)*sin(x) + 64cos(2y)*sin(2x) ) -
     3sin(3y)*(-16cos(2x)*cos(2y) - 20cos(x)*cos(3y)) -
@@ -190,13 +189,14 @@ function test_bqgql_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1
   end
 
   prob = BarotropicQGQL.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+  
   BarotropicQGQL.set_zeta!(prob, qf)
 
-  # Step forward
   stepforward!(prob, round(Int, nt))
+  
   BarotropicQGQL.updatevars!(prob)
-  return isapprox(v.zeta+v.Zeta, qf, rtol=1e-13)
+  
+  return isapprox(prob.vars.zeta + prob.vars.Zeta, qf, rtol = 1e-13)
 end
 
 """
