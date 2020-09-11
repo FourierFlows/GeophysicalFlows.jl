@@ -85,10 +85,9 @@ function test_twodnavierstokes_stochasticforcingbudgets(dev::Device=CPU(); n=256
   totalZ = WZ[ii2] - DZ[ii] - RZ[ii]
 
   residual = dEdt - total
-  isapprox(mean(abs.(residual)), 0, atol=1e-4)
-
   residualZ = dZdt - totalZ
-  isapprox(mean(abs.(residualZ)), 0, atol=(kf^2)*1e-4)
+
+  return isapprox(mean(abs.(residual)), 0, atol=1e-4) && isapprox(mean(abs.(residualZ)), 0, atol=(kf^2)*1e-4)
 end
 
 
@@ -146,8 +145,7 @@ function test_twodnavierstokes_deterministicforcingbudgets(dev::Device=CPU(); n=
   residual = dEdt - total
   residualZ = dZdt - totalZ
 
-  isapprox(mean(abs.(residual)), 0, atol=1e-8)
-  isapprox(mean(abs.(residualZ)), 0, atol=1e-8)
+  return isapprox(mean(abs.(residual)), 0, atol=1e-8) && isapprox(mean(abs.(residualZ)), 0, atol=1e-8)
 end
 
 """
@@ -231,6 +229,6 @@ function test_twodnavierstokes_problemtype(dev, T)
   prob = TwoDNavierStokes.Problem(dev; T=T)
 
   A = ArrayType(dev)
-  
+
   (typeof(prob.sol)<:A{Complex{T},2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T,2})
 end
