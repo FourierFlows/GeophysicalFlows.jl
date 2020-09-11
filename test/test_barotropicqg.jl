@@ -102,7 +102,7 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
   # dEdt_computed = W[2:E.i] + ε - D[1:E.i-1] - R[1:E.i-1]      # Ito
   dEdt_computed = W[2:E.i] - D[1:E.i-1] - R[1:E.i-1]        # Stratonovich
 
-  return isapprox(mean(abs.(dEdt_numerical)), mean(abs.(dEdt_computed)), atol=1e-4)
+  return isapprox(dEdt_numerical, dEdt_computed, atol=1e-4)
 end
 
 """
@@ -150,7 +150,7 @@ function test_bqg_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01,
   
   residual = dEdt_numerical - dEdt_computed
 
-  return isapprox(mean(abs.(dEdt_numerical)), mean(abs.(dEdt_computed)), atol=1e-10)
+  return isapprox(dEdt_numerical, dEdt_computed, atol=1e-10)
 end
 
 """
