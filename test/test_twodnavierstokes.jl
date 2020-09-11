@@ -20,7 +20,7 @@ function test_twodnavierstokes_lambdipole(n, dt, dev::Device=CPU(); L=2π, Ue=1,
   isapprox(Ue, mean(Ue_m[2:end]), rtol=rtol_lambdipole)
 end
 
-function test_twodnavierstokes_stochasticforcingbudgets(dev::Device=CPU(); n=256, L=2π, dt=0.005, ν=1e-7, nν=2, μ=1e-1, nμ=0, tf=0.1/μ)
+function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU(); n=256, L=2π, dt=0.005, ν=1e-7, nν=2, μ=1e-1, nμ=0, tf=0.1/μ)
   nt = round(Int, tf/dt)
 
   # Forcing parameters
@@ -59,21 +59,15 @@ function test_twodnavierstokes_stochasticforcingbudgets(dev::Device=CPU(); n=256
   D = Diagnostic(TwoDNavierStokes.energy_dissipation, prob, nsteps=nt)
   R = Diagnostic(TwoDNavierStokes.energy_drag,        prob, nsteps=nt)
   W = Diagnostic(TwoDNavierStokes.energy_work,        prob, nsteps=nt)
-  Z = Diagnostic(TwoDNavierStokes.enstrophy,      prob, nsteps=nt)
-  DZ = Diagnostic(TwoDNavierStokes.enstrophy_dissipation, prob, nsteps=nt)
-  RZ = Diagnostic(TwoDNavierStokes.enstrophy_drag,        prob, nsteps=nt)
-  WZ = Diagnostic(TwoDNavierStokes.enstrophy_work,        prob, nsteps=nt)
-  diags = [E, D, W, R, Z, DZ, WZ, RZ]
+  diags = [E, D, W, R]
 
   stepforward!(prob, diags, nt)
   TwoDNavierStokes.updatevars!(prob)
 
-  E, D, W, R, Z, DZ, WZ, RZ = diags
-  t = round(μ*cl.t, digits=2)
+  E, D, W, R = diags
 
   i₀ = 1
   dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
-  dZdt = (Z[(i₀+1):Z.i] - Z[i₀:Z.i-1])/cl.dt
   ii = (i₀):E.i-1
   ii2 = (i₀+1):E.i
 
@@ -82,16 +76,75 @@ function test_twodnavierstokes_stochasticforcingbudgets(dev::Device=CPU(); n=256
   # then we need to add the drift term
   # total = W[ii2]+ε - D[ii] - R[ii]      # Ito
   total = W[ii2] - D[ii] - R[ii]        # Stratonovich
-  totalZ = WZ[ii2] - DZ[ii] - RZ[ii]
 
   residual = dEdt - total
-  residualZ = dZdt - totalZ
 
-  return isapprox(mean(abs.(residual)), 0, atol=1e-4) && isapprox(mean(abs.(residualZ)), 0, atol=(kf^2)*1e-4)
+  return isapprox(mean(abs.(residual)), 0, atol=1e-4)
 end
 
+function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=256, L=2π, dt=0.005, ν=1e-7, nν=2, μ=1e-1, nμ=0, tf=0.1/μ)
+  nt = round(Int, tf/dt)
 
-function test_twodnavierstokes_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, nμ=0)
+  # Forcing parameters
+  kf, dkf = 12.0, 2.0
+  ε = 0.1
+
+  gr  = TwoDGrid(dev, n, L)
+  x, y = gridpoints(gr)
+
+  Kr = ArrayType(dev)([CUDA.@allowscalar gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
+
+  forcingcovariancespectrum = ArrayType(dev)(zero(gr.Krsq))
+  @. forcingcovariancespectrum = exp(-(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2))
+  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .< 2^2] = 0
+  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .> 20^2] = 0
+  CUDA.@allowscalar @. forcingcovariancespectrum[Kr .< 2π/L] = 0
+  ε0 = parsevalsum(forcingcovariancespectrum .* gr.invKrsq / 2, gr) / (gr.Lx * gr.Ly)
+  forcingcovariancespectrum .= ε / ε0 * forcingcovariancespectrum
+
+  Random.seed!(1234)
+
+  function calcF!(Fh, sol, t, cl, v, p, g)
+    eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(cl.dt))
+    CUDA.@allowscalar eta[1, 1] = 0.0
+    @. Fh = eta * sqrt(forcingcovariancespectrum)
+    nothing
+  end
+
+  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
+   stepper="RK4", calcF=calcF!, stochastic=true)
+
+  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
+
+  TwoDNavierStokes.set_zeta!(prob, 0*x)
+  Z = Diagnostic(TwoDNavierStokes.enstrophy,      prob, nsteps=nt)
+  D = Diagnostic(TwoDNavierStokes.enstrophy_dissipation, prob, nsteps=nt)
+  R = Diagnostic(TwoDNavierStokes.enstrophy_drag,        prob, nsteps=nt)
+  W = Diagnostic(TwoDNavierStokes.enstrophy_work,        prob, nsteps=nt)
+  diags = [Z, D, W, R]
+
+  stepforward!(prob, diags, nt)
+  TwoDNavierStokes.updatevars!(prob)
+
+  Z, D, W, R = diags
+
+  i₀ = 1
+  dZdt = (Z[(i₀+1):Z.i] - Z[i₀:Z.i-1])/cl.dt
+  ii = (i₀):Z.i-1
+  ii2 = (i₀+1):Z.i
+
+  # dZdt = W - D - R?
+  # If the Ito interpretation was used for the work
+  # then we need to add the drift term
+  # total = W[ii2]+ε - D[ii] - R[ii]      # Ito
+  total = W[ii2] - D[ii] - R[ii]        # Stratonovich
+
+  residual = dZdt - total
+
+  return isapprox(mean(abs.(residual)), 0, atol=(kf^2)*1e-4)
+end
+
+function test_twodnavierstokes_deterministicforcing_energybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, nμ=0)
   n, L  = 256, 2π
   ν, nν = 1e-7, 2
   μ, nμ = 1e-1, 0
@@ -120,32 +173,73 @@ function test_twodnavierstokes_deterministicforcingbudgets(dev::Device=CPU(); n=
   D = Diagnostic(TwoDNavierStokes.energy_dissipation, prob, nsteps=nt)
   R = Diagnostic(TwoDNavierStokes.energy_drag,        prob, nsteps=nt)
   W = Diagnostic(TwoDNavierStokes.energy_work,        prob, nsteps=nt)
-  Z = Diagnostic(TwoDNavierStokes.enstrophy,      prob, nsteps=nt)
-  DZ = Diagnostic(TwoDNavierStokes.enstrophy_dissipation, prob, nsteps=nt)
-  RZ = Diagnostic(TwoDNavierStokes.enstrophy_drag,        prob, nsteps=nt)
-  WZ = Diagnostic(TwoDNavierStokes.enstrophy_work,        prob, nsteps=nt)
-  diags = [E, D, W, R, Z, DZ, WZ, RZ]
+  diags = [E, D, W, R]
 
   # Step forward
   stepforward!(prob, diags, nt)
   TwoDNavierStokes.updatevars!(prob)
 
-  E, D, W, R, Z, DZ, WZ, RZ = diags
-  t = round(μ*cl.t, digits=2)
+  E, D, W, R = diags
 
   i₀ = 1
   dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
-  dZdt = (Z[(i₀+1):Z.i] - Z[i₀:Z.i-1])/cl.dt
   ii = (i₀):E.i-1
   ii2 = (i₀+1):E.i
 
   # dEdt = W - D - R?
   total = W[ii2] - D[ii] - R[ii]
-  totalZ = WZ[ii2] - DZ[ii] - RZ[ii]
   residual = dEdt - total
-  residualZ = dZdt - totalZ
 
-  return isapprox(mean(abs.(residual)), 0, atol=1e-8) && isapprox(mean(abs.(residualZ)), 0, atol=1e-8)
+  return isapprox(mean(abs.(residual)), 0, atol=1e-8)
+end
+
+function test_twodnavierstokes_deterministicforcing_enstrophybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, nμ=0)
+  n, L  = 256, 2π
+  ν, nν = 1e-7, 2
+  μ, nμ = 1e-1, 0
+  dt, tf = 0.005, 0.1/μ
+  nt = round(Int, tf/dt)
+
+  gr  = TwoDGrid(dev, n, L)
+  x, y = gridpoints(gr)
+
+  # Forcing = 0.01cos(4x)cos(5y)cos(2t)
+  f = @. 0.01cos(4x) * cos(5y)
+  fh = rfft(f)
+  function calcF!(Fh, sol, t, cl, v, p, g::AbstractGrid{T, A}) where {T, A}
+    Fh = fh * cos(2t)
+    nothing
+  end
+
+  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
+   stepper="RK4", calcF=calcF!, stochastic=false)
+
+  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+
+  TwoDNavierStokes.set_zeta!(prob, 0*x)
+
+  Z = Diagnostic(TwoDNavierStokes.enstrophy,      prob, nsteps=nt)
+  D = Diagnostic(TwoDNavierStokes.enstrophy_dissipation, prob, nsteps=nt)
+  R = Diagnostic(TwoDNavierStokes.enstrophy_drag,        prob, nsteps=nt)
+  W = Diagnostic(TwoDNavierStokes.enstrophy_work,        prob, nsteps=nt)
+  diags = [Z, D, W, R]
+
+  # Step forward
+  stepforward!(prob, diags, nt)
+  TwoDNavierStokes.updatevars!(prob)
+
+  Z, D, W, R = diags
+
+  i₀ = 1
+  dZdt = (Z[(i₀+1):Z.i] - Z[i₀:Z.i-1])/cl.dt
+  ii = (i₀):Z.i-1
+  ii2 = (i₀+1):Z.i
+
+  # dZdt = W - D - R?
+  total = W[ii2] - D[ii] - R[ii]
+  residual = dZdt - total
+
+  return isapprox(mean(abs.(residual)), 0, atol=1e-8)
 end
 
 """
