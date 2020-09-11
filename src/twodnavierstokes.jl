@@ -346,7 +346,7 @@ Returns the extraction of domain-averaged enstrophy by drag/hypodrag μ.
 @inline function enstrophy_drag(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   @. vars.uh = grid.Krsq^params.nμ * abs2(sol)
-  vars.uh[1, 1] = 0
+  CUDA.@allowscalar vars.uh[1, 1] = 0
   return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
