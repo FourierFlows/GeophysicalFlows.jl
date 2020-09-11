@@ -62,7 +62,7 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
   kf, dkf = 12.0, 2.0
   ε = 0.1
 
-  CUDA.@allowscalar Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl ])
+  CUDA.@allowscalar Kr = ArrayType(dev)([gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
 
   forcingcovariancespectrum = zeros(dev, T, (gr.nkr, gr.nl))
   @. forcingcovariancespectrum = exp( -(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2) )
@@ -74,8 +74,8 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
 
   Random.seed!(1234)
 
-  function calcFq!(Fqh, sol, t, cl, v, p, g)
-    eta = ArrayType(dev)(exp.(2π*im*rand(T, size(sol)))/sqrt(cl.dt))
+  function calcFq!(Fqh, sol, t, clock, vars, params, grid)
+    eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
     @. Fqh = eta * sqrt(forcingcovariancespectrum)
     return nothing
@@ -84,8 +84,6 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
   prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcFq=calcFq!, stochastic=true)
 
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-
   BarotropicQG.set_zeta!(prob, 0*x)
   E = Diagnostic(BarotropicQG.energy,      prob, nsteps=nt)
   D = Diagnostic(BarotropicQG.dissipation, prob, nsteps=nt)
@@ -93,30 +91,18 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
   W = Diagnostic(BarotropicQG.work,        prob, nsteps=nt)
   diags = [E, D, W, R]
 
-  # Step forward
-
   stepforward!(prob, diags, nt)
 
   BarotropicQG.updatevars!(prob)
 
-  E, D, W, R = diags
+  dEdt_numerical = (E[2:E.i] - E[1:E.i-1]) / prob.clock.dt
 
-  t = round(μ*cl.t, digits=2)
-
-  i₀ = 1
-  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
-  ii = (i₀):E.i-1
-  ii2 = (i₀+1):E.i
-
-  # dEdt = W - D - R?
   # If the Ito interpretation was used for the work
   # then we need to add the drift term
-  # total = W[ii2]+ε - D[ii] - R[ii]      # Ito
-  total = W[ii2] - D[ii] - R[ii]        # Stratonovich
+  # dEdt_computed = W[2:E.i] + ε - D[1:E.i-1] - R[1:E.i-1]      # Ito
+  dEdt_computed = W[2:E.i] - D[1:E.i-1] - R[1:E.i-1]        # Stratonovich
 
-  residual = dEdt - total
-
-  isapprox(mean(abs.(residual)), 0, atol=1e-4)
+  return isapprox(dEdt_numerical, dEdt_computed, rtol=1e-3)
 end
 
 """
@@ -139,45 +125,32 @@ function test_bqg_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01,
   f = @. 0.01 * cos(4k₀*x) * cos(5l₀*y)
   fh = rfft(f)
   
-  function calcFq!(Fqh, sol, t, cl, v, p, g)
-    cos2t = cos(2*t)
-    @. Fqh = fh*cos2t
+  function calcFq!(Fqh, sol, t, clock, vars, params, grid)
+    @. Fqh = fh * cos(2t)
     return nothing
   end
 
   prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcFq=calcFq!, stochastic=false)
 
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-
   BarotropicQG.set_zeta!(prob, 0*x)
+  
   E = Diagnostic(BarotropicQG.energy,      prob, nsteps=nt)
   D = Diagnostic(BarotropicQG.dissipation, prob, nsteps=nt)
   R = Diagnostic(BarotropicQG.drag,        prob, nsteps=nt)
   W = Diagnostic(BarotropicQG.work,        prob, nsteps=nt)
   diags = [E, D, W, R]
 
-  # Step forward
-
   stepforward!(prob, diags, round(Int, nt))
 
   BarotropicQG.updatevars!(prob)
 
-  E, D, W, R = diags
+  dEdt_numerical = (E[3:E.i] - E[1:E.i-2]) / (2 * prob.clock.dt)
+  dEdt_computed  = W[2:E.i-1] - D[2:E.i-1] - R[2:E.i-1]
+  
+  residual = dEdt_numerical - dEdt_computed
 
-  t = round(μ*cl.t, digits=2)
-
-  i₀ = 1
-  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
-  ii = (i₀):E.i-1
-  ii2 = (i₀+1):E.i
-
-  # dEdt = W - D - R?
-  total = W[ii2] - D[ii] - R[ii]
-
-  residual = dEdt - total
-
-  return isapprox(mean(abs.(residual)), 0, atol=1e-8)
+  return isapprox(dEdt_numerical, dEdt_computed, atol=1e-10)
 end
 
 """
