@@ -130,7 +130,7 @@ nothing # hide
 
 function computetendencies_and_makeplot(prob, diags)
   TwoDNavierStokes.updatevars!(prob)
-  E, D, W, R, Z, DZ, WZ, RZ = diags
+  E, D, W, R, Z, Dᶻ, Wᶻ, Rᶻ = diags
 
   clocktime = round(μ*cl.t, digits=2)
 
@@ -142,12 +142,12 @@ function computetendencies_and_makeplot(prob, diags)
 
   t = E.t[ii]
   dEdt_computed = W[ii2] - D[ii] - R[ii]        # Stratonovich interpretation
-  dZdt_computed = WZ[ii2] - DZ[ii] - RZ[ii]
+  dZdt_computed = Wᶻ[ii2] - Dᶻ[ii] - Rᶻ[ii]
 
   residual_E = dEdt_computed - dEdt_numerical
   residual_Z = dZdt_computed - dZdt_numerical
 
-  εZ = ε*(forcing_wavenumber^2)  # Estimate of mean enstrophy injection rate
+  εᶻ = parsevalsum(forcing_spectrum / 2, g) / (g.Lx * g.Ly)
 
   l = @layout grid(2,3)
 
@@ -168,7 +168,7 @@ function computetendencies_and_makeplot(prob, diags)
   pζ = plot(pzeta, size = (400, 400))
 
   p1 = plot(μ*t, [W[ii2] ε.+0*t -D[ii] -R[ii]],
-             label = ["work, W" "ensemble mean work, <W>" "dissipation, D" "drag, D=-2μE"],
+             label = ["work, W" "ensemble mean work, <W>" "dissipation, D" "drag, R=-2μE"],
          linestyle = [:solid :dash :solid :solid],
          linewidth = 2,
              alpha = 0.8,
@@ -189,8 +189,8 @@ function computetendencies_and_makeplot(prob, diags)
            alpha = 0.7,
           xlabel = "μt")
 
-  p4 = plot(μ*t, [WZ[ii2] εZ.+0*t -DZ[ii] -RZ[ii]],
-           label = ["Enstrophy work, WZ" "mean enstrophy work, <WZ>" "enstrophy dissipation, DZ" "enstrophy drag, D=-2μZ"],
+  p4 = plot(μ*t, [Wᶻ[ii2] εᶻ.+0*t -Dᶻ[ii] -Rᶻ[ii]],
+           label = ["Enstrophy work, Wᶻ" "mean enstrophy work, <Wᶻ>" "enstrophy dissipation, Dᶻ" "enstrophy drag, Rᶻ=-2μZ"],
        linestyle = [:solid :dash :solid :solid],
        linewidth = 2,
            alpha = 0.8,
@@ -199,7 +199,7 @@ function computetendencies_and_makeplot(prob, diags)
 
 
   p5 = plot(μ*t, [dZdt_computed[ii], dZdt_numerical],
-         label = ["computed WZ-DZ" "numerical dZ/dt"],
+         label = ["computed Wᶻ-Dᶻ" "numerical dZ/dt"],
      linestyle = [:solid :dashdotdot],
      linewidth = 2,
          alpha = 0.8,
