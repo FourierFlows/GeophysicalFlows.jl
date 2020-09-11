@@ -6,7 +6,8 @@
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
 # the form of linear drag and hyperviscosity. As a demonstration, we compute how
-# each of the forcing and dissipation terms contribute to the energy budget.
+# each of the forcing and dissipation terms contribute to the energy and the 
+# enstrophy budgets.
 
 using FourierFlows, Printf, Plots
 
