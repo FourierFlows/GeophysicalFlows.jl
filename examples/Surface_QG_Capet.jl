@@ -138,8 +138,8 @@ nothing # hidenothing # hide
 # Define base filename so saved data can be distinguished from other runs
 base_filename = string("SurfaceQG_n_", nx, "_visc_", round(ν, sigdigits=1), "_order_", 2*nν, "_ki_", init_wavenumber, "_eps_", ϵ)
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
-datapath = "./simulations/Output/Data/"
-plotpath = "./simulations/Output/Figures/"
+datapath = "./"
+plotpath = "./"
 plotname = "snapshots"
 
 dataname = joinpath(datapath, base_filename)
