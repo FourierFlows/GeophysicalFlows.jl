@@ -36,9 +36,9 @@ nothing # hide
 
 # ## Physical parameters
 
- L = 2π        # domain size
- β = 10.0      # planetary PV gradient
- μ = 0.01      # bottom drag
+L = 2π        # domain size
+β = 10.0      # planetary PV gradient
+μ = 0.01      # bottom drag
 nothing # hide
  
 

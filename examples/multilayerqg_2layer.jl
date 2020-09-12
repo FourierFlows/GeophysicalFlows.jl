@@ -26,9 +26,9 @@ nx = 128        # 2D resolution = nx^2
 ny = nx
 
 stepper = "FilteredRK4"  # timestepper
-dt = 6e-3                # timestep
-nsteps = 7000            # total number of time-steps
-nsubs  = 25              # number of time-steps for plotting (nsteps must be multiple of nsubs)
+     dt = 6e-3           # timestep
+ nsteps = 7000           # total number of time-steps
+ nsubs  = 25             # number of time-steps for plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 

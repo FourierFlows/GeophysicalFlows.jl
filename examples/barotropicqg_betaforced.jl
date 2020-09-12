@@ -35,9 +35,9 @@ nothing # hide
 
 # ## Physical parameters
 
-Lx = 2π        # domain size
- β = 10.0      # planetary PV gradient
- μ = 0.01      # bottom drag
+L = 2π        # domain size
+β = 10.0      # planetary PV gradient
+μ = 0.01      # bottom drag
 nothing # hide
 
 
@@ -55,13 +55,13 @@ forcing_bandwidth  = 1.5     # the width of the forcing spectrum
 
 gr  = TwoDGrid(n, L)
 
-K = @. sqrt(gr.Krsq)                      # a 2D array with the total wavenumber
-k = [gr.kr[i] for i=1:gr.nkr, j=1:gr.nl]  # a 2D array with the zonal wavenumber
+K  = @. sqrt(gr.Krsq)                      # a 2D array with the total wavenumber
+k = [gr.kr[i] for i=1:gr.nkr, j=1:gr.nl]   # a 2D array with the zonal wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
 forcing_spectrum[K .<  2 * 2π/L] .= 0    # no power at low wavenumbers
 forcing_spectrum[K .> 20 * 2π/L] .= 0    # no power at high wavenumbers
-forcing_spectrum[k .< 2π/L ] .= 0        # make sure forcing does not have power at k=0
+forcing_spectrum[k .< 2π/L] .= 0         # make sure forcing does not have power at k=0
 ε0 = parsevalsum(forcing_spectrum .* gr.invKrsq / 2, gr) / (gr.Lx * gr.Ly)
 @. forcing_spectrum *= ε/ε0               # normalize forcing to inject energy at rate ε
 
