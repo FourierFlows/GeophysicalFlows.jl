@@ -48,8 +48,10 @@ for dev in devices
 
     @test test_twodnavierstokes_advection(0.0005, "ForwardEuler", dev)
     @test test_twodnavierstokes_lambdipole(256, 1e-3, dev)
-    @test test_twodnavierstokes_stochasticforcingbudgets(dev)
-    @test test_twodnavierstokes_deterministicforcingbudgets(dev)
+    @test test_twodnavierstokes_deterministicforcing_energybudget(dev)
+    @test test_twodnavierstokes_stochasticforcing_energybudget(dev)
+    @test test_twodnavierstokes_deterministicforcing_enstrophybudget(dev)
+    @test test_twodnavierstokes_stochasticforcing_enstrophybudget(dev)
     @test test_twodnavierstokes_energyenstrophy(dev)
     @test test_twodnavierstokes_problemtype(dev, Float32)
     @test TwoDNavierStokes.nothingfunction() == nothing
