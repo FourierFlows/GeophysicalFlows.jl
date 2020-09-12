@@ -28,11 +28,11 @@ nothing # hide
 # First, we pick some numerical and physical parameters for our model.
 
  n, L  = 256, 2π             # grid resolution and domain length
- ν, nν = 2e-7, 2             # hyperviscosity coefficient and order
+ ν, nν = 2e-7, 2             # hyperviscosity coefficient and hyperviscosity order
  μ, nμ = 1e-1, 0             # linear drag coefficient
-    dt = 0.005               # timestep and final time
-nsteps = 4000  # total number of steps
- nsubs = 20    # number of steps between each plot
+    dt = 0.005               # timestep
+nsteps = 4000                # total number of steps
+ nsubs = 20                  # number of steps between each plot
 nothing # hide
 
 
@@ -49,14 +49,13 @@ forcing_bandwidth  = 1.5     # the width of the forcing spectrum
 ε = 0.1                      # energy input rate by the forcing
 
 grid = TwoDGrid(dev, n, L)
-x, y = grid.x, grid.y
 
-K = sqrt.(grid.Krsq)
+K = @. sqrt(grid.Krsq)
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
-forcing_spectrum[K .< (2*2π/L)]  .= 0 # make sure that focing has no power for low wavenumbers
-forcing_spectrum[K .> (20*2π/L)] .= 0 # make sure that focing has no power for high wavenumbers
+forcing_spectrum[K .< ( 2 * 2π/L)] .= 0 # no power at low wavenumbers
+forcing_spectrum[K .> (20 * 2π/L)] .= 0 # no power at high wavenumbers
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
-@. forcing_spectrum *= ε/ε0 # normalize forcing to inject energy ε
+@. forcing_spectrum *= ε/ε0             # normalize forcing to inject energy at rate ε
 
 seed!(1234)
 nothing # hide
@@ -80,10 +79,14 @@ nothing # hide
 
 # Define some shortcuts for convenience.
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+
+x, y = grid.x, grid.y
 nothing # hide
 
 
-# First let's see how a forcing realization looks like.
+# First let's see how a forcing realization looks like. Function `calcF!()` computes 
+# the forcing in Fourier space and saves it into variable `vars.Fh`, so we first need to
+# go back to physical space.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
 heatmap(x, y, irfft(vars.Fh, grid.nx),
@@ -102,7 +105,7 @@ heatmap(x, y, irfft(vars.Fh, grid.nx),
 
 # ## Setting initial conditions
 
-# Our initial condition is simply fluid at rest.
+# Our initial condition is a fluid at rest.
 TwoDNavierStokes.set_zeta!(prob, zeros(grid.nx, grid.ny))
 
 
