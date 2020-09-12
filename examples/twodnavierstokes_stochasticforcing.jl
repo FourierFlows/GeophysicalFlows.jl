@@ -144,7 +144,7 @@ p2 = plot(2, # this means "a plot with two series"
                alpha = 0.7,
               xlabel = "μ t",
                xlims = (0, 1.1 * μ * nsteps * dt),
-               ylims = (0, 0.6))
+               ylims = (0, 0.55))
 
 l = @layout Plots.grid(1, 2)
 p = plot(p1, p2, layout = l, size = (900, 420))
@@ -163,7 +163,7 @@ anim = @animate for j = 0:Int(nsteps/nsubs)
   if j%(1000/nsubs)==0; println(log) end  
 
   p[1][1][:z] = vars.zeta
-  p[1][:title] = "vorticity, μ t = "*@sprintf("%.2f", clock.t)
+  p[1][:title] = "vorticity, μ t = "*@sprintf("%.2f", μ * clock.t)
   push!(p[2][1], μ * E.t[E.i], E.data[E.i])
   push!(p[2][2], μ * Z.t[Z.i], Z.data[Z.i] / forcing_wavenumber^2)
 
