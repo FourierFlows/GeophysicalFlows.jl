@@ -21,6 +21,7 @@ const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 examples = [
     "twodnavierstokes_decaying.jl",
     "twodnavierstokes_stochasticforcing.jl",
+    "twodnavierstokes_stochasticforcing_budgets.jl",
     "barotropicqg_betadecay.jl",
     "barotropicqg_betaforced.jl",
     "barotropicqg_acc.jl",
@@ -73,6 +74,7 @@ sitename = "GeophysicalFlows.jl",
               "TwoDNavierStokes" => Any[
                 "generated/twodnavierstokes_decaying.md",
                 "generated/twodnavierstokes_stochasticforcing.md",
+                "generated/twodnavierstokes_stochasticforcing_budgets.md",
                 ],
               "BarotropicQG" => Any[
                 "generated/barotropicqg_betadecay.md",

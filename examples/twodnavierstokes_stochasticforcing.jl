@@ -5,9 +5,7 @@
 #
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
-# the form of linear drag and hyperviscosity. As a demonstration, we compute how
-# each of the forcing and dissipation terms contribute to the energy and the 
-# enstrophy budgets.
+# the form of linear drag and hyperviscosity. 
 
 using FourierFlows, Printf, Plots
 
@@ -16,8 +14,7 @@ using Random: seed!
 using FFTW: irfft
 
 import GeophysicalFlows.TwoDNavierStokes
-import GeophysicalFlows.TwoDNavierStokes: energy, energy_dissipation, energy_work, energy_drag
-import GeophysicalFlows.TwoDNavierStokes: enstrophy, enstrophy_dissipation, enstrophy_work, enstrophy_drag
+import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy
 
 
 # ## Choosing a device: CPU or GPU
@@ -31,11 +28,11 @@ nothing # hide
 # First, we pick some numerical and physical parameters for our model.
 
  n, L  = 256, 2π             # grid resolution and domain length
- ν, nν = 2e-7, 2             # hyperviscosity coefficient and order
+ ν, nν = 2e-7, 2             # hyperviscosity coefficient and hyperviscosity order
  μ, nμ = 1e-1, 0             # linear drag coefficient
-dt, tf = 0.005, 0.2/μ        # timestep and final time
-    nt = round(Int, tf/dt)   # total timesteps
-    ns = 4                   # how many intermediate times we want to plot
+    dt = 0.005               # timestep
+nsteps = 4000                # total number of steps
+ nsubs = 20                  # number of steps between each plot
 nothing # hide
 
 
@@ -49,25 +46,25 @@ nothing # hide
 
 forcing_wavenumber = 14.0    # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
 forcing_bandwidth  = 1.5     # the width of the forcing spectrum
-ε = 0.001                    # energy input rate by the forcing
+ε = 0.1                      # energy input rate by the forcing
 
-gr   = TwoDGrid(dev, n, L)
-x, y = gr.x, gr.y
+grid = TwoDGrid(dev, n, L)
 
-forcing_spectrum = @. exp(-(sqrt(gr.Krsq)-forcing_wavenumber)^2/(2*forcing_bandwidth^2))
-forcing_spectrum[ gr.Krsq .< (2π/L*2)^2 ]  .= 0 # make sure that focing has no power for low wavenumbers
-forcing_spectrum[ gr.Krsq .> (2π/L*20)^2 ] .= 0 # make sure that focing has no power for high wavenumbers
-ε0 = parsevalsum(forcing_spectrum.*gr.invKrsq/2.0, gr)/(gr.Lx*gr.Ly)
-forcing_spectrum .= ε/ε0 * forcing_spectrum # normalize forcing to inject energy ε
+K = @. sqrt(grid.Krsq)
+forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
+forcing_spectrum[K .< ( 2 * 2π/L)] .= 0 # no power at low wavenumbers
+forcing_spectrum[K .> (20 * 2π/L)] .= 0 # no power at high wavenumbers
+ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
+@. forcing_spectrum *= ε/ε0             # normalize forcing to inject energy at rate ε
 
 seed!(1234)
 nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
-function calcF!(Fh, sol, t, cl, v, p, g)
-  ξ = ArrayType(dev)(exp.(2π*im*rand(eltype(gr), size(sol)))/sqrt(cl.dt))
+function calcF!(Fh, sol, t, clock, vars, params, grid)
+  ξ = ArrayType(dev)(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
   ξ[1, 1] = 0
-  @. Fh = ξ*sqrt(forcing_spectrum)
+  @. Fh = ξ * sqrt(forcing_spectrum)
   nothing
 end
 nothing # hide
@@ -81,14 +78,18 @@ prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ,
 nothing # hide
 
 # Define some shortcuts for convenience.
-sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+
+x, y = grid.x, grid.y
 nothing # hide
 
 
-# First let's see how a forcing realization looks like.
-calcF!(v.Fh, sol, 0.0, cl, v, p, g)
+# First let's see how a forcing realization looks like. Function `calcF!()` computes 
+# the forcing in Fourier space and saves it into variable `vars.Fh`, so we first need to
+# go back to physical space.
+calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, irfft(v.Fh, g.nx),
+heatmap(x, y, irfft(vars.Fh, grid.nx),
      aspectratio = 1,
                c = :balance,
             clim = (-200, 200),
@@ -104,123 +105,49 @@ heatmap(x, y, irfft(v.Fh, g.nx),
 
 # ## Setting initial conditions
 
-# Our initial condition is simply fluid at rest.
-TwoDNavierStokes.set_zeta!(prob, zeros(g.nx, g.ny))
+# Our initial condition is a fluid at rest.
+TwoDNavierStokes.set_zeta!(prob, zeros(grid.nx, grid.ny))
 
 
 # ## Diagnostics
 
 # Create Diagnostics; the diagnostics are aimed to probe the energy budget.
-E = Diagnostic(energy,      prob, nsteps=nt) # energy
-R = Diagnostic(energy_drag,        prob, nsteps=nt) # dissipation by drag
-D = Diagnostic(energy_dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
-W = Diagnostic(energy_work,        prob, nsteps=nt) # work input by forcing
-Z = Diagnostic(enstrophy,      prob, nsteps=nt) # energy
-RZ = Diagnostic(enstrophy_drag,        prob, nsteps=nt) # dissipation by drag
-DZ = Diagnostic(enstrophy_dissipation, prob, nsteps=nt) # dissipation by hyperviscosity
-WZ = Diagnostic(enstrophy_work,        prob, nsteps=nt) # work input by forcing
-diags = [E, D, W, R, Z, DZ, WZ, RZ] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
+E  = Diagnostic(energy,                prob, nsteps=nsteps) # energy
+Z  = Diagnostic(enstrophy,             prob, nsteps=nsteps) # enstrophy
+diags = [E, Z] # a list of Diagnostics passed to `stepforward!` will  be updated every timestep.
 nothing # hide
 
 
 # ## Visualizing the simulation
 
-# We define a function that plots the vorticity field and the evolution of
-# the diagnostics: energy and all terms involved in the energy budget. Last
-# we confirm whether the energy budget is accurate, i.e., $\mathrm{d}E/\mathrm{d}t = W - R - D$.
+# We initialize a plot with the vorticity field and the time-series of
+# energy and enstrophy diagnostics. To plot energy and enstrophy on the same
+# axes we scale enstrophy with $k_f^2$.
 
-function computetendencies_and_makeplot(prob, diags)
-  TwoDNavierStokes.updatevars!(prob)
-  E, D, W, R, Z, Dᶻ, Wᶻ, Rᶻ = diags
+p1 = heatmap(x, y, vars.zeta,
+         aspectratio = 1,
+                   c = :balance,
+                clim = (-40, 40),
+               xlims = (-L/2, L/2),
+               ylims = (-L/2, L/2),
+              xticks = -3:3,
+              yticks = -3:3,
+              xlabel = "x",
+              ylabel = "y",
+               title = "vorticity, t="*@sprintf("%.2f", clock.t),
+          framestyle = :box)
 
-  clocktime = round(μ*cl.t, digits=2)
+p2 = plot(2, # this means "a plot with two series"
+               label = ["energy E(t)" "enstrophy Z(t) / k_f²"],
+              legend = :right,
+           linewidth = 2,
+               alpha = 0.7,
+              xlabel = "μ t",
+               xlims = (0, 1.1 * μ * nsteps * dt),
+               ylims = (0, 0.55))
 
-  i₀ = 1
-  dEdt_numerical = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt #numerical first-order approximation of energy tendency
-  dZdt_numerical = (Z[(i₀+1):Z.i] - Z[i₀:Z.i-1])/cl.dt #numerical first-order approximation of enstrophy tendency
-  ii = (i₀):E.i-1
-  ii2 = (i₀+1):E.i
-
-  t = E.t[ii]
-  dEdt_computed = W[ii2] - D[ii] - R[ii]        # Stratonovich interpretation
-  dZdt_computed = Wᶻ[ii2] - Dᶻ[ii] - Rᶻ[ii]
-
-  residual_E = dEdt_computed - dEdt_numerical
-  residual_Z = dZdt_computed - dZdt_numerical
-
-  εᶻ = parsevalsum(forcing_spectrum / 2, g) / (g.Lx * g.Ly)
-
-  l = @layout grid(2,3)
-
-  pzeta = heatmap(x, y, v.zeta,
-            aspectratio = 1,
-            legend = false,
-                 c = :viridis,
-              clim = (-25, 25),
-             xlims = (-L/2, L/2),
-             ylims = (-L/2, L/2),
-            xticks = -3:3,
-            yticks = -3:3,
-            xlabel = "μt",
-            ylabel = "y",
-             title = "∇²ψ(x, y, t="*@sprintf("%.2f", cl.t)*")",
-        framestyle = :box)
-
-  pζ = plot(pzeta, size = (400, 400))
-
-  p1 = plot(μ*t, [W[ii2] ε.+0*t -D[ii] -R[ii]],
-             label = ["work, W" "ensemble mean work, <W>" "dissipation, D" "drag, R=-2μE"],
-         linestyle = [:solid :dash :solid :solid],
-         linewidth = 2,
-             alpha = 0.8,
-            xlabel = "μt",
-            ylabel = "energy sources and sinks")
-
-  p2 = plot(μ*t, [dEdt_computed[ii], dEdt_numerical],
-           label = ["computed W-D" "numerical dE/dt"],
-       linestyle = [:solid :dashdotdot],
-       linewidth = 2,
-           alpha = 0.8,
-          xlabel = "μt",
-          ylabel = "dE/dt")
-
-  p3 = plot(μ*t, residual_E,
-           label = "residual dE/dt = computed - numerical",
-       linewidth = 2,
-           alpha = 0.7,
-          xlabel = "μt")
-
-  p4 = plot(μ*t, [Wᶻ[ii2] εᶻ.+0*t -Dᶻ[ii] -Rᶻ[ii]],
-           label = ["Enstrophy work, Wᶻ" "mean enstrophy work, <Wᶻ>" "enstrophy dissipation, Dᶻ" "enstrophy drag, Rᶻ=-2μZ"],
-       linestyle = [:solid :dash :solid :solid],
-       linewidth = 2,
-           alpha = 0.8,
-          xlabel = "μt",
-          ylabel = "enstrophy sources and sinks")
-
-
-  p5 = plot(μ*t, [dZdt_computed[ii], dZdt_numerical],
-         label = ["computed Wᶻ-Dᶻ" "numerical dZ/dt"],
-     linestyle = [:solid :dashdotdot],
-     linewidth = 2,
-         alpha = 0.8,
-        xlabel = "μt",
-        ylabel = "dZ/dt")
-
-  p6 = plot(μ*t, residual_Z,
-         label = "residual dZ/dt = computed - numerical",
-     linewidth = 2,
-         alpha = 0.7,
-        xlabel = "μt")
-
-
-  pbudgets = plot(p1, p2, p3, p4, p5, p6, layout=l, size = (1300, 900))
-
-  return pζ, pbudgets
-end
-nothing # hide
-
-
+l = @layout Plots.grid(1, 2)
+p = plot(p1, p2, layout = l, size = (900, 420))
 
 
 # ## Time-stepping the `Problem` forward
@@ -228,21 +155,21 @@ nothing # hide
 # Finally, we time-step the `Problem` forward in time.
 
 startwalltime = time()
-for i = 1:ns
-  stepforward!(prob, diags, round(Int, nt/ns))
-  TwoDNavierStokes.updatevars!(prob)
-  cfl = cl.dt*maximum([maximum(v.u)/g.dx, maximum(v.v)/g.dy])
+anim = @animate for j = 0:Int(nsteps/nsubs)
+    
+  log = @sprintf("step: %04d, t: %d, E: %.4f, Z: %.4f, walltime: %.2f min",
+      clock.step, clock.t, E.data[E.i], Z.data[Z.i], (time()-startwalltime)/60)
+  
+  if j%(1000/nsubs)==0; println(log) end  
 
-  log = @sprintf("step: %04d, t: %.1f, cfl: %.3f, walltime: %.2f min", cl.step, cl.t,
-        cfl, (time()-startwalltime)/60)
+  p[1][1][:z] = vars.zeta
+  p[1][:title] = "vorticity, μ t = "*@sprintf("%.2f", μ * clock.t)
+  push!(p[2][1], μ * E.t[E.i], E.data[E.i])
+  push!(p[2][2], μ * Z.t[Z.i], Z.data[Z.i] / forcing_wavenumber^2)
 
-  println(log)
+  stepforward!(prob, diags, nsubs)
+  TwoDNavierStokes.updatevars!(prob)  
+  
 end
 
-
-# ## Plot
-# And now let's see what we got. We plot the output.
-
-pζ, pbudgets = computetendencies_and_makeplot(prob, diags)
-
-pbudgets
+mp4(anim, "twodturb_forced.mp4", fps=18)
