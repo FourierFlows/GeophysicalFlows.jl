@@ -116,7 +116,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     Vars(dev, grid)
 
-Returns the vars for unforced two-dimensional turbulence on device dev and with `grid`.
+Returns the vars for unforced surface QG turbulence on device dev and with `grid`.
 """
 function Vars(::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
@@ -128,7 +128,7 @@ end
 """
     ForcedVars(dev, grid)
 
-Returns the vars for forced two-dimensional turbulence on device dev and with
+Returns the vars for forced surface QG turbulence on device dev and with
 `grid`.
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
@@ -141,7 +141,7 @@ end
 """
     StochasticForcedVars(dev, grid)
 
-Returns the vars for stochastically forced two-dimensional turbulence on device
+Returns the vars for stochastically forced surface QG turbulence on device
 dev and with grid grid.
 """
 function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
