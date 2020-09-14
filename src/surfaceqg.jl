@@ -320,12 +320,12 @@ be zero if buoyancy variance is conserved.
 @inline function buoyancy_advection(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
 
-  @. vars.b = vars.u * sol     # Calculate x-velocity*buoyancy
+  @. vars.b *= vars.u    # Calculate x-velocity*buoyancy
   mul!(vars.uh, grid.rfftplan, vars.b) # Fourier transform correlation
   vars.uh[1, 1] = 0
   @. uh = - im * grid.kr * vars.uh * conj(vars.bh)  # Calculate Fourier-space x-advection
 
-  @. vars.b = vars.v * sol
+  @. vars.b *= vars.v/vars.u    # Negate effects of previous multiplication by u
   mul!(vars.vh, grid.rfftplan, vars.b)
   vars.vh[1, 1] = 0
   @. uh += - im * grid.l * vars.vh * conj(vars.bh)
