@@ -77,7 +77,7 @@ nothing # hide
 # has a spectrum with power in a ring in wavenumber space of radius kᵖ and
 # width δkᵖ, and it injects energy per unit area and per unit time equalto ϵ.
 
-#kᵖ = 14.0    # peak wavenumber for an initial spectrum that is a ring in wavenumber space
+kᵖ = 14.0    # peak wavenumber for an initial spectrum that is a ring in wavenumber space
 
 gr  = TwoDGrid(nx, Lx)
 

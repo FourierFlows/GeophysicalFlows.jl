@@ -334,7 +334,7 @@ be zero if buoyancy variance is conserved.
   mul!(vars.uh, grid.rfftplan, vars.u) # \hat{u*b}
   mul!(vars.vh, grid.rfftplan, vars.v) # \hat{v*b}
 
-  @. vars.bh = ( - im * grid.kr * vars.uh - im * grid.l * vars.vh ) * conh( vars.bh )
+  @. vars.bh = ( - im * grid.kr * vars.uh - im * grid.l * vars.vh ) * conj( vars.bh )
 
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.bh, grid)
 end
