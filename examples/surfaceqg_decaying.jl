@@ -29,9 +29,9 @@ nothing # hide
 
      nx = 512            # 2D resolution = nx^2
 stepper = "FilteredRK4"  # timestepper
-     dt = 0.0002          # timestep
- nsteps = 250           # total number of time-steps
- nsubs  = 50          # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
+     dt = 0.005          # timestep
+ nsteps = 400           # total number of time-steps
+ nsubs  = 40         # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
@@ -41,6 +41,7 @@ Lx = 2π        # domain size
  ϵ = 1e7           # amplification factor to multiply initial buoyancy field
  nν = 4
  ν = 0.00025*(2e-5)*(2*π/nx)^(2*nν-2)
+ ν = 0
 nothing # hide
 
 # If we want to add a forcing realization computed every timestep we can Define
@@ -82,10 +83,12 @@ gr  = TwoDGrid(nx, Lx)
 
 k = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl] # a 2D grid with the zonal wavenumber
 
-initial_spectrum = @. sqrt(gr.Krsq)^7 / ((sqrt(gr.Krsq) + kᵖ)^12.0)
-init_bh = sqrt.(initial_spectrum).*exp.(2π*im*rand(eltype(initial_spectrum), size(initial_spectrum)))
-init_b = irfft(init_bh, gr.nx)
-init_b *= ϵ   # Renormalize buyancy field to have variance defined by ϵ
+#initial_spectrum = @. sqrt(gr.Krsq)^7 / ((sqrt(gr.Krsq) + kᵖ)^12.0)
+#init_bh = sqrt.(initial_spectrum).*exp.(2π*im*rand(eltype(initial_spectrum), size(initial_spectrum)))
+#init_b = irfft(init_bh, gr.nx)
+#init_b *= ϵ   # Renormalize buyancy field to have variance defined by ϵ
+@. init_b = 0.01*exp(-(gr.x^2 + (4*gr.y)^2))*(y/Lx^2)
+
 
 seed!(1234) # reset of the random number generator for reproducibility
 nothing # hide
@@ -97,10 +100,12 @@ SurfaceQG.set_b!(prob, init_b)
 # ## Diagnostics
 
 # Create Diagnostic -- `energy` and `enstrophy` are functions imported at the top.
-bb = Diagnostic(buoyvariance, prob; nsteps=nsteps)
-D = Diagnostic(dissipation_bb, prob; nsteps=nsteps) # dissipation by hyperviscosity
-R = Diagnostic(drag_bb, prob; nsteps=nsteps)
+bb = Diagnostic(buoyancy_variance, prob; nsteps=nsteps)
+Dᵇ = Diagnostic(buoyancy_dissipation, prob; nsteps=nsteps) # dissipation by hyperviscosity
+Rᵇ = Diagnostic(buoyancy_drag, prob; nsteps=nsteps)
+Aᵇ = Diagnostic(buoyancy_advection, prob; nsteps=nsteps)
 KE = Diagnostic(kinetic_energy, prob; nsteps=nsteps)
+Aᵏ = Diagnostic(kinetic_energy_advection, prob; nsteps=nsteps)
 
 diags = [bb, D, R, KE] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hidenothing # hide
@@ -408,12 +413,12 @@ saveoutput(out)
 
 #  N = - im * gr.kr .* ubh - im * gr.l .* vbh
 
-using FourierFlows: abs2
+#using FourierFlows: abs2
 
-diag_bb = 2*gr.Krsq.^nν .* abs2.(bh)
-diag_bb[1, 1] = 0
+#diag_bb = 2*gr.Krsq.^nν .* abs2.(bh)
+#diag_bb[1, 1] = 0
 
-diag_bb_diss = ν / (gr.Lx * gr.Ly) * parsevalsum(diag_bb, gr)
+#diag_bb_diss = ν / (gr.Lx * gr.Ly) * parsevalsum(diag_bb, gr)
 
 #  advective_residual = 1 / (2 * gr.Lx * gr.Ly) * parsevalsum(ubh+vbh, gr)
 #divergence = 1 / (2 * gr.Lx * gr.Ly) * parsevalsum(- im * gr.l .*ubh - im * gr.kr .*vbh, gr)

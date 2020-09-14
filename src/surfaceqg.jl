@@ -321,16 +321,16 @@ be zero if buoyancy variance is conserved.
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
 
   @. vars.u = vars.u * vars.b     # Calculate x-velocity*buoyancy
-  mul!(vars.uh, gr.rfftplan, vars.u) # Fourier transform correlation
+  mul!(vars.uh, grid.rfftplan, vars.u) # Fourier transform correlation
   vars.uh[1, 1] = 0
   @. N = - im * grid.kr * vars.uh * conj(vars.bh)  # Calculate Fourier-space x-advection
 
   @. vars.v = vars.v * vars.b
-  mul!(vars.vh, gr.rfftplan, vars.v)
+  mul!(vars.vh, grid.rfftplan, vars.v)
   vars.vh[1, 1] = 0
   @. N += - im * grid.l * vars.vh * conj(vars.bh)
 
-  return 1 / (gr.Lx * gr.Ly) * parsevalsum(N, grid)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(N, grid)
 end
 
 """
@@ -344,19 +344,19 @@ leading-order (geostrophic) flow.
 
   @. vars.u = vars.u * vars.u
   @. vars.v = vars.v * vars.u
-  mul!(vars.bh, gr.rfftplan, vars.u)
+  mul!(vars.bh, grid.rfftplan, vars.u)
   temp = vars.bh
-  mul!(vars.bh, gr.rfftplan, vars.v)
+  mul!(vars.bh, grid.rfftplan, vars.v)
   @. N = - ( im * grid.kr * temp + im * grid.l * vars.bh ) * conj(vars.uh)
 
   @. vars.u = vars.u * vars.v
   @. vars.v = vars.v * vars.v
-  mul!(vars.bh, gr.rfftplan, vars.u)
+  mul!(vars.bh, grid.rfftplan, vars.u)
   temp = vars.bh
-  mul!(vars.bh, gr.rfftplan, vars.v)
+  mul!(vars.bh, grid.rfftplan, vars.v)
   @. N += - ( im * grid.kr * temp + im * grid.l * vars.bh ) * conj(vars.vh)
 
-  return 1 / (gr.Lx * gr.Ly) * parsevalsum(N, grid)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(N, grid)
 end
 
 end # module
