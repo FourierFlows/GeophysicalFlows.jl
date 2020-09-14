@@ -347,16 +347,16 @@ leading-order (geostrophic) flow.
   sol = vars.bh
   @. vars.v = vars.v * vars.u
   mul!(vars.bh, grid.rfftplan, vars.u)
-  @. uh = - ( im * grid.kr * sol + im * grid.l * vars.bh ) * conj(vars.uh)
+  @. vars.uh = - ( im * grid.kr * sol + im * grid.l * vars.bh ) * conj(vars.uh)
 
   @. vars.u = vars.u * vars.v
   mul!(vars.bh, grid.rfftplan, vars.u)
   sol = vars.bh
   @. vars.v = vars.v * vars.v
   mul!(vars.bh, grid.rfftplan, vars.v)
-  @. vh = - ( im * grid.kr * sol + im * grid.l * vars.bh ) * conj(vars.vh)
+  @. vars.vh = - ( im * grid.kr * sol + im * grid.l * vars.bh ) * conj(vars.vh)
 
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum( uh + vh , grid)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum( vars.uh + vars.vh , grid)
 end
 
 end # module
