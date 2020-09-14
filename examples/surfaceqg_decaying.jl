@@ -107,7 +107,7 @@ Aᵇ = Diagnostic(buoyancy_advection, prob; nsteps=nsteps)
 KE = Diagnostic(kinetic_energy, prob; nsteps=nsteps)
 Aᵏ = Diagnostic(kinetic_energy_advection, prob; nsteps=nsteps)
 
-diags = [bb, D, R, KE] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
+diags = [bb, Dᵇ, Rᵇ, Aᵇ, KE, Aᵏ] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hidenothing # hide
 
 
@@ -322,7 +322,7 @@ ii = (i₀):bb.i-1
 ii2 = (i₀+1):bb.i
 
 t = bb.t[ii]
-db²dt_computed = - D[ii]
+db²dt_computed = - Dᵇ[ii]
 
 residual = db²dt_computed - db²dt_numerical
 
@@ -374,16 +374,16 @@ pb4 = heatmap(x, y, vs.b,
            title = "bˢ(x, y, t="*@sprintf("%.2f", cl.t)*")",
       framestyle = :box)
 
-pb5 = plot(t, [R[ii] D[ii]],
-         label = ["Drag" "Dissipation"],
-     linestyle = [:solid :dash],
+pb5 = plot(t, [Rᵇ[ii] Dᵇ[ii] Aᵇ[ii]],
+         label = ["Drag" "Dissipation" "Advection"],
+     linestyle = [:solid :dash :solid],
      linewidth = 2,
          alpha = 0.8,
         xlabel = "t",
         ylabel = "Sources and sinks of buoyancy variance")
 
-pb6 = plot(t, [KE[ii] bb[ii]],
-           label = ["Kinetic Energy" "Buoyancy Variance"],
+pb6 = plot(t, [KE[ii] Aᵏ[ii]],
+           label = ["Kinetic Energy" "Advection"],
        linestyle = [:solid :dash],
        linewidth = 2,
            alpha = 0.8,
