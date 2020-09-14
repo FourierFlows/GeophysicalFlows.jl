@@ -323,14 +323,14 @@ be zero if buoyancy variance is conserved.
   @. vars.b = vars.u * sol     # Calculate x-velocity*buoyancy
   mul!(vars.uh, grid.rfftplan, vars.b) # Fourier transform correlation
   vars.uh[1, 1] = 0
-  @. N = - im * grid.kr * vars.uh * conj(vars.bh)  # Calculate Fourier-space x-advection
+  @. uh = - im * grid.kr * vars.uh * conj(vars.bh)  # Calculate Fourier-space x-advection
 
   @. vars.b = vars.v * sol
   mul!(vars.vh, grid.rfftplan, vars.b)
   vars.vh[1, 1] = 0
-  @. N += - im * grid.l * vars.vh * conj(vars.bh)
+  @. uh += - im * grid.l * vars.vh * conj(vars.bh)
 
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum(N, grid)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(uh, grid)
 end
 
 """
