@@ -320,13 +320,13 @@ be zero if buoyancy variance is conserved.
 @inline function buoyancy_advection(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
 
-  @. vars.u = vars.u * vars.b     # Calculate x-velocity*buoyancy
-  mul!(vars.uh, grid.rfftplan, vars.u) # Fourier transform correlation
+  @. vars.b = vars.u * sol     # Calculate x-velocity*buoyancy
+  mul!(vars.uh, grid.rfftplan, vars.b) # Fourier transform correlation
   vars.uh[1, 1] = 0
   @. N = - im * grid.kr * vars.uh * conj(vars.bh)  # Calculate Fourier-space x-advection
 
-  @. vars.v = vars.v * vars.b
-  mul!(vars.vh, grid.rfftplan, vars.v)
+  @. vars.b = vars.v * sol
+  mul!(vars.vh, grid.rfftplan, vars.b)
   vars.vh[1, 1] = 0
   @. N += - im * grid.l * vars.vh * conj(vars.bh)
 
@@ -342,19 +342,19 @@ leading-order (geostrophic) flow.
 @inline function kinetic_energy_advection(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
 
-  @. vars.u = vars.u * vars.u
+  @. vars.b = vars.u * vars.u
+  mul!(vars.bh, grid.rfftplan, vars.u)
+  sol = vars.bh
   @. vars.v = vars.v * vars.u
   mul!(vars.bh, grid.rfftplan, vars.u)
-  temp = vars.bh
-  mul!(vars.bh, grid.rfftplan, vars.v)
-  @. N = - ( im * grid.kr * temp + im * grid.l * vars.bh ) * conj(vars.uh)
+  @. N = - ( im * grid.kr * sol + im * grid.l * vars.bh ) * conj(vars.uh)
 
   @. vars.u = vars.u * vars.v
-  @. vars.v = vars.v * vars.v
   mul!(vars.bh, grid.rfftplan, vars.u)
-  temp = vars.bh
+  sol = vars.bh
+  @. vars.v = vars.v * vars.v
   mul!(vars.bh, grid.rfftplan, vars.v)
-  @. N += - ( im * grid.kr * temp + im * grid.l * vars.bh ) * conj(vars.vh)
+  @. N += - ( im * grid.kr * sol + im * grid.l * vars.bh ) * conj(vars.vh)
 
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(N, grid)
 end

@@ -83,9 +83,9 @@ gr  = TwoDGrid(nx, Lx)
 
 k = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl] # a 2D grid with the zonal wavenumber
 
-#initial_spectrum = @. sqrt(gr.Krsq)^7 / ((sqrt(gr.Krsq) + kᵖ)^12.0)
-#init_bh = sqrt.(initial_spectrum).*exp.(2π*im*rand(eltype(initial_spectrum), size(initial_spectrum)))
-#init_b = irfft(init_bh, gr.nx)
+initial_spectrum = @. sqrt(gr.Krsq)^7 / ((sqrt(gr.Krsq) + kᵖ)^12.0)
+init_bh = sqrt.(initial_spectrum).*exp.(2π*im*rand(eltype(initial_spectrum), size(initial_spectrum)))
+init_b = irfft(init_bh, gr.nx)
 #init_b *= ϵ   # Renormalize buyancy field to have variance defined by ϵ
 @. init_b = 0.01*exp(-(gr.x^2 + (4*gr.y)^2))*(y/Lx^2)
 
