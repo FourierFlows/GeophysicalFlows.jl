@@ -6,10 +6,12 @@ export
   updatevars!,
 
   kinetic_energy,
-  buoyvariance,
-  dissipation_bb,
-  work_bb,
-  drag_bb
+  buoyancy_variance,
+  buoyancy_dissipation,
+  buoyancy_work,
+  buoyancy_drag,
+  buoyancy_advection,
+  kinetic_energy_advection
 
   using
     CUDA,
@@ -243,34 +245,34 @@ end
     kinetic_energy(prob)
 
 Returns the domain-averaged surface kinetic energy. In SQG flows this is
-identical to half the domain-averaged surface buoyancy variance
+identical to half the domain-averaged surface buoyancy variance.
 """
 @inline function kinetic_energy(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
-  @. vars.uh = abs2(sol)
+  @. vars.uh = abs2(vars.uh) + abs2(vars.vh)
   return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
 """
-    buoyvariance(prob)
+    buoyancy_variance(prob)
 
 Returns the domain-averaged buoyancy variance. In SQG flows this is identical to
 the domain-averaged velocity variance (twice the kinetic energy)
 """
-@inline function buoyvariance(prob)
+@inline function buoyancy_variance(prob)
   sol, grid = prob.sol, prob.grid
   return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs2.(sol), grid)
 end
 
 """
-    dissipation_bb(prob)
+    buoyancy_dissipation(prob)
 
 Returns the domain-averaged dissipation rate of surface buoyancy variance due
 to small scale diffusion/viscosity. nν must be >= 1.
 
 In an SQG flow this is identical to twice the rate of kinetic energy dissipation
 """
-@inline function dissipation_bb(prob)
+@inline function buoyancy_dissipation(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   @. vars.uh = 2*grid.Krsq^params.nν * abs2(sol)
   CUDA.@allowscalar vars.uh[1, 1] = 0
@@ -278,18 +280,18 @@ In an SQG flow this is identical to twice the rate of kinetic energy dissipation
 end
 
 """
-    work_bb(prob)
-    work_bb(sol, v, grid)
+    buoyancy_work(prob)
+    buoyancy_work(sol, v, grid)
 
 Returns the domain-averaged rate of work of buoyancy variance by the forcing Fh.
 """
-@inline function work_bb(prob)
+@inline function buoyancy_work(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   @. vars.uh =  sol * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
-@inline function work_bb(sol, vars::StochasticForcedVars, grid)
+@inline function buoyancy_work(sol, vars::StochasticForcedVars, grid)
   @. vars.uh =  (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
   # @. vars.uh = grid.invKrsq * vars.prevsol * conj(vars.Fh)           # Ito
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
@@ -298,15 +300,63 @@ end
 @inline work(prob) = work(prob.sol, prob.vars, prob.grid)
 
 """
-    drag_bb(prob)
+    buoyancy_drag(prob)
 
 Returns the extraction of domain-averaged buoyancy variance by drag/hypodrag μ.
 """
-@inline function drag_bb(prob)
+@inline function buoyancy_drag(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   @. vars.uh = grid.Krsq^params.nμ * abs2(sol)
   vars.uh[1, 1] = 0
   return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+end
+
+"""
+    buoyancy_advection(prob)
+
+Returns the average of domain-averaged advection of buoyancy variance. This should
+be zero if buoyancy variance is conserved.
+"""
+@inline function buoyancy_advection(prob)
+  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
+
+  @. vars.u = vars.u * vars.b     # Calculate x-velocity*buoyancy
+  mul!(vars.uh, gr.rfftplan, vars.u) # Fourier transform correlation
+  vars.uh[1, 1] = 0
+  @. N = - im * grid.kr * vars.uh * conj(vars.bh)  # Calculate Fourier-space x-advection
+
+  @. vars.v = vars.v * vars.b
+  mul!(vars.vh, gr.rfftplan, vars.v)
+  vars.vh[1, 1] = 0
+  @. N += - im * grid.l * vars.vh * conj(vars.bh)
+
+  return 1 / (gr.Lx * gr.Ly) * parsevalsum(N, grid)
+end
+
+"""
+    kinetic_energy_advection(prob)
+
+Returns the average of domain-averaged advection of kinetic energy by the
+leading-order (geostrophic) flow.
+"""
+@inline function kinetic_energy_advection(prob)
+  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
+
+  @. vars.u = vars.u * vars.u
+  @. vars.v = vars.v * vars.u
+  mul!(vars.bh, gr.rfftplan, vars.u)
+  temp = vars.bh
+  mul!(vars.bh, gr.rfftplan, vars.v)
+  @. N = - ( im * grid.kr * temp + im * grid.l * vars.bh ) * conj(vars.uh)
+
+  @. vars.u = vars.u * vars.v
+  @. vars.v = vars.v * vars.v
+  mul!(vars.bh, gr.rfftplan, vars.u)
+  temp = vars.bh
+  mul!(vars.bh, gr.rfftplan, vars.v)
+  @. N += - ( im * grid.kr * temp + im * grid.l * vars.bh ) * conj(vars.vh)
+
+  return 1 / (gr.Lx * gr.Ly) * parsevalsum(N, grid)
 end
 
 end # module
