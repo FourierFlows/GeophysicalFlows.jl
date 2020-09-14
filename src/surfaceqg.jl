@@ -320,17 +320,23 @@ be zero if buoyancy variance is conserved.
 @inline function buoyancy_advection(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
 
-  @. vars.b *= vars.u    # Calculate x-velocity*buoyancy
-  mul!(vars.uh, grid.rfftplan, vars.b) # Fourier transform correlation
-  vars.uh[1, 1] = 0
-  @. vars.uh = - im * grid.kr * vars.uh * conj(vars.bh)  # Calculate Fourier-space x-advection
+  @. vars.bh = sol
+  @. vars.uh =   im * grid.l  * sqrt.(grid.invKrsq) * sol
+  @. vars.vh = - im * grid.kr * sqrt.(grid.invKrsq) * sol
 
-  @. vars.b *= vars.v/vars.u    # Calculate v * b negating previous * u
-  mul!(vars.vh, grid.rfftplan, vars.b)
-  vars.vh[1, 1] = 0
-  @. vars.uh += - im * grid.l * vars.vh * conj(vars.bh)
+  ldiv!(vars.u, grid.rfftplan, vars.uh)
+  ldiv!(vars.v, grid.rfftplan, vars.vh)
+  ldiv!(vars.b, grid.rfftplan, vars.bh)
 
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+  @. vars.u *= vars.b # u*b
+  @. vars.v *= vars.b # v*b
+
+  mul!(vars.uh, grid.rfftplan, vars.u) # \hat{u*b}
+  mul!(vars.vh, grid.rfftplan, vars.v) # \hat{v*b}
+
+  @. vars.bh = ( - im * grid.kr * vars.uh - im * grid.l * vars.vh ) * conh( vars.bh )
+
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.bh, grid)
 end
 
 """

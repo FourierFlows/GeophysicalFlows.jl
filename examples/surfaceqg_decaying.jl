@@ -77,7 +77,7 @@ nothing # hide
 # has a spectrum with power in a ring in wavenumber space of radius kᵖ and
 # width δkᵖ, and it injects energy per unit area and per unit time equalto ϵ.
 
-kᵖ = 14.0    # peak wavenumber for an initial spectrum that is a ring in wavenumber space
+#kᵖ = 14.0    # peak wavenumber for an initial spectrum that is a ring in wavenumber space
 
 gr  = TwoDGrid(nx, Lx)
 
@@ -86,8 +86,8 @@ k = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl] # a 2D grid with the zonal wavenumber
 initial_spectrum = @. sqrt(gr.Krsq)^7 / ((sqrt(gr.Krsq) + kᵖ)^12.0)
 init_bh = sqrt.(initial_spectrum).*exp.(2π*im*rand(eltype(initial_spectrum), size(initial_spectrum)))
 init_b = irfft(init_bh, gr.nx)
-#init_b *= ϵ   # Renormalize buyancy field to have variance defined by ϵ
-@. init_b = 0.01*exp(-(gr.x^2 + (4*gr.y)^2))*(y/Lx^2)
+init_b *= ϵ   # Renormalize buyancy field to have variance defined by ϵ
+#@. init_b = 0.01*exp(-(gr.x^2 + (4*gr.y)^2))*(y/Lx^2)
 
 
 seed!(1234) # reset of the random number generator for reproducibility
@@ -115,7 +115,7 @@ nothing # hidenothing # hide
 
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
 # Define base filename so saved data can be distinguished from other runs
-base_filename = string("SurfaceQG_n_", nx, "_visc_", round(ν, sigdigits=1), "_order_", 2*nν, "_ki_", init_wavenumber, "_eps_", ϵ)
+base_filename = string("SurfaceQG_n_", nx, "_visc_", round(ν, sigdigits=1), "_order_", 2*nν, "_eps_", ϵ)
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
 datapath = "./Output/Data/"
 plotpath = "./Output/Figures/"
@@ -239,8 +239,8 @@ anim = @animate for j=0:Int(nsteps/nsubs)
 
         println(log)
 
-  log = @sprintf("bb diagnostics - Energy: %.2e, Diss: %.2e, Drag: %.2e",
-            KE.data[KE.i], D.data[D.i], R.data[R.i])
+  log = @sprintf("bb diagnostics - bb: %.2e, Diss: %.2e, Drag: %.2e, Adv %.2e",
+            bb.data[bb.i], Dᵇ.data[Dᵇ.i], Rᵇ.data[Rᵇ.i], Aᵇ.data[Aᵇ.i])
 
       println(log)
 
