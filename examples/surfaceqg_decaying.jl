@@ -12,8 +12,10 @@ using Statistics: mean
 using Random: seed!
 
 import GeophysicalFlows.SurfaceQG
-import GeophysicalFlows.SurfaceQG: kinetic_energy, buoyvariance
-import GeophysicalFlows.SurfaceQG: dissipation_bb, work_bb, drag_bb
+import GeophysicalFlows.SurfaceQG: kinetic_energy, buoyancy_variance
+import GeophysicalFlows.SurfaceQG: buoyancy_dissipation, buoyancy_work
+import GeophysicalFlows.SurfaceQG: buoyancy_drag
+import GeophysicalFlows.SurfaceQG: buoyancy_advection, kinetic_energy_advection
 
 
 # ## Choosing a device: CPU or GPU
