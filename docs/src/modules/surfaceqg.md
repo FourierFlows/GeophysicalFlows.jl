@@ -2,7 +2,7 @@
 
 ### Basic Equations
 
-This module solves the non-dimensional surface quasi-geostrophic (SQG) equation for surface buoyancy $b_s=b(x,y,z=0)$. The buoyancy and fluid motion at the surface are related through streamfunction $\psi$ as $(u_s, \upsilon_s, b_s) = (-\partial_y\psi, \partial_x\psi, -\partial_z\psi)$. This model solves the time evolution of the surface buoyancy,
+This module solves the non-dimensional surface quasi-geostrophic (SQG) equation for surface buoyancy $b_s=b(x,y,z=0)$ described in Capet et al., 2008. The buoyancy and fluid motion at the surface are related through streamfunction $\psi$ as $(u_s, \upsilon_s, b_s) = (-\partial_y\psi, \partial_x\psi, -\partial_z\psi)$. This model solves the time evolution of the surface buoyancy,
 
 $$\partial_t b_s + \mathsf{J}(\psi, b_s) = \underbrace{-\nu(-1)^{n_\nu} \nabla^{2n_\nu} b_s}_{\textrm{buoyancy diffusion}} + \underbrace{f}_{\textrm{forcing}}\.$$
 
@@ -39,3 +39,6 @@ $$\mathcal{N}(\widehat{b_s}) = - \mathrm{i}k_x \mathrm{FFT}(u q)-
 - `examples/surfaceqg_decaying.jl`: A script that simulates decaying surface quasi-geostrophic flow with a prescribed initial buoyancy field, producing a video of the evolution of buoyancy and velocity fields.
 
 - `examples/surfaceqg_decaying_budget.jl`: A script that simulates decaying surface quasi-geostrophic flow with a prescribed initial buoyancy field, producing plots of buoyancy variance and kinetic energy budget terms.
+
+
+  > Capet, X. et al., (2008). Surface kinetic energy transfer in surface quasi-geostrophic flows. *J. Fluid Mech.*, **604**, 165-174.
