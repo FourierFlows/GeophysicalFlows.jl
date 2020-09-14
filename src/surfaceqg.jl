@@ -325,7 +325,7 @@ be zero if buoyancy variance is conserved.
   vars.uh[1, 1] = 0
   @. vars.uh = - im * grid.kr * vars.uh * conj(vars.bh)  # Calculate Fourier-space x-advection
 
-  @. vars.b *= vars.v/vars.u    # Negate effects of previous multiplication by u
+  @. vars.b *= vars.v/vars.u    # Calculate v * b negating previous * u
   mul!(vars.vh, grid.rfftplan, vars.b)
   vars.vh[1, 1] = 0
   @. vars.uh += - im * grid.l * vars.vh * conj(vars.bh)
@@ -347,16 +347,16 @@ leading-order (geostrophic) flow.
   sol = vars.bh
   @. vars.v = vars.v * vars.u
   mul!(vars.bh, grid.rfftplan, vars.u)
-  @. N = - ( im * grid.kr * sol + im * grid.l * vars.bh ) * conj(vars.uh)
+  @. uh = - ( im * grid.kr * sol + im * grid.l * vars.bh ) * conj(vars.uh)
 
   @. vars.u = vars.u * vars.v
   mul!(vars.bh, grid.rfftplan, vars.u)
   sol = vars.bh
   @. vars.v = vars.v * vars.v
   mul!(vars.bh, grid.rfftplan, vars.v)
-  @. N += - ( im * grid.kr * sol + im * grid.l * vars.bh ) * conj(vars.vh)
+  @. vh = - ( im * grid.kr * sol + im * grid.l * vars.bh ) * conj(vars.vh)
 
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum(N, grid)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum( uh + vh , grid)
 end
 
 end # module
