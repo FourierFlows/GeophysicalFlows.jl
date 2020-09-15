@@ -18,7 +18,6 @@ import GeophysicalFlows.SurfaceQG: kinetic_energy, buoyancy_variance, buoyancy_d
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()    # Device (CPU/GPU)ENV["GRDIR"]=""
-Pkg.build("GR")
 nothing # hide
 
 
