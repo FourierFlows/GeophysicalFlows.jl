@@ -249,8 +249,10 @@ identical to half the domain-averaged surface buoyancy variance.
 """
 @inline function kinetic_energy(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
-  @. vars.uh = abs2(vars.uh) + abs2(vars.vh)
-  return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+  @. vars.uh =   im * grid.l  * sqrt.(grid.invKrsq) * sol
+  @. vars.vh = - im * grid.kr * sqrt.(grid.invKrsq) * sol
+  @. vars.uh = 0.5 * ( abs2(vars.uh) + abs2(vars.vh) )
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
 """
@@ -261,7 +263,7 @@ the domain-averaged velocity variance (twice the kinetic energy)
 """
 @inline function buoyancy_variance(prob)
   sol, grid = prob.sol, prob.grid
-  return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs2.(sol), grid)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(abs2.(sol), grid)
 end
 
 """
