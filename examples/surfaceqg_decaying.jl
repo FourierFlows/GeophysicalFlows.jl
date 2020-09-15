@@ -12,10 +12,7 @@ using Statistics: mean
 using Random: seed!
 
 import GeophysicalFlows.SurfaceQG
-import GeophysicalFlows.SurfaceQG: kinetic_energy, buoyancy_variance
-import GeophysicalFlows.SurfaceQG: buoyancy_dissipation, buoyancy_work
-import GeophysicalFlows.SurfaceQG: buoyancy_drag
-import GeophysicalFlows.SurfaceQG: buoyancy_advection, kinetic_energy_advection
+import GeophysicalFlows.SurfaceQG: kinetic_energy, buoyancy_variance, buoyancy_dissipation
 
 
 # ## Choosing a device: CPU or GPU
@@ -30,29 +27,18 @@ nothing # hide
      nx = 512            # 2D resolution = nx^2
 stepper = "FilteredRK4"  # timestepper
      dt = 0.005          # timestep
- nsteps = 400           # total number of time-steps
- nsubs  = 40         # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
+     tf = 25             # length of time for simulation
+ nsteps = tf/dt           # total number of time-steps
+ nsubs  = round(Int, nsteps/tf)         # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
 # ## Physical parameters
 
-Lx = 2π        # domain size
- ϵ = 1e7           # amplification factor to multiply initial buoyancy field
+  L = 2π        # domain size
  nν = 4
- ν = 0.00025*(2e-5)*(2*π/nx)^(2*nν-2)
- ν = 0
+  ν = 1e-19
 nothing # hide
-
-# If we want to add a forcing realization computed every timestep we can Define
-# a function. For this decaying case it is not included
-#function calcFb!(Fh, sol, t, clock, vars, params, grid)
-#  ξ = ArrayType(dev)(exp.(2π*im*rand(eltype(grid), size(sol)))/sqrt(clock.dt))
-#  @. Fh = ξ*sqrt.(forcing_spectrum)
-#  Fh[abs.(grid.Krsq).==0] .= 0
-#  nothing
-#end
-#nothing # hide
 
 
 # ## Problem setup
@@ -60,7 +46,7 @@ nothing # hide
 # a viscosity coefficient ν leads to the module's default value: ν=0. In this
 # example numerical instability due to accumulation of enstrophy in high wavenumbers
 # is taken care with the `FilteredTimestepper` we picked.
-prob = SurfaceQG.Problem(dev; nx=nx, Lx=Lx, dt=dt, stepper=stepper,
+prob = SurfaceQG.Problem(dev; nx=nx, Lx=L, dt=dt, stepper=stepper,
                             ν=ν, nν=nν, stochastic=true)
 nothing # hide
 
@@ -77,18 +63,9 @@ nothing # hide
 # has a spectrum with power in a ring in wavenumber space of radius kᵖ and
 # width δkᵖ, and it injects energy per unit area and per unit time equalto ϵ.
 
-kᵖ = 14.0    # peak wavenumber for an initial spectrum that is a ring in wavenumber space
+gr  = TwoDGrid(nx, L)
 
-gr  = TwoDGrid(nx, Lx)
-
-k = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl] # a 2D grid with the zonal wavenumber
-
-initial_spectrum = @. sqrt(gr.Krsq)^7 / ((sqrt(gr.Krsq) + kᵖ)^12.0)
-init_bh = sqrt.(initial_spectrum).*exp.(2π*im*rand(eltype(initial_spectrum), size(initial_spectrum)))
-init_b = irfft(init_bh, gr.nx)
-init_b *= ϵ   # Renormalize buyancy field to have variance defined by ϵ
-#@. init_b = 0.01*exp(-(gr.x^2 + (4*gr.y)^2))*(y/Lx^2)
-
+init_b = exp.(-((repeat(gr.x', nx)').^2 + (4*repeat(gr.y', nx)).^2))
 
 seed!(1234) # reset of the random number generator for reproducibility
 nothing # hide
@@ -101,13 +78,9 @@ SurfaceQG.set_b!(prob, init_b)
 
 # Create Diagnostic -- `energy` and `enstrophy` are functions imported at the top.
 bb = Diagnostic(buoyancy_variance, prob; nsteps=nsteps)
-Dᵇ = Diagnostic(buoyancy_dissipation, prob; nsteps=nsteps) # dissipation by hyperviscosity
-Rᵇ = Diagnostic(buoyancy_drag, prob; nsteps=nsteps)
-Aᵇ = Diagnostic(buoyancy_advection, prob; nsteps=nsteps)
 KE = Diagnostic(kinetic_energy, prob; nsteps=nsteps)
-Aᵏ = Diagnostic(kinetic_energy_advection, prob; nsteps=nsteps)
-
-diags = [bb, Dᵇ, Rᵇ, Aᵇ, KE, Aᵏ] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
+Dᵇ = Diagnostic(buoyancy_dissipation, prob; nsteps=nsteps)
+diags = [bb, KE, Dᵇ] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hidenothing # hide
 
 
@@ -115,19 +88,16 @@ nothing # hidenothing # hide
 
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
 # Define base filename so saved data can be distinguished from other runs
-base_filename = string("SurfaceQG_n_", nx, "_visc_", round(ν, sigdigits=1), "_order_", 2*nν, "_eps_", ϵ)
+base_filename = string("SurfaceQG_decaying_n_", nx, "_visc_", round(ν, sigdigits=1), "_order_", 2*nν)
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
-datapath = "./Output/Data/"
-plotpath = "./Output/Figures/"
-plotname = "snapshots"
+datapath = "./"
+plotpath = "./"
 
 dataname = joinpath(datapath, base_filename)
 plotname = joinpath(plotpath, base_filename)
-jld2_filename = joinpath(datapath, string(base_filename, ".jld2"))
 nothing # hide
 
 # Do some basic file management,
-if isfile(jld2_filename); rm(jld2_filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 if !isdir(datapath); mkdir(datapath); end
 nothing # hide
@@ -141,20 +111,17 @@ nothing # hide
 
 # ## Visualizing the simulation
 
-# We define a function that plots the buoyancy and velocity fields, their
-# corresponding zonal mean structure and timeseries of energy and buoyancy variance.
+# We define a function that plots the buoyancy field and the time evolution of
+# kinetic energy and buoyancy variance.
 
 function plot_output(prob)
     bˢ = prob.vars.b
-    b̅ˢ = mean(bˢ, dims=1)'
-    ū = mean(prob.vars.u, dims=1)'
     Energy =  0.5*(prob.vars.u.^2 + prob.vars.v.^2)
 
   pbˢ = heatmap(x, y, bˢ,
        aspectratio = 1,
-            legend = false,
-                 c = :balance,
-              clim = (-8, 8),
+                 c = :RdBu,
+              clim = (0, 1),
              xlims = (-gr.Lx/2, gr.Lx/2),
              ylims = (-gr.Ly/2, gr.Ly/2),
             xticks = -3:3,
@@ -164,67 +131,34 @@ function plot_output(prob)
              title = "buoyancy bˢ",
         framestyle = :box)
 
-  pbˢ_zoom = heatmap(x, y, bˢ,
-       aspectratio = 1,
-            legend = false,
-                 c = :balance,
-              clim = (-8, 8),
-             xlims = (-gr.Lx/8, gr.Lx/8),
-             ylims = (-gr.Ly/8, gr.Ly/8),
-            xticks = -3:3,
-            yticks = -3:3,
-            xlabel = "x",
-            ylabel = "y",
-             title = "buoyancy bˢ",
-        framestyle = :box)
-
-  pb̄ˢ = plot(b̅ˢ, y,
-            legend = false,
-         linewidth = 2,
-             alpha = 0.7,
-            yticks = -3:3,
-             xlims = (-3, 3),
-            xlabel = "zonal mean bˢ",
-            ylabel = "y")
-  plot!(pb̄ˢ, 0*y, y, linestyle=:dash, linecolor=:black)
-
-  pū = plot(ū, y,
-            legend = false,
-         linewidth = 2,
-             alpha = 0.7,
-            yticks = -3:3,
-             xlims = (-0.5, 0.5),
-            xlabel = "zonal mean u",
-            ylabel = "y")
-  plot!(pū, 0*y, y, linestyle=:dash, linecolor=:black)
 
   pKE = plot(1,
-             label = "kinetic energy",
+             label = "kinetic energy ½(u²+v²)",
          linewidth = 2,
              alpha = 0.7,
-             xlims = (-0.1, 4.1),
-             ylims = (0, 5e-4),
+             xlims = (0, tf),
+             ylims = (0, 5e-3),
             xlabel = "μt")
 
   pb² = plot(1,
-             label = "buoyancy variance",
+             label = "buoyancy variance (bˢ)²",
          linecolor = :red,
             legend = :bottomright,
          linewidth = 2,
              alpha = 0.7,
-             xlims = (-0.1, 4.1),
-             ylims = (0, 2.5),
-            xlabel = "μt")
+             xlims = (0, tf),
+             ylims = (0, 5e-2),
+            xlabel = "t")
 
-  l = @layout grid(2, 3)
-  p = plot(pbˢ, pb̄ˢ, pKE, pbˢ_zoom, pū, pb², layout=l, size = (1000, 600), dpi=150)
+  l = @layout grid(1, 3)
+  p = plot(pbˢ, pKE, pb², layout=l, size = (1500, 500), dpi=150)
 
   return p
 end
 nothing # hide
 
 
-# ## Time-stepping the `Problem` forward
+# ## Time-stepping the `Problem` forward and create animation by updating plot
 
 startwalltime = time()
 
@@ -239,50 +173,58 @@ anim = @animate for j=0:Int(nsteps/nsubs)
 
         println(log)
 
-  log = @sprintf("bb diagnostics - bb: %.2e, Diss: %.2e, Drag: %.2e, Adv %.2e",
-            bb.data[bb.i], Dᵇ.data[Dᵇ.i], Rᵇ.data[Rᵇ.i], Aᵇ.data[Aᵇ.i])
+  log = @sprintf("buoyancy variance diagnostics - bb: %.2e, Diss: %.2e",
+            bb.data[bb.i], Dᵇ.data[Dᵇ.i])
 
       println(log)
 
-  #if j%(1000/nsubs)==0; println(log) end
-
   p[1][1][:z] = Array(vs.b)
   p[1][:title] = "buoyancy, t="*@sprintf("%.2f", cl.t)
-  p[4][1][:z] = Array(vs.b.*vs.b)
-  p[2][1][:x] = mean(vs.b, dims=1)'
-  p[5][1][:x] = mean(vs.u, dims=1)'
-  push!(p[3][1], KE.t[KE.i], KE.data[KE.i])
-  push!(p[6][1], bb.t[bb.i], bb.data[bb.i])
-
-  #bh = rfft(vs.b)      # Fourier transform of energy density
-  #kr, temp_spectrum= FourierFlows.radialspectrum(bh, gr, refinement=1)
-  #if  @isdefined(buoyancy_spectrum) # compute radial specturm of `bh`
-#      buoyancy_spectrum = [buoyancy_spectrum temp_spectrum]
-#  else
-#      buoyancy_spectrum = zeros(Complex{Float64}, size(kr,1), 1)
-#      buoyancy_spectrum = temp_spectrum
- # end
+  push!(p[2][1], KE.t[KE.i], KE.data[KE.i])
+  push!(p[3][1], bb.t[bb.i], bb.data[bb.i])
 
   stepforward!(prob, diags, nsubs)
   SurfaceQG.updatevars!(prob)
 
 end
 
-mp4(anim, string(plotname, ".mp4"), fps=10)
+mp4(anim, string(plotname, ".mp4"), fps=2)
 
 
-#mean_buoyancy_spectrum = mean(buoyancy_spectrum, dims=2)
+# ## Create a plot showing the final buoyancy and velocity fields
 
-l = @layout grid(2, 2)
+l = @layout grid(1, 3)
 
-Eᵏ = 0.5*(vs.u.^2+vs.v.^2) # Update diagnosed Kinetic Energy
-L = Lx
+pb1 = heatmap(x, y, vs.u',
+     aspectratio = 1,
+               c = :RdBu,
+            clim = (-maximum(abs.(vs.u)), maximum(abs.(vs.u))),
+           xlims = (-L/2, L/2),
+           ylims = (-L/2, L/2),
+          xticks = -3:3,
+          yticks = -3:3,
+          xlabel = "x",
+          ylabel = "y",
+           title = "uˢ(x, y, t="*@sprintf("%.2f", cl.t)*")",
+      framestyle = :box)
 
-ps1 = heatmap(x, y, vs.b,
-          aspectratio = 1,
-          legend = false,
-               c = :balance,
-            clim = (-maximum(abs.(vs.b)), maximum(abs.(vs.b))),
+      pb2 = heatmap(x, y, vs.v',
+           aspectratio = 1,
+                     c = :RdBu,
+                  clim = (-maximum(abs.(vs.v)), maximum(abs.(vs.v))),
+                 xlims = (-L/2, L/2),
+                 ylims = (-L/2, L/2),
+                xticks = -3:3,
+                yticks = -3:3,
+                xlabel = "x",
+                ylabel = "y",
+                 title = "vˢ(x, y, t="*@sprintf("%.2f", cl.t)*")",
+            framestyle = :box)
+
+pb3 = heatmap(x, y, vs.b',
+     aspectratio = 1,
+               c = :RdBu,
+            clim = (0, 1),
            xlims = (-L/2, L/2),
            ylims = (-L/2, L/2),
           xticks = -3:3,
@@ -292,133 +234,10 @@ ps1 = heatmap(x, y, vs.b,
            title = "bˢ(x, y, t="*@sprintf("%.2f", cl.t)*")",
       framestyle = :box)
 
-bh = rfft(vs.b)      # Fourier transform of energy density
-kr, buoyancy_spectrum_r = FourierFlows.radialspectrum(bh, gr, refinement=1) # compute radial specturm of `bh`
-#nothing # hide
 
-ps2 = plot(kr, abs.(buoyancy_spectrum_r),
-    linewidth = 2,
-        alpha = 0.7,
-       xlabel = "kᵣ", ylabel = "∫ |b̂|² kᵣ dk_θ",
-        xlims = (1e0, 1e3),
-        ylims = (1e0, 1e5),
-       xscale = :log10, yscale = :log10,
-        title = "Radial buoyancy variance spectrum",
-       legend = false)
-
-ps3 = ps1
-ps4 = ps2
-
-
-plot_spectra = plot(ps1, ps2, ps3, ps4, layout=l, size = (1200, 1200))
-
-png(joinpath(plotpath, string("Spectra_", base_filename)))
-
-
-
-i₀ = 1
-db²dt_numerical = (bb[(i₀+1):bb.i] - bb[i₀:bb.i-1])/cl.dt #numerical first-order approximation of energy tendency
-ii = (i₀):bb.i-1
-ii2 = (i₀+1):bb.i
-
-t = bb.t[ii]
-db²dt_computed = - Dᵇ[ii]
-
-residual = db²dt_computed - db²dt_numerical
-
-l = @layout grid(2, 3)
-
-L = Lx
-
-pb1 = heatmap(x, y, vs.u,
-     aspectratio = 1,
-          legend = false,
-               c = :balance,
-            clim = (-maximum(abs.(vs.b)), maximum(abs.(vs.b))),
-           xlims = (-L/8, L/8),
-           ylims = (-L/8, L/8),
-          xticks = -3:3,
-          yticks = -3:3,
-          xlabel = "x",
-          ylabel = "y",
-           title = "bˢ(x, y, t="*@sprintf("%.2f", cl.t)*")",
-      framestyle = :box)
-
-pb2 = plot(t, [db²dt_computed[ii], db²dt_numerical],
-           label = ["computed Work minus Dissipation" "numerical db²/dt"],
-       linestyle = [:solid :dashdotdot],
-       linewidth = 2,
-           alpha = 0.8,
-           ylims = (-2, 1),
-          xlabel = "μt",
-          ylabel = "dE/dt")
-
-pb3 = plot(t, residual,
-         label = "residual db²/dt = computed - numerical",
-     linewidth = 2,
-         alpha = 0.7,
-         ylims = (-1, 2),
-        xlabel = "t")
-
-pb4 = heatmap(x, y, vs.b,
-     aspectratio = 1,
-          legend = false,
-               c = :balance,
-            clim = (-maximum(abs.(vs.b)), maximum(abs.(vs.b))),
-           xlims = (-L/8, L/8),
-           ylims = (-L/8, L/8),
-          xticks = -3:3,
-          yticks = -3:3,
-          xlabel = "x",
-          ylabel = "y",
-           title = "bˢ(x, y, t="*@sprintf("%.2f", cl.t)*")",
-      framestyle = :box)
-
-pb5 = plot(t, [Rᵇ[ii] Dᵇ[ii] Aᵇ[ii]],
-         label = ["Drag" "Dissipation" "Advection"],
-     linestyle = [:solid :dash :solid],
-     linewidth = 2,
-         alpha = 0.8,
-        xlabel = "t",
-        ylabel = "Sources and sinks of buoyancy variance")
-
-pb6 = plot(t, [KE[ii] Aᵏ[ii]],
-           label = ["Kinetic Energy" "Advection"],
-       linestyle = [:solid :dash],
-       linewidth = 2,
-           alpha = 0.8,
-          xlabel = "t",
-          ylabel = "Evolution of energy and buoyancy variance")
-
-plot_budgets = plot(pb1, pb2, pb3, pb4, pb5, pb6, layout=l, size = (2400, 1200))
+plot_end = plot(pb1, pb2, pb3, layout=l, size = (1500, 500))
 
 png(plotname)
 
 # Last we save the output.
 saveoutput(out)
-
-#using LinearAlgebra: mul!, ldiv!
-
-#  ub = vs.u
-#  vb = vs.v
-#  ub *= vs.b
-#  vb *= vs.b
-
-#  ubh = vs.uh
-#  vbh = vs.vh
-#  N = vs.vh
-
-#  mul!(ubh, gr.rfftplan, ub)
-#  mul!(vbh, gr.rfftplan, vb)
-
-#  N = - im * gr.kr .* ubh - im * gr.l .* vbh
-
-#using FourierFlows: abs2
-
-#diag_bb = 2*gr.Krsq.^nν .* abs2.(bh)
-#diag_bb[1, 1] = 0
-
-#diag_bb_diss = ν / (gr.Lx * gr.Ly) * parsevalsum(diag_bb, gr)
-
-#  advective_residual = 1 / (2 * gr.Lx * gr.Ly) * parsevalsum(ubh+vbh, gr)
-#divergence = 1 / (2 * gr.Lx * gr.Ly) * parsevalsum(- im * gr.l .*ubh - im * gr.kr .*vbh, gr)
