@@ -120,8 +120,7 @@ for dev in devices
   @testset "SurfaceQG" begin
     include("test_surfaceqg.jl")
     
-    # @test test_mqg_paramsconstructor(dev)
-    # @test test_mqg_stochasticforcedproblemconstructor(dev)
+    @test test_sqg_stochasticforcedproblemconstructor(dev)
     @test test_sqg_problemtype(dev, Float32)
     @test SurfaceQG.nothingfunction() == nothing
   end
