@@ -10,7 +10,8 @@ import # use 'import' rather than 'using' for submodules to keep namespace clean
   GeophysicalFlows.TwoDNavierStokes,
   GeophysicalFlows.BarotropicQG,
   GeophysicalFlows.BarotropicQGQL,
-  GeophysicalFlows.MultilayerQG
+  GeophysicalFlows.MultilayerQG,
+  GeophysicalFlows.SurfaceQG
 
 using FourierFlows: parsevalsum
 using GeophysicalFlows: lambdipole, peakedisotropicspectrum
@@ -114,6 +115,15 @@ for dev in devices
     @test test_mqg_stochasticforcedproblemconstructor(dev)
     @test test_mqg_problemtype(dev, Float32)
     @test MultilayerQG.nothingfunction() == nothing
+  end
+
+  @testset "SurfaceQG" begin
+    include("test_surfaceqg.jl")
+    
+    # @test test_mqg_paramsconstructor(dev)
+    # @test test_mqg_stochasticforcedproblemconstructor(dev)
+    @test test_sqg_problemtype(dev, Float32)
+    @test SurfaceQG.nothingfunction() == nothing
   end
   
 end
