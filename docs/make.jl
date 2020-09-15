@@ -5,7 +5,7 @@ using
   Literate,
   Plots,  # to not capture precompilation output
   GeophysicalFlows
-  
+
 # Gotta set this environment variable when using the GR run-time on Travis CI.
 # This happens as examples will use Plots.jl to make plots and movies.
 # See: https://github.com/jheinen/GR.jl/issues/278
@@ -26,6 +26,7 @@ examples = [
     "barotropicqg_acc.jl",
     "barotropicqgql_betaforced.jl",
     "multilayerqg_2layer.jl",
+    "surfaceqg_decaying.jl",
 ]
 
 for example in examples
@@ -67,9 +68,10 @@ sitename = "GeophysicalFlows.jl",
               "modules/twodnavierstokes.md",
               "modules/barotropicqg.md",
               "modules/barotropicqgql.md",
-              "modules/multilayerqg.md"
+              "modules/multilayerqg.md",
+              "modules/surfaceqg.md"
             ],
-            "Examples" => [ 
+            "Examples" => [
               "TwoDNavierStokes" => Any[
                 "generated/twodnavierstokes_decaying.md",
                 "generated/twodnavierstokes_stochasticforcing.md",
@@ -84,6 +86,9 @@ sitename = "GeophysicalFlows.jl",
                 ],
               "MultilayerQG" => Any[
                 "generated/multilayerqg_2layer.md"
+                ],
+              "SurfaceQG" => Any[
+                "generated/surfaceqg_decaying.md"
                 ]
             ],
             "DocStrings" => Any[
