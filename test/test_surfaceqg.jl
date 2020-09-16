@@ -32,7 +32,7 @@ be realized, at least at long times, if it is unstable.)
 function test_sqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1)
   n, L  = 128, 2π
   ν, nν = 1e-2, 1
-  tf = 0.5  # SQG piles up energy at small energy so running for longer brings up instability
+  tf = 0.5  # SQG piles up energy at small scales so running for t ⪆ 0.5 brings instability
   nt = round(Int, tf/dt)
 
   grid = TwoDGrid(dev, n, L)
