@@ -137,7 +137,7 @@ function plot_output(prob)
              alpha = 0.7,
              xlims = (0, tf),
              ylims = (0, 5e-3),
-            xlabel = "μt")
+            xlabel = "t")
 
   pb² = plot(1,
              label = "buoyancy variance (bˢ)²",

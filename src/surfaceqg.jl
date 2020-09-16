@@ -39,8 +39,6 @@ function Problem(dev::Device=CPU();
   # Drag and/or hyper-/hypo-viscosity
            ν = 0,
           nν = 1,
-           μ = 0,
-          nμ = 0,
   # Timestepper and equation options
      stepper = "RK4",
        calcF = nothingfunction,
@@ -49,7 +47,7 @@ function Problem(dev::Device=CPU();
 
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
 
-  params = Params{T}(ν, nν, μ, nμ, calcF)
+  params = Params{T}(ν, nν, calcF)
 
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
@@ -71,8 +69,6 @@ Returns the params for Surface QG turbulence.
 struct Params{T} <: AbstractParams
        ν :: T         # Buoyancy viscosity
       nν :: Int       # Buoyancy hyperviscous order
-       μ :: T         # Bottom drag or hypoviscosity
-      nμ :: Int       # Order of hypoviscosity
   calcF! :: Function  # Function that calculates the buoyancy forcing F
 end
 
@@ -89,7 +85,7 @@ Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
 Returns the equation for Surface QG turbulence with params p and `grid`.
 """
 function Equation(params::Params, grid::AbstractGrid)
-  L = @. - params.ν * grid.Krsq^params.nν - params.μ * grid.Krsq^params.nμ
+  L = @. - params.ν * grid.Krsq^params.nν
   CUDA.@allowscalar L[1, 1] = 0
   return FourierFlows.Equation(L, calcN!, grid)
 end
