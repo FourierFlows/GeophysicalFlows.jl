@@ -339,7 +339,7 @@ leading-order (geostrophic) flow.
   @. vars.bh *= conj(vars.uh) # -FFT(∂[uu]/∂x) * conj(FFT(u))
 
   mul!(sol, grid.rfftplan, vars.u .* vars.v) # Transform adv. of u * v
-  # add -FFT(∂[uv]/∂y) * conj(FFT(u)) and -FFT(∂[uv]/∂x) * conj(FFT(v))
+  # add -FFT(∂[uv]/∂y) * conj(FFT(u)) -FFT(∂[uv]/∂x) * conj(FFT(v))
   @. vars.bh += - ( im * grid.l * sol ) * conj(vars.uh)
   @. vars.bh += - ( im * grid.kr * sol ) * conj(vars.vh)
 
