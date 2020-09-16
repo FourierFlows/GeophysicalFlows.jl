@@ -37,7 +37,7 @@ testtime = @elapsed begin
 for dev in devices
   
   println("testing on "*string(typeof(dev)))
-  
+
   @testset "Utils" begin
     include("test_utils.jl")
 
@@ -125,6 +125,8 @@ for dev in devices
     @test test_sqg_advection(0.0005, "ForwardEuler", dev)
     @test test_sqg_stochasticforcedproblemconstructor(dev)
     @test test_sqg_problemtype(dev, Float32)
+    @test test_sqg_paramsconstructor(dev)
+    @test test_sqg_noforcing(dev)
     @test SurfaceQG.nothingfunction() == nothing
   end
   

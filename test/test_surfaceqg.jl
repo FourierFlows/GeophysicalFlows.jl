@@ -92,8 +92,7 @@ function test_sqg_kineticenergy_buoyancyvariance(dev::Device=CPU())
   params = SurfaceQG.Params(p.ν, p.nν)
 
   return (isapprox(kinetic_energy_b₀, kinetic_energy_calc, rtol=rtol_surfaceqg) &&
-   isapprox(buoyancy_variance_b₀, buoyancy_variance_calc, rtol=rtol_surfaceqg) &&
-   SurfaceQG.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
+   isapprox(buoyancy_variance_b₀, buoyancy_variance_calc, rtol=rtol_surfaceqg))
 end
 
 function test_sqg_paramsconstructor(dev::Device=CPU())
@@ -108,10 +107,20 @@ function test_sqg_paramsconstructor(dev::Device=CPU())
 end
 
 function test_sqg_noforcing(dev::Device=CPU())
-  n, L = 128, 2π
-  ν, nν = 1e-3, 4
+  n, L = 16, 2π
   
-  prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, stepper="ForwardEuler")
+  prob_unforced = SurfaceQG.Problem(dev; nx=n, Lx=L, stepper="ForwardEuler")
+
+  SurfaceQG.addforcing!(prob_unforced.timestepper.N, prob_unforced.sol, prob_unforced.clock.t, prob_unforced.clock, prob_unforced.vars, prob_unforced.params, prob_unforced.grid)
   
-  return SurfaceQG.addforcing!(prob.timestepper.N, sol, prob.clock.t, prob.clock, prob.vars, prob.params, prob.grid)==nothing
+  function calcF!(Fh, sol, t, clock, vars, params, grid)
+    Fh .= 2*ones(size(sol))
+    return nothing
+  end
+  
+  prob_forced = SurfaceQG.Problem(dev; nx=n, Lx=L, stepper="ForwardEuler", calcF=calcF!)
+
+  SurfaceQG.addforcing!(prob_forced.timestepper.N, prob_forced.sol, prob_forced.clock.t, prob_forced.clock, prob_forced.vars, prob_forced.params, prob_forced.grid)
+  
+  return prob_unforced.timestepper.N == Complex.(zeros(size(prob_unforced.sol))) && prob_forced.timestepper.N == Complex.(2*ones(size(prob_unforced.sol)))
 end
