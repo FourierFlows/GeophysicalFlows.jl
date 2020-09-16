@@ -24,6 +24,7 @@ const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
 const rtol_twodnavierstokes = 1e-13 # tolerance for twodnavierstokes forcing tests
 const rtol_barotropicQG = 1e-13 # tolerance for barotropicqg forcing tests
 const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
+const rtol_surfaceqg = 1e-13 # tolerance for multilayerqg forcing tests
 
 
 "Get the CFL number, assuming a uniform grid with `dx=dy`."
@@ -120,6 +121,7 @@ for dev in devices
   @testset "SurfaceQG" begin
     include("test_surfaceqg.jl")
     
+    @test test_sqg_advection(0.0005, "ForwardEuler", dev)
     @test test_sqg_stochasticforcedproblemconstructor(dev)
     @test test_sqg_problemtype(dev, Float32)
     @test SurfaceQG.nothingfunction() == nothing
