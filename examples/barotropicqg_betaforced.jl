@@ -25,7 +25,7 @@ nothing # hide
 
 # ## Numerical parameters and time-stepping parameters
 
-     nx = 128            # 2D resolution = nx^2
+      n = 128            # 2D resolution = n^2
 stepper = "FilteredRK4"  # timestepper
      dt = 0.05           # timestep
  nsteps = 8000           # total number of time-steps
@@ -35,9 +35,9 @@ nothing # hide
 
 # ## Physical parameters
 
-Lx = 2π        # domain size
- β = 10.0      # planetary PV gradient
- μ = 0.01      # bottom drag
+L = 2π        # domain size
+β = 10.0      # planetary PV gradient
+μ = 0.01      # bottom drag
 nothing # hide
 
 
@@ -53,26 +53,27 @@ forcing_wavenumber = 14.0    # the central forcing wavenumber for a spectrum tha
 forcing_bandwidth  = 1.5     # the width of the forcing spectrum 
 ε = 0.001                    # energy input rate by the forcing
 
-gr  = TwoDGrid(nx, Lx)
+gr  = TwoDGrid(n, L)
 
-k = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl] # a 2D grid with the zonal wavenumber
+K  = @. sqrt(gr.Krsq)                      # a 2D array with the total wavenumber
+k = [gr.kr[i] for i=1:gr.nkr, j=1:gr.nl]   # a 2D array with the zonal wavenumber
 
-forcing_spectrum = @. exp( -(sqrt(gr.Krsq)-forcing_wavenumber)^2 / (2forcing_bandwidth^2) )
-@. forcing_spectrum[ gr.Krsq < (2π/Lx*2)^2  ] = 0
-@. forcing_spectrum[ gr.Krsq > (2π/Lx*20)^2 ] = 0
-@. forcing_spectrum[ k .< 2π/Lx ] .= 0 # make sure forcing does not have power at k=0 component
-ε0 = parsevalsum(forcing_spectrum .* gr.invKrsq/2, gr)/(gr.Lx*gr.Ly)
-@. forcing_spectrum = ε/ε0 * forcing_spectrum  # normalization so that forcing injects energy ε per domain area per unit time
+forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
+forcing_spectrum[K .<  2 * 2π/L] .= 0    # no power at low wavenumbers
+forcing_spectrum[K .> 20 * 2π/L] .= 0    # no power at high wavenumbers
+forcing_spectrum[k .< 2π/L] .= 0         # make sure forcing does not have power at k=0
+ε0 = parsevalsum(forcing_spectrum .* gr.invKrsq / 2, gr) / (gr.Lx * gr.Ly)
+@. forcing_spectrum *= ε/ε0               # normalize forcing to inject energy at rate ε
 
 seed!(1234) # reset of the random number generator for reproducibility
 nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
 function calcFq!(Fh, sol, t, clock, vars, params, grid)
-  ξ = ArrayType(dev)(exp.(2π*im*rand(eltype(grid), size(sol)))/sqrt(clock.dt))
+  ξ = ArrayType(dev)(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
   @. Fh = ξ*sqrt.(forcing_spectrum)
-  Fh[abs.(grid.Krsq).==0] .= 0
-  nothing
+  Fh[abs.(grid.Krsq) .== 0] .= 0
+  return nothing
 end
 nothing # hide
 
@@ -82,7 +83,7 @@ nothing # hide
 # a viscosity coefficient ν leads to the module's default value: ν=0. In this
 # example numerical instability due to accumulation of enstrophy in high wavenumbers
 # is taken care with the `FilteredTimestepper` we picked. 
-prob = BarotropicQG.Problem(dev; nx=nx, Lx=Lx, β=β, μ=μ, dt=dt, stepper=stepper, 
+prob = BarotropicQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper, 
                             calcFq=calcFq!, stochastic=true)
 nothing # hide
 

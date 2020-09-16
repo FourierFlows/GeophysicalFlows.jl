@@ -12,7 +12,7 @@ function test_bqgql_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
    T = Float64
 
   # the following if statement is called so that all the cases of
-  # Problem() fuction are tested
+  # Problem() function are tested
   if stepper=="ForwardEuler"
     eta = zeros(dev, T, (nx, nx))
   else
@@ -20,27 +20,26 @@ function test_bqgql_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
   end
 
   prob = BarotropicQGQL.Problem(dev; nx=nx, Lx=Lx, eta=eta, β=β, μ=μ, ν=ν, stepper=stepper, dt=dt)
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+  sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
-  x, y = gridpoints(g)
+  x, y = gridpoints(grid)
 
   # the Rossby wave initial condition
    ampl = 1e-2
-  kwave = 3*2π/g.Lx
-  lwave = 2*2π/g.Ly
-      ω = - p.β * kwave / (kwave^2 + lwave^2)
-     ζ0 = @. ampl * cos(kwave*x) * cos(lwave*y)
+  kwave, lwave = 3 * 2π / grid.Lx, 2 * 2π / grid.Ly
+      ω = - params.β * kwave / (kwave^2 + lwave^2)
+     ζ0 = @. ampl * cos(kwave * x) * cos(lwave * y)
     ζ0h = rfft(ζ0)
 
   BarotropicQGQL.set_zeta!(prob, ζ0)
 
   stepforward!(prob, nsteps)
-  dealias!(sol, g)
+  dealias!(sol, grid)
   BarotropicQGQL.updatevars!(prob)
 
-  ζ_theory = @. ampl * cos(kwave * (x - ω/kwave * cl.t)) * cos(lwave * y)
+  ζ_theory = @. ampl * cos(kwave * (x - ω / kwave * clock.t)) * cos(lwave * y)
 
-  return isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
+  return isapprox(ζ_theory, vars.zeta, rtol = grid.nx * grid.ny * nsteps * 1e-12)
 end
 
 """
@@ -55,7 +54,7 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-    gr = TwoDGrid(dev, n, L)
+  gr = TwoDGrid(dev, n, L)
   x, y = gridpoints(gr)
 
   # Forcing
@@ -74,8 +73,8 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
 
   Random.seed!(1234)
 
-  function calcF!(F, sol, t, cl, v, p, g)
-    eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(cl.dt))
+  function calcF!(F, sol, t, clock, vars, params, grid)
+    eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
     @. F = eta * sqrt(forcingcovariancespectrum)
     return nothing
@@ -84,8 +83,6 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   prob = BarotropicQGQL.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=true)
 
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-
   BarotropicQGQL.set_zeta!(prob, 0*x)
   E = Diagnostic(BarotropicQGQL.energy,      prob, nsteps=nt)
   D = Diagnostic(BarotropicQGQL.dissipation, prob, nsteps=nt)
@@ -93,31 +90,18 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   W = Diagnostic(BarotropicQGQL.work,        prob, nsteps=nt)
   diags = [E, D, W, R]
 
-  # Step forward
   stepforward!(prob, diags, round(Int, nt))
 
   BarotropicQGQL.updatevars!(prob)
+  
+  dEdt_numerical = (E[2:E.i] - E[1:E.i-1]) / prob.clock.dt
 
-  cfl = cl.dt*maximum([maximum(v.v)/g.dx, maximum(v.u)/g.dy])
-
-  E, D, W, R = diags
-
-  t = round(μ*cl.t, digits=2)
-
-  i₀ = 1
-  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
-  ii = (i₀):E.i-1
-  ii2 = (i₀+1):E.i
-
-  # dEdt = W - D - R?
   # If the Ito interpretation was used for the work
   # then we need to add the drift term
-  # total = W[ii2]+ε - D[ii] - R[ii]      # Ito
-  total = W[ii2] - D[ii] - R[ii]        # Stratonovich
+  # dEdt_computed = W[2:E.i] + ε - D[1:E.i-1] - R[1:E.i-1]      # Ito
+  dEdt_computed = W[2:E.i] - D[1:E.i-1] - R[1:E.i-1]        # Stratonovich
 
-  residual = dEdt - total
-
-  return isapprox(mean(abs.(residual)), 0, atol=1e-4)
+  return isapprox(dEdt_numerical, dEdt_computed, rtol=1e-3)
 end
 
 """
@@ -140,46 +124,32 @@ function test_bqgql_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.0
   f = @. 0.01 * cos(4k₀*x) * cos(5l₀*y)
   fh = rfft(f)
 
-  function calcF!(Fh, sol, t, cl, v, p, g)
-    cos2t = cos(2*t)
-    @. Fh = fh*cos2t
+  function calcF!(Fh, sol, t, clock, vars, params, grid)
+    @. Fh = fh*cos(2t)
     return nothing
   end
 
   prob = BarotropicQGQL.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=false)
 
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-
   BarotropicQGQL.set_zeta!(prob, 0*x)
+  
   E = Diagnostic(BarotropicQGQL.energy,      prob, nsteps=nt)
   D = Diagnostic(BarotropicQGQL.dissipation, prob, nsteps=nt)
   R = Diagnostic(BarotropicQGQL.drag,        prob, nsteps=nt)
   W = Diagnostic(BarotropicQGQL.work,        prob, nsteps=nt)
   diags = [E, D, W, R]
 
-  # Step forward
-
   stepforward!(prob, diags, nt)
 
   BarotropicQGQL.updatevars!(prob)
 
-  E, D, W, R = diags
+  dEdt_numerical = (E[3:E.i] - E[1:E.i-2]) / (2 * prob.clock.dt)
+  dEdt_computed  = W[2:E.i-1] - D[2:E.i-1] - R[2:E.i-1]
+  
+  residual = dEdt_numerical - dEdt_computed
 
-  t = round(μ*cl.t, digits=2)
-
-  i₀ = 1
-  dEdt = (E[(i₀+1):E.i] - E[i₀:E.i-1])/cl.dt
-  ii = (i₀):E.i-1
-  ii2 = (i₀+1):E.i
-
-  # dEdt = W - D - R?
-  total = W[ii2] - D[ii] - R[ii]
-
-  residual = dEdt - total
-
-  # println(mean(abs.(residual)))
-  return isapprox(mean(abs.(residual)), 0, atol=1e-8)
+  return isapprox(dEdt_numerical, dEdt_computed, atol=1e-10)
 end
 
 """
@@ -202,8 +172,8 @@ function test_bqgql_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1
   gr = TwoDGrid(dev, n, L)
   x, y = gridpoints(gr)
 
-  psif = @.    cos(3y) +  sin(2x)*cos(2y) +  2sin(x)*cos(3y)
-    qf = @. - 9cos(3y) - 8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
+  ψf = @.    cos(3y) +  sin(2x)*cos(2y) +  2sin(x)*cos(3y)
+  qf = @. - 9cos(3y) - 8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
 
   Ff = @. ν*( 81cos(3y) + 200cos(3y)*sin(x) + 64cos(2y)*sin(2x) ) -
     3sin(3y)*(-16cos(2x)*cos(2y) - 20cos(x)*cos(3y)) -
@@ -219,13 +189,14 @@ function test_bqgql_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1
   end
 
   prob = BarotropicQGQL.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+  
   BarotropicQGQL.set_zeta!(prob, qf)
 
-  # Step forward
   stepforward!(prob, round(Int, nt))
+  
   BarotropicQGQL.updatevars!(prob)
-  return isapprox(v.zeta+v.Zeta, qf, rtol=1e-13)
+  
+  return isapprox(prob.vars.zeta + prob.vars.Zeta, qf, rtol = 1e-13)
 end
 
 """

@@ -284,7 +284,7 @@ Returns the domain-averaged dissipation rate of enstrophy. nν must be >= 1.
 @inline function enstrophy_dissipation(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   @. vars.uh = grid.Krsq^params.nν * abs2(sol)
-  vars.uh[1, 1] = 0
+  CUDA.@allowscalar vars.uh[1, 1] = 0
   return params.ν / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 

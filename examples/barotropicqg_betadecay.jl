@@ -22,7 +22,7 @@ nothing # hide
 
 # ## Numerical parameters and time-stepping parameters
 
-     nx = 128            # 2D resolution = nx^2
+      n = 128            # 2D resolution = n^2
 stepper = "FilteredRK4"  # timestepper
      dt = 0.05           # timestep
  nsteps = 2000           # total number of time-steps
@@ -32,9 +32,9 @@ nothing # hide
 
 # ## Physical parameters
 
-Lx = 2π        # domain size
- β = 10.0      # planetary PV gradient
- μ = 0.0       # bottom drag
+L = 2π        # domain size
+β = 10.0      # planetary PV gradient
+μ = 0.0       # bottom drag
 nothing # hide
 
 # ## Problem setup
@@ -42,7 +42,7 @@ nothing # hide
 # a viscosity coefficient ν leads to the module's default value: ν=0. In this
 # example numerical instability due to accumulation of enstrophy in high wavenumbers
 # is taken care with the `FilteredTimestepper` we picked. 
-prob = BarotropicQG.Problem(dev; nx=nx, Lx=Lx, β=β, μ=μ, dt=dt, stepper=stepper)
+prob = BarotropicQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper)
 nothing # hide
 
 # and define some shortcuts
@@ -54,19 +54,20 @@ nothing # hide
 # ## Setting initial conditions
 
 # Our initial condition consist of a flow that has power only at wavenumbers with
-# $8<\frac{L}{2\pi}\sqrt{k_x^2+k_y^2}<10$ and initial energy $E_0$:
+# $8 < \frac{L}{2\pi} \sqrt{k_x^2+k_y^2} < 10$ and initial energy $E_0$:
 
 E0 = 0.1 # energy of initial condition
 
-k = [ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl] # a 2D grid with the zonal wavenumber
+K = @. sqrt(gr.Krsq)                      # a 2D array with the total wavenumber
+k = [gr.kr[i] for i=1:gr.nkr, j=1:gr.nl]  # a 2D array with the zonal wavenumber
 
 Random.seed!(1234)
 qih = randn(Complex{eltype(gr)}, size(sol))
-qih[ gr.Krsq .< (8*2π /gr.Lx)^2 ] .= 0
-qih[ gr.Krsq .> (10*2π/gr.Lx)^2 ] .= 0
-qih[ k .== 0 ] .= 0 # remove any power from k=0 component
-Ein = energy(qih, gr)  # compute energy of qi
-qih = qih*sqrt(E0/Ein) # normalize qi to have energy E0
+qih[K .<  8 * 2π/L] .= 0
+qih[K .> 10 * 2π/L] .= 0
+qih[k .== 0] .= 0         # no power at zonal wavenumber k=0 component
+Ein = energy(qih, gr)     # compute energy of qi
+qih *= sqrt(E0 / Ein)     # normalize qi to have energy E0
 qi  = irfft(qih, gr.nx)
 
 BarotropicQG.set_zeta!(prob, qi)
