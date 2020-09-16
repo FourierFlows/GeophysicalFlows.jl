@@ -301,13 +301,14 @@ be zero if buoyancy variance is conserved.
 @inline function buoyancy_advection(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
 
-#  @. vars.bh = sol
-#  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
-#  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
+  # Diagnose all the neccessary variables from sol
+  @. vars.bh = sol
+  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
+  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
 
-#  ldiv!(vars.u, grid.rfftplan, vars.uh)
-#  ldiv!(vars.v, grid.rfftplan, vars.vh)
-#  ldiv!(vars.b, grid.rfftplan, vars.bh)
+  ldiv!(vars.u, grid.rfftplan, vars.uh)
+  ldiv!(vars.v, grid.rfftplan, vars.vh)
+  ldiv!(vars.b, grid.rfftplan, vars.bh)
 
   @. vars.u *= vars.b # u*b
   @. vars.v *= vars.b # v*b
@@ -316,8 +317,7 @@ be zero if buoyancy variance is conserved.
   mul!(vars.vh, grid.rfftplan, vars.v) # \hat{v*b}
 
   @. vars.bh = (- im * grid.kr * vars.uh - im * grid.l * vars.vh) * conj(vars.bh)
-
-  # vars.bh is -conj(FFT[b])⋅FFT[u̲⋅∇(b)] which appears opposite tendency term
+  # vars.bh is -conj(FFT[b])⋅FFT[u̲⋅∇(b)] 
 
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.bh, grid)
 end
@@ -332,17 +332,17 @@ leading-order (geostrophic) flow.
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
 
   mul!(sol, grid.rfftplan, vars.u .* vars.u)  # Transform adv. of u * u
-  @. vars.bh = - (im * grid.kr * sol) # -FFT(∂[uu]/∂x), bh will be advection
+  @. vars.bh = - im * grid.kr * sol # -FFT(∂[uu]/∂x), bh will be advection
   @. vars.bh *= conj(vars.uh)         # -FFT(∂[uu]/∂x) * conj(FFT(u))
 
   mul!(sol, grid.rfftplan, vars.u .* vars.v) # Transform adv. of u * v
   # add -FFT(∂[uv]/∂y) * conj(FFT(u)) -FFT(∂[uv]/∂x) * conj(FFT(v))
-  @. vars.bh -= (im * grid.l  * sol) * conj(vars.uh)
-  @. vars.bh -= (im * grid.kr * sol) * conj(vars.vh)
+  @. vars.bh -= im * grid.l  * sol * conj(vars.uh)
+  @. vars.bh -= im * grid.kr * sol * conj(vars.vh)
 
   mul!(sol, grid.rfftplan, vars.v .* vars.v) # Transform adv. of v * v
   # add -FFT(∂[vv]/∂y) * conj(FFT(v))
-  @. vars.bh -= - im * grid.l * sol * conj(vars.vh)
+  @. vars.bh -= im * grid.l * sol * conj(vars.vh)
 
   # vars.bh is -conj(FFT[u̲])⋅FFT[u̲⋅∇(u̲)] which appears opposite tenfency term
 
