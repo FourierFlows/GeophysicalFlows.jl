@@ -71,7 +71,7 @@ struct Params{T} <: AbstractParams
   calcF! :: Function  # Function that calculates the buoyancy forcing F
 end
 
-Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
+Params(ν, nν) = Params(ν, nν, nothingfunction)
 
 
 # ---------
