@@ -60,7 +60,7 @@ function Problem(nlayers::Int,                        # number of fluid layers
                        T = Float64)
 
    # topographic PV
-   eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
+   eta === nothing && (eta = zeros(dev, T, (nx, ny)))
            
    grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
    params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq, dev=dev)   
@@ -179,8 +179,8 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
 
     g′ = T(g) * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface
 
-    Fm = @. T( f₀^2 / (g′ * H[2:nlayers]) )
-    Fp = @. T( f₀^2 / (g′ * H[1:nlayers-1]) )
+    Fm = @. T(f₀^2 / (g′ * H[2:nlayers]))
+    Fp = @. T(f₀^2 / (g′ * H[1:nlayers-1]))
 
     typeofSkl = SArray{Tuple{nlayers, nlayers}, T, 2, nlayers^2} # StaticArrays of type T and dims = (nlayers x nlayers)
     
@@ -192,11 +192,11 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
     
     S, S⁻¹, Fp, Fm  = A(S), A(S⁻¹), A(Fp), A(Fm)     # convert to appropriate ArrayType
 
-    CUDA.@allowscalar @views Qy[:, :, 1] = @. Qy[:, :, 1] - Fp[1] * ( U[:, :, 2] - U[:, :, 1] )
+    CUDA.@allowscalar @views Qy[:, :, 1] = @. Qy[:, :, 1] - Fp[1] * (U[:, :, 2] - U[:, :, 1])
     for j = 2:nlayers-1
-      CUDA.@allowscalar @views Qy[:, :, j] = @. Qy[:, :, j] - Fp[j] * ( U[:, :, j+1] - U[:, :, j] ) + Fm[j-1] * ( U[:, :, j-1] - U[:, :, j] )
+      CUDA.@allowscalar @views Qy[:, :, j] = @. Qy[:, :, j] - Fp[j] * (U[:, :, j+1] - U[:, :, j]) + Fm[j-1] * (U[:, :, j-1] - U[:, :, j])
     end
-    CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * ( U[:, :, nlayers-1] - U[:, :, nlayers] )
+    CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
     return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
   end
@@ -326,7 +326,7 @@ function calcS!(S, Fp, Fm, nlayers, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   for n=1:grid.nl, m=1:grid.nkr
     CUDA.@allowscalar k² = grid.Krsq[m, n]
-    Skl = SMatrix{nlayers, nlayers}( - k² * I + F )
+    Skl = SMatrix{nlayers, nlayers}(- k² * I + F)
     S[m, n] = Skl
   end
   return nothing
@@ -344,9 +344,9 @@ function calcS⁻¹!(S⁻¹, Fp, Fm, nlayers, grid)
   for n=1:grid.nl, m=1:grid.nkr
     CUDA.@allowscalar k² = grid.Krsq[m, n] == 0 ? 1 : grid.Krsq[m, n]
     Skl = - k² * I + F
-    S⁻¹[m, n] = SMatrix{nlayers, nlayers}( I / Skl )
+    S⁻¹[m, n] = SMatrix{nlayers, nlayers}(I / Skl)
   end
-  S⁻¹[1, 1] = SMatrix{nlayers, nlayers}( zeros(T, (nlayers, nlayers)) )
+  S⁻¹[1, 1] = SMatrix{nlayers, nlayers}(zeros(T, (nlayers, nlayers)))
   return nothing
 end
 
@@ -585,11 +585,11 @@ function fluxes(vars, params, grid, sol)
   @. vars.uh = im * grid.l * vars.uh      # ∂u/∂y
   invtransform!(vars.u, vars.uh, params)
 
-  lateralfluxes = (sum( @. params.H * params.U * vars.v * vars.u; dims=(1, 2) ))[1, 1, :]
+  lateralfluxes = (sum(@. params.H * params.U * vars.v * vars.u; dims=(1, 2)))[1, 1, :]
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   for j=1:nlayers-1
-    CUDA.@allowscalar verticalfluxes[j] = sum( @views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j] ; dims=(1, 2) )[1]
+    CUDA.@allowscalar verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j] ; dims=(1, 2))[1]
     CUDA.@allowscalar verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
   end
 
@@ -602,7 +602,7 @@ function fluxes(vars, params::SingleLayerParams, grid, sol)
   @. vars.uh = im * grid.l * vars.uh
   invtransform!(vars.u, vars.uh, params)
 
-  lateralfluxes = (sum( @. params.U * vars.v * vars.u; dims=(1, 2) ))[1, 1, :]
+  lateralfluxes = (sum(@. params.U * vars.v * vars.u; dims=(1, 2)))[1, 1, :]
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly)
 
   return lateralfluxes
