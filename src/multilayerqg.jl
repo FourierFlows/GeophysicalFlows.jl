@@ -41,7 +41,7 @@ function Problem(nlayers::Int,                        # number of fluid layers
                       Ly = Lx,
                       dt = 0.01,
               # Physical parameters
-                      f0 = 1.0,                       # Coriolis parameter
+                      f₀ = 1.0,                       # Coriolis parameter
                        β = 0.0,                       # y-gradient of Coriolis parameter
                        g = 1.0,                       # gravitational constant
                        U = zeros(nlayers),            # imposed zonal flow U(y) in each layer
@@ -63,7 +63,7 @@ function Problem(nlayers::Int,                        # number of fluid layers
    eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
            
    grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
-   params = Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq, dev=dev)   
+   params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq, dev=dev)   
    vars = calcFq == nothingfunction ? Vars(dev, grid, params) : (stochastic ? StochasticForcedVars(dev, grid, params) : ForcedVars(dev, grid, params))
    eqn = linear ? LinearEquation(dev, params, grid) : Equation(dev, params, grid)
 
@@ -76,7 +76,7 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
   # prescribed params
    nlayers :: Int        # Number of fluid layers
          g :: T          # Gravitational constant
-        f0 :: T          # Constant planetary vorticity
+        f₀ :: T          # Constant planetary vorticity
          β :: T          # Planetary vorticity y-gradient
          ρ :: Aphys3D    # Array with density of each fluid layer
          H :: Aphys3D    # Array with rest height of each fluid layer
@@ -142,7 +142,7 @@ function convert_U_to_U3D(dev, nlayers, grid, U::Number)
 end
 
 
-function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE, dev::Device=CPU()) where TU
+function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE, dev::Device=CPU()) where TU
   
   T = eltype(grid)
   A = ArrayType(dev)
@@ -179,8 +179,8 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
 
     g′ = T(g) * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface
 
-    Fm = @. T( f0^2 / (g′ * H[2:nlayers]) )
-    Fp = @. T( f0^2 / (g′ * H[1:nlayers-1]) )
+    Fm = @. T( f₀^2 / (g′ * H[2:nlayers]) )
+    Fp = @. T( f₀^2 / (g′ * H[1:nlayers-1]) )
 
     typeofSkl = SArray{Tuple{nlayers, nlayers}, T, 2, nlayers^2} # StaticArrays of type T and dims = (nlayers x nlayers)
     
@@ -198,7 +198,7 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
     end
     CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * ( U[:, :, nlayers-1] - U[:, :, nlayers] )
 
-    return Params(nlayers, T(g), T(f0), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
+    return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
   end
 end
 
@@ -552,7 +552,7 @@ function energies(vars, params, grid, sol)
   end
 
   for j=1:nlayers-1
-    CUDA.@allowscalar PE[j] = 1/(2*grid.Lx*grid.Ly)*params.f0^2/params.g′[j]*parsevalsum(abs2.(vars.ψh[:, :, j+1].-vars.ψh[:, :, j]), grid)
+    CUDA.@allowscalar PE[j] = 1/(2*grid.Lx*grid.Ly)*params.f₀^2/params.g′[j]*parsevalsum(abs2.(vars.ψh[:, :, j+1].-vars.ψh[:, :, j]), grid)
   end
 
   return KE, PE
@@ -589,7 +589,7 @@ function fluxes(vars, params, grid, sol)
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   for j=1:nlayers-1
-    CUDA.@allowscalar verticalfluxes[j] = sum( @views @. params.f0^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j] ; dims=(1,2) )[1]
+    CUDA.@allowscalar verticalfluxes[j] = sum( @views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j] ; dims=(1, 2) )[1]
     CUDA.@allowscalar verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
   end
 
