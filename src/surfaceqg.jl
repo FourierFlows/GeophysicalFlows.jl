@@ -337,16 +337,17 @@ leading-order (geostrophic) flow.
   ldiv!(vars.u, grid.rfftplan, vars.uh)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
 
+  # The goal is to calculate -conj(FFT[u̲])⋅FFT[u̲⋅∇(u̲)] by summing its components
+
   # Diagnose Fluxes - initially vars.vh is used to store velocity correlations
   mul!(vars.vh, grid.rfftplan, vars.u .* vars.u)  # Transform adv. of u * u
   @. vars.bh = - im * grid.kr * vars.vh # -FFT(∂[uu]/∂x), bh will be advection
   @. vars.bh *= conj(vars.uh)         # -FFT(∂[uu]/∂x) * conj(FFT(u))
-
   mul!(vars.vh, grid.rfftplan, vars.u .* vars.v) # Transform adv. of u * v
   # add -FFT(∂[uv]/∂y) * conj(FFT(u))
   @. vars.bh -= im * grid.l  * vars.vh * conj(vars.uh)
 
-  # Re-calculate correct value of vars.vh, now vars.uh is storage variable
+  # Re-calculate current value of vars.vh, now vars.uh is storage variable
   @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
   mul!(vars.uh, grid.rfftplan, vars.u .* vars.v) # Transform adv. of u * v
   # add -FFT(∂[uv]/∂x) * conj(FFT(v))
@@ -354,8 +355,7 @@ leading-order (geostrophic) flow.
   mul!(vars.uh, grid.rfftplan, vars.v .* vars.v) # Transform adv. of v * v
   # add -FFT(∂[vv]/∂y) * conj(FFT(v))
   @. vars.bh -= im * grid.l * vars.uh * conj(vars.vh)
-
-  # vars.bh is -conj(FFT[u̲])⋅FFT[u̲⋅∇(u̲)] which appears opposite tenfency term
+  # vars.bh is now -conj(FFT[u̲])⋅FFT[u̲⋅∇(u̲)]
 
   return 1 / (grid.Lx * grid.Ly) * parsevalsum( vars.bh , grid)
 end
