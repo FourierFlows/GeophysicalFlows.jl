@@ -9,7 +9,6 @@ export
   buoyancy_variance,
   buoyancy_dissipation,
   buoyancy_work,
-  buoyancy_drag,
   buoyancy_advection,
   kinetic_energy_advection
 
@@ -36,7 +35,7 @@ function Problem(dev::Device=CPU();
           ny = nx,
           Ly = Lx,
           dt = 0.01,
-  # Drag and/or hyper-/hypo-viscosity
+  # Hyper-viscosity parameters
            ν = 0,
           nν = 1,
   # Timestepper and equation options
@@ -62,7 +61,7 @@ end
 # ----------
 
 """
-    Params(ν, nν, μ, nμ, calcF!)
+    Params(ν, nν, calcF!)
 
 Returns the params for Surface QG turbulence.
 """
@@ -161,8 +160,8 @@ Calculates the advection term.
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.bh = sol
-  @. vars.uh =   im * grid.l  * sqrt.(grid.invKrsq) * sol
-  @. vars.vh = - im * grid.kr * sqrt.(grid.invKrsq) * sol
+  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
+  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
 
 
   ldiv!(vars.u, grid.rfftplan, vars.uh)
@@ -215,8 +214,8 @@ Update variables in `vars` with solution i`n `sol`.
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
   @. vars.bh = sol
-  @. vars.uh =   im * grid.l  * sqrt.(grid.invKrsq) * sol
-  @. vars.vh = - im * grid.kr * sqrt.(grid.invKrsq) * sol
+  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
+  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
   ldiv!(vars.b, grid.rfftplan, deepcopy(vars.bh))
   ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh))
   ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh))
@@ -245,8 +244,8 @@ identical to half the domain-averaged surface buoyancy variance.
 """
 @inline function kinetic_energy(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
-  @. vars.uh =   im * grid.l  * sqrt.(grid.invKrsq) * sol
-  @. vars.vh = - im * grid.kr * sqrt.(grid.invKrsq) * sol
+  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
+  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
   @. vars.uh = 0.5 * ( abs2(vars.uh) + abs2(vars.vh) )
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
@@ -285,29 +284,16 @@ Returns the domain-averaged rate of work of buoyancy variance by the forcing Fh.
 """
 @inline function buoyancy_work(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  @. vars.uh =  sol * conj(vars.Fh)
+  @. vars.uh =  sol * conj(vars.Fh)    # FFT(b) * conj(FFT(Forcing))
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
 @inline function buoyancy_work(sol, vars::StochasticForcedVars, grid)
   @. vars.uh =  (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
-  # @. vars.uh = grid.invKrsq * vars.prevsol * conj(vars.Fh)           # Ito
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
 @inline work(prob) = work(prob.sol, prob.vars, prob.grid)
-
-"""
-    buoyancy_drag(prob)
-
-Returns the extraction of domain-averaged buoyancy variance by drag/hypodrag μ.
-"""
-@inline function buoyancy_drag(prob)
-  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  @. vars.uh = grid.Krsq^params.nμ * abs2(sol)
-  vars.uh[1, 1] = 0
-  return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
-end
 
 """
     buoyancy_advection(prob)
@@ -318,13 +304,13 @@ be zero if buoyancy variance is conserved.
 @inline function buoyancy_advection(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
 
-  @. vars.bh = sol
-  @. vars.uh =   im * grid.l  * sqrt.(grid.invKrsq) * sol
-  @. vars.vh = - im * grid.kr * sqrt.(grid.invKrsq) * sol
+#  @. vars.bh = sol
+#  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
+#  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
 
-  ldiv!(vars.u, grid.rfftplan, vars.uh)
-  ldiv!(vars.v, grid.rfftplan, vars.vh)
-  ldiv!(vars.b, grid.rfftplan, vars.bh)
+#  ldiv!(vars.u, grid.rfftplan, vars.uh)
+#  ldiv!(vars.v, grid.rfftplan, vars.vh)
+#  ldiv!(vars.b, grid.rfftplan, vars.bh)
 
   @. vars.u *= vars.b # u*b
   @. vars.v *= vars.b # v*b
@@ -333,6 +319,8 @@ be zero if buoyancy variance is conserved.
   mul!(vars.vh, grid.rfftplan, vars.v) # \hat{v*b}
 
   @. vars.bh = ( - im * grid.kr * vars.uh - im * grid.l * vars.vh ) * conj( vars.bh )
+
+  # vars.bh is -conj(FFT[b])⋅FFT[u̲⋅∇(b)] which appears opposite tenfency term
 
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.bh, grid)
 end
@@ -346,21 +334,22 @@ leading-order (geostrophic) flow.
 @inline function kinetic_energy_advection(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
 
-  @. vars.b = vars.u * vars.u
-  mul!(vars.bh, grid.rfftplan, vars.u)
-  sol = vars.bh
-  @. vars.v = vars.v * vars.u
-  mul!(vars.bh, grid.rfftplan, vars.u)
-  @. vars.uh = - ( im * grid.kr * sol + im * grid.l * vars.bh ) * conj(vars.uh)
+  mul!(sol, grid.rfftplan, vars.u .* vars.u)  # Transform adv. of u * u
+  @. vars.bh = - ( im * grid.kr * sol ) # -FFT(∂[uu]/∂x), bh will be advection
+  @. vars.bh *= conj(vars.uh) # -FFT(∂[uu]/∂x) * conj(FFT(u))
 
-  @. vars.u = vars.u * vars.v
-  mul!(vars.bh, grid.rfftplan, vars.u)
-  sol = vars.bh
-  @. vars.v = vars.v * vars.v
-  mul!(vars.bh, grid.rfftplan, vars.v)
-  @. vars.vh = - ( im * grid.kr * sol + im * grid.l * vars.bh ) * conj(vars.vh)
+  mul!(sol, grid.rfftplan, vars.u .* vars.v) # Transform adv. of u * v
+  # add -FFT(∂[uv]/∂y) * conj(FFT(u)) -FFT(∂[uv]/∂x) * conj(FFT(v))
+  @. vars.bh += - ( im * grid.l * sol ) * conj(vars.uh)
+  @. vars.bh += - ( im * grid.kr * sol ) * conj(vars.vh)
 
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum( vars.uh + vars.vh , grid)
+  mul!(sol, grid.rfftplan, vars.v .* vars.v) # Transform adv. of v * v
+  # add -FFT(∂[vv]/∂y) * conj(FFT(v))
+  @. vars.bh += - ( im * grid.l * sol ) * conj(vars.vh)
+
+  # vars.bh is -conj(FFT[u̲])⋅FFT[u̲⋅∇(u̲)] which appears opposite tenfency term
+
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum( vars.bh , grid)
 end
 
 end # module
