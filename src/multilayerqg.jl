@@ -92,7 +92,7 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
         Qx :: Aphys3D    # Array containing x-gradient of PV due to eta in each fluid layer
         Qy :: Aphys3D    # Array containing y-gradient of PV due to β, U, and eta in each fluid layer
          S :: Atrans4D   # Array containing coeffients for getting PV from  streamfunction
-      invS :: Atrans4D   # Array containing coeffients for inverting PV to streamfunction
+       S⁻¹ :: Atrans4D   # Array containing coeffients for inverting PV to streamfunction
   rfftplan :: Trfft      # rfft plan for FFTs
 end
 
@@ -187,10 +187,10 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
     S = Array{typeofSkl, 2}(undef, (nkr, nl))
     calcS!(S, Fp, Fm, nlayers, grid)
 
-    invS = Array{typeofSkl, 2}(undef, (nkr, nl))
-    calcinvS!(invS, Fp, Fm, nlayers, grid)
+    S⁻¹ = Array{typeofSkl, 2}(undef, (nkr, nl))
+    calcS⁻¹!(S⁻¹, Fp, Fm, nlayers, grid)
     
-    S, invS, Fp, Fm  = A(S), A(invS), A(Fp), A(Fm)     # convert to appropriate ArrayType
+    S, S⁻¹, Fp, Fm  = A(S), A(S⁻¹), A(Fp), A(Fm)     # convert to appropriate ArrayType
 
     CUDA.@allowscalar @views Qy[:, :, 1] = @. Qy[:, :, 1] - Fp[1] * ( U[:, :, 2] - U[:, :, 1] )
     for j = 2:nlayers-1
@@ -198,7 +198,7 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
     end
     CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * ( U[:, :, nlayers-1] - U[:, :, nlayers] )
 
-    return Params(nlayers, T(g), T(f0), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, invS, rfftplanlayered)
+    return Params(nlayers, T(g), T(f0), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
   end
 end
 
@@ -298,7 +298,7 @@ invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, v
 
 function streamfunctionfrompv!(ψh, qh, params, grid)
   for j=1:grid.nl, i=1:grid.nkr
-    CUDA.@allowscalar @views ψh[i, j, :] .= params.invS[i, j] * qh[i, j, :]
+    CUDA.@allowscalar @views ψh[i, j, :] .= params.S⁻¹[i, j] * qh[i, j, :]
   end
 end
 
@@ -333,20 +333,20 @@ function calcS!(S, Fp, Fm, nlayers, grid)
 end
 
 """
-    calcinvS!(S, Fp, Fm, nlayers, grid)
+    calcS⁻¹!(S, Fp, Fm, nlayers, grid)
 
-Constructs the array invS, which consists of nlayer x nlayer static arrays (S_kl)⁻¹ that 
+Constructs the array S⁻¹, which consists of nlayer x nlayer static arrays (S_kl)⁻¹ that 
 relate the q's and ψ's at every wavenumber: ψ̂_{k, l} = (S_kl)⁻¹ * q̂_{k, l}.
 """
-function calcinvS!(invS, Fp, Fm, nlayers, grid)
+function calcS⁻¹!(S⁻¹, Fp, Fm, nlayers, grid)
   T = eltype(grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   for n=1:grid.nl, m=1:grid.nkr
     CUDA.@allowscalar k² = grid.Krsq[m, n] == 0 ? 1 : grid.Krsq[m, n]
-    Skl = - k²*I + F
-    invS[m, n] = SMatrix{nlayers, nlayers}( I / Skl )
+    Skl = - k² * I + F
+    S⁻¹[m, n] = SMatrix{nlayers, nlayers}( I / Skl )
   end
-  invS[1, 1] = SMatrix{nlayers, nlayers}( zeros(T, (nlayers, nlayers)) )
+  S⁻¹[1, 1] = SMatrix{nlayers, nlayers}( zeros(T, (nlayers, nlayers)) )
   return nothing
 end
 
