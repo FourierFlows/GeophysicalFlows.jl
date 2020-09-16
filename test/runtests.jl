@@ -121,6 +121,7 @@ for dev in devices
   @testset "SurfaceQG" begin
     include("test_surfaceqg.jl")
     
+    @test test_sqg_kineticenergy_buoyancyvariance(dev)
     @test test_sqg_advection(0.0005, "ForwardEuler", dev)
     @test test_sqg_stochasticforcedproblemconstructor(dev)
     @test test_sqg_problemtype(dev, Float32)

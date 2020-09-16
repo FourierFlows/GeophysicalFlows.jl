@@ -65,3 +65,53 @@ function test_sqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
 
   isapprox(prob.vars.b, bf, rtol=rtol_surfaceqg)
 end
+
+function test_sqg_kineticenergy_buoyancyvariance(dev::Device=CPU())
+  nx, Lx  = 128, 2π
+  ny, Ly  = 128, 3π
+  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  x, y = gridpoints(gr)
+
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
+  ψ₀ = @. sin(2k₀*x)*cos(2l₀*y) + 2sin(k₀*x)*cos(3l₀*y)
+  b₀ = @. - sqrt(8) * sin(2k₀*x)*cos(2l₀*y) - sqrt(10) * 2sin(k₀*x)*cos(3l₀*y)
+
+  kinetic_energy_calc = 6
+  buoyancy_variance_calc = 12
+
+  prob = SurfaceQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
+
+  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
+
+  SurfaceQG.set_b!(prob, b₀)
+  SurfaceQG.updatevars!(prob)
+
+  kinetic_energy_b₀ = SurfaceQG.kinetic_energy(prob)
+  buoyancy_variance_b₀ = SurfaceQG.buoyancy_variance(prob)
+
+  params = SurfaceQG.Params(p.ν, p.nν)
+
+  return (isapprox(kinetic_energy_b₀, kinetic_energy_calc, rtol=rtol_surfaceqg) &&
+   isapprox(buoyancy_variance_b₀, buoyancy_variance_calc, rtol=rtol_surfaceqg) &&
+   SurfaceQG.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
+end
+
+function test_sqg_paramsconstructor(dev::Device=CPU())
+  n, L = 128, 2π
+  ν, nν = 1e-3, 4
+  
+  prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, stepper="ForwardEuler")
+  
+  params = SurfaceQG.Params(ν, nν)
+
+  return prob.params == params
+end
+
+function test_sqg_noforcing(dev::Device=CPU())
+  n, L = 128, 2π
+  ν, nν = 1e-3, 4
+  
+  prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, stepper="ForwardEuler")
+  
+  return SurfaceQG.addforcing!(prob.timestepper.N, sol, prob.clock.t, prob.clock, prob.vars, prob.params, prob.grid)==nothing
+end
