@@ -66,9 +66,9 @@ end
 Returns the params for Surface QG turbulence.
 """
 struct Params{T} <: AbstractParams
-       ν :: T         # Buoyancy viscosity
+       ν :: T         # Buoyancy viscosity coefficient
       nν :: Int       # Buoyancy hyperviscous order
-  calcF! :: Function  # Function that calculates the buoyancy forcing F
+  calcF! :: Function  # Calculates the Fourier transform of the buoyancy forcing `Fh`
 end
 
 Params(ν, nν) = Params(ν, nν, nothingfunction)
@@ -81,7 +81,7 @@ Params(ν, nν) = Params(ν, nν, nothingfunction)
 """
     Equation(params, grid)
 
-Returns the equation for Surface QG turbulence with params p and `grid`.
+Returns the equation for Surface QG turbulence with `params` and `grid`.
 """
 function Equation(params::Params, grid::AbstractGrid)
   L = @. - params.ν * grid.Krsq^params.nν
@@ -125,7 +125,7 @@ end
 """
     ForcedVars(dev, grid)
 
-Returns the vars for forced surface QG turbulence on device dev and with
+Returns the vars for forced surface QG turbulence on device `dev` and with
 `grid`.
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
@@ -138,8 +138,8 @@ end
 """
     StochasticForcedVars(dev, grid)
 
-Returns the vars for stochastically forced surface QG turbulence on device
-dev and with grid grid.
+Returns the `vars` for stochastically forced surface QG turbulence on device
+`dev` and with `grid`.
 """
 function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
@@ -162,7 +162,6 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.bh = sol
   @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
   @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
-
 
   ldiv!(vars.u, grid.rfftplan, vars.uh)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
@@ -209,7 +208,7 @@ end
 """
     updatevars!(prob)
 
-Update variables in `vars` with solution i`n `sol`.
+Update variables in `vars` with solution in `sol`.
 """
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
@@ -225,13 +224,11 @@ end
 """
     set_b!(prob, b)
 
-Set the solution sol as the transform of b and update variables v
-on the grid grid.
+Set the solution `sol` as the transform of b and update all variables.
 """
 function set_b!(prob, b)
-  params, vars, grid, sol = prob.params, prob.vars, prob.grid, prob.sol
-  mul!(sol, grid.rfftplan, b)
-  CUDA.@allowscalar sol[1, 1] = 0 # zero domain average
+  mul!(prob.sol, prob.grid.rfftplan, b)
+  CUDA.@allowscalar prob.sol[1, 1] = 0 # zero domain average
   updatevars!(prob)
   return nothing
 end
@@ -239,15 +236,15 @@ end
 """
     kinetic_energy(prob)
 
-Returns the domain-averaged surface kinetic energy. In SQG flows this is
+Returns the domain-averaged surface kinetic energy. In SQG, this is
 identical to half the domain-averaged surface buoyancy variance.
 """
 @inline function kinetic_energy(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
   @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
   @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
-  @. vars.uh = 0.5 * ( abs2(vars.uh) + abs2(vars.vh) )
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+  @. vars.bh = 0.5 * (abs2(vars.uh) + abs2(vars.vh)) # ½(|û|²+|v̂|²)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.bh, grid)
 end
 
 """
@@ -267,24 +264,24 @@ end
 Returns the domain-averaged dissipation rate of surface buoyancy variance due
 to small scale diffusion/viscosity. nν must be >= 1.
 
-In an SQG flow this is identical to twice the rate of kinetic energy dissipation
+In SQG, this is identical to twice the rate of kinetic energy dissipation
 """
 @inline function buoyancy_dissipation(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  @. vars.uh = 2*grid.Krsq^params.nν * abs2(sol)
+  @. vars.uh = 2 * grid.Krsq^params.nν * abs2(sol)
   CUDA.@allowscalar vars.uh[1, 1] = 0
   return params.ν / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
 """
     buoyancy_work(prob)
-    buoyancy_work(sol, v, grid)
+    buoyancy_work(sol, vars, grid)
 
 Returns the domain-averaged rate of work of buoyancy variance by the forcing Fh.
 """
 @inline function buoyancy_work(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  @. vars.uh =  sol * conj(vars.Fh)    # FFT(b) * conj(FFT(Forcing))
+  @. vars.uh =  sol * conj(vars.Fh)    # b̂*conj(f̂)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
@@ -318,9 +315,9 @@ be zero if buoyancy variance is conserved.
   mul!(vars.uh, grid.rfftplan, vars.u) # \hat{u*b}
   mul!(vars.vh, grid.rfftplan, vars.v) # \hat{v*b}
 
-  @. vars.bh = ( - im * grid.kr * vars.uh - im * grid.l * vars.vh ) * conj( vars.bh )
+  @. vars.bh = (- im * grid.kr * vars.uh - im * grid.l * vars.vh) * conj(vars.bh)
 
-  # vars.bh is -conj(FFT[b])⋅FFT[u̲⋅∇(b)] which appears opposite tenfency term
+  # vars.bh is -conj(FFT[b])⋅FFT[u̲⋅∇(b)] which appears opposite tendency term
 
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.bh, grid)
 end
@@ -335,17 +332,17 @@ leading-order (geostrophic) flow.
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
 
   mul!(sol, grid.rfftplan, vars.u .* vars.u)  # Transform adv. of u * u
-  @. vars.bh = - ( im * grid.kr * sol ) # -FFT(∂[uu]/∂x), bh will be advection
-  @. vars.bh *= conj(vars.uh) # -FFT(∂[uu]/∂x) * conj(FFT(u))
+  @. vars.bh = - (im * grid.kr * sol) # -FFT(∂[uu]/∂x), bh will be advection
+  @. vars.bh *= conj(vars.uh)         # -FFT(∂[uu]/∂x) * conj(FFT(u))
 
   mul!(sol, grid.rfftplan, vars.u .* vars.v) # Transform adv. of u * v
   # add -FFT(∂[uv]/∂y) * conj(FFT(u)) -FFT(∂[uv]/∂x) * conj(FFT(v))
-  @. vars.bh += - ( im * grid.l * sol ) * conj(vars.uh)
-  @. vars.bh += - ( im * grid.kr * sol ) * conj(vars.vh)
+  @. vars.bh -= (im * grid.l  * sol) * conj(vars.uh)
+  @. vars.bh -= (im * grid.kr * sol) * conj(vars.vh)
 
   mul!(sol, grid.rfftplan, vars.v .* vars.v) # Transform adv. of v * v
   # add -FFT(∂[vv]/∂y) * conj(FFT(v))
-  @. vars.bh += - ( im * grid.l * sol ) * conj(vars.vh)
+  @. vars.bh -= -(im * grid.l * sol) * conj(vars.vh)
 
   # vars.bh is -conj(FFT[u̲])⋅FFT[u̲⋅∇(u̲)] which appears opposite tenfency term
 
