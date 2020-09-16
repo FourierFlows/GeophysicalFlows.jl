@@ -342,7 +342,7 @@ leading-order (geostrophic) flow.
 
   mul!(sol, grid.rfftplan, vars.v .* vars.v) # Transform adv. of v * v
   # add -FFT(∂[vv]/∂y) * conj(FFT(v))
-  @. vars.bh -= -(im * grid.l * sol) * conj(vars.vh)
+  @. vars.bh -= - im * grid.l * sol * conj(vars.vh)
 
   # vars.bh is -conj(FFT[u̲])⋅FFT[u̲⋅∇(u̲)] which appears opposite tenfency term
 
