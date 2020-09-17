@@ -46,9 +46,9 @@ See `examples/` for example scripts.
 All modules provide solvers on two-dimensional domains. We currently provide
 
 * `TwoDNavierStokes`: the two-dimensional vorticity equation.
-* `BarotropicQG`: the barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography and Coriolis parameters of the form `f = f₀ + βy`.
+* `BarotropicQG`: the barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography and Coriolis parameters of the form `f = f₀ + β y`.
 * `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
-* `MultilayerQG`: a multi-layer quasi-geostrophic model over topography and with ability to impose a zonal flow `U_n(y)` in each layer.
+* `MultilayerQG`: a multi-layer quasi-geostrophic model over topography and with tge ability to impose a zonal flow `Uₙ(y)` in each layer.
 * `SurfaceQG`: a surface quasi-geostrophic model.
 
 
