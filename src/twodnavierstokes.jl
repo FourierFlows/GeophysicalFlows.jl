@@ -87,7 +87,7 @@ Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
 """
     Equation(params, grid)
 
-Returns the equation for two-dimensional turbulence with params p and `grid`.
+Returns the equation for two-dimensional turbulence with `params` and `grid`.
 """
 function Equation(params::Params, grid::AbstractGrid)
   L = @. - params.ν * grid.Krsq^params.nν - params.μ * grid.Krsq^params.nμ
@@ -119,7 +119,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     Vars(dev, grid)
 
-Returns the vars for unforced two-dimensional turbulence on device dev and with `grid`.
+Returns the `vars` for unforced two-dimensional turbulence on device `dev` and with `grid`.
 """
 function Vars(::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
@@ -131,8 +131,7 @@ end
 """
     ForcedVars(dev, grid)
 
-Returns the vars for forced two-dimensional turbulence on device dev and with
-`grid`.
+Returns the vars for forced two-dimensional turbulence on device `dev` and with `grid`.
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
@@ -144,8 +143,7 @@ end
 """
     StochasticForcedVars(dev, grid)
 
-Returns the vars for stochastically forced two-dimensional turbulence on device
-dev and with grid grid.
+Returns the vars for stochastically forced two-dimensional turbulence on device `dev` and with `grid`.
 """
 function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
@@ -175,7 +173,7 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   
   uζ = vars.u
   @. uζ *= vars.zeta # u*zeta
-  vζ = vars.u
+  vζ = vars.v
   @. vζ *= vars.zeta # v*zeta
   
   uζh = vars.uh
@@ -218,7 +216,7 @@ end
 """
     updatevars!(prob)
 
-Update variables in `vars` with solution i`n `sol`.
+Update variables in `vars` with solution in `sol`.
 """
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
@@ -234,26 +232,26 @@ end
 """
     set_zeta!(prob, zeta)
 
-Set the solution sol as the transform of zeta and update variables v
-on the grid grid.
+Set the solution `sol` as the transform of `zeta` and update variables.
 """
 function set_zeta!(prob, zeta)
-  params, vars, grid, sol = prob.params, prob.vars, prob.grid, prob.sol
-  mul!(sol, grid.rfftplan, zeta)
-  CUDA.@allowscalar sol[1, 1] = 0 # zero domain average
+  mul!(prob.sol, prob.grid.rfftplan, zeta)
+  CUDA.@allowscalar prob.sol[1, 1] = 0 # zero domain average
+  
   updatevars!(prob)
+  
   return nothing
 end
 
 """
     energy(prob)
 
-Returns the domain-averaged kinetic energy in the Fourier-transformed vorticity
-solution `sol`.
+Returns the domain-averaged kinetic energy, ∫ ½(u²+v²)dxdy / (Lx Ly), for the solution in `sol`.
 """
 @inline function energy(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
   energyh = vars.uh # use vars.uh as scratch variable
+  
   @. energyh = 1 / 2 * grid.invKrsq * abs2(sol)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energyh, grid)
 end
@@ -261,8 +259,7 @@ end
 """
     enstrophy(prob)
 
-Returns the domain-averaged enstrophy in the Fourier-transformed vorticity
-solution `sol`.
+Returns the domain-averaged enstrophy, ∫ ½ ζ² dxdy / (Lx Ly), for the solution in `sol`.
 """
 @inline function enstrophy(prob)
   sol, grid = prob.sol, prob.grid
@@ -272,7 +269,7 @@ end
 """
     energy_dissipation(prob)
 
-Returns the domain-averaged dissipation rate. nν must be >= 1.
+Returns the domain-averaged energy dissipation rate. `nν` must be >= 1.
 """
 @inline function energy_dissipation(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
@@ -286,7 +283,7 @@ end
 """
     enstrophy_dissipation(prob)
 
-Returns the domain-averaged dissipation rate of enstrophy. nν must be >= 1.
+Returns the domain-averaged enstrophy dissipation rate. `nν` must be >= 1.
 """
 @inline function enstrophy_dissipation(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
@@ -301,7 +298,7 @@ end
     energy_work(prob)
     energy_work(sol, v, grid)
 
-Returns the domain-averaged rate of work of energy by the forcing Fh.
+Returns the domain-averaged rate of work of energy by the forcing `Fh`.
 """
 @inline function energy_work(sol, vars::ForcedVars, grid)
   energy_workh = vars.uh # use vars.uh as scratch variable
@@ -324,7 +321,7 @@ end
     enstrophy_work(prob)
     enstrophy_work(sol, v, grid)
 
-Returns the domain-averaged rate of work of enstrophy by the forcing Fh.
+Returns the domain-averaged rate of work of enstrophy by the forcing `Fh`.
 """
 @inline function enstrophy_work(sol, vars::ForcedVars, grid)
   enstrophy_workh = vars.uh # use vars.uh as scratch variable
@@ -351,7 +348,7 @@ Returns the extraction of domain-averaged energy by drag/hypodrag μ.
 @inline function energy_drag(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   
-  energy_workh = vars.uh # use vars.uh as scratch variable
+  energy_dragh = vars.uh # use vars.uh as scratch variable
   
   @. energy_dragh = params.μ * grid.Krsq^(params.nμ - 1) * abs2(sol)
   CUDA.@allowscalar energy_dragh[1, 1] = 0
