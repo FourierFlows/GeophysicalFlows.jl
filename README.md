@@ -49,6 +49,7 @@ All modules provide solvers on two-dimensional domains. We currently provide
 * `BarotropicQG`: the barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography and Coriolis parameters of the form `f = f₀ + βy`.
 * `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
 * `MultilayerQG`: a multi-layer quasi-geostrophic model over topography and with ability to impose a zonal flow `U_n(y)` in each layer.
+* `SurfaceQG`: a surface quasi-geostrophic model.
 
 
 
