@@ -280,7 +280,7 @@ end
 Returns the domain-averaged rate of work of buoyancy variance by the forcing Fh.
 """
 @inline function buoyancy_work(sol, vars::ForcedVars, grid)
-  @. vars.uh =  2 * sol * conj(vars.Fh)    # b̂*conj(f̂)
+  @. vars.uh =  2 * sol * conj(vars.Fh)    # 2b̂*conj(f̂)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
@@ -290,73 +290,5 @@ end
 end
 
 @inline buoyancy_work(prob) = buoyancy_work(prob.sol, prob.vars, prob.grid)
-
-"""
-    buoyancy_advection(prob)
-
-Returns the average of domain-averaged advection of buoyancy variance. This should
-be zero if buoyancy variance is conserved.
-"""
-@inline function buoyancy_advection(prob)
-  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-
-  # Diagnose all the neccessary variables from sol
-  @. vars.bh = sol
-  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
-  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
-  ldiv!(vars.u, grid.rfftplan, vars.uh)
-  ldiv!(vars.v, grid.rfftplan, vars.vh)
-  ldiv!(vars.b, grid.rfftplan, vars.bh)
-
-  # Diagnose fluxes
-  @. vars.u *= vars.b # u*b
-  @. vars.v *= vars.b # v*b
-
-  mul!(vars.uh, grid.rfftplan, vars.u) # \hat{u*b}
-  mul!(vars.vh, grid.rfftplan, vars.v) # \hat{v*b}
-
-  @. vars.bh = (- im * grid.kr * vars.uh - im * grid.l * vars.vh) * conj(vars.bh)
-  # vars.bh is -conj(FFT[b])⋅FFT[u̲⋅∇(b)]
-
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.bh, grid)
-end
-
-"""
-    kinetic_energy_advection(prob)
-
-Returns the average of domain-averaged advection of kinetic energy by the
-leading-order (geostrophic) flow.
-"""
-@inline function kinetic_energy_advection(prob)
-  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-
-  # Diagnose all the neccessary variables from sol
-  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
-  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
-  ldiv!(vars.u, grid.rfftplan, vars.uh)
-  ldiv!(vars.v, grid.rfftplan, vars.vh)
-
-  # The goal is to calculate -conj(FFT[u̲])⋅FFT[u̲⋅∇(u̲)] by summing its components
-
-  # Diagnose Fluxes - initially vars.vh is used to store velocity correlations
-  mul!(vars.vh, grid.rfftplan, vars.u .* vars.u)  # Transform adv. of u * u
-  @. vars.bh = - im * grid.kr * vars.vh # -FFT(∂[uu]/∂x), bh will be advection
-  @. vars.bh *= conj(vars.uh)         # -FFT(∂[uu]/∂x) * conj(FFT(u))
-  mul!(vars.vh, grid.rfftplan, vars.u .* vars.v) # Transform adv. of u * v
-  # add -FFT(∂[uv]/∂y) * conj(FFT(u))
-  @. vars.bh -= im * grid.l  * vars.vh * conj(vars.uh)
-
-  # Re-calculate current value of vars.vh, now vars.uh is storage variable
-  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
-  mul!(vars.uh, grid.rfftplan, vars.u .* vars.v) # Transform adv. of u * v
-  # add -FFT(∂[uv]/∂x) * conj(FFT(v))
-  @. vars.bh -= im * grid.kr * vars.uh * conj(vars.vh)
-  mul!(vars.uh, grid.rfftplan, vars.v .* vars.v) # Transform adv. of v * v
-  # add -FFT(∂[vv]/∂y) * conj(FFT(v))
-  @. vars.bh -= im * grid.l * vars.uh * conj(vars.vh)
-  # vars.bh is now -conj(FFT[u̲])⋅FFT[u̲⋅∇(u̲)]
-
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum( vars.bh , grid)
-end
 
 end # module
