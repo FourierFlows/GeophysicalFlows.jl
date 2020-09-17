@@ -128,7 +128,7 @@ end
 Returns the vars for forced surface QG turbulence on device `dev` and with
 `grid`.
 """
-function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function ForcedVars(dev::Dev, grid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh Fh
@@ -141,7 +141,7 @@ end
 Returns the `vars` for stochastically forced surface QG turbulence on device
 `dev` and with `grid`.
 """
-function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function StochasticForcedVars(dev::Dev, grid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh Fh prevsol
@@ -279,18 +279,17 @@ end
 
 Returns the domain-averaged rate of work of buoyancy variance by the forcing Fh.
 """
-@inline function buoyancy_work(prob)
-  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  @. vars.uh =  sol * conj(vars.Fh)    # b̂*conj(f̂)
+@inline function buoyancy_work(sol, vars::ForcedVars, grid)
+  @. vars.uh =  2 * sol * conj(vars.Fh)    # b̂*conj(f̂)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
 @inline function buoyancy_work(sol, vars::StochasticForcedVars, grid)
-  @. vars.uh =  (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
+  @. vars.uh =  (vars.prevsol + sol) * conj(vars.Fh) # Stratonovich
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
-@inline work(prob) = work(prob.sol, prob.vars, prob.grid)
+@inline buoyancy_work(prob) = buoyancy_work(prob.sol, prob.vars, prob.grid)
 
 """
     buoyancy_advection(prob)
