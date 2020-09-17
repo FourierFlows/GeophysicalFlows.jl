@@ -171,9 +171,9 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
   ldiv!(vars.zeta, grid.rfftplan, vars.zetah)
   
-  uζ = vars.u
+  uζ = vars.u        # use vars.u as scratch variable
   @. uζ *= vars.zeta # u*zeta
-  vζ = vars.v
+  vζ = vars.v        # use vars.v as scratch variable
   @. vζ *= vars.zeta # v*zeta
   
   uζh = vars.uh

@@ -205,15 +205,22 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   ldiv!(vars.v, grid.rfftplan, vars.psih)
 
   @. vars.q = vars.zeta + params.eta
-  CUDA.@allowscalar @. vars.u = (vars.U[] + vars.u) * vars.q # (U+u)*q
-  @. vars.v = vars.v * vars.q # v*q
-
-  mul!(vars.uh, grid.rfftplan, vars.u)      # \hat{(u+U)*q}
+  uq = vars.u                                            # use vars.u as scratch variable
+  CUDA.@allowscalar @. uq = (vars.U[] + vars.u) * vars.q # (U+u)*q
+  vq = vars.v                                            # use vars.v as scratch variable
+  @. vq *= vars.q                                        # v*q
+  
+  uqh = vars.uh                                          # use vars.uh as scratch variable
+  mul!(uqh, grid.rfftplan, uq)                           # \hat{(u+U)*q}
 
   # Nonlinear advection term for q (part 1)
-  @. N = -im * grid.kr * vars.uh            # -∂[(U+u)q]/∂x
-  mul!(vars.uh, grid.rfftplan, vars.v)      # \hat{v*q}
-  @. N += - im * grid.l * vars.uh           # -∂[vq]/∂y
+  @. N = -im * grid.kr * uqh                             # -∂[(U+u)q]/∂x
+  
+  vqh = vars.uh                                          # use vars.uh as scratch variable
+  mul!(vqh, grid.rfftplan, vq)                           # \hat{v*q}
+  
+  # Nonlinear advection term for q (part 2)
+  @. N += - im * grid.l * vqh                            # -∂[vq]/∂y
   return nothing
 end
 
@@ -222,8 +229,8 @@ function calcN!(N, sol, t, clock, vars, params, grid)
   addforcing!(N, sol, t, clock, vars, params, grid)
   if params.calcFU != nothingfunction
     # 'Nonlinear' term for U with topographic correlation.
-    # Note: < v*eta > =   sum(conj(vh)*eta) / (nx²*ny²) if  fft is used
-    # while < v*eta > = 2*sum(conj(vh)*eta) / (nx²*ny²) if rfft is used
+    # Note: ⟨v*eta⟩ =   sum(conj(v̂)*η) / (nx²ny²) if  fft is used
+    # while ⟨v*eta⟩ = 2*sum(conj(v̂)*η) / (nx²ny²) if rfft is used
     CUDA.@allowscalar N[1, 1] = params.calcFU(t) + 2 * sum(conj(vars.vh) .* params.etah).re / (grid.nx^2 * grid.ny^2)
   end
   return nothing
