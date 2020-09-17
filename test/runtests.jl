@@ -123,6 +123,8 @@ for dev in devices
     
     @test test_sqg_kineticenergy_buoyancyvariance(dev)
     @test test_sqg_advection(0.0005, "ForwardEuler", dev)
+    @test test_sqg_deterministicforcing_buoyancy_variance_budget(dev)
+    @test test_sqg_stochasticforcing_buoyancy_variance_budget(dev)
     @test test_sqg_stochasticforcedproblemconstructor(dev)
     @test test_sqg_problemtype(dev, Float32)
     @test test_sqg_paramsconstructor(dev)

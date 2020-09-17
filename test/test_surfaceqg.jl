@@ -69,6 +69,7 @@ end
 function test_sqg_kineticenergy_buoyancyvariance(dev::Device=CPU())
   nx, Lx  = 128, 2π
   ny, Ly  = 128, 3π
+  
   gr = TwoDGrid(dev, nx, Lx, ny, Ly)
   x, y = gridpoints(gr)
 
@@ -123,4 +124,94 @@ function test_sqg_noforcing(dev::Device=CPU())
   SurfaceQG.addforcing!(prob_forced.timestepper.N, prob_forced.sol, prob_forced.clock.t, prob_forced.clock, prob_forced.vars, prob_forced.params, prob_forced.grid)
   
   return prob_unforced.timestepper.N == Complex.(zeros(size(prob_unforced.sol))) && prob_forced.timestepper.N == Complex.(2*ones(size(prob_unforced.sol)))
+end
+
+function test_sqg_deterministicforcing_buoyancy_variance_budget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, tf=10.0)
+  n, L  = 256, 2π
+  ν, nν = 1e-7, 2
+  dt, tf = 0.005, 10
+  nt = round(Int, tf/dt)
+
+  grid  = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
+
+  # buoyancy forcing = 0.01cos(4x)cos(5y)cos(2t)
+  f = @. 0.01cos(4x) * cos(5y)
+  fh = rfft(f)
+  function calcF!(Fh, sol, t, clock, vars, params, grid)
+    @. Fh = fh * cos(2t)
+    return nothing
+  end
+
+  prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, dt=dt, stepper="RK4",
+    calcF=calcF!, stochastic=false)
+
+  SurfaceQG.set_b!(prob, 0*x)
+
+  B = Diagnostic(SurfaceQG.buoyancy_variance,    prob, nsteps=nt)
+  D = Diagnostic(SurfaceQG.buoyancy_dissipation, prob, nsteps=nt)
+  W = Diagnostic(SurfaceQG.buoyancy_work,        prob, nsteps=nt)
+  diags = [B, D, W]
+
+  stepforward!(prob, diags, nt)
+  
+  SurfaceQG.updatevars!(prob)
+
+  dBdt_numerical = (B[3:B.i] - B[1:B.i-2]) / (2 * prob.clock.dt)
+  dBdt_computed  = W[2:B.i-1] - D[2:B.i-1]
+
+  return isapprox(dBdt_numerical, dBdt_computed, rtol = 1e-4)
+end
+
+function test_sqg_stochasticforcing_buoyancy_variance_budget(dev::Device=CPU(); n=256, L=2π, dt=0.005, ν=1e-7, nν=2, tf=2.0)
+  nt = round(Int, tf/dt)
+
+  # Forcing parameters
+  kf, dkf = 12.0, 2.0
+  εᵇ = 0.01
+
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
+
+  Kr = ArrayType(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
+
+  forcingcovariancespectrum = ArrayType(dev)(zero(grid.Krsq))
+  @. forcingcovariancespectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
+  CUDA.@allowscalar @. forcingcovariancespectrum[grid.Krsq .< 2^2] = 0
+  CUDA.@allowscalar @. forcingcovariancespectrum[grid.Krsq .> 20^2] = 0
+  CUDA.@allowscalar @. forcingcovariancespectrum[Kr .< 2π/L] = 0
+  εᵇ0 = parsevalsum(forcingcovariancespectrum, grid) / (grid.Lx * grid.Ly)
+  forcingcovariancespectrum .= εᵇ / εᵇ0 * forcingcovariancespectrum
+  
+  Random.seed!(1234)
+
+  function calcF!(Fh, sol, t, clock, vars, params, grid)
+    eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
+    CUDA.@allowscalar eta[1, 1] = 0.0
+    @. Fh = eta * sqrt(forcingcovariancespectrum)
+    nothing
+  end
+
+  prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, dt=dt, stepper="RK4",
+    calcF=calcF!, stochastic=true)
+
+  SurfaceQG.set_b!(prob, 0*x)
+  
+  B = Diagnostic(SurfaceQG.buoyancy_variance,    prob, nsteps=nt)
+  D = Diagnostic(SurfaceQG.buoyancy_dissipation, prob, nsteps=nt)
+  W = Diagnostic(SurfaceQG.buoyancy_work,        prob, nsteps=nt)
+  diags = [B, D, W]
+
+  stepforward!(prob, diags, nt)
+
+  SurfaceQG.updatevars!(prob)
+
+  dBdt_numerical = (B[2:B.i] - B[1:B.i-1]) / prob.clock.dt
+
+  # If the Ito interpretation was used for the work
+  # then we need to add the drift term
+  # dBdt_computed = W[2:B.i] + εᵇ - D[1:B.i-1]      # Ito
+  dBdt_computed = W[2:B.i] - D[1:B.i-1]        # Stratonovich
+  
+  return isapprox(dBdt_numerical, dBdt_computed, rtol = 1e-4)
 end
