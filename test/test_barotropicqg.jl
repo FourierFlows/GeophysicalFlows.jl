@@ -85,10 +85,11 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
    stepper="RK4", calcFq=calcFq!, stochastic=true)
 
   BarotropicQG.set_zeta!(prob, 0*x)
-  E = Diagnostic(BarotropicQG.energy,      prob, nsteps=nt)
-  D = Diagnostic(BarotropicQG.dissipation, prob, nsteps=nt)
-  R = Diagnostic(BarotropicQG.drag,        prob, nsteps=nt)
-  W = Diagnostic(BarotropicQG.work,        prob, nsteps=nt)
+  
+  E = Diagnostic(BarotropicQG.energy,             prob, nsteps=nt)
+  D = Diagnostic(BarotropicQG.energy_dissipation, prob, nsteps=nt)
+  R = Diagnostic(BarotropicQG.energy_drag,        prob, nsteps=nt)
+  W = Diagnostic(BarotropicQG.energy_work,        prob, nsteps=nt)
   diags = [E, D, W, R]
 
   stepforward!(prob, diags, nt)
@@ -135,10 +136,10 @@ function test_bqg_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01,
 
   BarotropicQG.set_zeta!(prob, 0*x)
   
-  E = Diagnostic(BarotropicQG.energy,      prob, nsteps=nt)
-  D = Diagnostic(BarotropicQG.dissipation, prob, nsteps=nt)
-  R = Diagnostic(BarotropicQG.drag,        prob, nsteps=nt)
-  W = Diagnostic(BarotropicQG.work,        prob, nsteps=nt)
+  E = Diagnostic(BarotropicQG.energy,             prob, nsteps=nt)
+  D = Diagnostic(BarotropicQG.energy_dissipation, prob, nsteps=nt)
+  R = Diagnostic(BarotropicQG.energy_drag,        prob, nsteps=nt)
+  W = Diagnostic(BarotropicQG.energy_work,        prob, nsteps=nt)
   diags = [E, D, W, R]
 
   stepforward!(prob, diags, round(Int, nt))
