@@ -41,7 +41,7 @@ function Problem(nlayers::Int,                        # number of fluid layers
                       Ly = Lx,
                       dt = 0.01,
               # Physical parameters
-                      f0 = 1.0,                       # Coriolis parameter
+                      f₀ = 1.0,                       # Coriolis parameter
                        β = 0.0,                       # y-gradient of Coriolis parameter
                        g = 1.0,                       # gravitational constant
                        U = zeros(nlayers),            # imposed zonal flow U(y) in each layer
@@ -60,10 +60,10 @@ function Problem(nlayers::Int,                        # number of fluid layers
                        T = Float64)
 
    # topographic PV
-   eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
+   eta === nothing && (eta = zeros(dev, T, (nx, ny)))
            
    grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
-   params = Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq, dev=dev)   
+   params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq, dev=dev)   
    vars = calcFq == nothingfunction ? Vars(dev, grid, params) : (stochastic ? StochasticForcedVars(dev, grid, params) : ForcedVars(dev, grid, params))
    eqn = linear ? LinearEquation(dev, params, grid) : Equation(dev, params, grid)
 
@@ -76,7 +76,7 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
   # prescribed params
    nlayers :: Int        # Number of fluid layers
          g :: T          # Gravitational constant
-        f0 :: T          # Constant planetary vorticity
+        f₀ :: T          # Constant planetary vorticity
          β :: T          # Planetary vorticity y-gradient
          ρ :: Aphys3D    # Array with density of each fluid layer
          H :: Aphys3D    # Array with rest height of each fluid layer
@@ -92,7 +92,7 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
         Qx :: Aphys3D    # Array containing x-gradient of PV due to eta in each fluid layer
         Qy :: Aphys3D    # Array containing y-gradient of PV due to β, U, and eta in each fluid layer
          S :: Atrans4D   # Array containing coeffients for getting PV from  streamfunction
-      invS :: Atrans4D   # Array containing coeffients for inverting PV to streamfunction
+       S⁻¹ :: Atrans4D   # Array containing coeffients for inverting PV to streamfunction
   rfftplan :: Trfft      # rfft plan for FFTs
 end
 
@@ -142,7 +142,7 @@ function convert_U_to_U3D(dev, nlayers, grid, U::Number)
 end
 
 
-function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE, dev::Device=CPU()) where TU
+function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE, dev::Device=CPU()) where TU
   
   T = eltype(grid)
   A = ArrayType(dev)
@@ -179,26 +179,26 @@ function Params(nlayers, g, f0, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=not
 
     g′ = T(g) * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface
 
-    Fm = @. T( f0^2 / (g′ * H[2:nlayers]) )
-    Fp = @. T( f0^2 / (g′ * H[1:nlayers-1]) )
+    Fm = @. T(f₀^2 / (g′ * H[2:nlayers]))
+    Fp = @. T(f₀^2 / (g′ * H[1:nlayers-1]))
 
     typeofSkl = SArray{Tuple{nlayers, nlayers}, T, 2, nlayers^2} # StaticArrays of type T and dims = (nlayers x nlayers)
     
     S = Array{typeofSkl, 2}(undef, (nkr, nl))
     calcS!(S, Fp, Fm, nlayers, grid)
 
-    invS = Array{typeofSkl, 2}(undef, (nkr, nl))
-    calcinvS!(invS, Fp, Fm, nlayers, grid)
+    S⁻¹ = Array{typeofSkl, 2}(undef, (nkr, nl))
+    calcS⁻¹!(S⁻¹, Fp, Fm, nlayers, grid)
     
-    S, invS, Fp, Fm  = A(S), A(invS), A(Fp), A(Fm)     # convert to appropriate ArrayType
+    S, S⁻¹, Fp, Fm  = A(S), A(S⁻¹), A(Fp), A(Fm)     # convert to appropriate ArrayType
 
-    CUDA.@allowscalar @views Qy[:, :, 1] = @. Qy[:, :, 1] - Fp[1] * ( U[:, :, 2] - U[:, :, 1] )
+    CUDA.@allowscalar @views Qy[:, :, 1] = @. Qy[:, :, 1] - Fp[1] * (U[:, :, 2] - U[:, :, 1])
     for j = 2:nlayers-1
-      CUDA.@allowscalar @views Qy[:, :, j] = @. Qy[:, :, j] - Fp[j] * ( U[:, :, j+1] - U[:, :, j] ) + Fm[j-1] * ( U[:, :, j-1] - U[:, :, j] )
+      CUDA.@allowscalar @views Qy[:, :, j] = @. Qy[:, :, j] - Fp[j] * (U[:, :, j+1] - U[:, :, j]) + Fm[j-1] * (U[:, :, j-1] - U[:, :, j])
     end
-    CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * ( U[:, :, nlayers-1] - U[:, :, nlayers] )
+    CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
-    return Params(nlayers, T(g), T(f0), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, invS, rfftplanlayered)
+    return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
   end
 end
 
@@ -298,7 +298,7 @@ invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, v
 
 function streamfunctionfrompv!(ψh, qh, params, grid)
   for j=1:grid.nl, i=1:grid.nkr
-    CUDA.@allowscalar @views ψh[i, j, :] .= params.invS[i, j] * qh[i, j, :]
+    CUDA.@allowscalar @views ψh[i, j, :] .= params.S⁻¹[i, j] * qh[i, j, :]
   end
 end
 
@@ -326,27 +326,27 @@ function calcS!(S, Fp, Fm, nlayers, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   for n=1:grid.nl, m=1:grid.nkr
     CUDA.@allowscalar k² = grid.Krsq[m, n]
-    Skl = SMatrix{nlayers, nlayers}( - k² * I + F )
+    Skl = SMatrix{nlayers, nlayers}(- k² * I + F)
     S[m, n] = Skl
   end
   return nothing
 end
 
 """
-    calcinvS!(S, Fp, Fm, nlayers, grid)
+    calcS⁻¹!(S, Fp, Fm, nlayers, grid)
 
-Constructs the array invS, which consists of nlayer x nlayer static arrays (S_kl)⁻¹ that 
+Constructs the array S⁻¹, which consists of nlayer x nlayer static arrays (S_kl)⁻¹ that 
 relate the q's and ψ's at every wavenumber: ψ̂_{k, l} = (S_kl)⁻¹ * q̂_{k, l}.
 """
-function calcinvS!(invS, Fp, Fm, nlayers, grid)
+function calcS⁻¹!(S⁻¹, Fp, Fm, nlayers, grid)
   T = eltype(grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   for n=1:grid.nl, m=1:grid.nkr
     CUDA.@allowscalar k² = grid.Krsq[m, n] == 0 ? 1 : grid.Krsq[m, n]
-    Skl = - k²*I + F
-    invS[m, n] = SMatrix{nlayers, nlayers}( I / Skl )
+    Skl = - k² * I + F
+    S⁻¹[m, n] = SMatrix{nlayers, nlayers}(I / Skl)
   end
-  invS[1, 1] = SMatrix{nlayers, nlayers}( zeros(T, (nlayers, nlayers)) )
+  S⁻¹[1, 1] = SMatrix{nlayers, nlayers}(zeros(T, (nlayers, nlayers)))
   return nothing
 end
 
@@ -386,24 +386,30 @@ function calcN_advection!(N, sol, vars, params, grid)
 
   invtransform!(vars.u, vars.uh, params)
   @. vars.u += params.U                    # add the imposed zonal flow U
-  @. vars.q  = vars.u * params.Qx
-  fwdtransform!(vars.uh, vars.q, params)
-  @. N = -vars.uh                          # -(U+u)*∂Q/∂x
+  
+  uQx, uQxh = vars.q, vars.uh              # use vars.q and vars.uh as scratch variables
+  @. uQx  = vars.u * params.Qx             # (U+u)*∂Q/∂x
+  fwdtransform!(uQxh, uQx, params)
+  @. N = - uQxh                            # -\hat{(U+u)*∂Q/∂x}
 
   invtransform!(vars.v, vars.vh, params)
-  @. vars.q = vars.v * params.Qy
-  fwdtransform!(vars.vh, vars.q, params)
-  @. N -= vars.vh                          # -v*∂Q/∂y
+  
+  vQy, vQyh = vars.q, vars.vh              # use vars.q and vars.vh as scratch variables
+  @. vQy = vars.v * params.Qy              # v*∂Q/∂y
+  fwdtransform!(vQyh, vQy, params)
+  @. N -= vQyh                             # -\hat{v*∂Q/∂y}
 
   invtransform!(vars.q, vars.qh, params)
+  
+  uq , vq  = vars.u , vars.v               # use vars.u and vars.v as scratch variables
+  uqh, vqh = vars.uh, vars.vh              # use vars.uh and vars.vh as scratch variables
+  @. uq *= vars.q                          # (U+u)*q
+  @. vq *= vars.q                          # v*q
 
-  @. vars.u *= vars.q                      # u*q
-  @. vars.v *= vars.q                      # v*q
+  fwdtransform!(uqh, uq, params)
+  fwdtransform!(vqh, vq, params)
 
-  fwdtransform!(vars.uh, vars.u, params)
-  fwdtransform!(vars.vh, vars.v, params)
-
-  @. N -= im * grid.kr * vars.uh + im * grid.l * vars.vh    # -∂[(U+u)q]/∂x - ∂[vq]/∂y
+  @. N -= im * grid.kr * uqh + im * grid.l * vqh    # -\hat{∂[(U+u)q]/∂x} - \hat{∂[vq]/∂y}
 
   return nothing
 end
@@ -424,22 +430,28 @@ function calcN_linearadvection!(N, sol, vars, params, grid)
 
   invtransform!(vars.u, vars.uh, params)
   @. vars.u += params.U                    # add the imposed zonal flow U
-  @. vars.q  = vars.u * params.Qx
-  fwdtransform!(vars.uh, vars.q, params)
-  @. N = -vars.uh                          # -(U+u)*∂Q/∂x
+  uQx, uQxh = vars.q, vars.uh              # use vars.q and vars.uh as scratch variables
+  @. uQx  = vars.u * params.Qx             # (U+u)*∂Q/∂x
+  fwdtransform!(uQxh, uQx, params)
+  @. N = - uQxh                            # -\hat{(U+u)*∂Q/∂x}
 
   invtransform!(vars.v, vars.vh, params)
-  @. vars.q = vars.v * params.Qy
-  fwdtransform!(vars.vh, vars.q, params)
-  @. N -= vars.vh                          # -v*∂Q/∂y
+  
+  vQy, vQyh = vars.q, vars.vh              # use vars.q and vars.vh as scratch variables
+
+  @. vQy = vars.v * params.Qy              # v*∂Q/∂y
+  fwdtransform!(vQyh, vQy, params)
+  @. N -= vQyh                             # -\hat{v*∂Q/∂y}
 
   invtransform!(vars.q, vars.qh, params)
+  
   @. vars.u  = params.U
-  @. vars.u *= vars.q                      # u*q
+  Uq , Uqh  = vars.u , vars.uh             # use vars.u and vars.uh as scratch variables
+  @. Uq *= vars.q                          # U*q
 
-  fwdtransform!(vars.uh, vars.u, params)
+  fwdtransform!(Uqh, Uq, params)
 
-  @. N -= im * grid.kr * vars.uh           # -∂[U*q]/∂x
+  @. N -= im * grid.kr * Uqh               # -\hat{∂[U*q]/∂x}
 
   return nothing
 end
@@ -552,7 +564,7 @@ function energies(vars, params, grid, sol)
   end
 
   for j=1:nlayers-1
-    CUDA.@allowscalar PE[j] = 1/(2*grid.Lx*grid.Ly)*params.f0^2/params.g′[j]*parsevalsum(abs2.(vars.ψh[:, :, j+1].-vars.ψh[:, :, j]), grid)
+    CUDA.@allowscalar PE[j] = 1/(2*grid.Lx*grid.Ly)*params.f₀^2/params.g′[j]*parsevalsum(abs2.(vars.ψh[:, :, j+1].-vars.ψh[:, :, j]), grid)
   end
 
   return KE, PE
@@ -585,11 +597,11 @@ function fluxes(vars, params, grid, sol)
   @. vars.uh = im * grid.l * vars.uh      # ∂u/∂y
   invtransform!(vars.u, vars.uh, params)
 
-  lateralfluxes = (sum( @. params.H * params.U * vars.v * vars.u; dims=(1, 2) ))[1, 1, :]
+  lateralfluxes = (sum(@. params.H * params.U * vars.v * vars.u; dims=(1, 2)))[1, 1, :]
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   for j=1:nlayers-1
-    CUDA.@allowscalar verticalfluxes[j] = sum( @views @. params.f0^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j] ; dims=(1,2) )[1]
+    CUDA.@allowscalar verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j] ; dims=(1, 2))[1]
     CUDA.@allowscalar verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
   end
 
@@ -602,7 +614,7 @@ function fluxes(vars, params::SingleLayerParams, grid, sol)
   @. vars.uh = im * grid.l * vars.uh
   invtransform!(vars.u, vars.uh, params)
 
-  lateralfluxes = (sum( @. params.U * vars.v * vars.u; dims=(1, 2) ))[1, 1, :]
+  lateralfluxes = (sum(@. params.U * vars.v * vars.u; dims=(1, 2)))[1, 1, :]
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly)
 
   return lateralfluxes

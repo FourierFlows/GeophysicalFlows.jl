@@ -205,15 +205,22 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   ldiv!(vars.v, grid.rfftplan, vars.psih)
 
   @. vars.q = vars.zeta + params.eta
-  CUDA.@allowscalar @. vars.u = (vars.U[] + vars.u) * vars.q # (U+u)*q
-  @. vars.v = vars.v * vars.q # v*q
-
-  mul!(vars.uh, grid.rfftplan, vars.u)      # \hat{(u+U)*q}
+  uq = vars.u                                            # use vars.u as scratch variable
+  CUDA.@allowscalar @. uq = (vars.U[] + vars.u) * vars.q # (U+u)*q
+  vq = vars.v                                            # use vars.v as scratch variable
+  @. vq *= vars.q                                        # v*q
+  
+  uqh = vars.uh                                          # use vars.uh as scratch variable
+  mul!(uqh, grid.rfftplan, uq)                           # \hat{(u+U)*q}
 
   # Nonlinear advection term for q (part 1)
-  @. N = -im * grid.kr * vars.uh            # -∂[(U+u)q]/∂x
-  mul!(vars.uh, grid.rfftplan, vars.v)      # \hat{v*q}
-  @. N += - im * grid.l * vars.uh           # -∂[vq]/∂y
+  @. N = -im * grid.kr * uqh                             # -∂[(U+u)q]/∂x
+  
+  vqh = vars.uh                                          # use vars.uh as scratch variable
+  mul!(vqh, grid.rfftplan, vq)                           # \hat{v*q}
+  
+  # Nonlinear advection term for q (part 2)
+  @. N += - im * grid.l * vqh                            # -∂[vq]/∂y
   return nothing
 end
 
@@ -222,8 +229,8 @@ function calcN!(N, sol, t, clock, vars, params, grid)
   addforcing!(N, sol, t, clock, vars, params, grid)
   if params.calcFU != nothingfunction
     # 'Nonlinear' term for U with topographic correlation.
-    # Note: < v*eta > =   sum(conj(vh)*eta) / (nx²*ny²) if  fft is used
-    # while < v*eta > = 2*sum(conj(vh)*eta) / (nx²*ny²) if rfft is used
+    # Note: ⟨v*η⟩ =     sum(conj(v̂)*η̂) / (nx²ny²) if  fft is used,
+    # while ⟨v*η⟩ = 2 * sum(conj(v̂)*η̂) / (nx²ny²) if rfft is used
     CUDA.@allowscalar N[1, 1] = params.calcFU(t) + 2 * sum(conj(vars.vh) .* params.etah).re / (grid.nx^2 * grid.ny^2)
   end
   return nothing
@@ -321,8 +328,8 @@ set_U!(prob, U::Float64) = set_U!(prob.sol, prob.vars, prob.params, prob.grid, U
 
 
 """
-    energy(sol, grid)
     energy(prob)
+    energy(sol, grid)
 
 Returns the domain-averaged kinetic energy of solution `sol`.
 """
@@ -330,12 +337,12 @@ energy(sol, grid::AbstractGrid) = 0.5 * ( parsevalsum2(grid.kr .* grid.invKrsq .
 energy(prob) = energy(prob.sol, prob.grid)
 
 """
-    enstrophy(sol, grid, vars)
     enstrophy(prob)
+    enstrophy(sol, grid, vars)
 
 Returns the domain-averaged enstrophy of solution `sol`.
 """
-function enstrophy(sol, grid::AbstractGrid, vars::AbstractVars)
+function enstrophy(sol, grid, vars)
   @. vars.uh = sol
   CUDA.@allowscalar vars.uh[1, 1] = 0
   return 0.5*parsevalsum2(vars.uh, grid) / (grid.Lx * grid.Ly)
@@ -347,7 +354,7 @@ enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
 
 Returns the energy of the domain-averaged U.
 """
-meanenergy(prob) = CUDA.@allowscalar real(0.5 * prob.sol[1, 1].^2)
+meanenergy(prob) = CUDA.@allowscalar real(0.5 * prob.sol[1, 1]^2)
 
 """
     meanenstrophy(prob)
@@ -357,92 +364,109 @@ Returns the enstrophy of the domain-averaged U.
 meanenstrophy(prob) = CUDA.@allowscalar real(prob.params.β * prob.sol[1, 1])
 
 """
-    dissipation_ens(prob)
+    energy_dissipation(prob)
+    energy_dissipation(sol, vars, params, grid)
 
-Returns the domain-averaged dissipation rate of enstrophy. nν must be >= 1.
+Returns the domain-averaged energy dissipation rate. nν must be >= 1.
 """
-@inline function dissipation_ens(prob)
-  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  @. vars.uh = grid.Krsq^params.nν * abs2(sol)
-  vars.uh[1, 1] = 0
-  return params.ν / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+@inline function energy_dissipation(sol, vars, params, grid)
+  energy_dissipationh = vars.uh # use vars.uh as scratch variable
+  
+  @. energy_dissipationh = params.ν * grid.Krsq^(params.nν-1) * abs2(sol)
+  CUDA.@allowscalar energy_dissipationh[1, 1] = 0
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_dissipationh, grid)
 end
 
-"""
-    dissipation(prob)
-    dissipation(sol, vars, params, grid)
+@inline energy_dissipation(prob) = energy_dissipation(prob.sol, prob.vars, prob.params, prob.grid)
 
-Returns the domain-averaged dissipation rate. nν must be >= 1.
 """
-@inline function dissipation(sol, vars, params, grid)
-  @. vars.uh = grid.Krsq^(params.nν-1) * abs2(sol)
-  CUDA.@allowscalar vars.uh[1, 1] = 0
-  return params.ν / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+    enstrophy_dissipation(prob)
+    enstrophy_dissipation(sol, vars, params, grid)
+
+Returns the domain-averaged enstrophy dissipation rate. nν must be >= 1.
+"""
+@inline function enstrophy_dissipation(sol, vars, params, grid)
+  enstrophy_dissipationh = vars.uh # use vars.uh as scratch variable
+  
+  @. enstrophy_dissipationh = params.ν * grid.Krsq^params.nν * abs2(sol)
+  CUDA.@allowscalar enstrophy_dissipationh[1, 1] = 0
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_dissipationh, grid)
 end
 
-@inline dissipation(prob) = dissipation(prob.sol, prob.vars, prob.params, prob.grid)
+@inline enstrophy_dissipation(prob) = enstrophy_dissipation(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
-    work(prob)
-    work(sol, vars, grid)
+    energy_work(prob)
+    energy_work(sol, vars, grid)
 
-Returns the domain-averaged rate of work of energy by the forcing Fqh.
+Returns the domain-averaged rate of work of energy by the forcing `Fqh`.
 """
-@inline function work(sol, vars::ForcedVars, grid)
-  @. vars.uh = grid.invKrsq * sol * conj(vars.Fqh)
+@inline function energy_work(sol, vars::ForcedVars, grid)
+  energy_workh = vars.uh # use vars.uh as scratch variable
+  
+  @. energy_workh = grid.invKrsq * sol * conj(vars.Fqh)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_workh, grid)
+end
+
+@inline function energy_work(sol, vars::StochasticForcedVars, grid)
+  energy_workh = vars.uh # use vars.uh as scratch variable
+  
+  @. energy_workh = grid.invKrsq * (vars.prevsol + sol)/2 * conj(vars.Fqh) # Stratonovich
+  # @. energy_workh = grid.invKrsq * vars.prevsol * conj(vars.Fqh)             # Ito
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
-@inline function work(sol, vars::StochasticForcedVars, grid)
-  @. vars.uh = grid.invKrsq * (vars.prevsol + sol)/2 * conj(vars.Fqh) # Stratonovich
-  # @. vars.uh = grid.invKrsq * vars.prevsol * conj(vars.Fqh)             # Ito
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
-end
-
-@inline work(prob) = work(prob.sol, prob.vars, prob.grid)
+@inline energy_work(prob) = energy_work(prob.sol, prob.vars, prob.grid)
 
 """
-    work_ens(prob)
-    work_ens(sol, v, grid)
+    enstrophy_work(prob)
+    enstrophy_work(sol, vars, grid)
 
-Returns the domain-averaged rate of work of enstrophy by the forcing Fh.
+Returns the domain-averaged rate of work of enstrophy by the forcing `Fqh`.
 """
-@inline function work_ens(sol, vars::ForcedVars, grid)
-  @. vars.uh = sol * conj(vars.Fqh)
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+@inline function enstrophy_work(sol, vars::ForcedVars, grid)
+  enstrophy_workh = vars.uh # use vars.uh as scratch variable
+  
+  @. enstrophy_workh = sol * conj(vars.Fqh)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_workh, grid)
 end
 
-@inline function work_ens(sol, vars::StochasticForcedVars, grid)
-  @. vars.uh = (vars.prevsol + sol) / 2 * conj(vars.Fqh) # Stratonovich
-  # @. vars.uh = grid.invKrsq * vars.prevsol * conj(vars.Fh)           # Ito
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+@inline function enstrophy_work(sol, vars::StochasticForcedVars, grid)
+  enstrophy_workh = vars.uh # use vars.uh as scratch variable
+  
+  @. enstrophy_workh = (vars.prevsol + sol) / 2 * conj(vars.Fqh) # Stratonovich
+  # @. enstrophy_workh = grid.invKrsq * vars.prevsol * conj(vars.Fh)           # Ito
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_workh, grid)
 end
 
-@inline work_ens(prob) = work_ens(prob.sol, prob.vars, prob.grid)
+@inline enstrophy_work(prob) = enstrophy_work(prob.sol, prob.vars, prob.grid)
 
 """
-    drag(prob)
-    drag(sol, vars, params, grid)
+    energy_drag(prob)
 
 Returns the extraction of domain-averaged energy by drag μ.
 """
-@inline function drag(prob)
+@inline function energy_drag(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  @. vars.uh = grid.invKrsq * abs2(sol)
-  CUDA.@allowscalar vars.uh[1, 1] = 0
-  return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+  energy_dragh = vars.uh # use vars.uh as scratch variable
+
+  @. energy_dragh = params.μ * grid.invKrsq * abs2(sol)
+  CUDA.@allowscalar energy_dragh[1, 1] = 0
+  return  1 / (grid.Lx * grid.Ly) * parsevalsum(energy_dragh, grid)
 end
 
 """
-    drag_ens(prob)
+    enstrophy_drag(prob)
 
 Returns the extraction of domain-averaged enstrophy by drag/hypodrag μ.
 """
-@inline function drag_ens(prob)
+@inline function enstrophy_drag(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  @. vars.uh = grid.Krsq^0.0 * abs2(sol)
-  CUDA.@allowscalar vars.uh[1, 1] = 0
-  return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+  enstrophy_dragh = vars.uh # use vars.uh as scratch variable
+
+  @. enstrophy_dragh = params.μ * abs2(sol)
+  CUDA.@allowscalar enstrophy_dragh[1, 1] = 0
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_dragh, grid)
 end
 
 end # module
