@@ -65,7 +65,7 @@ SurfaceQG.set_b!(prob, b₀)
 nothing # hide
 
 # Let's plot the initial condition.
-heatmap(x, y, b₀',
+heatmap(x, y, prob.vars.b',
      aspectratio = 1,
                c = :deep,
             clim = (0, 1),
