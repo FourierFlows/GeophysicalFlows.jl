@@ -25,12 +25,12 @@ nothing # hide
 
 # ## Numerical parameters and time-stepping parameters
 
-     nx = 256               # 2D resolution = nx^2
-stepper = "FilteredETDRK4"  # timestepper
-     dt = 0.02              # timestep
-     tf = 80                # length of time for simulation
- nsteps = Int(tf / dt)      # total number of time-steps
- nsubs  = round(Int, nsteps/200)         # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
+      n = 256                       # 2D resolution = n²
+stepper = "FilteredETDRK4"          # timestepper
+     dt = 0.03                      # timestep
+     tf = 60                        # length of time for simulation
+ nsteps = Int(tf / dt)              # total number of time-steps
+ nsubs  = round(Int, nsteps/100)    # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
@@ -46,7 +46,7 @@ nothing # hide
 # We initialize a `Problem` by providing a set of keyword arguments. In this
 # example numerical instability due to accumulation of buoyancy variance at high
 # wavenumbers is taken care with the `FilteredTimestepper` we picked.
-prob = SurfaceQG.Problem(dev; nx=nx, Lx=L, dt=dt, stepper=stepper, ν=ν, nν=nν)
+prob = SurfaceQG.Problem(dev; nx=n, Lx=L, dt=dt, stepper=stepper, ν=ν, nν=nν)
 nothing # hide
 
 # Let's define some shortcuts.
@@ -58,12 +58,14 @@ nothing # hide
 # ## Setting initial conditions
 #
 # We initialize the buoyancy equation with an elliptical vortex.
-b₀ = @. exp(-(x'^2 + 4 * y^2))
+X, Y = gridpoints(grid)
+b₀ = @. exp(-(X^2 + 4*Y^2))
+
 SurfaceQG.set_b!(prob, b₀)
 nothing # hide
 
 # Let's plot the initial condition.
-heatmap(x, y, prob.vars.b,
+heatmap(x, y, prob.vars.b',
      aspectratio = 1,
                c = :deep,
             clim = (0, 1),
@@ -73,17 +75,18 @@ heatmap(x, y, prob.vars.b,
           yticks = -3:3,
           xlabel = "x",
           ylabel = "y",
-           title = "buoyancy bˢ",
+           title = "buoyancy bₛ",
       framestyle = :box)
 
 
 # ## Diagnostics
 
-# Create Diagnostic -- `energy` and `enstrophy` are functions imported at the top.
+# Create Diagnostics; `buoyancy_variance`, `kinetic_energy` and `buoyancy_dissipation` 
+# functions were imported at the top.
 B  = Diagnostic(buoyancy_variance, prob; nsteps=nsteps)
 KE = Diagnostic(kinetic_energy, prob; nsteps=nsteps)
 Dᵇ = Diagnostic(buoyancy_dissipation, prob; nsteps=nsteps)
-diags = [B, KE, Dᵇ] # A list of Diagnostics types passed to "stepforward!" are updated every timestep.
+diags = [B, KE, Dᵇ] # A list of Diagnostics types passed to `stepforward!`. Diagnostics are updated every timestep.
 nothing # hidenothing # hide
 
 
@@ -91,7 +94,7 @@ nothing # hidenothing # hide
 
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
 # Define base filename so saved data can be distinguished from other runs
-base_filename = string("SurfaceQG_decaying_n_", nx, "_visc_", round(ν, sigdigits=1), "_order_", 2*nν)
+base_filename = string("SurfaceQG_decaying_n_", n)
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
 datapath = "./"
 plotpath = "./"
@@ -118,9 +121,11 @@ nothing # hide
 # kinetic energy and buoyancy variance.
 
 function plot_output(prob)
-  bˢ = prob.vars.b
+  bₛ = prob.vars.b
+  uₛ = prob.vars.u
+  vₛ = prob.vars.v
 
-  pbˢ = heatmap(x, y, bˢ,
+  pbₛ = heatmap(x, y, bₛ',
        aspectratio = 1,
                  c = :deep,
               clim = (0, 1),
@@ -130,12 +135,11 @@ function plot_output(prob)
             yticks = -3:3,
             xlabel = "x",
             ylabel = "y",
-             title = "buoyancy bˢ",
+             title = "buoyancy bₛ",
         framestyle = :box)
 
-
   pKE = plot(1,
-             label = "kinetic energy ½(u²+v²)",
+             label = "kinetic energy ∫½(uₛ²+vₛ²)dxdy/L²",
          linewidth = 2,
             legend = :bottomright,
              alpha = 0.7,
@@ -144,7 +148,7 @@ function plot_output(prob)
             xlabel = "t")
 
   pb² = plot(1,
-             label = "buoyancy variance (bˢ)²",
+             label = "buoyancy variance ∫bₛ²dxdy/L²",
          linecolor = :red,
             legend = :bottomright,
          linewidth = 2,
@@ -153,8 +157,8 @@ function plot_output(prob)
              ylims = (0, 2e-2),
             xlabel = "t")
 
-  l = @layout Plots.grid(1, 3, heights=[0.9 ,0.7, 0.7], widths=[0.4, 0.3, 0.3])
-  p = plot(pbˢ, pKE, pb², layout=l, size = (1500, 500), dpi=150)
+  layout = @layout [a{0.5w} Plots.grid(2, 1)]
+  p = plot(pbₛ, pKE, pb², layout=layout, size = (900, 500), dpi=150)
 
   return p
 end
@@ -171,16 +175,16 @@ anim = @animate for j=0:Int(nsteps/nsubs)
 
   cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
 
-  if j%(1000/nsubs)==0
+  if j%(500/nsubs)==0
     log1 = @sprintf("step: %04d, t: %.1f, cfl: %.3f, walltime: %.2f min",
           clock.step, clock.t, cfl, (time()-startwalltime)/60)
-    log2 = @sprintf("buoyancy variance diagnostics - B: %.2e, Diss: %.2e",
+    log2 = @sprintf("buoyancy variance: %.2e, buoyancy variance dissipation: %.2e",
               B.data[B.i], Dᵇ.data[Dᵇ.i])
     println(log1)
     println(log2)
   end
 
-  p[1][1][:z] = Array(vars.b)
+  p[1][1][:z] = vars.b
   p[1][:title] = "buoyancy, t="*@sprintf("%.2f", clock.t)
   push!(p[2][1], KE.t[KE.i], KE.data[KE.i])
   push!(p[3][1], B.t[B.i], B.data[B.i])
@@ -194,9 +198,9 @@ mp4(anim, "sqg_ellipticalvortex.mp4", fps=14)
 
 # Let's see how all flow fields look like at the end of the simulation.
 
-pb1 = heatmap(x, y, vars.u,
+pu = heatmap(x, y, vars.u',
      aspectratio = 1,
-               c = :RdBu,
+               c = :balance,
             clim = (-maximum(abs.(vars.u)), maximum(abs.(vars.u))),
            xlims = (-L/2, L/2),
            ylims = (-L/2, L/2),
@@ -204,12 +208,12 @@ pb1 = heatmap(x, y, vars.u,
           yticks = -3:3,
           xlabel = "x",
           ylabel = "y",
-           title = "uˢ(x, y, t="*@sprintf("%.2f", clock.t)*")",
+           title = "uₛ(x, y, t="*@sprintf("%.2f", clock.t)*")",
       framestyle = :box)
 
-pb2 = heatmap(x, y, vars.v,
+pv = heatmap(x, y, vars.v',
      aspectratio = 1,
-               c = :RdBu,
+               c = :balance,
             clim = (-maximum(abs.(vars.v)), maximum(abs.(vars.v))),
            xlims = (-L/2, L/2),
            ylims = (-L/2, L/2),
@@ -217,10 +221,10 @@ pb2 = heatmap(x, y, vars.v,
           yticks = -3:3,
           xlabel = "x",
           ylabel = "y",
-           title = "vˢ(x, y, t="*@sprintf("%.2f", clock.t)*")",
+           title = "vₛ(x, y, t="*@sprintf("%.2f", clock.t)*")",
       framestyle = :box)
 
-pb3 = heatmap(x, y, vars.b,
+pb = heatmap(x, y, vars.b',
      aspectratio = 1,
                c = :deep,
             clim = (0, 1),
@@ -230,12 +234,12 @@ pb3 = heatmap(x, y, vars.b,
           yticks = -3:3,
           xlabel = "x",
           ylabel = "y",
-           title = "bˢ(x, y, t="*@sprintf("%.2f", clock.t)*")",
+           title = "bₛ(x, y, t="*@sprintf("%.2f", clock.t)*")",
       framestyle = :box)
 
-layout = @layout Plots.grid(1, 3)
+layout = @layout [a{0.5h}; b{0.5w} c{0.5w}]
 
-plot_final = plot(pb1, pb2, pb3, layout=layout, size = (1500, 500))
+plot_final = plot(pb, pu, pv, layout=layout, size = (800, 800))
 
 # Last we can save the output by calling `saveoutput(out)`.
 
