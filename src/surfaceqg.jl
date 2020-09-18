@@ -166,14 +166,17 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   ldiv!(vars.u, grid.rfftplan, vars.uh)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
   ldiv!(vars.b, grid.rfftplan, vars.bh)
+  
+  ub, ubh = vars.u, vars.uh         # use vars.u, vars.uh as scratch variables
+  vb, vbh = vars.v, vars.vh         # use vars.v, vars.vh as scratch variables
+  
+  @. ub *= vars.b # u*b
+  @. vb *= vars.b # v*b
 
-  @. vars.u *= vars.b # u*b
-  @. vars.v *= vars.b # v*b
+  mul!(ubh, grid.rfftplan, ub) # \hat{u*b}
+  mul!(vbh, grid.rfftplan, vb) # \hat{v*b}
 
-  mul!(vars.uh, grid.rfftplan, vars.u) # \hat{u*b}
-  mul!(vars.vh, grid.rfftplan, vars.v) # \hat{v*b}
-
-  @. N = - im * grid.kr * vars.uh - im * grid.l * vars.vh
+  @. N = - im * grid.kr * ubh - im * grid.l * vbh
   return nothing
 end
 
@@ -212,12 +215,15 @@ Update variables in `vars` with solution in `sol`.
 """
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
+  
   @. vars.bh = sol
   @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
   @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
+  
   ldiv!(vars.b, grid.rfftplan, deepcopy(vars.bh))
   ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh))
   ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh))
+  
   return nothing
 end
 
@@ -229,7 +235,9 @@ Set the solution `sol` as the transform of b and update all variables.
 function set_b!(prob, b)
   mul!(prob.sol, prob.grid.rfftplan, b)
   CUDA.@allowscalar prob.sol[1, 1] = 0 # zero domain average
+  
   updatevars!(prob)
+  
   return nothing
 end
 
@@ -241,10 +249,15 @@ identical to half the domain-averaged surface buoyancy variance.
 """
 @inline function kinetic_energy(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
+  
   @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
   @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
-  @. vars.bh = 0.5 * (abs2(vars.uh) + abs2(vars.vh)) # ½(|û|²+|v̂|²)
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.bh, grid)
+  
+  kinetic_energyh = vars.bh         # use vars.bh as scratch variable
+
+  @. kinetic_energyh = 0.5 * (abs2(vars.uh) + abs2(vars.vh)) # ½(|û|²+|v̂|²)
+  
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(kinetic_energyh, grid)
 end
 
 """
@@ -255,6 +268,7 @@ the domain-averaged velocity variance (twice the kinetic energy)
 """
 @inline function buoyancy_variance(prob)
   sol, grid = prob.sol, prob.grid
+  
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(abs2.(sol), grid)
 end
 
@@ -268,9 +282,12 @@ In SQG, this is identical to twice the rate of kinetic energy dissipation
 """
 @inline function buoyancy_dissipation(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  @. vars.uh = 2 * grid.Krsq^params.nν * abs2(sol)
-  CUDA.@allowscalar vars.uh[1, 1] = 0
-  return params.ν / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+  buoyancy_dissipationh = vars.uh         # use vars.uh as scratch variable
+  
+  @. buoyancy_dissipationh = 2 * params.ν * grid.Krsq^params.nν * abs2(sol)
+  CUDA.@allowscalar buoyancy_dissipationh[1, 1] = 0
+  
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(buoyancy_dissipationh, grid)
 end
 
 """
@@ -280,13 +297,17 @@ end
 Returns the domain-averaged rate of work of buoyancy variance by the forcing Fh.
 """
 @inline function buoyancy_work(sol, vars::ForcedVars, grid)
-  @. vars.uh =  2 * sol * conj(vars.Fh)    # 2b̂*conj(f̂)
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+  buoyancy_workh = vars.uh         # use vars.uh as scratch variable
+
+  @. buoyancy_workh =  2 * sol * conj(vars.Fh)    # 2*b̂*conj(f̂)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(buoyancy_workh, grid)
 end
 
 @inline function buoyancy_work(sol, vars::StochasticForcedVars, grid)
-  @. vars.uh =  (vars.prevsol + sol) * conj(vars.Fh) # Stratonovich
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
+  buoyancy_workh = vars.uh         # use vars.uh as scratch variable
+  
+  @. buoyancy_workh =  (vars.prevsol + sol) * conj(vars.Fh) # Stratonovich
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(buoyancy_workh, grid)
 end
 
 @inline buoyancy_work(prob) = buoyancy_work(prob.sol, prob.vars, prob.grid)
