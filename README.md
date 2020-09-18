@@ -16,10 +16,6 @@
     <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/">
         <img src="https://img.shields.io/badge/docs-dev-blue.svg">
     </a>
-    <!-- removes coveralls since it does not report GPU coverage via gitlab/JuliaGPU
-    <a href='https://coveralls.io/github/FourierFlows/GeophysicalFlows.jl?branch=master'><img src='https://coveralls.io/repos/github/FourierFlows/GeophysicalFlows.jl/badge.svg?branch=master' alt='Coverage Status' />
-    </a>
-    -->
     <a href="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl">
         <img src="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl/branch/master/graph/badge.svg" />
     </a>
@@ -48,7 +44,8 @@ All modules provide solvers on two-dimensional domains. We currently provide
 * `TwoDNavierStokes`: the two-dimensional vorticity equation.
 * `BarotropicQG`: the barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography and Coriolis parameters of the form `f = f₀ + βy`.
 * `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
-* `MultilayerQG`: a multi-layer quasi-geostrophic model over topography and with ability to impose a zonal flow `U_n(y)` in each layer.
+* `MultilayerQG`: a multi-layer quasi-geostrophic model over topography and with the ability to impose a zonal flow `U_n(y)` in each layer.
+* `SurfaceQG`: a surface quasi-geostrophic model.
 
 
 
@@ -56,7 +53,7 @@ All modules provide solvers on two-dimensional domains. We currently provide
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Navid C. Constantinou, & Gregory L. Wagner. (2020). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.7.0  (Version v0.7.0). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
+> Navid C. Constantinou, Gregory L. Wagner. (2020). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.8.0  (Version v0.8.0). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl

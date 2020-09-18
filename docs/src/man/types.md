@@ -39,3 +39,11 @@ Modules = [GeophysicalFlows.MultilayerQG]
 Public = false
 Order = [:type]
 ```
+
+## Private types in module `SurfaceQG`:
+
+```@autodocs
+Modules = [GeophysicalFlows.SurfaceQG]
+Public = false
+Order = [:type]
+```

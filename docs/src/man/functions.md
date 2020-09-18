@@ -40,3 +40,11 @@ Modules = [GeophysicalFlows.MultilayerQG]
 Private = false
 Order = [:function]
 ```
+
+## Functions exported from `SurfaceQG`:
+
+```@autodocs
+Modules = [GeophysicalFlows.SurfaceQG]
+Private = false
+Order = [:function]
+```

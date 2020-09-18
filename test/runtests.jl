@@ -10,7 +10,8 @@ import # use 'import' rather than 'using' for submodules to keep namespace clean
   GeophysicalFlows.TwoDNavierStokes,
   GeophysicalFlows.BarotropicQG,
   GeophysicalFlows.BarotropicQGQL,
-  GeophysicalFlows.MultilayerQG
+  GeophysicalFlows.MultilayerQG,
+  GeophysicalFlows.SurfaceQG
 
 using FourierFlows: parsevalsum
 using GeophysicalFlows: lambdipole, peakedisotropicspectrum
@@ -23,6 +24,7 @@ const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
 const rtol_twodnavierstokes = 1e-13 # tolerance for twodnavierstokes forcing tests
 const rtol_barotropicQG = 1e-13 # tolerance for barotropicqg forcing tests
 const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
+const rtol_surfaceqg = 1e-13 # tolerance for multilayerqg forcing tests
 
 
 "Get the CFL number, assuming a uniform grid with `dx=dy`."
@@ -35,7 +37,7 @@ testtime = @elapsed begin
 for dev in devices
   
   println("testing on "*string(typeof(dev)))
-  
+
   @testset "Utils" begin
     include("test_utils.jl")
 
@@ -114,6 +116,20 @@ for dev in devices
     @test test_mqg_stochasticforcedproblemconstructor(dev)
     @test test_mqg_problemtype(dev, Float32)
     @test MultilayerQG.nothingfunction() == nothing
+  end
+
+  @testset "SurfaceQG" begin
+    include("test_surfaceqg.jl")
+    
+    @test test_sqg_kineticenergy_buoyancyvariance(dev)
+    @test test_sqg_advection(0.0005, "ForwardEuler", dev)
+    @test test_sqg_deterministicforcing_buoyancy_variance_budget(dev)
+    @test test_sqg_stochasticforcing_buoyancy_variance_budget(dev)
+    @test test_sqg_stochasticforcedproblemconstructor(dev)
+    @test test_sqg_problemtype(dev, Float32)
+    @test test_sqg_paramsconstructor(dev)
+    @test test_sqg_noforcing(dev)
+    @test SurfaceQG.nothingfunction() == nothing
   end
   
 end
