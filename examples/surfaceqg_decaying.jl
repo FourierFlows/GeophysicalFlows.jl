@@ -239,7 +239,7 @@ pb = heatmap(x, y, vars.b',
 
 layout = @layout [a{0.5h}; b{0.5w} c{0.5w}]
 
-plot_final = plot(pb, pu, pv, layout=layout, size = (800, 800), dpi=150)
+plot_final = plot(pb, pu, pv, layout=layout, size = (800, 800))
 
 # Last we can save the output by calling `saveoutput(out)`.
 
