@@ -296,7 +296,7 @@ end
 
 """
     energy_work(prob)
-    energy_work(sol, v, grid)
+    energy_work(sol, vars, grid)
 
 Returns the domain-averaged rate of work of energy by the forcing `Fh`.
 """
@@ -319,7 +319,7 @@ end
 
 """
     enstrophy_work(prob)
-    enstrophy_work(sol, v, grid)
+    enstrophy_work(sol, vars, grid)
 
 Returns the domain-averaged rate of work of enstrophy by the forcing `Fh`.
 """
