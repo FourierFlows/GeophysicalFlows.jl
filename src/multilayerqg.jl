@@ -386,24 +386,30 @@ function calcN_advection!(N, sol, vars, params, grid)
 
   invtransform!(vars.u, vars.uh, params)
   @. vars.u += params.U                    # add the imposed zonal flow U
-  @. vars.q  = vars.u * params.Qx
-  fwdtransform!(vars.uh, vars.q, params)
-  @. N = -vars.uh                          # -(U+u)*∂Q/∂x
+  
+  uQx, uQxh = vars.q, vars.uh              # use vars.q and vars.uh as scratch variables
+  @. uQx  = vars.u * params.Qx             # (U+u)*∂Q/∂x
+  fwdtransform!(uQxh, uQx, params)
+  @. N = - uQxh                            # -\hat{(U+u)*∂Q/∂x}
 
   invtransform!(vars.v, vars.vh, params)
-  @. vars.q = vars.v * params.Qy
-  fwdtransform!(vars.vh, vars.q, params)
-  @. N -= vars.vh                          # -v*∂Q/∂y
+  
+  vQy, vQyh = vars.q, vars.vh              # use vars.q and vars.vh as scratch variables
+  @. vQy = vars.v * params.Qy              # v*∂Q/∂y
+  fwdtransform!(vQyh, vQy, params)
+  @. N -= vQyh                             # -\hat{v*∂Q/∂y}
 
   invtransform!(vars.q, vars.qh, params)
+  
+  uq , vq  = vars.u , vars.v               # use vars.u and vars.v as scratch variables
+  uqh, vqh = vars.uh, vars.vh              # use vars.uh and vars.vh as scratch variables
+  @. uq *= vars.q                          # (U+u)*q
+  @. vq *= vars.q                          # v*q
 
-  @. vars.u *= vars.q                      # u*q
-  @. vars.v *= vars.q                      # v*q
+  fwdtransform!(uqh, uq, params)
+  fwdtransform!(vqh, vq, params)
 
-  fwdtransform!(vars.uh, vars.u, params)
-  fwdtransform!(vars.vh, vars.v, params)
-
-  @. N -= im * grid.kr * vars.uh + im * grid.l * vars.vh    # -∂[(U+u)q]/∂x - ∂[vq]/∂y
+  @. N -= im * grid.kr * uqh + im * grid.l * vqh    # -\hat{∂[(U+u)q]/∂x} - \hat{∂[vq]/∂y}
 
   return nothing
 end
@@ -424,22 +430,28 @@ function calcN_linearadvection!(N, sol, vars, params, grid)
 
   invtransform!(vars.u, vars.uh, params)
   @. vars.u += params.U                    # add the imposed zonal flow U
-  @. vars.q  = vars.u * params.Qx
-  fwdtransform!(vars.uh, vars.q, params)
-  @. N = -vars.uh                          # -(U+u)*∂Q/∂x
+  uQx, uQxh = vars.q, vars.uh              # use vars.q and vars.uh as scratch variables
+  @. uQx  = vars.u * params.Qx             # (U+u)*∂Q/∂x
+  fwdtransform!(uQxh, uQx, params)
+  @. N = - uQxh                            # -\hat{(U+u)*∂Q/∂x}
 
   invtransform!(vars.v, vars.vh, params)
-  @. vars.q = vars.v * params.Qy
-  fwdtransform!(vars.vh, vars.q, params)
-  @. N -= vars.vh                          # -v*∂Q/∂y
+  
+  vQy, vQyh = vars.q, vars.vh              # use vars.q and vars.vh as scratch variables
+
+  @. vQy = vars.v * params.Qy              # v*∂Q/∂y
+  fwdtransform!(vQyh, vQy, params)
+  @. N -= vQyh                             # -\hat{v*∂Q/∂y}
 
   invtransform!(vars.q, vars.qh, params)
+  
   @. vars.u  = params.U
-  @. vars.u *= vars.q                      # u*q
+  Uq , Uqh  = vars.u , vars.uh             # use vars.u and vars.uh as scratch variables
+  @. Uq *= vars.q                          # U*q
 
-  fwdtransform!(vars.uh, vars.u, params)
+  fwdtransform!(Uqh, Uq, params)
 
-  @. N -= im * grid.kr * vars.uh           # -∂[U*q]/∂x
+  @. N -= im * grid.kr * Uqh               # -\hat{∂[U*q]/∂x}
 
   return nothing
 end
