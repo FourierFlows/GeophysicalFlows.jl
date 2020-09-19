@@ -99,6 +99,20 @@ for dev in devices
     @test BarotropicQGQL.nothingfunction() == nothing
   end
   
+  @testset "SurfaceQG" begin
+    include("test_surfaceqg.jl")
+      
+    @test test_sqg_kineticenergy_buoyancyvariance(dev)
+    @test test_sqg_advection(0.0005, "ForwardEuler", dev)
+    @test test_sqg_deterministicforcing_buoyancy_variance_budget(dev)
+    @test test_sqg_stochasticforcing_buoyancy_variance_budget(dev)
+    @test test_sqg_stochasticforcedproblemconstructor(dev)
+    @test test_sqg_problemtype(dev, Float32)
+    @test test_sqg_paramsconstructor(dev)
+    @test test_sqg_noforcing(dev)
+    @test SurfaceQG.nothingfunction() == nothing
+  end
+    
   @testset "MultilayerQG" begin
     include("test_multilayerqg.jl")
     
@@ -117,21 +131,6 @@ for dev in devices
     @test test_mqg_problemtype(dev, Float32)
     @test MultilayerQG.nothingfunction() == nothing
   end
-
-  @testset "SurfaceQG" begin
-    include("test_surfaceqg.jl")
-    
-    @test test_sqg_kineticenergy_buoyancyvariance(dev)
-    @test test_sqg_advection(0.0005, "ForwardEuler", dev)
-    @test test_sqg_deterministicforcing_buoyancy_variance_budget(dev)
-    @test test_sqg_stochasticforcing_buoyancy_variance_budget(dev)
-    @test test_sqg_stochasticforcedproblemconstructor(dev)
-    @test test_sqg_problemtype(dev, Float32)
-    @test test_sqg_paramsconstructor(dev)
-    @test test_sqg_noforcing(dev)
-    @test SurfaceQG.nothingfunction() == nothing
-  end
-  
 end
 
 end # time
