@@ -211,10 +211,8 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
     nothing
   end
 
-  # prob = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly,
-  #  f₀=f₀, g=g, H=H, ρ=ρ, U=U, eta=η, β=β, μ=μ, ν=ν, nν=nν, calcFq=calcFq!, stepper=stepper, dt=dt)
-   prob = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly,
-    f₀=f₀, g=g, H=H, ρ=ρ, U=U, β=0, μ=0, ν=0, nν=nν, stepper=stepper, dt=dt)
+  prob = MultilayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly,
+   f₀=f₀, g=g, H=H, ρ=ρ, U=U, eta=η, β=β, μ=μ, ν=ν, nν=nν, calcFq=calcFq!, stepper=stepper, dt=dt)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   qf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
@@ -226,13 +224,11 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
   @views ψf[:, :, 2] = ψ2
 
   MultilayerQG.set_q!(prob, qf)
-  stepforward!(prob, 1)
-  return prob.sol
   
-  # stepforward!(prob, nt)
-  # MultilayerQG.updatevars!(prob)
-  # 
-  # return isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)
+  stepforward!(prob, nt)
+  MultilayerQG.updatevars!(prob)
+  
+  return isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)
 end
 
 """
