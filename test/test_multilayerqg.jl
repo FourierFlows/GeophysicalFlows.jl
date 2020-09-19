@@ -175,7 +175,7 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
   
   β = 0.35
   
-  U1, U2 = 0, 0
+  U1, U2 = 0.1, 0.05
   u1 = @. 0.5sech(gr.y/(Ly/15))^2; u1 = A(reshape(u1, (1, gr.ny)))
   u2 = @. 0.02cos(3l₀*gr.y);       u2 = A(reshape(u2, (1, gr.ny)))
   uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
@@ -228,7 +228,7 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
   stepforward!(prob, nt)
   MultilayerQG.updatevars!(prob)
   
-  return isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)
+  return isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)		
 end
 
 """
