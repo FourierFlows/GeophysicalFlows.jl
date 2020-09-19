@@ -35,7 +35,12 @@ To install, do
 ] add GeophysicalFlows
 ```
 
-See `examples/` for example scripts.
+## Examples
+
+See `examples/` for example scripts. These examples are best viewed by browsing them within the package's [documentation]. 
+
+Some animations created with GeophysicalFlows.jl are [online @ youtube].
+
 
 ## Modules
 
@@ -48,7 +53,6 @@ All modules provide solvers on two-dimensional domains. We currently provide
 * `SurfaceQG`: a surface quasi-geostrophic model.
 
 
-
 ## Cite
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
@@ -57,3 +61,5 @@ The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
+[documentation]: https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/
+[online @ youtube]: https://www.youtube.com/channel/UCO_0ugkNUwCsFUMtepwYTqw
