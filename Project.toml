@@ -17,7 +17,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
-CUDA = "^1"
+CUDA = "^1, 2.0"
 FFTW = "^1"
 FourierFlows = "^0.6"
 JLD2 = "^0.1, ^0.2"
