@@ -135,6 +135,28 @@ for dev in devices
   end
 end
 
+dev = CPU()
+println("following tests only on "*string(typeof(dev)))
+
+@testset "MultilayerQG" begin
+  include("test_multilayerqg.jl")
+  
+  @test test_pvtofromstreamfunction_2layer(dev)
+  @test test_pvtofromstreamfunction_3layer(dev)
+  @test test_mqg_rossbywave("RK4", 1e-2, 20, dev)
+  @test test_mqg_nonlinearadvection(0.005, "ForwardEuler", dev)
+  @test test_mqg_linearadvection(0.005, "ForwardEuler", dev)
+  @test test_mqg_energies(dev)
+  @test test_mqg_energysinglelayer(dev)
+  @test test_mqg_fluxes(dev)
+  @test test_mqg_fluxessinglelayer(dev)
+  @test test_mqg_setqsetψ(dev)
+  @test test_mqg_paramsconstructor(dev)
+  @test test_mqg_stochasticforcedproblemconstructor(dev)
+  @test test_mqg_problemtype(dev, Float32)
+  @test MultilayerQG.nothingfunction() == nothing
+end
+
 end # time
 
 println("Total test time: ", testtime)
