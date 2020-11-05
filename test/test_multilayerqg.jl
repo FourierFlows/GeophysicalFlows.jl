@@ -224,11 +224,11 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
   @views ψf[:, :, 2] = ψ2
 
   MultilayerQG.set_q!(prob, qf)
-
+  
   stepforward!(prob, nt)
   MultilayerQG.updatevars!(prob)
-
-  return isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)
+  
+  return isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)		
 end
 
 """

@@ -57,7 +57,7 @@ All modules provide solvers on two-dimensional domains. We currently provide
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Navid C. Constantinou, Gregory L. Wagner. (2020). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.8.0  (Version v0.8.0). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
+> Navid C. Constantinou, Gregory L. Wagner. (2020). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.8.2  (Version v0.8.2). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
