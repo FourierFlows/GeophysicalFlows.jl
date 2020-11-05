@@ -101,7 +101,7 @@ for dev in devices
   
   @testset "SurfaceQG" begin
     include("test_surfaceqg.jl")
-    
+      
     @test test_sqg_kineticenergy_buoyancyvariance(dev)
     @test test_sqg_advection(0.0005, "ForwardEuler", dev)
     @test test_sqg_deterministicforcing_buoyancy_variance_budget(dev)
@@ -113,6 +113,26 @@ for dev in devices
     @test SurfaceQG.nothingfunction() == nothing
   end
   
+  if dev == CPU()
+    @testset "MultilayerQG" begin
+      include("test_multilayerqg.jl")
+      
+      @test test_pvtofromstreamfunction_2layer(dev)
+      @test test_pvtofromstreamfunction_3layer(dev)
+      @test test_mqg_rossbywave("RK4", 1e-2, 20, dev)
+      @test test_mqg_nonlinearadvection(0.005, "ForwardEuler", dev)
+      @test test_mqg_linearadvection(0.005, "ForwardEuler", dev)
+      @test test_mqg_energies(dev)
+      @test test_mqg_energysinglelayer(dev)
+      @test test_mqg_fluxes(dev)
+      @test test_mqg_fluxessinglelayer(dev)
+      @test test_mqg_setqsetψ(dev)
+      @test test_mqg_paramsconstructor(dev)
+      @test test_mqg_stochasticforcedproblemconstructor(dev)
+      @test test_mqg_problemtype(dev, Float32)
+      @test MultilayerQG.nothingfunction() == nothing
+    end
+  end
 end
 
 dev = CPU()

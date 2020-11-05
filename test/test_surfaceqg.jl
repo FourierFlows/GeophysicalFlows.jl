@@ -113,9 +113,9 @@ function test_sqg_noforcing(dev::Device=CPU())
   prob_unforced = SurfaceQG.Problem(dev; nx=n, Lx=L, stepper="ForwardEuler")
 
   SurfaceQG.addforcing!(prob_unforced.timestepper.N, prob_unforced.sol, prob_unforced.clock.t, prob_unforced.clock, prob_unforced.vars, prob_unforced.params, prob_unforced.grid)
-  
+    
   function calcF!(Fh, sol, t, clock, vars, params, grid)
-    Fh .= 2*ones(size(sol))
+    Fh .= 2 * ArrayType(dev)(ones(size(sol)))
     return nothing
   end
   
@@ -123,7 +123,7 @@ function test_sqg_noforcing(dev::Device=CPU())
 
   SurfaceQG.addforcing!(prob_forced.timestepper.N, prob_forced.sol, prob_forced.clock.t, prob_forced.clock, prob_forced.vars, prob_forced.params, prob_forced.grid)
   
-  return prob_unforced.timestepper.N == Complex.(zeros(size(prob_unforced.sol))) && prob_forced.timestepper.N == Complex.(2*ones(size(prob_unforced.sol)))
+  return prob_unforced.timestepper.N == Complex.(ArrayType(dev)(zeros(size(prob_unforced.sol)))) && prob_forced.timestepper.N == Complex.(2*ArrayType(dev)(ones(size(prob_unforced.sol))))
 end
 
 function test_sqg_deterministicforcing_buoyancy_variance_budget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, tf=10.0)
