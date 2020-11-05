@@ -16,68 +16,66 @@ function test_bqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
   if stepper=="ForwardEuler"
     eta = zeros(dev, T, (nx, nx))
   else
-    eta(x, y) = 0*x
+    eta(x, y) = 0 * x
   end
 
   prob = BarotropicQG.Problem(dev; nx=nx, Lx=Lx, eta=eta, β=β, μ=μ, ν=ν, stepper=stepper, dt=dt)
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+  sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
-  x, y = gridpoints(g)
+  x, y = gridpoints(grid)
 
   # the Rossby wave initial condition
    ampl = 1e-2
-  kwave = 3 * 2π/g.Lx
-  lwave = 2 * 2π/g.Ly
-      ω = -p.β*kwave/(kwave^2 + lwave^2)
-     ζ0 = @. ampl*cos(kwave*x)*cos(lwave*y)
+  kwave = 3 * 2π/grid.Lx
+  lwave = 2 * 2π/grid.Ly
+      ω = -params.β * kwave / (kwave^2 + lwave^2)
+     ζ0 = @. ampl * cos(kwave * x) * cos(lwave * y)
     ζ0h = rfft(ζ0)
 
   BarotropicQG.set_zeta!(prob, ζ0)
 
   stepforward!(prob, nsteps)
-  dealias!(sol, g)
+  dealias!(sol, grid)
   BarotropicQG.updatevars!(prob)
 
-  ζ_theory = @. ampl*cos(kwave*(x - ω/kwave*cl.t)) * cos(lwave*y)
+  ζ_theory = @. ampl * cos(kwave * (x - ω/kwave * clock.t)) * cos(lwave * y)
 
-  return isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
+  return isapprox(ζ_theory, vars.zeta, rtol=grid.nx * grid.ny * nsteps * 1e-12)
 end
 
 """
-    test_bqg_stochasticforcingbudgets(dev; kwargs...)
+    test_bqg_stochasticforcing_energy_budgets(dev; kwargs...)
 
-Tests if the energy budget is closed for BarotropicQG problem with stochastic forcing.
+Tests if the energy budget is closed for a BarotropicQG problem with stochastic forcing.
 """
-function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, T=Float64)
+function test_bqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, T=Float64)
   n, L  = 256, 2π
   ν, nν = 1e-7, 2
   μ = 1e-1
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-    gr = TwoDGrid(dev, n, L)
-  x, y = gridpoints(gr)
-
-  # Forcing
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
+  K  = @. sqrt(grid.Krsq)                      # a 2D array with the total wavenumber
+  
+  # Forcing with spectrum ~ exp(-(k-kf)²/(2 dkf²))
   kf, dkf = 12.0, 2.0
   ε = 0.1
-
-  CUDA.@allowscalar Kr = ArrayType(dev)([gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
-
-  forcingcovariancespectrum = zeros(dev, T, (gr.nkr, gr.nl))
-  @. forcingcovariancespectrum = exp( -(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2) )
-  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .< 2^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .> 20^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[Kr .< 2π/L] = 0
-  ε0 = parsevalsum(forcingcovariancespectrum .* gr.invKrsq / 2, gr) / (gr.Lx * gr.Ly)
-  forcingcovariancespectrum .= ε / ε0 * forcingcovariancespectrum
+  
+  forcing_spectrum = zeros(dev, T, (grid.nkr, grid.nl))
+  @. forcing_spectrum = exp(-(K - kf)^2 / (2 * dkf^2))
+  CUDA.@allowscalar @. forcing_spectrum[K .<  2 * 2π/L] = 0    # no power at low wavenumbers
+  CUDA.@allowscalar @. forcing_spectrum[K .> 20 * 2π/L] = 0    # no power at high wavenumbers
+  ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
+  forcing_spectrum .= ε / ε0 * forcing_spectrum
 
   Random.seed!(1234)
 
   function calcFq!(Fqh, sol, t, clock, vars, params, grid)
     eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
-    @. Fqh = eta * sqrt(forcingcovariancespectrum)
+    @. Fqh = eta * sqrt(forcing_spectrum)
     return nothing
   end
 
@@ -107,20 +105,20 @@ function test_bqg_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=
 end
 
 """
-    test_bqg_deterministicforcingbudgets(dev; kwargs...)
+    test_bqg_deterministicforcing_energy_budgets(dev; kwargs...)
 
-Tests if the energy budget is closed for BarotropicQG problem with deterministic forcing.
+Tests if the energy budget is closed for a BarotropicQG problem with deterministic forcing.
 """
-function test_bqg_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1)
+function test_bqg_deterministicforcing_energybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1)
   n, L  = 256, 2π
   ν, nν = 1e-7, 2
   μ = 1e-1
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  gr = TwoDGrid(dev, n, L)
-  x, y = gridpoints(gr)
-  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
+  k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
   f = @. 0.01 * cos(4k₀*x) * cos(5l₀*y)
@@ -149,9 +147,114 @@ function test_bqg_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.01,
   dEdt_numerical = (E[3:E.i] - E[1:E.i-2]) / (2 * prob.clock.dt)
   dEdt_computed  = W[2:E.i-1] - D[2:E.i-1] - R[2:E.i-1]
   
-  residual = dEdt_numerical - dEdt_computed
+  return isapprox(dEdt_numerical, dEdt_computed, rtol=1e-4)
+end
 
-  return isapprox(dEdt_numerical, dEdt_computed, atol=1e-10)
+"""
+    test_bqg_stochasticforcing_enstrophy_budgets(dev; kwargs...)
+
+Tests if the enstrophy budget is closed for a BarotropicQG problem with stochastic forcing.
+"""
+function test_bqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, T=Float64)
+  n, L  = 256, 2π
+  ν, nν = 1e-7, 2
+  μ = 1e-1
+  dt, tf = 0.005, 0.1/μ
+  nt = round(Int, tf/dt)
+
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
+  K  = @. sqrt(grid.Krsq)                      # a 2D array with the total wavenumber
+
+  # Forcing with spectrum ~ exp(-(k-kf)²/(2 dkf²))
+  kf, dkf = 12.0, 2.0
+  εᶻ = 0.1
+  
+  forcing_spectrum = zeros(dev, T, (grid.nkr, grid.nl))
+  @. forcing_spectrum = exp(-(K - kf)^2 / (2 * dkf^2))
+  CUDA.@allowscalar @. forcing_spectrum[K .<  2 * 2π/L] = 0    # no power at low wavenumbers
+  CUDA.@allowscalar @. forcing_spectrum[K .> 20 * 2π/L] = 0    # no power at high wavenumbers
+  εᶻ0 = parsevalsum(forcing_spectrum / 2, grid) / (grid.Lx * grid.Ly)
+  forcing_spectrum .= εᶻ / εᶻ0 * forcing_spectrum
+
+  Random.seed!(1234)
+
+  function calcFq!(Fqh, sol, t, clock, vars, params, grid)
+    eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
+    CUDA.@allowscalar eta[1, 1] = 0
+    @. Fqh = eta * sqrt(forcing_spectrum)
+    return nothing
+  end
+
+  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
+   stepper="RK4", calcFq=calcFq!, stochastic=true)
+
+  BarotropicQG.set_zeta!(prob, 0*x)
+  
+  Z = Diagnostic(BarotropicQG.enstrophy,             prob, nsteps=nt)
+  D = Diagnostic(BarotropicQG.enstrophy_dissipation, prob, nsteps=nt)
+  R = Diagnostic(BarotropicQG.enstrophy_drag,        prob, nsteps=nt)
+  W = Diagnostic(BarotropicQG.enstrophy_work,        prob, nsteps=nt)
+  diags = [Z, D, W, R]
+
+  stepforward!(prob, diags, nt)
+
+  BarotropicQG.updatevars!(prob)
+
+  dZdt_numerical = (Z[2:Z.i] - Z[1:Z.i-1]) / prob.clock.dt
+
+  # If the Ito interpretation was used for the work
+  # then we need to add the drift term
+  # dZdt_computed = W[2:Z.i] + εᶻ - D[1:Z.i-1] - R[1:Z.i-1]      # Ito
+  dZdt_computed = W[2:Z.i] - D[1:Z.i-1] - R[1:Z.i-1]        # Stratonovich
+
+  return isapprox(dZdt_numerical, dZdt_computed, rtol=1e-3)
+end
+
+"""
+    test_bqg_deterministicforcing_enstrophy_budgets(dev; kwargs...)
+
+Tests if the enstrophy budget is closed for a BarotropicQG problem with deterministic forcing.
+"""
+function test_bqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1)
+  n, L  = 256, 2π
+  ν, nν = 1e-7, 2
+  μ = 1e-1
+  dt, tf = 0.005, 0.1/μ
+  nt = round(Int, tf/dt)
+
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
+  k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly
+
+  # Forcing = 0.01cos(4x)cos(5y)cos(2t)
+  f = @. 0.01 * cos(4k₀*x) * cos(5l₀*y)
+  fh = rfft(f)
+  
+  function calcFq!(Fqh, sol, t, clock, vars, params, grid)
+    @. Fqh = fh * cos(2t)
+    return nothing
+  end
+
+  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
+   stepper="RK4", calcFq=calcFq!, stochastic=false)
+
+  BarotropicQG.set_zeta!(prob, 0*x)
+  
+  Z = Diagnostic(BarotropicQG.enstrophy,             prob, nsteps=nt)
+  D = Diagnostic(BarotropicQG.enstrophy_dissipation, prob, nsteps=nt)
+  R = Diagnostic(BarotropicQG.enstrophy_drag,        prob, nsteps=nt)
+  W = Diagnostic(BarotropicQG.enstrophy_work,        prob, nsteps=nt)
+  diags = [Z, D, W, R]
+
+  stepforward!(prob, diags, round(Int, nt))
+
+  BarotropicQG.updatevars!(prob)
+
+  dZdt_numerical = (Z[3:Z.i] - Z[1:Z.i-2]) / (2 * prob.clock.dt)
+  dZdt_computed  = W[2:Z.i-1] - D[2:Z.i-1] - R[2:Z.i-1]
+  
+  return isapprox(dZdt_numerical, dZdt_computed, rtol=1e-4)
 end
 
 """
@@ -172,8 +275,8 @@ function test_bqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
   tf = 1.0
   nt = round(Int, tf/dt)
 
-  gr = TwoDGrid(dev, n, L)
-  x, y = gridpoints(gr)
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
 
   ψf = @. sin(2x) * cos(2y) + 2sin(x) * cos(3y)
   qf = @. -8sin(2x) * cos(2y) - 20sin(x) * cos(3y)
@@ -185,7 +288,6 @@ function test_bqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
 
   Ffh = rfft(Ff)
 
-  # Forcing
   function calcFq!(Fqh, sol, t, cl, v, p, g)
     Fqh .= Ffh
     return nothing
