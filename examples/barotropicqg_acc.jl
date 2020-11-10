@@ -178,7 +178,7 @@ anim = @animate for j=0:Int(nsteps/nsubs)
 
 end
 
-mp4(anim, "barotropicqg_acc.mp4", fps=18)
+gif(anim, "barotropicqg_acc.gif", fps=18)
 
 # Note that since mean flow enstrophy is $Q_U = \beta U$ it can attain negative values. 
 

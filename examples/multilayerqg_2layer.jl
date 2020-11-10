@@ -206,7 +206,7 @@ anim = @animate for j=0:Int(nsteps/nsubs)
   MultilayerQG.updatevars!(prob)
 end
 
-mp4(anim, "multilayerqg_2layer.mp4", fps=18)
+gif(anim, "multilayerqg_2layer.gif", fps=18)
 
 
 # ## Save

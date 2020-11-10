@@ -264,7 +264,7 @@ anim = @animate for j=0:Int(nsteps/nsubs)
   
 end
 
-mp4(anim, "barotropicqg_betaforced.mp4", fps=18)
+gif(anim, "barotropicqg_betaforced.gif", fps=18)
 
 
 # ## Save
