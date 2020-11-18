@@ -42,8 +42,8 @@ function Problem(dev::Device=CPU();
           dt = 0.01,
   # Physical parameters
            β = 0.0,
+        kdef = 0.0,
          eta = nothing,
-         kdef = 0.0,
   # Drag and/or hyper-/hypo-viscosity
            ν = 0.0,
           nν = 1,
@@ -62,7 +62,7 @@ function Problem(dev::Device=CPU();
   # topographic PV
   eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
 
-  params = !(typeof(eta)<:ArrayType(dev)) ? Params(grid, β, eta, μ, ν, nν, kdef, calcFU, calcFq) : Params(β, eta, rfft(eta), μ, ν, nν, kdef, calcFU, calcFq)
+  params = !(typeof(eta)<:ArrayType(dev)) ? Params(grid, β, kdef, eta, μ, ν, nν, calcFU, calcFq) : Params(β, kdef, eta, rfft(eta), μ, ν, nν, calcFU, calcFq)
 
   vars = (calcFq == nothingfunction && calcFU == nothingfunction) ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
@@ -82,12 +82,12 @@ Returns the params for an unforced two-dimensional barotropic QG problem.
 """
 struct Params{T, Aphys, Atrans} <: AbstractParams
         β :: T            # Planetary vorticity y-gradient
+     kdef :: T          # deformation wavenumber
       eta :: Aphys        # Topographic PV
      etah :: Atrans       # FFT of Topographic PV
         μ :: T            # Linear drag
         ν :: T            # Viscosity coefficient
        nν :: Int          # Hyperviscous order (nν=1 is plain old viscosity)
-       kdef :: T          # deformation wavenumber
    calcFU :: Function     # Function that calculates the forcing F(t) on
                           # domain-averaged zonal flow U(t)
   calcFq! :: Function     # Function that calculates the forcing on QGPV q
@@ -97,10 +97,10 @@ end
     Params(g::TwoDGrid, β, eta::Function, μ, ν, nν, calcFU, calcFq)
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function Params(grid::AbstractGrid{T, A}, β, eta, kdef::Function, μ, ν, nν::Int, calcFU, calcFq) where {T, A}
+function Params(grid::AbstractGrid{T, A}, β, kdef, eta ::Function, μ, ν, nν::Int, calcFU, calcFq) where {T, A}
   etagrid = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
      etah = rfft(etagrid)
-  return Params(β, etagrid, etah, μ, ν, nν, kdef, calcFU, calcFq)
+  return Params(β, kdef, etagrid, etah, μ, ν, nν, calcFU, calcFq)
 end
 
 
