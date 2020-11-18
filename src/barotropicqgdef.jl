@@ -100,7 +100,7 @@ Constructor for Params that accepts a generating function for the topographic PV
 function Params(grid::AbstractGrid{T, A}, β, eta, kdef::Function, μ, ν, nν::Int, calcFU, calcFq) where {T, A}
   etagrid = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
      etah = rfft(etagrid)
-  return Params(β, etagrid, etah, μ, ν, nν, calcFU, calcFq)
+  return Params(β, etagrid, etah, μ, ν, nν, kdef, calcFU, calcFq)
 end
 
 
