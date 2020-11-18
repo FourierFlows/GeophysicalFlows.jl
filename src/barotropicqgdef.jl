@@ -185,7 +185,7 @@ end
 # Solvers
 # -------
 
-
+## add a new variable for Lapl psi - kdef^2 * psi ?
 function streamfunction!(psih,zetah,grid,params)
   @. psih = - zetah / (grid.Krsq + params.kdef^2)
   psih[1,1] = 0
