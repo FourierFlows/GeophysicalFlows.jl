@@ -43,7 +43,7 @@ function Problem(dev::Device=CPU();
   # Physical parameters
            β = 0.0,
          eta = nothing,
-         K_def = 0.0,
+         kdef = 0.0,
   # Drag and/or hyper-/hypo-viscosity
            ν = 0.0,
           nν = 1,
@@ -62,7 +62,7 @@ function Problem(dev::Device=CPU();
   # topographic PV
   eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
 
-  params = !(typeof(eta)<:ArrayType(dev)) ? Params(grid, β, eta, μ, ν, nν, K_def, calcFU, calcFq) : Params(β, eta, rfft(eta), μ, ν, nν, K_def, calcFU, calcFq)
+  params = !(typeof(eta)<:ArrayType(dev)) ? Params(grid, β, eta, μ, ν, nν, kdef, calcFU, calcFq) : Params(β, eta, rfft(eta), μ, ν, nν, kdef, calcFU, calcFq)
 
   vars = (calcFq == nothingfunction && calcFU == nothingfunction) ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
@@ -87,7 +87,7 @@ struct Params{T, Aphys, Atrans} <: AbstractParams
         μ :: T            # Linear drag
         ν :: T            # Viscosity coefficient
        nν :: Int          # Hyperviscous order (nν=1 is plain old viscosity)
-       K_def :: T         # wv deformation
+       kdef :: T          # deformation wavenumber
    calcFU :: Function     # Function that calculates the forcing F(t) on
                           # domain-averaged zonal flow U(t)
   calcFq! :: Function     # Function that calculates the forcing on QGPV q
@@ -97,7 +97,7 @@ end
     Params(g::TwoDGrid, β, eta::Function, μ, ν, nν, calcFU, calcFq)
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function Params(grid::AbstractGrid{T, A}, β, eta::Function, μ, ν, nν::Int, calcFU, calcFq) where {T, A}
+function Params(grid::AbstractGrid{T, A}, β, eta, kdef::Function, μ, ν, nν::Int, calcFU, calcFq) where {T, A}
   etagrid = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
      etah = rfft(etagrid)
   return Params(β, etagrid, etah, μ, ν, nν, calcFU, calcFq)
@@ -185,9 +185,10 @@ end
 # Solvers
 # -------
 
-## add deformation radius here and in params
+
 function streamfunction!(psih,zetah,grid,params)
-  @. psih = - grid.invKrsq * zetah
+  @. psih = - zetah / (grid.Krsq + params.kdef^2)
+  psih[1,1] = 0
   return nothing
 end
 
