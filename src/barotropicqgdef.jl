@@ -1,4 +1,4 @@
-module BarotropicQG_def
+module BarotropicQG_def0
 
 export
   Problem,
@@ -82,7 +82,7 @@ Returns the params for an unforced two-dimensional barotropic QG problem.
 """
 struct Params{T, Aphys, Atrans} <: AbstractParams
         β :: T            # Planetary vorticity y-gradient
-     kdef :: T          # deformation wavenumber
+     kdef :: T            # deformation wavenumber
       eta :: Aphys        # Topographic PV
      etah :: Atrans       # FFT of Topographic PV
         μ :: T            # Linear drag
@@ -188,7 +188,7 @@ end
 ## add a new variable for Lapl psi - kdef^2 * psi ?
 function streamfunction!(psih,zetah,grid,params)
   @. psih = - zetah / (grid.Krsq + params.kdef^2)
-  psih[1,1] = 0
+  CUDA.@allowscalar psih[1,1] = 0.0
   return nothing
 end
 
