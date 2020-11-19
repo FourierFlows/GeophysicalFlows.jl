@@ -97,10 +97,10 @@ end
     Params(g::TwoDGrid, β, eta::Function, μ, ν, nν, calcFU, calcFq)
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function Params(grid::AbstractGrid{T, A}, β, eta ::Function, μ, ν, nν::Int, calcFU, calcFq) where {T, A}
+function Params(grid::AbstractGrid{T, A}, β, kdef, eta ::Function, μ, ν, nν::Int, calcFU, calcFq) where {T, A}
   etagrid = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
      etah = rfft(etagrid)
-  return Params(β, etagrid, etah, μ, ν, nν, calcFU, calcFq)
+  return Params(β,kdef, etagrid, etah, μ, ν, nν, calcFU, calcFq)
 end
 
 
