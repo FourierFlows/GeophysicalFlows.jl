@@ -1,4 +1,4 @@
-module BarotropicQG_def0
+module BarotropicQG_def
 
 export
   Problem,
