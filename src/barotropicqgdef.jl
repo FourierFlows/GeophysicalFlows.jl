@@ -4,7 +4,8 @@ export
   Problem,
   set_zeta!,
   updatevars!,
-
+  ke_energy,
+  pe_energy,
   energy,
   enstrophy,
   meanenergy,
@@ -333,6 +334,21 @@ Returns the domain-averaged kinetic energy of solution `sol`.
 """
 energy(sol, grid::AbstractGrid) = 0.5 * ( parsevalsum2(grid.kr .* grid.invKrsq .* sol, grid) + parsevalsum2(grid.l .* grid.invKrsq .* sol, grid) ) / (grid.Lx * grid.Ly)
 energy(prob) = energy(prob.sol, prob.grid)
+
+
+function ke_energy(sol, grid, vars)
+    streamfunction!(vars.psih,sol,grid,params)
+
+  return parsevalsum(grid.Krsq .* abs2.(vars.psih), grid) / (grid.Lx * grid.Ly)
+end
+ke_energy(prob) = ke_energy(prob.sol, prob.grid, prob.vars)
+
+function pe_energy(sol, grid, vars, params)
+    streamfunction!(vars.psih,sol,grid,params)
+
+  return params.kdef*params.kdef*parsevalsum2(vars.psih, grid) / (grid.Lx * grid.Ly)
+end
+pe_energy(prob) = pe_energy(prob.sol, prob.grid, prob.vars, prob.params)
 
 """
     enstrophy(prob)
