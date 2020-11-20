@@ -8,7 +8,7 @@ export
   pe_energy,
   energy,
   enstrophy,
-  enstrophy_lia
+  enstrophy_lia,
   meanenergy,
   meanenstrophy,
   dissipation,
