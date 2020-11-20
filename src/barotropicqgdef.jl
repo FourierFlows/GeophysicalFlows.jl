@@ -336,12 +336,12 @@ energy(sol, grid::AbstractGrid) = 0.5 * ( parsevalsum2(grid.kr .* grid.invKrsq .
 energy(prob) = energy(prob.sol, prob.grid)
 
 
-function ke_energy(sol, grid, vars)
+function ke_energy(sol, grid, vars, params)
     streamfunction!(vars.psih,sol,grid,params)
 
   return parsevalsum(grid.Krsq .* abs2.(vars.psih), grid) / (grid.Lx * grid.Ly)
 end
-ke_energy(prob) = ke_energy(prob.sol, prob.grid, prob.vars)
+ke_energy(prob) = ke_energy(prob.sol, prob.grid, prob.vars, prob.params)
 
 function pe_energy(sol, grid, vars, params)
     streamfunction!(vars.psih,sol,grid,params)
