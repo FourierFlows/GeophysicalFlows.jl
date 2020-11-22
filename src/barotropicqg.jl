@@ -331,9 +331,9 @@ set_U!(prob, U::Float64) = set_U!(prob.sol, prob.vars, prob.params, prob.grid, U
     energy(prob)
     energy(sol, grid)
 
-Returns the domain-averaged kinetic energy of solution `sol`: ∫½(u²+v²)dxdy/(Lx Ly).
+Returns the domain-averaged kinetic energy of solution `sol`: ∫ ½ (u²+v²) dxdy / (Lx Ly) = ∑ ½ k² |ψ̂|².
 """
-energy(sol, grid::AbstractGrid) = parsevalsum2(sqrt.(grid.Krsq) .* grid.invKrsq .* sol, grid) / (2 * grid.Lx * grid.Ly)
+energy(sol, grid) = parsevalsum2(sqrt.(grid.Krsq) .* grid.invKrsq .* sol, grid) / (2 * grid.Lx * grid.Ly)
 energy(prob) = energy(prob.sol, prob.grid)
 
 """
