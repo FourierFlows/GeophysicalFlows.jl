@@ -340,14 +340,14 @@ energy(prob) = energy(prob.sol, prob.grid)
 function ke_energy(sol, grid, vars, params)
     streamfunction!(vars.psih,sol,grid,params)
 
-  return parsevalsum(grid.Krsq .* abs2.(vars.psih), grid) / (grid.Lx * grid.Ly)
+  return parsevalsum(grid.Krsq .* abs2.(vars.psih), grid) / (2 * grid.Lx * grid.Ly)
 end
 ke_energy(prob) = ke_energy(prob.sol, prob.grid, prob.vars, prob.params)
 
 function pe_energy(sol, grid, vars, params)
     streamfunction!(vars.psih,sol,grid,params)
 
-  return params.kdef*params.kdef*parsevalsum2(vars.psih, grid) / (grid.Lx * grid.Ly)
+  return params.kdef*params.kdef*parsevalsum2(vars.psih, grid) / (2 * grid.Lx * grid.Ly)
 end
 pe_energy(prob) = pe_energy(prob.sol, prob.grid, prob.vars, prob.params)
 
@@ -366,7 +366,7 @@ enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
 
 function enstrophy_lia(sol, grid, vars, params)
   streamfunction!(vars.psih,sol,grid,params)
-  return parsevalsum(grid.Krsq.*grid.Krsq .* abs2.(vars.psih), grid) / (grid.Lx * grid.Ly)
+  return parsevalsum(grid.Krsq.*grid.Krsq .* abs2.(vars.psih), grid) / (2*grid.Lx * grid.Ly)
 end
 enstrophy_lia(prob) = enstrophy_lia(prob.sol, prob.grid, prob.vars,prob.params)
 
