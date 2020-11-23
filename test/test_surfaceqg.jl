@@ -177,9 +177,9 @@ function test_sqg_stochasticforcing_buoyancy_variance_budget(dev::Device=CPU(); 
 
   forcingcovariancespectrum = ArrayType(dev)(zero(grid.Krsq))
   @. forcingcovariancespectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
-  CUDA.@allowscalar @. forcingcovariancespectrum[grid.Krsq .< 2^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[grid.Krsq .> 20^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[Kr .< 2π/L] = 0
+  @. forcingcovariancespectrum = ifelse(gr.Krsq < 2^2, 0, forcingcovariancespectrum)
+  @. forcingcovariancespectrum = ifelse(gr.Krsq > 20^2, 0, forcingcovariancespectrum)
+  @. forcingcovariancespectrum = ifelse(Kr < 2π/L, 0, forcingcovariancespectrum)
   εᵇ0 = parsevalsum(forcingcovariancespectrum, grid) / (grid.Lx * grid.Ly)
   forcingcovariancespectrum .= εᵇ / εᵇ0 * forcingcovariancespectrum
   

@@ -32,20 +32,20 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
 
   Kr = ArrayType(dev)([CUDA.@allowscalar gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
 
-  forcingcovariancespectrum = ArrayType(dev)(zero(gr.Krsq))
-  @. forcingcovariancespectrum = exp(-(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2))
-  @. forcingcovariancespectrum = ifelse(gr.Krsq < 2^2, 0, forcingcovariancespectrum)
-  @. forcingcovariancespectrum = ifelse(gr.Krsq > 20^2, 0, forcingcovariancespectrum)
-  @. forcingcovariancespectrum = ifelse(Kr < 2π/L, 0, forcingcovariancespectrum)
-  ε0 = parsevalsum(forcingcovariancespectrum .* gr.invKrsq / 2, gr) / (gr.Lx * gr.Ly)
-  forcingcovariancespectrum .= ε / ε0 * forcingcovariancespectrum
+  forcing_spectrum = ArrayType(dev)(zero(gr.Krsq))
+  @. forcing_spectrum = exp(-(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2))
+  @. forcing_spectrum = ifelse(gr.Krsq < 2^2, 0, forcing_spectrum)
+  @. forcing_spectrum = ifelse(gr.Krsq > 20^2, 0, forcing_spectrum)
+  @. forcing_spectrum = ifelse(Kr < 2π/L, 0, forcing_spectrum)
+  ε0 = parsevalsum(forcing_spectrum .* gr.invKrsq / 2, gr) / (gr.Lx * gr.Ly)
+  forcing_spectrum .= ε / ε0 * forcing_spectrum
 
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
     eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
-    @. Fh = eta * sqrt(forcingcovariancespectrum)
+    @. Fh = eta * sqrt(forcing_spectrum)
     return nothing
   end
 
@@ -86,20 +86,20 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
 
   Kr = ArrayType(dev)([CUDA.@allowscalar gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
 
-  forcingcovariancespectrum = ArrayType(dev)(zero(gr.Krsq))
-  @. forcingcovariancespectrum = exp(-(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2))
-  @. forcingcovariancespectrum = ifelse(gr.Krsq < 2^2, 0, forcingcovariancespectrum)
-  @. forcingcovariancespectrum = ifelse(gr.Krsq > 20^2, 0, forcingcovariancespectrum)
-  @. forcingcovariancespectrum = ifelse(Kr < 2π/L, 0, forcingcovariancespectrum)
-  εᶻ0 = parsevalsum(forcingcovariancespectrum / 2, gr) / (gr.Lx * gr.Ly)
-  forcingcovariancespectrum .= εᶻ / εᶻ0 * forcingcovariancespectrum
+  forcing_spectrum = ArrayType(dev)(zero(gr.Krsq))
+  @. forcing_spectrum = exp(-(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2))
+  @. forcing_spectrum = ifelse(gr.Krsq < 2^2, 0, forcing_spectrum)
+  @. forcing_spectrum = ifelse(gr.Krsq > 20^2, 0, forcing_spectrum)
+  @. forcing_spectrum = ifelse(Kr < 2π/L, 0, forcing_spectrum)
+  εᶻ0 = parsevalsum(forcing_spectrum / 2, gr) / (gr.Lx * gr.Ly)
+  forcing_spectrum .= εᶻ / εᶻ0 * forcing_spectrum
   
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, cl, v, p, g)
     eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(cl.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
-    @. Fh = eta * sqrt(forcingcovariancespectrum)
+    @. Fh = eta * sqrt(forcing_spectrum)
     nothing
   end
 
