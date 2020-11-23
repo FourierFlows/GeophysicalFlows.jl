@@ -34,9 +34,9 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
 
   forcingcovariancespectrum = ArrayType(dev)(zero(gr.Krsq))
   @. forcingcovariancespectrum = exp(-(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2))
-  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .< 2^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .> 20^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[Kr .< 2π/L] = 0
+  @. forcingcovariancespectrum = ifelse(gr.Krsq < 2^2, 0, forcingcovariancespectrum)
+  @. forcingcovariancespectrum = ifelse(gr.Krsq > 20^2, 0, forcingcovariancespectrum)
+  @. forcingcovariancespectrum = ifelse(Kr < 2π/L, 0, forcingcovariancespectrum)
   ε0 = parsevalsum(forcingcovariancespectrum .* gr.invKrsq / 2, gr) / (gr.Lx * gr.Ly)
   forcingcovariancespectrum .= ε / ε0 * forcingcovariancespectrum
 
@@ -88,9 +88,9 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
 
   forcingcovariancespectrum = ArrayType(dev)(zero(gr.Krsq))
   @. forcingcovariancespectrum = exp(-(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2))
-  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .< 2^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .> 20^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[Kr .< 2π/L] = 0
+  @. forcingcovariancespectrum = ifelse(gr.Krsq < 2^2, 0, forcingcovariancespectrum)
+  @. forcingcovariancespectrum = ifelse(gr.Krsq > 20^2, 0, forcingcovariancespectrum)
+  @. forcingcovariancespectrum = ifelse(Kr < 2π/L, 0, forcingcovariancespectrum)
   εᶻ0 = parsevalsum(forcingcovariancespectrum / 2, gr) / (gr.Lx * gr.Ly)
   forcingcovariancespectrum .= εᶻ / εᶻ0 * forcingcovariancespectrum
   
