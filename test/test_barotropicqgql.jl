@@ -227,7 +227,7 @@ function test_bqgql_energyenstrophy(dev::Device=CPU())
   energyζ₀ = BarotropicQGQL.energy(prob)
   enstrophyζ₀ = BarotropicQGQL.enstrophy(prob)
 
-  return isapprox(energyζ₀, energy_calc, rtol=1e-13) && isapprox(enstrophyζ₀, enstrophy_calc, rtol=1e-13) && BarotropicQGQL.addforcing!(prob.timestepper.N, sol, cl.t, clock, vars, params, grid)==nothing
+  return isapprox(energyζ₀, energy_calc, rtol=1e-13) && isapprox(enstrophyζ₀, enstrophy_calc, rtol=1e-13) && BarotropicQGQL.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid)==nothing
 end
 
 function test_bqgql_problemtype(dev, T)
