@@ -43,9 +43,9 @@ nothing # hide
 
 # We force the vorticity equation with stochastic excitation that is delta-correlated
 # in time and while spatially homogeneously and isotropically correlated. The forcing
-# has a spectrum with power in a ring in wavenumber space of radious $k_f$ and
-# width $\delta k_f$, and it injects energy per unit area and per unit time equal
-# to $\varepsilon$.
+# has a spectrum with power in a ring in wavenumber space of radius ``k_f`` and
+# width ``\delta k_f``, and it injects energy per unit area and per unit time equal
+# to ``\varepsilon``.
 
 forcing_wavenumber = 14.0    # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
 forcing_bandwidth  = 1.5     # the width of the forcing spectrum
@@ -54,9 +54,10 @@ forcing_bandwidth  = 1.5     # the width of the forcing spectrum
 grid = TwoDGrid(dev, n, L)
 
 K = @. sqrt(grid.Krsq)
+
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
-forcing_spectrum[K .< ( 2 * 2π/L)] .= 0 # no power at low wavenumbers
-forcing_spectrum[K .> (20 * 2π/L)] .= 0 # no power at high wavenumbers
+@. forcing_spectrum = ifelse(K < 2, 0, forcing_spectrum)       # no power at low wavenumbers
+@. forcing_spectrum = ifelse(K > 20, 0, forcing_spectrum)      # no power at high wavenumbers
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0             # normalize forcing to inject energy at rate ε
 
@@ -68,7 +69,8 @@ function calcF!(Fh, sol, t, clock, vars, params, grid)
   ξ = ArrayType(dev)(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
   ξ[1, 1] = 0
   @. Fh = ξ * sqrt(forcing_spectrum)
-  nothing
+  
+  return nothing
 end
 nothing # hide
 
@@ -92,7 +94,7 @@ nothing # hide
 # go back to physical space.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, irfft(vars.Fh, grid.nx),
+heatmap(x, y, irfft(vars.Fh, grid.nx)',
      aspectratio = 1,
                c = :balance,
             clim = (-200, 200),
@@ -132,8 +134,8 @@ nothing # hide
 # We define a function that plots the vorticity field and the evolution of
 # the diagnostics: energy, enstrophy, and all terms involved in the energy and 
 # enstrophy budgets. Last, we also check (by plotting) whether the energy and enstrophy
-# budgets are accurately computed, e.g., $\mathrm{d}E/\mathrm{d}t = W^\varepsilon - 
-# R^\varepsilon - D^\varepsilon$.
+# budgets are accurately computed, e.g., ``\mathrm{d}E/\mathrm{d}t = W^\varepsilon - 
+# R^\varepsilon - D^\varepsilon``.
 
 function computetendencies_and_makeplot(prob, diags)
   sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
@@ -155,7 +157,7 @@ function computetendencies_and_makeplot(prob, diags)
 
   εᶻ = parsevalsum(forcing_spectrum / 2, grid) / (grid.Lx * grid.Ly)
 
-  pzeta = heatmap(x, y, vars.zeta,
+  pzeta = heatmap(x, y, vars.zeta',
             aspectratio = 1,
             legend = false,
                  c = :viridis,
@@ -166,7 +168,7 @@ function computetendencies_and_makeplot(prob, diags)
             yticks = -3:3,
             xlabel = "μt",
             ylabel = "y",
-             title = "∇²ψ(x, y, μt="*@sprintf("%.2f", μ*clock.t)*")",
+             title = "∇²ψ(x, y, μt=" * @sprintf("%.2f", μ * clock.t) * ")",
         framestyle = :box)
 
   pζ = plot(pzeta, size = (400, 400))
