@@ -214,18 +214,34 @@ end
 # ----------------
 
 """
+    updatetransfomedvars!(prob)
+
+Update the Fourier transformed variables in `vars` with solution in `sol`.
+"""
+function updatetransfomedvars!(prob)
+  vars, grid, sol = prob.vars, prob.grid, prob.sol
+  
+  @. vars.zetah = sol
+  @. vars.uh =   im * grid.l  * grid.invKrsq * sol
+  @. vars.vh = - im * grid.kr * grid.invKrsq * sol
+  
+  return nothing
+end
+
+"""
     updatevars!(prob)
 
 Update variables in `vars` with solution in `sol`.
 """
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
-  @. vars.zetah = sol
-  @. vars.uh =   im * grid.l  * grid.invKrsq * sol
-  @. vars.vh = - im * grid.kr * grid.invKrsq * sol
+
+  updatetransfomedvars!(prob)
+  
   ldiv!(vars.zeta, grid.rfftplan, deepcopy(vars.zetah))
   ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh))
   ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh))
+  
   return nothing
 end
 
