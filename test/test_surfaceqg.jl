@@ -70,10 +70,10 @@ function test_sqg_kineticenergy_buoyancyvariance(dev::Device=CPU())
   nx, Lx  = 128, 2π
   ny, Ly  = 128, 3π
   
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
-  x, y = gridpoints(gr)
+  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+  x, y = gridpoints(grid)
 
-  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
+  k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly # fundamental wavenumbers
   ψ₀ = @. sin(2k₀*x)*cos(2l₀*y) + 2sin(k₀*x)*cos(3l₀*y)
   b₀ = @. - sqrt(8) * sin(2k₀*x)*cos(2l₀*y) - sqrt(10) * 2sin(k₀*x)*cos(3l₀*y)
 
@@ -175,20 +175,20 @@ function test_sqg_stochasticforcing_buoyancy_variance_budget(dev::Device=CPU(); 
 
   Kr = ArrayType(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
-  forcingcovariancespectrum = ArrayType(dev)(zero(grid.Krsq))
-  @. forcingcovariancespectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
-  @. forcingcovariancespectrum = ifelse(gr.Krsq < 2^2, 0, forcingcovariancespectrum)
-  @. forcingcovariancespectrum = ifelse(gr.Krsq > 20^2, 0, forcingcovariancespectrum)
-  @. forcingcovariancespectrum = ifelse(Kr < 2π/L, 0, forcingcovariancespectrum)
-  εᵇ0 = parsevalsum(forcingcovariancespectrum, grid) / (grid.Lx * grid.Ly)
-  forcingcovariancespectrum .= εᵇ / εᵇ0 * forcingcovariancespectrum
+  forcing_spectrum = ArrayType(dev)(zero(grid.Krsq))
+  @. forcing_spectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
+  @. forcing_spectrum = ifelse(grid.Krsq < 2^2, 0, forcing_spectrum)
+  @. forcing_spectrum = ifelse(grid.Krsq > 20^2, 0, forcing_spectrum)
+  @. forcing_spectrum = ifelse(Kr < 2π/L, 0, forcing_spectrum)
+  εᵇ0 = parsevalsum(forcing_spectrum, grid) / (grid.Lx * grid.Ly)
+  forcing_spectrum .= εᵇ / εᵇ0 * forcing_spectrum
   
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
     eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
-    @. Fh = eta * sqrt(forcingcovariancespectrum)
+    @. Fh = eta * sqrt(forcing_spectrum)
     nothing
   end
 

@@ -65,8 +65,8 @@ function test_bqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, dt=0.
   
   forcing_spectrum = zeros(dev, T, (grid.nkr, grid.nl))
   @. forcing_spectrum = exp(-(K - kf)^2 / (2 * dkf^2))
-  @. forcing_spectrum = ifelse(gr.Krsq < 2^2,  0, forcing_spectrum)   # no power at low wavenumbers
-  @. forcing_spectrum = ifelse(gr.Krsq > 20^2, 0, forcing_spectrum)   # no power at high wavenumbers
+  @. forcing_spectrum = ifelse(grid.Krsq < 2^2,  0, forcing_spectrum)   # no power at low wavenumbers
+  @. forcing_spectrum = ifelse(grid.Krsq > 20^2, 0, forcing_spectrum)   # no power at high wavenumbers
   ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
   forcing_spectrum .= ε / ε0 * forcing_spectrum
 
@@ -172,8 +172,8 @@ function test_bqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=256, dt
   
   forcing_spectrum = zeros(dev, T, (grid.nkr, grid.nl))
   @. forcing_spectrum = exp(-(K - kf)^2 / (2 * dkf^2))
-  @. forcing_spectrum = ifelse(gr.Krsq < 2^2,  0, forcing_spectrum)   # no power at low wavenumbers
-  @. forcing_spectrum = ifelse(gr.Krsq > 20^2, 0, forcing_spectrum)   # no power at high wavenumbers
+  @. forcing_spectrum = ifelse(grid.Krsq < 2^2,  0, forcing_spectrum)   # no power at low wavenumbers
+  @. forcing_spectrum = ifelse(grid.Krsq > 20^2, 0, forcing_spectrum)   # no power at high wavenumbers
   εᶻ0 = parsevalsum(forcing_spectrum / 2, grid) / (grid.Lx * grid.Ly)
   forcing_spectrum .= εᶻ / εᶻ0 * forcing_spectrum
 

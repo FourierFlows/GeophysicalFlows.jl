@@ -54,21 +54,21 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  gr = TwoDGrid(dev, n, L)
-  x, y = gridpoints(gr)
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
 
   # Forcing
   kf, dkf = 12.0, 2.0
   ε = 0.1
   
-  CUDA.@allowscalar Kr = ArrayType(dev)([ gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
+  CUDA.@allowscalar Kr = ArrayType(dev)([ grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
-  forcing_spectrum = zeros(dev, T, (gr.nkr, gr.nl))
-  @. forcing_spectrum = exp(-(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2))
-  @. forcing_spectrum = ifelse(gr.Krsq < 2^2, 0, forcing_spectrum)
-  @. forcing_spectrum = ifelse(gr.Krsq > 20^2, 0, forcing_spectrum)
+  forcing_spectrum = zeros(dev, T, (grid.nkr, grid.nl))
+  @. forcing_spectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
+  @. forcing_spectrum = ifelse(grid.Krsq < 2^2, 0, forcing_spectrum)
+  @. forcing_spectrum = ifelse(grid.Krsq > 20^2, 0, forcing_spectrum)
   @. forcing_spectrum = ifelse(Kr < 2π/L, 0, forcing_spectrum)
-  ε0 = parsevalsum(forcing_spectrum .* gr.invKrsq / 2, gr) / (gr.Lx * gr.Ly)
+  ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
   forcing_spectrum .= ε / ε0 * forcing_spectrum
 
   Random.seed!(1234)
@@ -116,9 +116,9 @@ function test_bqgql_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.0
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  gr = TwoDGrid(dev, n, L)
-  x, y = gridpoints(gr)
-  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
+  k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
   f = @. 0.01 * cos(4k₀*x) * cos(5l₀*y)
@@ -169,8 +169,8 @@ function test_bqgql_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1
   tf = 1.0
   nt = round(Int, tf/dt)
 
-  gr = TwoDGrid(dev, n, L)
-  x, y = gridpoints(gr)
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
 
   ψf = @.    cos(3y) +  sin(2x)*cos(2y) +  2sin(x)*cos(3y)
   qf = @. - 9cos(3y) - 8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
@@ -207,9 +207,9 @@ Tests the energy and enstrophy function for a BarotropicQGQL problem.
 function test_bqgql_energyenstrophy(dev::Device=CPU())
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
   k₀, l₀ = 2π/Lx, 2π/Ly # fundamental wavenumbers
-  x, y = gridpoints(gr)
+  x, y = gridpoints(grid)
 
   energy_calc = 29/9
   enstrophy_calc = 2701/162
@@ -219,7 +219,7 @@ function test_bqgql_energyenstrophy(dev::Device=CPU())
   ζ₀ = @. -((2k₀)^2+(2l₀)^2)*sin(2k₀*x)*cos(2l₀*y) - (k₀^2+(3l₀)^2)*2sin(k₀*x)*cos(3l₀*y)
 
   prob = BarotropicQGQL.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta=eta, stepper="ForwardEuler")
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+  sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
   
   BarotropicQGQL.set_zeta!(prob, ζ₀)
   BarotropicQGQL.updatevars!(prob)
@@ -227,7 +227,7 @@ function test_bqgql_energyenstrophy(dev::Device=CPU())
   energyζ₀ = BarotropicQGQL.energy(prob)
   enstrophyζ₀ = BarotropicQGQL.enstrophy(prob)
 
-  return isapprox(energyζ₀, energy_calc, rtol=1e-13) && isapprox(enstrophyζ₀, enstrophy_calc, rtol=1e-13) && BarotropicQGQL.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing
+  return isapprox(energyζ₀, energy_calc, rtol=1e-13) && isapprox(enstrophyζ₀, enstrophy_calc, rtol=1e-13) && BarotropicQGQL.addforcing!(prob.timestepper.N, sol, cl.t, clock, vars, params, grid)==nothing
 end
 
 function test_bqgql_problemtype(dev, T)
