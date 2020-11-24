@@ -27,25 +27,25 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
   kf, dkf = 12.0, 2.0
   ε = 0.1
 
-  gr  = TwoDGrid(dev, n, L)
-  x, y = gridpoints(gr)
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
 
-  Kr = ArrayType(dev)([CUDA.@allowscalar gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
+  Kr = ArrayType(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
-  forcingcovariancespectrum = ArrayType(dev)(zero(gr.Krsq))
-  @. forcingcovariancespectrum = exp(-(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2))
-  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .< 2^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .> 20^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[Kr .< 2π/L] = 0
-  ε0 = parsevalsum(forcingcovariancespectrum .* gr.invKrsq / 2, gr) / (gr.Lx * gr.Ly)
-  forcingcovariancespectrum .= ε / ε0 * forcingcovariancespectrum
+  forcing_spectrum = ArrayType(dev)(zero(grid.Krsq))
+  @. forcing_spectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
+  @. forcing_spectrum = ifelse(grid.Krsq < 2^2, 0, forcing_spectrum)
+  @. forcing_spectrum = ifelse(grid.Krsq > 20^2, 0, forcing_spectrum)
+  @. forcing_spectrum = ifelse(Kr < 2π/L, 0, forcing_spectrum)
+  ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
+  forcing_spectrum .= ε / ε0 * forcing_spectrum
 
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
     eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
-    @. Fh = eta * sqrt(forcingcovariancespectrum)
+    @. Fh = eta * sqrt(forcing_spectrum)
     return nothing
   end
 
@@ -54,7 +54,7 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
 
   TwoDNavierStokes.set_zeta!(prob, 0*x)
   
-  E = Diagnostic(TwoDNavierStokes.energy,      prob, nsteps=nt)
+  E = Diagnostic(TwoDNavierStokes.energy,             prob, nsteps=nt)
   D = Diagnostic(TwoDNavierStokes.energy_dissipation, prob, nsteps=nt)
   R = Diagnostic(TwoDNavierStokes.energy_drag,        prob, nsteps=nt)
   W = Diagnostic(TwoDNavierStokes.energy_work,        prob, nsteps=nt)
@@ -81,25 +81,25 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
   kf, dkf = 12.0, 2.0
   εᶻ = 0.1
 
-  gr  = TwoDGrid(dev, n, L)
-  x, y = gridpoints(gr)
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
 
-  Kr = ArrayType(dev)([CUDA.@allowscalar gr.kr[i] for i=1:gr.nkr, j=1:gr.nl])
+  Kr = ArrayType(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
-  forcingcovariancespectrum = ArrayType(dev)(zero(gr.Krsq))
-  @. forcingcovariancespectrum = exp(-(sqrt(gr.Krsq) - kf)^2 / (2 * dkf^2))
-  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .< 2^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[gr.Krsq .> 20^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[Kr .< 2π/L] = 0
-  εᶻ0 = parsevalsum(forcingcovariancespectrum / 2, gr) / (gr.Lx * gr.Ly)
-  forcingcovariancespectrum .= εᶻ / εᶻ0 * forcingcovariancespectrum
+  forcing_spectrum = ArrayType(dev)(zero(grid.Krsq))
+  @. forcing_spectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
+  @. forcing_spectrum = ifelse(grid.Krsq < 2^2, 0, forcing_spectrum)
+  @. forcing_spectrum = ifelse(grid.Krsq > 20^2, 0, forcing_spectrum)
+  @. forcing_spectrum = ifelse(Kr < 2π/L, 0, forcing_spectrum)
+  εᶻ0 = parsevalsum(forcing_spectrum / 2, grid) / (grid.Lx * grid.Ly)
+  forcing_spectrum .= εᶻ / εᶻ0 * forcing_spectrum
   
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, cl, v, p, g)
     eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(cl.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
-    @. Fh = eta * sqrt(forcingcovariancespectrum)
+    @. Fh = eta * sqrt(forcing_spectrum)
     nothing
   end
 
@@ -107,7 +107,7 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
    stepper="RK4", calcF=calcF!, stochastic=true)
 
   TwoDNavierStokes.set_zeta!(prob, 0*x)
-  Z = Diagnostic(TwoDNavierStokes.enstrophy,      prob, nsteps=nt)
+  Z = Diagnostic(TwoDNavierStokes.enstrophy,             prob, nsteps=nt)
   D = Diagnostic(TwoDNavierStokes.enstrophy_dissipation, prob, nsteps=nt)
   R = Diagnostic(TwoDNavierStokes.enstrophy_drag,        prob, nsteps=nt)
   W = Diagnostic(TwoDNavierStokes.enstrophy_work,        prob, nsteps=nt)
@@ -134,8 +134,8 @@ function test_twodnavierstokes_deterministicforcing_energybudget(dev::Device=CPU
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  gr  = TwoDGrid(dev, n, L)
-  x, y = gridpoints(gr)
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
   f = @. 0.01cos(4x) * cos(5y)
@@ -173,8 +173,8 @@ function test_twodnavierstokes_deterministicforcing_enstrophybudget(dev::Device=
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  gr  = TwoDGrid(dev, n, L)
-  x, y = gridpoints(gr)
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
   f = @. 0.01cos(4x) * cos(5y)
@@ -225,8 +225,8 @@ function test_twodnavierstokes_advection(dt, stepper, dev::Device=CPU(); n=128, 
   tf = 1.0
   nt = round(Int, tf/dt)
 
-  gr = TwoDGrid(dev, n, L)
-  x, y = gridpoints(gr)
+  grid = TwoDGrid(dev, n, L)
+  x, y = gridpoints(grid)
 
    psif = @.   sin(2x)*cos(2y) +  2sin(x)*cos(3y)
   zetaf = @. -8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
@@ -257,10 +257,11 @@ end
 function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
   nx, Lx  = 128, 2π
   ny, Ly  = 128, 3π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
-  x, y = gridpoints(gr)
+  
+  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+  x, y = gridpoints(grid)
 
-  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
+  k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly # fundamental wavenumbers
    ψ₀ = @. sin(2k₀*x)*cos(2l₀*y) + 2sin(k₀*x)*cos(3l₀*y)
    ζ₀ = @. -((2k₀)^2+(2l₀)^2)*sin(2k₀*x)*cos(2l₀*y) - (k₀^2+(3l₀)^2)*2sin(k₀*x)*cos(3l₀*y)
 
