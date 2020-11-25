@@ -24,7 +24,6 @@ examples = [
     "twodnavierstokes_stochasticforcing_budgets.jl",
     "barotropicqg_betadecay.jl",
     "barotropicqg_betaforced.jl",
-    "barotropicqg_acc.jl",
     "barotropicqgql_betaforced.jl",
     "multilayerqg_2layer.jl",
     "surfaceqg_decaying.jl",
@@ -73,7 +72,6 @@ sitename = "GeophysicalFlows.jl",
               "BarotropicQG" => Any[
                 "generated/barotropicqg_betadecay.md",
                 "generated/barotropicqg_betaforced.md",
-                "generated/barotropicqg_acc.md",
                 ],
               "BarotropicQGQL" => Any[
                 "generated/barotropicqgql_betaforced.md",
