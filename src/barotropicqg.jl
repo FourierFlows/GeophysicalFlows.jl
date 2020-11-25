@@ -96,8 +96,8 @@ end
 Constructor for Params that accepts a generating function for the topographic PV.
 """
 function Params(grid::AbstractGrid{T, A}, β, eta::Function, μ, ν, nν::Int, calcF) where {T, A}
-  etagrid = A([eta(grid.x[i], grid.y[j]) for j=1:grid.ny, i=1:grid.nx])
-     etah = rfft(etagrid)
+  etagrid = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
+  etah = rfft(etagrid)
   return Params(β, etagrid, etah, μ, ν, nν, calcF)
 end
 
@@ -201,15 +201,10 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   
   uqh = vars.uh                                          # use vars.uh as scratch variable
   mul!(uqh, grid.rfftplan, uq)                           # \hat{u*q}
-
-  # Nonlinear advection term for q (part 1)
-  @. N = -im * grid.kr * uqh                             # -∂[u*q]/∂x
-  
-  vqh = vars.uh                                          # use vars.uh as scratch variable
+  vqh = vars.vh                                          # use vars.vh as scratch variable
   mul!(vqh, grid.rfftplan, vq)                           # \hat{v*q}
-  
-  # Nonlinear advection term for q (part 2)
-  @. N += - im * grid.l * vqh                            # -∂[vq]/∂y
+
+  @. N = -im * grid.kr * uqh - im * grid.l * vqh         # -∂(u*q)/∂x -∂(v*q)/∂y
   return nothing
 end
 
