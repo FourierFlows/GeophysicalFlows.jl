@@ -69,7 +69,7 @@ seed!(1234) # reset of the random number generator for reproducibility
 nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
-function calcFq!(Fh, sol, t, clock, vars, params, grid)
+function calcF!(Fh, sol, t, clock, vars, params, grid)
   ξ = ArrayType(dev)(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
   @. Fh = ξ*sqrt.(forcing_spectrum)
   Fh[abs.(grid.Krsq) .== 0] .= 0
@@ -84,7 +84,7 @@ nothing # hide
 # example numerical instability due to accumulation of enstrophy in high wavenumbers
 # is taken care with the `FilteredTimestepper` we picked. 
 prob = BarotropicQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper, 
-                            calcFq=calcFq!, stochastic=true)
+                            calcF=calcF!, stochastic=true)
 nothing # hide
 
 # Let's define some shortcuts.
@@ -94,9 +94,9 @@ nothing # hide
 
 
 # First let's see how a forcing realization looks like.
-calcFq!(vs.Fqh, sol, 0.0, cl, vs, pr, gr)
+calcF!(vs.Fh, sol, 0.0, cl, vs, pr, gr)
 
-heatmap(x, y, irfft(vs.Fqh, gr.nx),
+heatmap(x, y, irfft(vs.Fh, gr.nx),
      aspectratio = 1,
                c = :balance,
             clim = (-8, 8),
