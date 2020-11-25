@@ -72,15 +72,15 @@ function test_bqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, dt=0.
 
   Random.seed!(1234)
 
-  function calcFq!(Fqh, sol, t, clock, vars, params, grid)
+  function calcF!(Fh, sol, t, clock, vars, params, grid)
     eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
-    @. Fqh = eta * sqrt(forcing_spectrum)
+    @. Fh = eta * sqrt(forcing_spectrum)
     return nothing
   end
 
   prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
-   stepper="RK4", calcFq=calcFq!, stochastic=true)
+   stepper="RK4", calcF=calcF!, stochastic=true)
 
   BarotropicQG.set_zeta!(prob, 0*x)
   
@@ -124,13 +124,13 @@ function test_bqg_deterministicforcing_energybudget(dev::Device=CPU(); n=256, dt
   f = @. 0.01 * cos(4k₀*x) * cos(5l₀*y)
   fh = rfft(f)
   
-  function calcFq!(Fqh, sol, t, clock, vars, params, grid)
-    @. Fqh = fh * cos(2t)
+  function calcF!(Fh, sol, t, clock, vars, params, grid)
+    @. Fh = fh * cos(2t)
     return nothing
   end
 
   prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
-   stepper="RK4", calcFq=calcFq!, stochastic=false)
+   stepper="RK4", calcF=calcF!, stochastic=false)
 
   BarotropicQG.set_zeta!(prob, 0*x)
   
@@ -179,15 +179,15 @@ function test_bqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=256, dt
 
   Random.seed!(1234)
 
-  function calcFq!(Fqh, sol, t, clock, vars, params, grid)
+  function calcF!(Fh, sol, t, clock, vars, params, grid)
     eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
-    @. Fqh = eta * sqrt(forcing_spectrum)
+    @. Fh = eta * sqrt(forcing_spectrum)
     return nothing
   end
 
   prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
-   stepper="RK4", calcFq=calcFq!, stochastic=true)
+   stepper="RK4", calcF=calcF!, stochastic=true)
 
   BarotropicQG.set_zeta!(prob, 0*x)
   
@@ -231,13 +231,13 @@ function test_bqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n=256,
   f = @. 0.01 * cos(4k₀*x) * cos(5l₀*y)
   fh = rfft(f)
   
-  function calcFq!(Fqh, sol, t, clock, vars, params, grid)
-    @. Fqh = fh * cos(2t)
+  function calcF!(Fh, sol, t, clock, vars, params, grid)
+    @. Fh = fh * cos(2t)
     return nothing
   end
 
   prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
-   stepper="RK4", calcFq=calcFq!, stochastic=false)
+   stepper="RK4", calcF=calcF!, stochastic=false)
 
   BarotropicQG.set_zeta!(prob, 0*x)
   
@@ -288,12 +288,12 @@ function test_bqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
 
   Ffh = rfft(Ff)
 
-  function calcFq!(Fqh, sol, t, cl, v, p, g)
-    Fqh .= Ffh
+  function calcF!(Fh, sol, t, cl, v, p, g)
+    Fh .= Ffh
     return nothing
   end
 
-  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcFq=calcFq!)
+  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
 
   BarotropicQG.set_zeta!(prob, qf)
 
@@ -305,36 +305,6 @@ function test_bqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
 end
 
 """
-    test_bqg_formstress(dt, stepper, dev; kwargs...)
-
-Tests the form stress term that forces the domain-averaged zonal flow U(t).
-"""
-function test_bqg_formstress(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=0.0, nν=1, μ=0.0)
-  n, L  = 128, 2π
-  ν, nν = 1e-2, 1
-  μ = 0.0
-  tf = 1
-  nt = 1
-
-  gr  = TwoDGrid(dev, n, L)
-  x, y = gridpoints(gr)
-
-  ζ₀ = @. -20 * sin(10x) * cos(10y)
-  topoPV(x, y) = @. cos(10x) * cos(10y)
-  F(t) = 0 #no forcing
-
-  answer = 0.25 # this is what <v*eta> should be
-
-  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, eta=topoPV, calcFU=F)
-  BarotropicQG.set_zeta!(prob, ζ₀)
-  BarotropicQG.updatevars!(prob)
-
-  # Step forward
-  stepforward!(prob, nt)
-  return CUDA.@allowscalar isapprox(prob.timestepper.N[1, 1], answer, rtol=rtol_barotropicQG)
-end
-
-"""
     test_bqg_energyenstrophy(dev)
 
 Tests the energy and enstrophy function for a BarotropicQG problem.
@@ -342,9 +312,9 @@ Tests the energy and enstrophy function for a BarotropicQG problem.
 function test_bqg_energyenstrophy(dev::Device=CPU())
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
-  g  = TwoDGrid(dev, nx, Lx, ny, Ly)
+  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
   k₀, l₀ = 2π/Lx, 2π/Ly # fundamental wavenumbers
-  x, y = gridpoints(g)
+  x, y = gridpoints(grid)
 
   energy_calc = 29/9
   enstrophy_calc = 2701/162
@@ -363,48 +333,6 @@ function test_bqg_energyenstrophy(dev::Device=CPU())
 
   return isapprox(energyzeta0, energy_calc, rtol=rtol_barotropicQG) && isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_barotropicQG) &&
   BarotropicQG.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing
-end
-
-"""
-    test_bqg_energyenstrophy(dev)
-
-Tests the mean flow U(t) energy and enstrophy function for a BarotropicQG problem.
-"""
-function test_bqg_meanenergyenstrophy(dev::Device=CPU())
-  nx, Lx  = 64, 2π
-  ny, Ly  = 96, 3π
-  g = TwoDGrid(dev, nx, Lx, ny, Ly)
-  k₀, l₀ = 2π/Lx, 2π/Ly # fundamental wavenumbers
-  x, y = gridpoints(g)
-
-  calcFU(t) = 0.0
-  eta(x, y) = @. cos(10x) * cos(10y)
-  psi0 = @. sin(2k₀*x) * cos(2l₀*y) + 2sin(k₀*x) * cos(3l₀*y)
- zeta0 = @. - ((2k₀)^2+(2l₀)^2) * sin(2k₀*x) * cos(2l₀*y) - (k₀^2+(3l₀)^2) * 2sin(k₀*x) * cos(3l₀*y)
-  β = 10.0
-  U = 1.2
-
-  energy_calc = 29/9
-  enstrophy_calc = 2701/162
-
-  prob = BarotropicQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, β=β, eta=eta, calcFU = calcFU,
-                                    stepper="ForwardEuler")
-
-  BarotropicQG.set_zeta!(prob, zeta0)
-  BarotropicQG.set_U!(prob, U)
-  BarotropicQG.updatevars!(prob)
-
-  energyU = BarotropicQG.meanenergy(prob)
-  enstrophyU = BarotropicQG.meanenstrophy(prob)
-
-  energyzeta0 = BarotropicQG.energy(prob)
-  enstrophyzeta0 = BarotropicQG.enstrophy(prob)
-
-  return (isapprox(energyU, 0.5*U^2, rtol=rtol_barotropicQG) &&
-    isapprox(enstrophyU, β*U, rtol=rtol_barotropicQG) &&
-    isapprox(energyzeta0, energy_calc, rtol=rtol_barotropicQG) &&
-    isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_barotropicQG)
-  )
 end
 
 """

@@ -37,14 +37,14 @@ testtime = @elapsed begin
 for dev in devices
   
   println("testing on "*string(typeof(dev)))
-
+    
   @testset "Utils" begin
     include("test_utils.jl")
 
     @test testpeakedisotropicspectrum(dev)
     @test_throws ErrorException("the domain is not square") testpeakedisotropicspectrum_rectangledomain()
   end
-
+  
   @testset "TwoDNavierStokes" begin
     include("test_twodnavierstokes.jl")
 
@@ -58,7 +58,7 @@ for dev in devices
     @test test_twodnavierstokes_problemtype(dev, Float32)
     @test TwoDNavierStokes.nothingfunction() == nothing
   end
-  
+   
   @testset "BarotropicQG" begin
     include("test_barotropicqg.jl")
 
@@ -75,13 +75,11 @@ for dev in devices
     @test test_bqg_deterministicforcing_enstrophybudget(dev)
     @test test_bqg_stochasticforcing_enstrophybudget(dev)
     @test test_bqg_advection(0.0005, "ForwardEuler", dev)
-    @test test_bqg_formstress(0.01, "ForwardEuler", dev)
     @test test_bqg_energyenstrophy(dev)
-    @test test_bqg_meanenergyenstrophy(dev)
     @test test_bqg_problemtype(dev, Float32)
     @test BarotropicQG.nothingfunction() == nothing
   end
-  
+   
   @testset "BarotropicQGQL" begin
     include("test_barotropicqgql.jl")
 
@@ -114,7 +112,7 @@ for dev in devices
     @test test_sqg_noforcing(dev)
     @test SurfaceQG.nothingfunction() == nothing
   end
-  
+    
   @testset "MultilayerQG" begin
     include("test_multilayerqg.jl")
     
@@ -134,7 +132,6 @@ for dev in devices
     @test MultilayerQG.nothingfunction() == nothing
   end
 end
-
 end # time
 
 println("Total test time: ", testtime)
