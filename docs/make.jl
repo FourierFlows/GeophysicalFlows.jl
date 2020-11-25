@@ -64,14 +64,6 @@ checkdocs = :all,
 sitename = "GeophysicalFlows.jl",
    pages = Any[
             "Home"    => "index.md",
-            "Forcing" => "forcing.md",
-            "Modules" => Any[
-              "modules/twodnavierstokes.md",
-              "modules/barotropicqg.md",
-              "modules/barotropicqgql.md",
-              "modules/multilayerqg.md",
-              "modules/surfaceqg.md"
-            ],
             "Examples" => [
               "TwoDNavierStokes" => Any[
                 "generated/twodnavierstokes_decaying.md",
@@ -93,6 +85,14 @@ sitename = "GeophysicalFlows.jl",
                 "generated/surfaceqg_decaying.md"
                 ]
             ],
+            "Modules" => Any[
+              "modules/twodnavierstokes.md",
+              "modules/barotropicqg.md",
+              "modules/barotropicqgql.md",
+              "modules/multilayerqg.md",
+              "modules/surfaceqg.md"
+            ],
+            "Forcing" => "forcing.md",
             "DocStrings" => Any[
             "man/types.md",
             "man/functions.md"]
