@@ -10,6 +10,7 @@ export
   enstrophy,
   pot_enstrophy,
   enstrophy_lia,
+  ke_2Dspec,
   meanenergy,
   meanenstrophy,
   dissipation,
@@ -337,6 +338,12 @@ Returns the domain-averaged kinetic energy of solution `sol`.
 energy(sol, grid::AbstractGrid) = 0.5 * ( parsevalsum2(grid.kr .* grid.invKrsq .* sol, grid) + parsevalsum2(grid.l .* grid.invKrsq .* sol, grid) ) / (grid.Lx * grid.Ly)
 energy(prob) = energy(prob.sol, prob.grid)
 
+function ke_2Dspec(sol, grid, vars, params)
+    streamfunction!(vars.psih,sol,grid,params)
+    norm = grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2)
+    return abs2.(sqrt.(grid.Krsq)).* vars.psih)* norm
+end
+ke_2Dspec(prob)=ke_2Dspec(sol, grid, vars, params)
 
 function ke_energy(sol, grid, vars, params)
     streamfunction!(vars.psih,sol,grid,params)
