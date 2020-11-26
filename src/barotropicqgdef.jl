@@ -341,7 +341,7 @@ energy(prob) = energy(prob.sol, prob.grid)
 function ke_2Dspec(sol, grid, vars, params)
     streamfunction!(vars.psih,sol,grid,params)
     norm = grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2)
-    return abs2.(sqrt.(grid.Krsq)).* vars.psih)* norm
+    return abs2.(sqrt.(grid.Krsq).* vars.psih)* norm
 end
 ke_2Dspec(prob)=ke_2Dspec(sol, grid, vars, params)
 
