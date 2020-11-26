@@ -8,6 +8,7 @@ export
   pe_energy,
   energy,
   enstrophy,
+  pot_enstrophy,
   enstrophy_lia,
   meanenergy,
   meanenstrophy,
@@ -369,6 +370,12 @@ function enstrophy_lia(sol, grid, vars, params)
   return parsevalsum(grid.Krsq.*grid.Krsq .* abs2.(vars.psih), grid) / (2*grid.Lx * grid.Ly)
 end
 enstrophy_lia(prob) = enstrophy_lia(prob.sol, prob.grid, prob.vars,prob.params)
+
+function pot_enstrophy(sol, grid, vars, params)
+  streamfunction!(vars.psih,sol,grid,params)
+  return parsevalsum2(grid.Krsq .* vars.psih .+ params.etah, grid) / (2*grid.Lx * grid.Ly)
+end
+pot_enstrophy(prob) = pot_enstrophy(prob.sol, prob.grid, prob.vars,prob.params)
 
 """
     meanenergy(prob)
