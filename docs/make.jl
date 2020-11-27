@@ -25,7 +25,7 @@ examples = [
     "barotropicqg_betadecay.jl",
     "barotropicqg_betaforced.jl",
     "barotropicqgql_betaforced.jl",
-    "barotropicqg_decaying_topography.jl",
+    "barotropicqg_decay_topography.jl",
     "multilayerqg_2layer.jl",
     "surfaceqg_decaying.jl",
 ]
@@ -73,7 +73,7 @@ sitename = "GeophysicalFlows.jl",
               "BarotropicQG" => Any[
                 "generated/barotropicqg_betadecay.md",
                 "generated/barotropicqg_betaforced.md",
-                "generated/barotropicqg_decaying_topography.md"
+                "generated/barotropicqg_decay_topography.md"
                 ],
               "BarotropicQGQL" => Any[
                 "generated/barotropicqgql_betaforced.md",
