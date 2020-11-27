@@ -40,22 +40,22 @@ nothing # hide
 
 # We force the vorticity equation with stochastic excitation that is delta-correlated
 # in time and while spatially homogeneously and isotropically correlated. The forcing
-# has a spectrum with power in a ring in wavenumber space of radious $k_f$ and
-# width $\delta k_f$, and it injects energy per unit area and per unit time equal
-# to $\varepsilon$.
+# has a spectrum with power in a ring in wavenumber space of radius ``k_f`` and
+# width ``\delta k_f``, and it injects energy per unit area and per unit time equal
+# to ``\varepsilon``.
 
-forcing_wavenumber = 14.0    # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
-forcing_bandwidth  = 1.5     # the width of the forcing spectrum
-ε = 0.1                      # energy input rate by the forcing
+forcing_wavenumber = 14.0 * 2π/L   # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
+forcing_bandwidth  = 1.5  * 2π/L   # the width of the forcing spectrum
+ε = 0.1                            # energy input rate by the forcing
 
 grid = TwoDGrid(dev, n, L)
 
 K = @. sqrt(grid.Krsq)
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
-forcing_spectrum[K .< ( 2 * 2π/L)] .= 0 # no power at low wavenumbers
-forcing_spectrum[K .> (20 * 2π/L)] .= 0 # no power at high wavenumbers
+@. forcing_spectrum = ifelse(K < 2  * 2π/L, 0, forcing_spectrum)      # no power at low wavenumbers
+@. forcing_spectrum = ifelse(K > 20 * 2π/L, 0, forcing_spectrum)      # no power at high wavenumbers
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
-@. forcing_spectrum *= ε/ε0             # normalize forcing to inject energy at rate ε
+@. forcing_spectrum *= ε / ε0             # normalize forcing to inject energy at rate ε
 
 seed!(1234)
 nothing # hide
@@ -65,7 +65,8 @@ function calcF!(Fh, sol, t, clock, vars, params, grid)
   ξ = ArrayType(dev)(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
   ξ[1, 1] = 0
   @. Fh = ξ * sqrt(forcing_spectrum)
-  nothing
+  
+  return nothing
 end
 nothing # hide
 
@@ -89,7 +90,7 @@ nothing # hide
 # go back to physical space.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, irfft(vars.Fh, grid.nx),
+heatmap(x, y, irfft(vars.Fh, grid.nx)',
      aspectratio = 1,
                c = :balance,
             clim = (-200, 200),
@@ -124,7 +125,7 @@ nothing # hide
 # energy and enstrophy diagnostics. To plot energy and enstrophy on the same
 # axes we scale enstrophy with $k_f^2$.
 
-p1 = heatmap(x, y, vars.zeta,
+p1 = heatmap(x, y, vars.zeta',
          aspectratio = 1,
                    c = :balance,
                 clim = (-40, 40),
@@ -134,7 +135,7 @@ p1 = heatmap(x, y, vars.zeta,
               yticks = -3:3,
               xlabel = "x",
               ylabel = "y",
-               title = "vorticity, t="*@sprintf("%.2f", clock.t),
+               title = "vorticity, t=" * @sprintf("%.2f", clock.t),
           framestyle = :box)
 
 p2 = plot(2, # this means "a plot with two series"
@@ -155,21 +156,23 @@ p = plot(p1, p2, layout = l, size = (900, 420))
 # Finally, we time-step the `Problem` forward in time.
 
 startwalltime = time()
-anim = @animate for j = 0:Int(nsteps/nsubs)
+
+anim = @animate for j = 0:round(Int, nsteps / nsubs)
+  if j % (1000/nsubs) == 0
+    cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
     
-  log = @sprintf("step: %04d, t: %d, E: %.4f, Z: %.4f, walltime: %.2f min",
-      clock.step, clock.t, E.data[E.i], Z.data[Z.i], (time()-startwalltime)/60)
-  
-  if j%(1000/nsubs)==0; println(log) end  
+    log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Z: %.4f, walltime: %.2f min",
+          clock.step, clock.t, cfl, E.data[E.i], Z.data[Z.i], (time()-startwalltime)/60)
+    println(log)
+  end  
 
   p[1][1][:z] = vars.zeta
-  p[1][:title] = "vorticity, μ t = "*@sprintf("%.2f", μ * clock.t)
+  p[1][:title] = "vorticity, μt = " * @sprintf("%.2f", μ * clock.t)
   push!(p[2][1], μ * E.t[E.i], E.data[E.i])
   push!(p[2][2], μ * Z.t[Z.i], Z.data[Z.i] / forcing_wavenumber^2)
 
   stepforward!(prob, diags, nsubs)
   TwoDNavierStokes.updatevars!(prob)  
-  
 end
 
 mp4(anim, "twodturb_forced.mp4", fps=18)
