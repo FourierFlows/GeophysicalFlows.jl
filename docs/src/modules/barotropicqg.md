@@ -37,8 +37,6 @@ $$\mathcal{N}(\widehat{\zeta}) = - \mathrm{i}k_x \mathrm{FFT}(u q)-
 
 - `examples/barotropicqg_betadecay.jl`: A script that simulates decaying quasi-geostrophic flow on a beta-plane demonstrating zonation.
 
-- `examples/barotropicqg_betaforced.jl`: A script that simulates forced-dissipative quasi-geostrophic flow on a beta-plane demonstrating zonation. The forcing is temporally delta-correlated and its spatial structure is isotropic with power in a narrow annulus of total radius `kf` in wavenumber space.
+- `examples/barotropicqg_betaforced.jl`: A script that simulates forced-dissipative quasi-geostrophic flow on a beta-plane demonstrating zonation. The forcing is temporally delta-correlated and its spatial structure is isotropic with power in a narrow annulus of total radius ``k_f`` in wavenumber space.
 
-- `examples/barotropicqg_acc.jl`: A script that simulates barotropic quasi-geostrophic flow above topography reproducing the results of the paper by
-
-  > Constantinou, N. C. (2018). A barotropic model of eddy saturation. *J. Phys. Oceanogr.*, **48 (2)**, 397-411.
+- `examples/barotropicqg_decay_topography.jl`: A script that simulates two dimensional turbulence (barotropic quasi-geostrophic flow with ``beta=0``) above topography.
