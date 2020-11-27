@@ -49,9 +49,9 @@ nothing # hide
 # width ``\delta k_f``, and it injects energy per unit area and per unit time equal 
 # to ``\varepsilon``.
 
-forcing_wavenumber = 14.0    # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
-forcing_bandwidth  = 1.5     # the width of the forcing spectrum 
-ε = 0.001                    # energy input rate by the forcing
+forcing_wavenumber = 14.0 * 2π/L  # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
+forcing_bandwidth  = 1.5  * 2π/L  # the width of the forcing spectrum 
+ε = 0.001                         # energy input rate by the forcing
 
 grid = TwoDGrid(n, L)
 
@@ -59,8 +59,8 @@ K  = @. sqrt(grid.Krsq)                          # a 2D array with the total wav
 k = [grid.kr[i] for i=1:grid.nkr, j=1:grid.nl]   # a 2D array with the zonal wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
-@. forcing_spectrum = ifelse(K < 2, 0, forcing_spectrum)       # no power at low wavenumbers
-@. forcing_spectrum = ifelse(K > 20, 0, forcing_spectrum)      # no power at high wavenumbers
+@. forcing_spectrum = ifelse(K < 2  * 2π/L, 0, forcing_spectrum)      # no power at low wavenumbers
+@. forcing_spectrum = ifelse(K > 20 * 2π/L, 0, forcing_spectrum)      # no power at high wavenumbers
 @. forcing_spectrum = ifelse(k < 2π/L, 0, forcing_spectrum)    # make sure forcing does not have power at k=0
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0               # normalize forcing to inject energy at rate ε

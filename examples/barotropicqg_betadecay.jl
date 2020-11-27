@@ -63,9 +63,9 @@ k = [grid.kr[i] for i=1:grid.nkr, j=1:grid.nl]  # a 2D array with the zonal wave
 
 Random.seed!(1234)
 qih = randn(Complex{eltype(grid)}, size(sol))
-@. qih = ifelse(K < 2, 0, qih)
-@. qih = ifelse(K > 10, 0, qih)
-@. qih = ifelse(k == 0, 0, qih)   # no power at zonal wavenumber k=0 component
+@. qih = ifelse(K < 2  * 2π/L, 0, qih)
+@. qih = ifelse(K > 10 * 2π/L, 0, qih)
+@. qih = ifelse(k == 0 * 2π/L, 0, qih)   # no power at zonal wavenumber k=0 component
 Ein = energy(qih, grid)           # compute energy of qi
 qih *= sqrt(E₀ / Ein)             # normalize qi to have energy E₀
 qi = irfft(qih, grid.nx)

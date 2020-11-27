@@ -60,8 +60,8 @@ K = @. sqrt(grid.Krsq)                          # a 2D array with the total wave
 k = [grid.kr[i] for i=1:grid.nkr, j=1:grid.nl]  # a 2D array with the zonal wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
-@. forcing_spectrum = ifelse(K < 2, 0, forcing_spectrum)       # no power at low wavenumbers
-@. forcing_spectrum = ifelse(K > 20, 0, forcing_spectrum)      # no power at high wavenumbers
+@. forcing_spectrum = ifelse(K < 2  * 2π/L, 0, forcing_spectrum)      # no power at low wavenumbers
+@. forcing_spectrum = ifelse(K > 20 * 2π/L, 0, forcing_spectrum)      # no power at high wavenumbers
 @. forcing_spectrum = ifelse(k < 2π/L, 0, forcing_spectrum)    # make sure forcing does not have power at k=0
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0               # normalize forcing to inject energy at rate ε
