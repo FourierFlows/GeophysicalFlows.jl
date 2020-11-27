@@ -27,11 +27,6 @@ const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
 const rtol_surfaceqg = 1e-13 # tolerance for multilayerqg forcing tests
 
 
-"Get the CFL number, assuming a uniform grid with `dx=dy`."
-cfl(u, v, dt, dx) = maximum([maximum(abs.(u)), maximum(abs.(v))]*dt/dx)
-cfl(prob) = cfl(prob.vars.u, prob.vars.v, prob.clock.dt, prob.grid.dx)
-
-
 # Run tests
 testtime = @elapsed begin
 for dev in devices

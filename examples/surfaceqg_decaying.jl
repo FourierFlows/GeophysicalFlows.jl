@@ -171,27 +171,28 @@ startwalltime = time()
 
 p = plot_output(prob)
 
-anim = @animate for j=0:Int(nsteps/nsubs)
+anim = @animate for j = 0:round(Int, nsteps/nsubs)
+  if j % (500 / nsubs) == 0
+    cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
 
-  cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
-
-  if j%(500/nsubs)==0
     log1 = @sprintf("step: %04d, t: %.1f, cfl: %.3f, walltime: %.2f min",
           clock.step, clock.t, cfl, (time()-startwalltime)/60)
+
     log2 = @sprintf("buoyancy variance: %.2e, buoyancy variance dissipation: %.2e",
               B.data[B.i], Dᵇ.data[Dᵇ.i])
+
     println(log1)
+
     println(log2)
   end
 
   p[1][1][:z] = vars.b
-  p[1][:title] = "buoyancy, t="*@sprintf("%.2f", clock.t)
+  p[1][:title] = "buoyancy, t=" * @sprintf("%.2f", clock.t)
   push!(p[2][1], KE.t[KE.i], KE.data[KE.i])
   push!(p[3][1], B.t[B.i], B.data[B.i])
 
   stepforward!(prob, diags, nsubs)
   SurfaceQG.updatevars!(prob)
-
 end
 
 mp4(anim, "sqg_ellipticalvortex.mp4", fps=14)
@@ -208,7 +209,7 @@ pu = heatmap(x, y, vars.u',
           yticks = -3:3,
           xlabel = "x",
           ylabel = "y",
-           title = "uₛ(x, y, t="*@sprintf("%.2f", clock.t)*")",
+           title = "uₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")",
       framestyle = :box)
 
 pv = heatmap(x, y, vars.v',
@@ -221,7 +222,7 @@ pv = heatmap(x, y, vars.v',
           yticks = -3:3,
           xlabel = "x",
           ylabel = "y",
-           title = "vₛ(x, y, t="*@sprintf("%.2f", clock.t)*")",
+           title = "vₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")",
       framestyle = :box)
 
 pb = heatmap(x, y, vars.b',
@@ -234,7 +235,7 @@ pb = heatmap(x, y, vars.b',
           yticks = -3:3,
           xlabel = "x",
           ylabel = "y",
-           title = "bₛ(x, y, t="*@sprintf("%.2f", clock.t)*")",
+           title = "bₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")",
       framestyle = :box)
 
 layout = @layout [a{0.5h}; b{0.5w} c{0.5w}]
