@@ -82,8 +82,8 @@ K = @. sqrt(grid.Krsq)                          # a 2D array with the total wave
 
 Random.seed!(1234)
 qih = randn(Complex{eltype(grid)}, size(sol))
-@. qih = ifelse(K * L/2π < 6 , 0, qih)
-@. qih = ifelse(K * L/2π > 12, 0, qih)
+@. qih = ifelse(K < 6  * 2π/L, 0, qih)
+@. qih = ifelse(K > 12 * 2π/L, 0, qih)
 qih *= sqrt(E₀ / energy(qih, grid))             # normalize qi to have energy E₀
 qi = irfft(qih, grid.nx)
 
