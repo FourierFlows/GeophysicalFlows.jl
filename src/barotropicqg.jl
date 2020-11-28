@@ -7,14 +7,12 @@ export
 
   energy,
   enstrophy,
-  meanenergy,
-  meanenstrophy,
-  dissipation,
-  work,
-  drag,
-  drag_ens,
-  work_ens,
-  dissipation_ens
+  energy_dissipation,
+  enstrophy_dissipation,
+  energy_work,
+  enstrophy_work,
+  energy_drag,
+  enstrophy_drag
 
 using
   CUDA,
