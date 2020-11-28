@@ -6,12 +6,12 @@ export
   updatevars!,
 
   energy,
-  enstrophy,
   energy_dissipation,
-  enstrophy_dissipation,
   energy_work,
-  enstrophy_work,
   energy_drag,
+  enstrophy,
+  enstrophy_dissipation,
+  enstrophy_work,
   enstrophy_drag
 
 using
