@@ -6,15 +6,13 @@ export
   updatevars!,
 
   energy,
+  energy_dissipation,
+  energy_work,
+  energy_drag,
   enstrophy,
-  meanenergy,
-  meanenstrophy,
-  dissipation,
-  work,
-  drag,
-  drag_ens,
-  work_ens,
-  dissipation_ens
+  enstrophy_dissipation,
+  enstrophy_work,
+  enstrophy_drag
 
 using
   CUDA,
