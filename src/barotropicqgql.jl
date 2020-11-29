@@ -350,7 +350,7 @@ enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
 Returns the domain-averaged dissipation rate. `nν` must be >= 1.
 """
 @inline function dissipation(sol, vars, params, grid)
-  @. vars.uh = grid.Krsq^(params.nν - 1) * abs(sol)^2
+  @. vars.uh = grid.Krsq^(params.nν - 1) * abs2(sol)
   CUDA.@allowscalar vars.uh[1, 1] = 0
   return params.ν / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
@@ -384,7 +384,7 @@ Returns the extraction of domain-averaged energy by drag `μ`.
 """
 @inline function drag(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  @. vars.uh = grid.invKrsq * abs(sol)^2
+  @. vars.uh = grid.invKrsq * abs2(sol)
   CUDA.@allowscalar vars.uh[1, 1] = 0
   return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
