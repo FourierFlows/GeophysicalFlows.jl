@@ -379,8 +379,9 @@ end
 enstrophy_lia(prob) = enstrophy_lia(prob.sol, prob.grid, prob.vars,prob.params)
 
 function pot_enstrophy(sol, grid, vars, params)
-  streamfunction!(vars.psih,sol,grid,params)
-  return parsevalsum2(grid.Krsq .* vars.psih .+ params.etah, grid) / (2*grid.Lx * grid.Ly)
+  @. vars.uh = sol
+  CUDA.@allowscalar vars.uh[1, 1] = 0
+  return parsevalsum2(vars.uh .+ params.etah, grid) / (2*grid.Lx * grid.Ly)
 end
 pot_enstrophy(prob) = pot_enstrophy(prob.sol, prob.grid, prob.vars,prob.params)
 
