@@ -554,9 +554,12 @@ set_ψ!(prob, ψ) = set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)
 """
     energies(prob)
 
-Returns the kinetic energy of each fluid layer KE_1, ..., KE_nlayers, and the
-potential energy of each fluid interface PE_{3/2}, ..., PE_{nlayers-1/2}.
+Returns the kinetic energy of each fluid layer ``KE_1, ..., KE_{nlayers}``, and the
+potential energy of each fluid interface ``PE_{3/2}, ..., PE_{nlayers-1/2}``.
 (When `nlayers=1` only kinetic energy is returned.)
+
+The kinetic energy at the ``j``-th fluid layer is ``KE_{j} = H_j / H ∫ ½ |𝛁ψ_{j}|² d²𝐱 / Lx Ly`` and
+the potential energy at the ``j+1/2`` fluid interface is ``PE_{j+1/2} = ∫ ½ f₀²/g'_{j+1/2} (ψ_j - ψ_{j+1})^2 d²𝐱 / Lx Ly``.
 """
 function energies(vars, params, grid, sol)
   nlayers = numberoflayers(params)
@@ -565,7 +568,7 @@ function energies(vars, params, grid, sol)
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
   
-  abs²∇𝐮h = vars.uh # use vars.uh as scratch variable
+  abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
   @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
   
   for j = 1:nlayers
@@ -583,7 +586,7 @@ function energies(vars, params::SingleLayerParams, grid, sol)
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
 
-  abs²∇𝐮h = vars.uh # use vars.uh as scratch variable
+  abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
   @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
   
   return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h, grid)
@@ -606,8 +609,8 @@ function fluxes(vars, params, grid, sol)
 
   updatevars!(vars, params, grid, sol)
 
-  ∂u∂yh = vars.uh # use vars.uh as scratch variable
-  ∂u∂y  = vars.u  # use vars.u as scratch variable
+  ∂u∂yh = vars.uh           # use vars.uh as scratch variable
+  ∂u∂y  = vars.u            # use vars.u  as scratch variable
 
   @. ∂u∂yh = im * grid.l * vars.uh
   invtransform!(∂u∂y, ∂u∂yh, params)
@@ -626,8 +629,8 @@ end
 function fluxes(vars, params::SingleLayerParams, grid, sol)
   updatevars!(vars, params, grid, sol)
 
-  ∂u∂yh = vars.uh # use vars.uh as scratch variable
-  ∂u∂y  = vars.u  # use vars.u as scratch variable
+  ∂u∂yh = vars.uh           # use vars.uh as scratch variable
+  ∂u∂y  = vars.u            # use vars.u  as scratch variable
 
   @. ∂u∂yh = im * grid.l * vars.uh
   invtransform!(∂u∂y, ∂u∂yh, params)
