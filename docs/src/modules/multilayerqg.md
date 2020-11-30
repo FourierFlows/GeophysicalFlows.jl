@@ -18,7 +18,7 @@ vortex stretching terms:
 
 ```math
 q_1 = \nabla^2 \psi_1 + F_{3/2, 1} (\psi_2 - \psi_1) \ ,\\
-q_j = \nabla^2 \psi_j + F_{j-1/2, j} (\psi_{j-1} - \psi_j) + F_{j+1/2, j} (\psi_{j+1} - \psi_j),\quad j = 2, \dots, n-1 \ ,\\
+q_j = \nabla^2 \psi_j + F_{j-1/2, j} (\psi_{j-1} - \psi_j) + F_{j+1/2, j} (\psi_{j+1} - \psi_j) \ , \quad j = 2, \dots, n-1 \ ,\\
 q_n = \nabla^2 \psi_n + F_{n-1/2, n} (\psi_{n-1} - \psi_n) \ .
 ```
 
