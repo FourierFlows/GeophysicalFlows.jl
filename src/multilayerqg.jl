@@ -552,14 +552,21 @@ set_ψ!(prob, ψ) = set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)
 
 
 """
+    energies(vars, params, grid, sol)
     energies(prob)
 
-Returns the kinetic energy of each fluid layer ``KE_1, ..., KE_{nlayers}``, and the
-potential energy of each fluid interface ``PE_{3/2}, ..., PE_{nlayers-1/2}``.
-(When `nlayers=1` only kinetic energy is returned.)
+Returns the kinetic energy of each fluid layer KE``_1, ...,`` KE``_{n}``, and the
+potential energy of each fluid interface PE``_{3/2}, ...,`` PE``_{n-1/2}``, where ``n``
+is the number of layers in the fluid. (When ``n=1``, only the kinetic energy is returned.)
 
-The kinetic energy at the ``j``-th fluid layer is ``KE_{j} = H_j / H ∫ ½ |𝛁ψ_{j}|² d²𝐱 / Lx Ly`` and
-the potential energy at the ``j+1/2`` fluid interface is ``PE_{j+1/2} = ∫ ½ f₀²/g'_{j+1/2} (ψ_j - ψ_{j+1})^2 d²𝐱 / Lx Ly``.
+The kinetic energy at the ``j``-th fluid layer is 
+```math
+\\textrm{KE}_j = \\frac{H_j}{H} \\int \\frac1{2} |\\boldsymbol{\\nabla} \\psi_j|^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n \\ ,
+```
+while the potential energy that corresponds to the interface ``j+1/2`` (i.e., interface between the ``j``-th and ``(j+1)``-th fluid layer) is
+```math
+\\textrm{PE}_{j+1/2} = \\int \\frac1{2} \\frac{f_0^2}{g'_{j+1/2}} (\\psi_j - \\psi_{j+1})^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n-1 \\ .
+```
 """
 function energies(vars, params, grid, sol)
   nlayers = numberoflayers(params)
@@ -595,12 +602,26 @@ end
 energies(prob) = energies(prob.vars, prob.params, prob.grid, prob.sol)
 
 """
+    fluxes(vars, params, grid, sol)
     fluxes(prob)
 
-Returns the lateral eddy fluxes within each fluid layer
-lateralfluxes_1, ..., lateralfluxes_nlayers and also the vertical eddy fluxes for
-each fluid interface verticalfluxes_{3/2}, ..., verticalfluxes_{nlayers-1/2}.
-(When `nlayers=1` only the lateral fluxes are returned.)
+Returns the lateral eddy fluxes within each fluid layer, lateralfluxes``_1,...,``lateralfluxes``_n``
+and also the vertical eddy fluxes at each fluid interface 
+verticalfluxes``_{3/2}``, ...,`` verticalfluxes``_{n-1/2}, where ``n`` is the number of layers in the fluid.
+(When ``n=1``, only the lateral fluxes are returned.)
+
+The lateral eddy fluxes whithin the ``j``-th fluid layer are
+```math
+\\textrm{lateralfluxes}_j = \\frac{H_j}{H} \\int U_j \\, \\upsilon_j \\, \\partial_y u_j 
+\\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n \\ ,
+```
+while the vertical eddy fluxes at the ``j+1/2``-th fluid interface  (i.e., interface between 
+the ``j``-th and ``(j+1)``-th fluid layer) are
+```math
+\\textrm{verticalfluxes}_{j+1/2} = \\int \\frac{f_0^2}{g'_{j+1/2} H} (U_j - U_{j+1}) \\, 
+\\upsilon_{j+1} \\, \\psi_{j} \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad 
+j = 1 , \\dots , n-1.
+```
 """
 function fluxes(vars, params, grid, sol)
   nlayers = numberoflayers(params)

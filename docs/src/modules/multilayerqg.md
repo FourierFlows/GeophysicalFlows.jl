@@ -53,7 +53,7 @@ where
 Including an imposed zonal flow ``U_j(y)`` in each layer, the equations of motion are:
 
 ```math
-\partial_t q_j + \mathsf{J}(\psi_j, q_j ) + (U_j - \partial_y\psi_j) \partial_x Q_j +  U_j \partial_x q_j  + (\partial_y Q_j)(\partial_x \psi_j) = -\delta_{j,n} \mu \nabla^2 \psi_n - \nu(-1)^{n_\nu} \nabla^{2n_\nu} q_j,
+\partial_t q_j + \mathsf{J}(\psi_j, q_j ) + (U_j - \partial_y\psi_j) \partial_x Q_j +  U_j \partial_x q_j  + (\partial_y Q_j)(\partial_x \psi_j) = -\delta_{j, n} \mu \nabla^2 \psi_n - \nu (-1)^{n_\nu} \nabla^{2n_\nu} q_j,
 ```
 
 with
@@ -63,30 +63,19 @@ with
 \partial_x Q_j \equiv \delta_{j,n} \partial_x \eta \ .
 ```
 
-The eddy kinetic energy in each layer is:
+The eddy kinetic energy in each layer and the eddy potential energy that corresponds to each 
+fluid interface is computed via `energies()`:
 
-```math
-\textrm{KE}_j = \dfrac{H_j}{H} \int \dfrac1{2} |\boldsymbol{\nabla} \psi_j|^2 \frac{\mathrm{d}^2\boldsymbol{x}}{L_x L_y} \ , \quad j = 1, \dots, n \ ,
+```@docs
+GeophysicalFlows.MultilayerQG.energies
 ```
 
-while the eddy potential energy related to each of fluid interface is
+The lateral eddy fluxes in each layer and the vertical fluxes across fluid interfaces are
+computed via `fluxes()`:
 
-```math
-\textrm{PE}_{j+1/2} = \int \dfrac1{2} \dfrac{f_0^2}{g'_{j+1/2}} (\psi_j - \psi_{j+1})^2 \frac{\mathrm{d}^2\boldsymbol{x}}{L_x L_y} \ , \quad j = 1, \dots, n-1 \ .
+```@docs
+GeophysicalFlows.MultilayerQG.fluxes
 ```
-
-The lateral eddy fluxes in each layer are:
-
-```math
-\textrm{lateralfluxes}_j = \dfrac{H_j}{H} \int U_j\,\upsilon_j \,\partial_y u_j \frac{\mathrm{d}^2\boldsymbol{x}}{L_x L_y} \ , \quad j = 1, \dots, n \ ,
-```
-
-while the vertical fluxes accros fluid interfaces are:
-
-```math
-\textrm{verticalfluxes}_{j+1/2} = \int \dfrac{f_0^2}{g'_{j+1/2} H} (U_j - U_{j+1}) \, \upsilon_{j+1} \, \psi_{j} \frac{\mathrm{d}^2\boldsymbol{x}}{L_x L_y} \ , \quad j = 1 , \dots , n-1.
-```
-
 
 ### Implementation
 
