@@ -364,12 +364,12 @@ pe_energy(prob) = pe_energy(prob.sol, prob.grid, prob.vars, prob.params)
     enstrophy(sol, grid, vars)
 Returns the domain-averaged enstrophy of solution `sol`.
 """
-function enstrophy(sol, grid, vars)
-  @. vars.uh = sol
-  CUDA.@allowscalar vars.uh[1, 1] = 0
-  return 0.5*parsevalsum2(vars.uh, grid) / (grid.Lx * grid.Ly)
-end
-enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
+# function enstrophy(sol, grid, vars)
+#   @. vars.uh = sol
+#   CUDA.@allowscalar vars.uh[1, 1] = 0
+#   return 0.5*parsevalsum2(vars.uh, grid) / (grid.Lx * grid.Ly)
+# end
+# enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
 
 
 function enstrophy_lia(sol, grid, vars, params)
@@ -378,12 +378,10 @@ function enstrophy_lia(sol, grid, vars, params)
 end
 enstrophy_lia(prob) = enstrophy_lia(prob.sol, prob.grid, prob.vars,prob.params)
 
-function pot_enstrophy(sol, grid, vars, params)
-  @. vars.uh = sol
-  CUDA.@allowscalar vars.uh[1, 1] = 0
-  return parsevalsum2(vars.uh .+ params.etah, grid) / (2*grid.Lx * grid.Ly)
+function enstrophy(sol, grid, vars, params)
+  return parsevalsum2( vars.zetah .+ params.etah, grid) / (2*grid.Lx * grid.Ly)
 end
-pot_enstrophy(prob) = pot_enstrophy(prob.sol, prob.grid, prob.vars,prob.params)
+enstrophy(prob) = pot_enstrophy(prob.sol, prob.grid, prob.vars,prob.params)
 
 """
     meanenergy(prob)
