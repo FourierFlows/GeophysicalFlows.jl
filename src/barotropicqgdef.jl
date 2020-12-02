@@ -364,12 +364,12 @@ pe_energy(prob) = pe_energy(prob.sol, prob.grid, prob.vars, prob.params)
     enstrophy(sol, grid, vars)
 Returns the domain-averaged enstrophy of solution `sol`.
 """
-function enstrophy(sol, grid, vars)
+function enstrophy(sol, grid, vars, params)
   @. vars.uh = sol
   CUDA.@allowscalar vars.uh[1, 1] = 0
   return 0.5*parsevalsum2(vars.uh.+ params.etah, grid) / (grid.Lx * grid.Ly)
 end
-enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
+enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars, prob.params)
 
 
 function reduced_enstrophy(sol, grid, vars)
