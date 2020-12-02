@@ -470,12 +470,12 @@ end
 # ----------------
 
 """
-    updatevars!(params, vars, grid, sol)
+    updatevars!(vars, params, grid, sol)
     updatevars!(prob)
 
 Update all problem variables using `sol`.
 """
-function updatevars!(params, vars, grid, sol)
+function updatevars!(vars, params, grid, sol)
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
   @. vars.uh = -im * grid.l  * vars.ψh
@@ -485,36 +485,39 @@ function updatevars!(params, vars, grid, sol)
   invtransform!(vars.ψ, deepcopy(vars.ψh), params)
   invtransform!(vars.u, deepcopy(vars.uh), params)
   invtransform!(vars.v, deepcopy(vars.vh), params)
+  
   return nothing
 end
 
-updatevars!(prob) = updatevars!(prob.params, prob.vars, prob.grid, prob.sol)
+updatevars!(prob) = updatevars!(prob.vars, prob.params, prob.grid, prob.sol)
 
 
 """
-    set_q!(params, vars, grid, sol, q)
+    set_q!(sol, params, vars, grid, q)
     set_q!(prob)
 
 Set the solution `prob.sol` as the transform of `q` and updates variables.
 """
-function set_q!(params, vars, grid, sol, q)
+function set_q!(sol, params, vars, grid, q)
   A = typeof(vars.q)
   fwdtransform!(vars.qh, A(q), params)
   @. vars.qh[1, 1, :] = 0
   @. sol = vars.qh
-  updatevars!(params, vars, grid, sol)
+  updatevars!(vars, params, grid, sol)
+  
   return nothing
 end
 
-function set_q!(params::SingleLayerParams, vars, grid, sol, q::AbstractArray{T, 2}) where T
+function set_q!(sol, params::SingleLayerParams, vars, grid, q::AbstractArray{T, 2}) where T
   A = typeof(vars.q[:, :, 1])
   q_3D = vars.q
   @views q_3D[:, :, 1] = A(q)
-  set_q!(params, vars, grid, sol, q_3D)
+  set_q!(sol, params, vars, grid, q_3D)
+  
   return nothing
 end
 
-set_q!(prob, q) = set_q!(prob.params, prob.vars, prob.grid, prob.sol, q)
+set_q!(prob, q) = set_q!(prob.sol, prob.params, prob.vars, prob.grid, q)
 
 
 """
@@ -524,32 +527,46 @@ set_q!(prob, q) = set_q!(prob.params, prob.vars, prob.grid, prob.sol, q)
 Set the solution `prob.sol` to correspond to the transform of streamfunction `ψ` and
 updates variables.
 """
-function set_ψ!(params, vars, grid, sol, ψ)
+function set_ψ!(sol, params, vars, grid, ψ)
   A = typeof(vars.ψ)
   fwdtransform!(vars.ψh, A(ψ), params)
   pvfromstreamfunction!(vars.qh, vars.ψh, params, grid)
   invtransform!(vars.q, vars.qh, params)
-  set_q!(params, vars, grid, sol, vars.q)
+  
+  set_q!(sol, params, vars, grid, vars.q)
+  
   return nothing
 end
 
-function set_ψ!(params::SingleLayerParams, vars, grid, sol, ψ::AbstractArray{T, 2}) where T
+function set_ψ!(sol, params::SingleLayerParams, vars, grid, ψ::AbstractArray{T, 2}) where T
   A = typeof(vars.ψ[:, :, 1])
   ψ_3D = vars.ψ
   @views ψ_3D[:, :, 1] = A(ψ)
-  set_ψ!(params, vars, grid, sol, ψ_3D)
+  
+  set_ψ!(sol, params, vars, grid, ψ_3D)
+  
   return nothing  
 end
 
-set_ψ!(prob, ψ) = set_ψ!(prob.params, prob.vars, prob.grid, prob.sol, ψ)
+set_ψ!(prob, ψ) = set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)
 
 
 """
+    energies(vars, params, grid, sol)
     energies(prob)
 
-Returns the kinetic energy of each fluid layer KE_1, ..., KE_nlayers, and the
-potential energy of each fluid interface PE_{3/2}, ..., PE_{nlayers-1/2}.
-(When `nlayers=1` only kinetic energy is returned.)
+Returns the kinetic energy of each fluid layer KE``_1, ...,`` KE``_{n}``, and the
+potential energy of each fluid interface PE``_{3/2}, ...,`` PE``_{n-1/2}``, where ``n``
+is the number of layers in the fluid. (When ``n=1``, only the kinetic energy is returned.)
+
+The kinetic energy at the ``j``-th fluid layer is 
+```math
+\\textrm{KE}_j = \\frac{H_j}{H} \\int \\frac1{2} |\\boldsymbol{\\nabla} \\psi_j|^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n \\ ,
+```
+while the potential energy that corresponds to the interface ``j+1/2`` (i.e., interface between the ``j``-th and ``(j+1)``-th fluid layer) is
+```math
+\\textrm{PE}_{j+1/2} = \\int \\frac1{2} \\frac{f_0^2}{g'_{j+1/2}} (\\psi_j - \\psi_{j+1})^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n-1 \\ .
+```
 """
 function energies(vars, params, grid, sol)
   nlayers = numberoflayers(params)
@@ -557,14 +574,16 @@ function energies(vars, params, grid, sol)
 
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
-
-  @. vars.uh = grid.Krsq * abs2(vars.ψh)
-  for j=1:nlayers
-    CUDA.@allowscalar KE[j] = 1/(2*grid.Lx*grid.Ly)*parsevalsum(vars.uh[:, :, j], grid)*params.H[j]/sum(params.H)
+  
+  abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
+  @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
+  
+  for j = 1:nlayers
+    CUDA.@allowscalar KE[j] = 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j] / sum(params.H)
   end
 
-  for j=1:nlayers-1
-    CUDA.@allowscalar PE[j] = 1/(2*grid.Lx*grid.Ly)*params.f₀^2/params.g′[j]*parsevalsum(abs2.(vars.ψh[:, :, j+1].-vars.ψh[:, :, j]), grid)
+  for j = 1:nlayers-1
+    CUDA.@allowscalar PE[j] = 1 / (2 * grid.Lx * grid.Ly) * params.f₀^2 / params.g′[j] * parsevalsum(abs2.(vars.ψh[:, :, j+1] .- vars.ψh[:, :, j]), grid)
   end
 
   return KE, PE
@@ -573,34 +592,54 @@ end
 function energies(vars, params::SingleLayerParams, grid, sol)
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
+
+  abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
+  @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
   
-  return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(grid.Krsq .* abs2.(vars.ψh), grid)
+  return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h, grid)
 end
 
 energies(prob) = energies(prob.vars, prob.params, prob.grid, prob.sol)
 
 """
+    fluxes(vars, params, grid, sol)
     fluxes(prob)
 
-Returns the lateral eddy fluxes within each fluid layer
-lateralfluxes_1, ..., lateralfluxes_nlayers and also the vertical eddy fluxes for
-each fluid interface verticalfluxes_{3/2}, ..., verticalfluxes_{nlayers-1/2}.
-(When `nlayers=1` only the lateral fluxes are returned.)
+Returns the lateral eddy fluxes within each fluid layer, lateralfluxes``_1,...,``lateralfluxes``_n``
+and also the vertical eddy fluxes at each fluid interface 
+verticalfluxes``_{3/2}``, ...,`` verticalfluxes``_{n-1/2}, where ``n`` is the number of layers in the fluid.
+(When ``n=1``, only the lateral fluxes are returned.)
+
+The lateral eddy fluxes whithin the ``j``-th fluid layer are
+```math
+\\textrm{lateralfluxes}_j = \\frac{H_j}{H} \\int U_j \\, \\upsilon_j \\, \\partial_y u_j 
+\\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n \\ ,
+```
+while the vertical eddy fluxes at the ``j+1/2``-th fluid interface  (i.e., interface between 
+the ``j``-th and ``(j+1)``-th fluid layer) are
+```math
+\\textrm{verticalfluxes}_{j+1/2} = \\int \\frac{f_0^2}{g'_{j+1/2} H} (U_j - U_{j+1}) \\, 
+\\upsilon_{j+1} \\, \\psi_{j} \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad 
+j = 1 , \\dots , n-1.
+```
 """
 function fluxes(vars, params, grid, sol)
   nlayers = numberoflayers(params)
   
   lateralfluxes, verticalfluxes = zeros(nlayers), zeros(nlayers-1)
 
-  updatevars!(params, vars, grid, sol)
+  updatevars!(vars, params, grid, sol)
 
-  @. vars.uh = im * grid.l * vars.uh      # ∂u/∂y
-  invtransform!(vars.u, vars.uh, params)
+  ∂u∂yh = vars.uh           # use vars.uh as scratch variable
+  ∂u∂y  = vars.u            # use vars.u  as scratch variable
 
-  lateralfluxes = (sum(@. params.H * params.U * vars.v * vars.u; dims=(1, 2)))[1, 1, :]
+  @. ∂u∂yh = im * grid.l * vars.uh
+  invtransform!(∂u∂y, ∂u∂yh, params)
+
+  lateralfluxes = (sum(@. params.H * params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
-  for j=1:nlayers-1
+  for j = 1:nlayers-1
     CUDA.@allowscalar verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j] ; dims=(1, 2))[1]
     CUDA.@allowscalar verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
   end
@@ -609,12 +648,15 @@ function fluxes(vars, params, grid, sol)
 end
 
 function fluxes(vars, params::SingleLayerParams, grid, sol)
-  updatevars!(params, vars, grid, sol)
+  updatevars!(vars, params, grid, sol)
 
-  @. vars.uh = im * grid.l * vars.uh
-  invtransform!(vars.u, vars.uh, params)
+  ∂u∂yh = vars.uh           # use vars.uh as scratch variable
+  ∂u∂y  = vars.u            # use vars.u  as scratch variable
 
-  lateralfluxes = (sum(@. params.U * vars.v * vars.u; dims=(1, 2)))[1, 1, :]
+  @. ∂u∂yh = im * grid.l * vars.uh
+  invtransform!(∂u∂y, ∂u∂yh, params)
+
+  lateralfluxes = (sum(@. params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly)
 
   return lateralfluxes
