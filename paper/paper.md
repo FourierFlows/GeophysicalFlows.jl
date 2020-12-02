@@ -16,6 +16,9 @@ authors:
   - name: Brodie Pearson
     orcid: 0000-0002-0202-0481
     affiliation: 4
+  - name: André Palóczy
+    orcid: 0000-0001-8231-8298
+    affiliation: 5
   - name: Lia Siegelman
     orcid: 0000-0003-3330-082X
     affiliation: 5
@@ -30,13 +33,13 @@ affiliations:
    index: 4
  - name: University of California San Diego
    index: 5
-date: 27 November 2020
+date: 3 December 2020
 bibliography: paper.bib
 ---
 
 # Summary
 
-FourierFlows is great...
+GeophysicalFlows.jl is a julia package and it is very nice...
 
 <!-- 
 # Citations
