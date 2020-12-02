@@ -1,9 +1,8 @@
 ---
-title: 'GeophysicalFlows.jl: A Julia ecosystem for solving partial differential equations on periodic domains'
+title: 'GeophysicalFlows.jl: A Julia package for solving geophysical-fluid-dynamics problems on periodic domains on CPUs and GPUs'
 tags:
   - julia
-  - PDE
-  - pseudospectral
+  - geophysical fluid dynamics
   - Fourier methods
   - gpu
 authors:
@@ -85,7 +84,7 @@ and referenced from text using \autoref{fig:example}.
 
 Fenced code blocks are rendered with syntax highlighting:
 ```julia
-]add FourierFlows
+]add GeophysicalFlows
 ```	
 
 # Acknowledgements
