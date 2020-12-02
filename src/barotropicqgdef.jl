@@ -8,8 +8,8 @@ export
   pe_energy,
   energy,
   enstrophy,
-  pot_enstrophy,
-  enstrophy_lia,
+  reduced_enstrophy,
+  cst_enstrophy,
   ke_2Dspec,
   meanenergy,
   meanenstrophy,
@@ -364,24 +364,35 @@ pe_energy(prob) = pe_energy(prob.sol, prob.grid, prob.vars, prob.params)
     enstrophy(sol, grid, vars)
 Returns the domain-averaged enstrophy of solution `sol`.
 """
-# function enstrophy(sol, grid, vars)
-#   @. vars.uh = sol
-#   CUDA.@allowscalar vars.uh[1, 1] = 0
-#   return 0.5*parsevalsum2(vars.uh, grid) / (grid.Lx * grid.Ly)
+function enstrophy(sol, grid, vars)
+  @. vars.uh = sol
+  CUDA.@allowscalar vars.uh[1, 1] = 0
+  return 0.5*parsevalsum2(vars.uh.+ params.etah, grid) / (grid.Lx * grid.Ly)
+end
+enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
+
+
+function reduced_enstrophy(sol, grid, vars)
+  @. vars.uh = sol
+  CUDA.@allowscalar vars.uh[1, 1] = 0
+  return 0.5*parsevalsum(abs2.(vars.uh) .+ 2* vars.uh .* params.etah, grid) / (grid.Lx * grid.Ly)
+end
+reduced_enstrophy(prob) = reduced_enstrophy(prob.sol, prob.grid, prob.vars)
+
+function cst_enstrophy(sol, grid, vars)
+  @. vars.uh = sol
+  CUDA.@allowscalar vars.uh[1, 1] = 0
+  return 0.5*parsevalsum2(params.etah, grid) / (grid.Lx * grid.Ly)
+end
+cst_enstrophy(prob) = cst_enstrophy(prob.sol, prob.grid, prob.vars)
+
+
+
+
+# function enstrophy(sol, grid, vars, params)
+#   return parsevalsum2( vars.zetah .+ params.etah, grid) / (2*grid.Lx * grid.Ly)
 # end
-# enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
-
-
-function enstrophy_lia(sol, grid, vars, params)
-  streamfunction!(vars.psih,sol,grid,params)
-  return parsevalsum(grid.Krsq.*grid.Krsq .* abs2.(vars.psih), grid) / (2*grid.Lx * grid.Ly)
-end
-enstrophy_lia(prob) = enstrophy_lia(prob.sol, prob.grid, prob.vars,prob.params)
-
-function enstrophy(sol, grid, vars, params)
-  return parsevalsum2( vars.zetah .+ params.etah, grid) / (2*grid.Lx * grid.Ly)
-end
-enstrophy(prob) = pot_enstrophy(prob.sol, prob.grid, prob.vars,prob.params)
+# enstrophy(prob) = pot_enstrophy(prob.sol, prob.grid, prob.vars,prob.params)
 
 """
     meanenergy(prob)
