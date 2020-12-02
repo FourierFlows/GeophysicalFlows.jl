@@ -5,11 +5,13 @@ export
   set_zeta!,
   updatevars!,
 
-  energy,
+  k_energy,
+  p_energy,
   energy_dissipation,
   energy_work,
   energy_drag,
   enstrophy,
+  reduced_enstrophy,
   enstrophy_dissipation,
   enstrophy_work,
   enstrophy_drag
@@ -41,6 +43,7 @@ function Problem(dev::Device=CPU();
           dt = 0.01,
   # Physical parameters
            β = 0.0,
+        kdef = 0.0,
          eta = nothing,
   # Drag and/or hyper-/hypo-viscosity
            ν = 0.0,
@@ -59,7 +62,7 @@ function Problem(dev::Device=CPU();
   # topographic PV
   eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
 
-  params = !(typeof(eta)<:ArrayType(dev)) ? Params(grid, β, eta, μ, ν, nν, calcF) : Params(β, eta, rfft(eta), μ, ν, nν, calcF)
+  params = !(typeof(eta)<:ArrayType(dev)) ? Params(grid, β, kdef, eta, μ, ν, nν, calcF) : Params(β, kdef, eta, rfft(eta), μ, ν, nν, calcF)
 
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
@@ -80,6 +83,7 @@ Returns the params for an unforced two-dimensional barotropic QG problem.
 """
 struct Params{T, Aphys, Atrans} <: AbstractParams
         β :: T            # Planetary vorticity y-gradient
+     kdef :: T            # deformation wavenumber
       eta :: Aphys        # Topographic PV
      etah :: Atrans       # FFT of Topographic PV
         μ :: T            # Linear drag
@@ -93,10 +97,10 @@ end
 
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function Params(grid::AbstractGrid{T, A}, β, eta::Function, μ, ν, nν::Int, calcF) where {T, A}
+function Params(grid::AbstractGrid{T, A}, β, kdef, eta::Function, μ, ν, nν::Int, calcF) where {T, A}
   etagrid = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
   etah = rfft(etagrid)
-  return Params(β, etagrid, etah, μ, ν, nν, calcF)
+  return Params(β, kdef, etagrid, etah, μ, ν, nν, calcF)
 end
 
 
@@ -183,7 +187,8 @@ end
 
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.zetah = sol
-  @. vars.psih  = -grid.invKrsq * vars.zetah
+  @. vars.psih  = - vars.zetah / (grid.Krsq + params.kdef^2)
+  # @. vars.psih  = -grid.invKrsq * vars.zetah
   @. vars.uh    = -im * grid.l  * vars.psih
   @. vars.vh    =  im * grid.kr * vars.psih
 
@@ -196,7 +201,7 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. uq *= vars.q                                        # u*q
   vq = vars.v                                            # use vars.v as scratch variable
   @. vq *= vars.q                                        # v*q
-  
+
   uqh = vars.uh                                          # use vars.uh as scratch variable
   mul!(uqh, grid.rfftplan, uq)                           # \hat{u*q}
   vqh = vars.vh                                          # use vars.vh as scratch variable
@@ -218,7 +223,7 @@ addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
 function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
   params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
   @. N += vars.Fh
-  
+
   return nothing
 end
 
@@ -227,9 +232,9 @@ function addforcing!(N, sol, t, clock, vars::StochasticForcedVars, params, grid)
     @. vars.prevsol = sol # sol at previous time-step is needed to compute budgets for stochastic forcing
     params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
   end
-  
+
   @. N += vars.Fh
-  
+
   return nothing
 end
 
@@ -245,7 +250,8 @@ Update the variables in `vars` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
   @. vars.zetah = sol
-  @. vars.psih  = -grid.invKrsq * vars.zetah
+  @. vars.psih  = - vars.zetah / (grid.Krsq + params.kdef^2)
+  # @. vars.psih  = -grid.invKrsq * vars.zetah
   @. vars.uh    = -im * grid.l  * vars.psih
   @. vars.vh    =  im * grid.kr * vars.psih
 
@@ -255,7 +261,7 @@ function updatevars!(sol, vars, params, grid)
   ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh))
 
   @. vars.q = vars.zeta + params.eta
-  
+
   return nothing
 end
 
@@ -270,11 +276,11 @@ on the `grid`.
 """
 function set_zeta!(sol, vars, params, grid, zeta)
   mul!(vars.zetah, grid.rfftplan, zeta)
-  
+
   @. sol = vars.zetah
 
   updatevars!(sol, vars, params, grid)
-  
+
   return nothing
 end
 
@@ -282,25 +288,46 @@ set_zeta!(prob, zeta) = set_zeta!(prob.sol, prob.vars, prob.params, prob.grid, z
 
 
 """
-    energy(prob)
-    energy(sol, grid)
+    k_energy(prob)
+    p_energy(prob)
+    k_energy(vars, grid)
+    p_energy(vars, grid, params)
 
 Returns the domain-averaged kinetic energy of solution `sol`: ∫ ½ (u²+v²) dxdy / (Lx Ly) = ∑ ½ k² |ψ̂|² / (Lx Ly).
+Returns the domain-averaged potential energy of solution `sol`: ½ kdef² ∫ ψ² dxdy / (Lx Ly) = ½ kdef² ∑ |ψ̂|² / (Lx Ly).
+
 """
-energy(sol, grid) = parsevalsum2(sqrt.(grid.Krsq) .* grid.invKrsq .* sol, grid) / (2 * grid.Lx * grid.Ly)
-energy(prob) = energy(prob.sol, prob.grid)
+k_energy(vars,grid) = parsevalsum(grid.Krsq .* abs2.(vars.psih), grid) / (2 * grid.Lx * grid.Ly)
+p_energy(vars,grid,params) = params.kdef*params.kdef*parsevalsum2(vars.psih, grid) / (2 * grid.Lx * grid.Ly)
+
+k_energy(prob) = k_energy(prob.vars,prob.grid)
+p_energy(prob) = k_energy(prob.vars,prob.grid, prob.params)
+
+# energy(sol, grid) = parsevalsum2(sqrt.(grid.Krsq) .* grid.invKrsq .* sol, grid) / (2 * grid.Lx * grid.Ly)
+# energy(prob) = energy(prob.sol, prob.grid)
+ζ
 
 """
     enstrophy(prob)
     enstrophy(sol, grid, vars)
+    reduced_enstrophy(prob)
+    reduced_enstrophy(sol, grid, vars)
 
-Returns the domain-averaged enstrophy of solution `sol`.
+Returns the domain-averaged enstrophy ½ ∫ q² dxdy / (Lx Ly), with q = ζ + η and sol = ζ.
+Returns the domain-averaged reduced enstrophy ½ ∫(ζ² + 2ζη) dxdy / (Lx Ly) .
+
 """
-function enstrophy(sol, grid, vars)
+function enstrophy(sol, grid, vars, params)
   @. vars.zetah = sol
-  return 0.5*parsevalsum2(vars.zetah, grid) / (grid.Lx * grid.Ly)
+  return 0.5*parsevalsum2(vars.zetah + params.etah, grid) / (grid.Lx * grid.Ly)
 end
-enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
+enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars, prob.params)
+
+function reduced_enstrophy(sol, grid, vars, params)
+  @. vars.zetah = sol
+  return 0.5*parsevalsum(abs2.(vars.uh) .+ 2* vars.uh .* params.etah, grid) / (grid.Lx * grid.Ly)
+end
+reduced_enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars, prob.params)
 
 """
     energy_dissipation(prob)
@@ -310,7 +337,7 @@ Returns the domain-averaged energy dissipation rate. nν must be >= 1.
 """
 @inline function energy_dissipation(sol, vars, params, grid)
   energy_dissipationh = vars.uh # use vars.uh as scratch variable
-  
+
   @. energy_dissipationh = params.ν * grid.Krsq^(params.nν-1) * abs2(sol)
   CUDA.@allowscalar energy_dissipationh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_dissipationh, grid)
@@ -326,7 +353,7 @@ Returns the domain-averaged enstrophy dissipation rate. nν must be >= 1.
 """
 @inline function enstrophy_dissipation(sol, vars, params, grid)
   enstrophy_dissipationh = vars.uh # use vars.uh as scratch variable
-  
+
   @. enstrophy_dissipationh = params.ν * grid.Krsq^params.nν * abs2(sol)
   CUDA.@allowscalar enstrophy_dissipationh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_dissipationh, grid)
@@ -342,14 +369,14 @@ Returns the domain-averaged rate of work of energy by the forcing `Fh`.
 """
 @inline function energy_work(sol, vars::ForcedVars, grid)
   energy_workh = vars.uh # use vars.uh as scratch variable
-  
+
   @. energy_workh = grid.invKrsq * sol * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_workh, grid)
 end
 
 @inline function energy_work(sol, vars::StochasticForcedVars, grid)
   energy_workh = vars.uh # use vars.uh as scratch variable
-  
+
   @. energy_workh = grid.invKrsq * (vars.prevsol + sol)/2 * conj(vars.Fh) # Stratonovich
   # @. energy_workh = grid.invKrsq * vars.prevsol * conj(vars.Fh)             # Ito
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
@@ -365,14 +392,14 @@ Returns the domain-averaged rate of work of enstrophy by the forcing `Fh`.
 """
 @inline function enstrophy_work(sol, vars::ForcedVars, grid)
   enstrophy_workh = vars.uh # use vars.uh as scratch variable
-  
+
   @. enstrophy_workh = sol * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_workh, grid)
 end
 
 @inline function enstrophy_work(sol, vars::StochasticForcedVars, grid)
   enstrophy_workh = vars.uh # use vars.uh as scratch variable
-  
+
   @. enstrophy_workh = (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
   # @. enstrophy_workh = grid.invKrsq * vars.prevsol * conj(vars.Fh)           # Ito
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_workh, grid)
