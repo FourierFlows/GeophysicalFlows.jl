@@ -71,7 +71,7 @@ qih *= sqrt(E₀ / Ein)             # normalize qi to have energy E₀
 qi = irfft(qih, grid.nx)
 
 BarotropicQG.set_zeta!(prob, qi)
-nothing #hide
+nothing # hide
 
 # Let's plot the initial vorticity field:
 
@@ -234,7 +234,7 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
 
 end
 
-mp4(anim, "barotropicqg_betadecay.mp4", fps=12)
+gif(anim, "barotropicqg_betadecay.gif", fps=12)
 
 # ## Save
 

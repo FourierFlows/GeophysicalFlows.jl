@@ -158,7 +158,7 @@ function plot_output(prob)
             xlabel = "t")
 
   layout = @layout [a{0.5w} Plots.grid(2, 1)]
-  p = plot(pbₛ, pKE, pb², layout=layout, size = (900, 500), dpi=150)
+  p = plot(pbₛ, pKE, pb², layout=layout, size = (900, 500))
 
   return p
 end
@@ -195,7 +195,7 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
   SurfaceQG.updatevars!(prob)
 end
 
-mp4(anim, "sqg_ellipticalvortex.mp4", fps=14)
+gif(anim, "sqg_ellipticalvortex.gif", fps=14)
 
 # Let's see how all flow fields look like at the end of the simulation.
 
@@ -243,4 +243,3 @@ layout = @layout [a{0.5h}; b{0.5w} c{0.5w}]
 plot_final = plot(pb, pu, pv, layout=layout, size = (800, 800))
 
 # Last we can save the output by calling `saveoutput(out)`.
-
