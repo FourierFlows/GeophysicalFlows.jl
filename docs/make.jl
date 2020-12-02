@@ -51,7 +51,7 @@ Timer(t -> println(" "), 0, interval=240)
 format = Documenter.HTML(
   collapselevel = 2,
      prettyurls = get(ENV, "CI", nothing) == "true",
-      canonical = "https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/"
+      canonical = "https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/"
 )
 
 makedocs(
