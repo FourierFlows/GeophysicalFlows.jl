@@ -10,6 +10,7 @@
 using FourierFlows, Plots, Printf
 
 using FFTW: rfft, irfft
+using Random: seed!
 import GeophysicalFlows.MultilayerQG
 import GeophysicalFlows.MultilayerQG: energies
 
@@ -22,9 +23,7 @@ nothing # hide
 
 # ## Numerical parameters and time-stepping parameters
 
-nx = 128        # 2D resolution = nx^2
-ny = nx
-
+n = 128                  # 2D resolution = n²
 stepper = "FilteredRK4"  # timestepper
      dt = 6e-3           # timestep
  nsteps = 7000           # total number of time-steps
@@ -33,14 +32,14 @@ nothing # hide
 
 
 # ## Physical parameters
-Lx = 2π         # domain size
- μ = 5e-2       # bottom drag
- β = 5          # the y-gradient of planetary PV
+ L = 2π                  # domain size
+ μ = 5e-2                # bottom drag
+ β = 5                   # the y-gradient of planetary PV
  
-nlayers = 2      # number of layers
-f₀, g = 1, 1     # Coriolis parameter and gravitational constant
- H = [0.2, 0.8]  # the rest depths of each layer
- ρ = [4.0, 5.0]  # the density of each layer
+nlayers = 2              # number of layers
+f₀, g = 1, 1             # Coriolis parameter and gravitational constant
+ H = [0.2, 0.8]          # the rest depths of each layer
+ ρ = [4.0, 5.0]          # the density of each layer
  
  U = zeros(nlayers) # the imposed mean zonal flow in each layer
  U[1] = 1.0
@@ -50,7 +49,7 @@ nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments,
-prob = MultilayerQG.Problem(nlayers, dev; nx=nx, Lx=Lx, f₀=f₀, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
+prob = MultilayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
 nothing # hide
 
 # and define some shortcuts.
@@ -64,7 +63,8 @@ nothing # hide
 # Our initial condition is some small amplitude random noise. We smooth our initial
 # condidtion using the `timestepper`'s high-wavenumber `filter`.
 
-q_i  = 4e-3randn((nx, ny, nlayers))
+seed!(1234) # reset of the random number generator for reproducibility
+q_i  = 4e-3randn((grid.nx, grid.ny, nlayers))
 qh_i = prob.timestepper.filter .* rfft(q_i, (1, 2)) # only apply rfft in dims=1, 2
 q_i  = irfft(qh_i, grid.nx, (1, 2)) # only apply irfft in dims=1, 2
 
@@ -108,7 +108,7 @@ function get_u(prob)
 end
 
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
-nothing #hide
+nothing # hide
 
 
 # ## Visualizing the simulation
@@ -122,15 +122,15 @@ function plot_output(prob)
   Lx, Ly = prob.grid.Lx, prob.grid.Ly
   
   l = @layout Plots.grid(2, 3)
-  p = plot(layout=l, size = (1000, 600), dpi=150)
+  p = plot(layout=l, size = (1000, 600))
   
   for m in 1:nlayers
     heatmap!(p[(m-1) * 3 + 1], x, y, vars.q[:, :, m]',
          aspectratio = 1,
               legend = false,
                    c = :balance,
-               xlims = (-Lx / 2, Lx / 2),
-               ylims = (-Ly / 2, Ly / 2),
+               xlims = (-Lx/2, Lx/2),
+               ylims = (-Ly/2, Ly/2),
                clims = symlims,
               xticks = -3:3,
               yticks = -3:3,
@@ -144,8 +144,8 @@ function plot_output(prob)
          aspectratio = 1,
               legend = false,
                    c = :viridis,
-               xlims = (-Lx / 2, Lx / 2),
-               ylims = (-Ly / 2, Ly / 2),
+               xlims = (-Lx/2, Lx/2),
+               ylims = (-Ly/2, Ly/2),
                clims = symlims,
               xticks = -3:3,
               yticks = -3:3,
@@ -212,7 +212,7 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
   MultilayerQG.updatevars!(prob)
 end
 
-mp4(anim, "multilayerqg_2layer.mp4", fps=18)
+gif(anim, "multilayerqg_2layer.gif", fps=18)
 
 
 # ## Save

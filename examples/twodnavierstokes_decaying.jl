@@ -159,7 +159,7 @@ anim = @animate for j = 0:Int(nsteps/nsubs)
   TwoDNavierStokes.updatevars!(prob)  
 end
 
-mp4(anim, "twodturb.mp4", fps=18)
+gif(anim, "twodturb.gif", fps=18)
 
 
 # Last we save the output.
@@ -168,7 +168,7 @@ saveoutput(out)
 
 # ## Radial energy spectrum
 
-# After the simulation is done we plot the radial energy spectrum to illustrate
+# After the simulation is done we plot the instantaneous radial energy spectrum to illustrate
 # how `FourierFlows.radialspectrum` can be used,
 
 E  = @. 0.5 * (vars.u^2 + vars.v^2) # energy density

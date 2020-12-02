@@ -25,7 +25,7 @@ nothing # hide
       n = 128            # 2D resolution = n²
 stepper = "FilteredRK4"  # timestepper
      dt = 0.05           # timestep
- nsteps = 2000           # total number of time-steps
+ nsteps = 1500           # total number of time-steps
  nsubs  = 10             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
@@ -71,7 +71,7 @@ qih *= sqrt(E₀ / Ein)             # normalize qi to have energy E₀
 qi = irfft(qih, grid.nx)
 
 BarotropicQG.set_zeta!(prob, qi)
-nothing #hide
+nothing # hide
 
 # Let's plot the initial vorticity field:
 
@@ -103,7 +103,7 @@ p2 = contourf(x, y, vars.psi',
     framestyle = :box)
 
 l = @layout Plots.grid(1, 2)
-p = plot(p1, p2, layout=l, size=(900, 400))
+p = plot(p1, p2, layout=l, size = (900, 800))
 
 
 # ## Diagnostics
@@ -131,8 +131,7 @@ nothing # hide
 
 # and then create Output.
 get_sol(prob) = sol # extracts the Fourier-transformed solution
-get_u(prob) = irfft(im * grid.l .* grid.invKrsq .* sol, grid.nx)
-out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
+out = Output(prob, filename, (:sol, get_sol))
 nothing # hide
 
 
@@ -214,7 +213,7 @@ p = plot_output(prob)
 
 anim = @animate for j = 0:round(Int, nsteps/nsubs)
 
-  if j % (1000 / nsubs) == 0
+  if j % (500 / nsubs) == 0
     cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
 
     log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, walltime: %.2f min",
@@ -234,7 +233,7 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
 
 end
 
-mp4(anim, "barotropicqg_betadecay.mp4", fps=12)
+gif(anim, "barotropicqg_betadecay.gif", fps=8)
 
 # ## Save
 
