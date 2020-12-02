@@ -305,7 +305,6 @@ p_energy(prob) = k_energy(prob.vars,prob.grid, prob.params)
 
 # energy(sol, grid) = parsevalsum2(sqrt.(grid.Krsq) .* grid.invKrsq .* sol, grid) / (2 * grid.Lx * grid.Ly)
 # energy(prob) = energy(prob.sol, prob.grid)
-ζ
 
 """
     enstrophy(prob)
