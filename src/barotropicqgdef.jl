@@ -372,19 +372,19 @@ end
 enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars, prob.params)
 
 
-function reduced_enstrophy(sol, grid, vars)
+function reduced_enstrophy(sol, grid, vars, params)
   @. vars.uh = sol
   CUDA.@allowscalar vars.uh[1, 1] = 0
   return 0.5*parsevalsum(abs2.(vars.uh) .+ 2* vars.uh .* params.etah, grid) / (grid.Lx * grid.Ly)
 end
-reduced_enstrophy(prob) = reduced_enstrophy(prob.sol, prob.grid, prob.vars)
+reduced_enstrophy(prob) = reduced_enstrophy(prob.sol, prob.grid, prob.vars, prob.params)
 
-function cst_enstrophy(sol, grid, vars)
+function cst_enstrophy(sol, grid, vars, params)
   @. vars.uh = sol
   CUDA.@allowscalar vars.uh[1, 1] = 0
   return 0.5*parsevalsum2(params.etah, grid) / (grid.Lx * grid.Ly)
 end
-cst_enstrophy(prob) = cst_enstrophy(prob.sol, prob.grid, prob.vars)
+cst_enstrophy(prob) = cst_enstrophy(prob.sol, prob.grid, prob.vars, prob.params)
 
 
 
