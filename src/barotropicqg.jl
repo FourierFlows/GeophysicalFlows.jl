@@ -297,10 +297,13 @@ Returns the domain-averaged kinetic energy of solution `sol`: ∫ ½ (u²+v²) d
 Returns the domain-averaged potential energy of solution `sol`: ½ kdef² ∫ ψ² dxdy / (Lx Ly) = ½ kdef² ∑ |ψ̂|² / (Lx Ly).
 
 """
-k_energy(vars,grid) = parsevalsum(grid.Krsq .* abs2.(vars.psih), grid) / (2 * grid.Lx * grid.Ly)
-p_energy(vars,grid,params) = params.kdef*params.kdef*parsevalsum2(vars.psih, grid) / (2 * grid.Lx * grid.Ly)
 
-k_energy(prob) = k_energy(prob.vars,prob.grid)
+k_energy(sol,grid,params) = parsevalsum2(sqrt.(grid.Krsq) .* sol ./(grid.Krsq + params.kdef^2) , grid) / (2 * grid.Lx * grid.Ly)
+# k_energy(vars,grid) = parsevalsum(grid.Krsq .* abs2.(vars.psih), grid) / (2 * grid.Lx * grid.Ly)
+p_energy(vars,grid,params) = params.kdef^2*parsevalsum2(vars.psih, grid) / (2 * grid.Lx * grid.Ly)
+
+# k_energy(prob) = k_energy(prob.vars,prob.grid)
+k_energy(prob) = k_energy(prob.sol,prob.grid, prob.params)
 p_energy(prob) = k_energy(prob.vars,prob.grid, prob.params)
 
 # energy(sol, grid) = parsevalsum2(sqrt.(grid.Krsq) .* grid.invKrsq .* sol, grid) / (2 * grid.Lx * grid.Ly)
