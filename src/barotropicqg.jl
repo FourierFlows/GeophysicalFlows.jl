@@ -188,6 +188,7 @@ end
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.zetah = sol
   @. vars.psih  = - vars.zetah / (grid.Krsq .+ params.kdef^2)
+  CUDA.@allowscalar vars.psih[1, 1] = 0
   # @. vars.psih  = -grid.invKrsq * vars.zetah
   @. vars.uh    = -im * grid.l  * vars.psih
   @. vars.vh    =  im * grid.kr * vars.psih
@@ -251,6 +252,7 @@ Update the variables in `vars` with the solution in `sol`.
 function updatevars!(sol, vars, params, grid)
   @. vars.zetah = sol
   @. vars.psih  = - vars.zetah / (grid.Krsq .+ params.kdef^2)
+  CUDA.@allowscalar vars.psih[1, 1] = 0
   # @. vars.psih  = -grid.invKrsq * vars.zetah
   @. vars.uh    = -im * grid.l  * vars.psih
   @. vars.vh    =  im * grid.kr * vars.psih
