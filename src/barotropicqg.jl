@@ -306,8 +306,8 @@ p_energy(sol, grid, params) = params.kdef^2*parsevalsum2(sol ./(grid.Krsq .+ par
 
 
 # k_energy(prob) = k_energy(prob.vars,prob.grid)
-k_energy(prob) = k_energy(prob.sol,prob.grid, prob.params)
-p_energy(prob) = k_energy(prob.sol, prob.grid, prob.params)
+k_energy(prob) = k_energy(prob.sol, prob.grid, prob.params)
+p_energy(prob) = p_energy(prob.sol, prob.grid, prob.params)
 # p_energy(prob) = k_energy(prob.vars,prob.grid, prob.params)
 
 # energy(sol, grid) = parsevalsum2(sqrt.(grid.Krsq) .* grid.invKrsq .* sol, grid) / (2 * grid.Lx * grid.Ly)
