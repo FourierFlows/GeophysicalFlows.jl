@@ -4,6 +4,7 @@ export
   Problem,
   set_zeta!,
   updatevars!,
+
   ke_energy,
   pe_energy,
   energy,
