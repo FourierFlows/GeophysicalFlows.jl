@@ -187,7 +187,7 @@ end
 
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.zetah = sol
-  @. vars.psih  = - vars.zetah / (grid.Krsq + params.kdef^2)
+  @. vars.psih  = - vars.zetah / (grid.Krsq .+ params.kdef^2)
   # @. vars.psih  = -grid.invKrsq * vars.zetah
   @. vars.uh    = -im * grid.l  * vars.psih
   @. vars.vh    =  im * grid.kr * vars.psih
@@ -250,7 +250,7 @@ Update the variables in `vars` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
   @. vars.zetah = sol
-  @. vars.psih  = - vars.zetah / (grid.Krsq + params.kdef^2)
+  @. vars.psih  = - vars.zetah / (grid.Krsq .+ params.kdef^2)
   # @. vars.psih  = -grid.invKrsq * vars.zetah
   @. vars.uh    = -im * grid.l  * vars.psih
   @. vars.vh    =  im * grid.kr * vars.psih
@@ -298,7 +298,7 @@ Returns the domain-averaged potential energy of solution `sol`: ½ kdef² ∫ ψ
 
 """
 
-k_energy(sol,grid,params) = parsevalsum2(sqrt.(grid.Krsq) .* sol ./(grid.Krsq + params.kdef^2) , grid) / (2 * grid.Lx * grid.Ly)
+k_energy(sol,grid,params) = parsevalsum2(sqrt.(grid.Krsq) .* sol ./(grid.Krsq .+ params.kdef^2) , grid) / (2 * grid.Lx * grid.Ly)
 # k_energy(vars,grid) = parsevalsum(grid.Krsq .* abs2.(vars.psih), grid) / (2 * grid.Lx * grid.Ly)
 p_energy(vars,grid,params) = params.kdef^2*parsevalsum2(vars.psih, grid) / (2 * grid.Lx * grid.Ly)
 
