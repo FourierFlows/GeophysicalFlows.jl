@@ -304,21 +304,21 @@ Returns the domain-averaged potential energy of solution `sol`: ½ kdef² ∫ ψ
 # p_energy(sol, grid, params) = params.kdef^2*parsevalsum2(sol ./(grid.Krsq .+ params.kdef^2), grid) / (2 * grid.Lx * grid.Ly)
 
 
-function k_energy(sol,grid,params)
+function k_energy(sol, grid, vars, params)
     @. vars.uh = sqrt.(grid.Krsq) .* sol ./(grid.Krsq .+ params.kdef^2) ## uh is a dummy variable
     CUDA.@allowscalar vars.uh[1, 1] = 0
     return parsevalsum2(vars.uh , grid) / (2 * grid.Lx * grid.Ly)
 end
 
-function p_energy(sol,grid,params)
+function p_energy(sol, grid, vars, params)
     @. vars.uh = sol ./(grid.Krsq .+ params.kdef^2) ## uh is a dummy variable
     CUDA.@allowscalar vars.uh[1, 1] = 0
     return params.kdef^2*parsevalsum2(vars.uh, grid) / (2 * grid.Lx * grid.Ly)
 end
 
 # k_energy(prob) = k_energy(prob.vars,prob.grid)
-k_energy(prob) = k_energy(prob.sol, prob.grid, prob.params)
-p_energy(prob) = p_energy(prob.sol, prob.grid, prob.params)
+k_energy(prob) = k_energy(prob.sol, prob.grid, prob.vars, prob.params)
+p_energy(prob) = p_energy(prob.sol, prob.grid, prob.vars, prob.params)
 # p_energy(prob) = k_energy(prob.vars,prob.grid, prob.params)
 
 # energy(sol, grid) = parsevalsum2(sqrt.(grid.Krsq) .* grid.invKrsq .* sol, grid) / (2 * grid.Lx * grid.Ly)
