@@ -344,7 +344,7 @@ enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars, prob.params)
 
 function reduced_enstrophy(sol, grid, vars, params)
   @. vars.zetah = sol
-  return 0.5*parsevalsum(abs2.(vars.uh) .+ 2* vars.uh .* params.etah, grid) / (grid.Lx * grid.Ly)
+  return 0.5*parsevalsum(abs2.(vars.zetah) .+ 2* vars.zetah .* params.etah, grid) / (grid.Lx * grid.Ly)
 end
 reduced_enstrophy(prob) = reduced_enstrophy(prob.sol, prob.grid, prob.vars, prob.params)
 
