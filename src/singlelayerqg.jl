@@ -188,7 +188,9 @@ end
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.zetah = sol
   @. vars.psih  = - vars.zetah / (grid.Krsq .+ params.kdef^2)
-  CUDA.@allowscalar vars.psih[1, 1] = 0
+  if params.kdef == 0.0
+      CUDA.@allowscalar vars.psih[1, 1] = 0
+  end
   @. vars.uh    = -im * grid.l  * vars.psih
   @. vars.vh    =  im * grid.kr * vars.psih
 
@@ -251,7 +253,9 @@ Update the variables in `vars` with the solution in `sol`.
 function updatevars!(sol, vars, params, grid)
   @. vars.zetah = sol
   @. vars.psih  = - vars.zetah / (grid.Krsq .+ params.kdef^2)
-  CUDA.@allowscalar vars.psih[1, 1] = 0
+  if params.kdef == 0.0
+      CUDA.@allowscalar vars.psih[1, 1] = 0
+  end
   @. vars.uh    = -im * grid.l  * vars.psih
   @. vars.vh    =  im * grid.kr * vars.psih
 
@@ -299,13 +303,17 @@ Returns the domain-averaged potential energy of solution `sol`: ½ kdef² ∫ ψ
 """
 function k_energy(sol, grid, vars, params)
     @. vars.uh = sqrt.(grid.Krsq) .* sol ./(grid.Krsq .+ params.kdef^2) ## uh is a dummy variable
-    CUDA.@allowscalar vars.uh[1, 1] = 0
+    if params.kdef == 0.0
+        CUDA.@allowscalar vars.uh[1, 1] = 0
+    end
     return parsevalsum2(vars.uh , grid) / (2 * grid.Lx * grid.Ly)
 end
 
 function p_energy(sol, grid, vars, params)
     @. vars.uh = sol ./(grid.Krsq .+ params.kdef^2) ## uh is a dummy variable
-    CUDA.@allowscalar vars.uh[1, 1] = 0
+    if params.kdef == 0.0
+        CUDA.@allowscalar vars.uh[1, 1] = 0
+    end
     return params.kdef^2*parsevalsum2(vars.uh, grid) / (2 * grid.Lx * grid.Ly)
 end
 
