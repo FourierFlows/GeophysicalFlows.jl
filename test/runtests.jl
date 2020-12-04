@@ -27,24 +27,19 @@ const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
 const rtol_surfaceqg = 1e-13 # tolerance for multilayerqg forcing tests
 
 
-"Get the CFL number, assuming a uniform grid with `dx=dy`."
-cfl(u, v, dt, dx) = maximum([maximum(abs.(u)), maximum(abs.(v))]*dt/dx)
-cfl(prob) = cfl(prob.vars.u, prob.vars.v, prob.clock.dt, prob.grid.dx)
-
-
 # Run tests
 testtime = @elapsed begin
 for dev in devices
   
   println("testing on "*string(typeof(dev)))
-
+    
   @testset "Utils" begin
     include("test_utils.jl")
 
     @test testpeakedisotropicspectrum(dev)
     @test_throws ErrorException("the domain is not square") testpeakedisotropicspectrum_rectangledomain()
   end
-
+  
   @testset "TwoDNavierStokes" begin
     include("test_twodnavierstokes.jl")
 
@@ -58,7 +53,7 @@ for dev in devices
     @test test_twodnavierstokes_problemtype(dev, Float32)
     @test TwoDNavierStokes.nothingfunction() == nothing
   end
-  
+   
   @testset "BarotropicQG" begin
     include("test_barotropicqg.jl")
 
@@ -75,13 +70,11 @@ for dev in devices
     @test test_bqg_deterministicforcing_enstrophybudget(dev)
     @test test_bqg_stochasticforcing_enstrophybudget(dev)
     @test test_bqg_advection(0.0005, "ForwardEuler", dev)
-    @test test_bqg_formstress(0.01, "ForwardEuler", dev)
     @test test_bqg_energyenstrophy(dev)
-    @test test_bqg_meanenergyenstrophy(dev)
     @test test_bqg_problemtype(dev, Float32)
     @test BarotropicQG.nothingfunction() == nothing
   end
-  
+   
   @testset "BarotropicQGQL" begin
     include("test_barotropicqgql.jl")
 
@@ -115,50 +108,25 @@ for dev in devices
     @test SurfaceQG.nothingfunction() == nothing
   end
   
-  if dev == CPU()
-    @testset "MultilayerQG" begin
-      include("test_multilayerqg.jl")
-      
-      @test test_pvtofromstreamfunction_2layer(dev)
-      @test test_pvtofromstreamfunction_3layer(dev)
-      @test test_mqg_rossbywave("RK4", 1e-2, 20, dev)
-      @test test_mqg_nonlinearadvection(0.005, "ForwardEuler", dev)
-      @test test_mqg_linearadvection(0.005, "ForwardEuler", dev)
-      @test test_mqg_energies(dev)
-      @test test_mqg_energysinglelayer(dev)
-      @test test_mqg_fluxes(dev)
-      @test test_mqg_fluxessinglelayer(dev)
-      @test test_mqg_setqsetψ(dev)
-      @test test_mqg_paramsconstructor(dev)
-      @test test_mqg_stochasticforcedproblemconstructor(dev)
-      @test test_mqg_problemtype(dev, Float32)
-      @test MultilayerQG.nothingfunction() == nothing
-    end
+  @testset "MultilayerQG" begin
+    include("test_multilayerqg.jl")
+    
+    @test test_pvtofromstreamfunction_2layer(dev)
+    @test test_pvtofromstreamfunction_3layer(dev)
+    @test test_mqg_rossbywave("RK4", 1e-2, 20, dev)
+    @test test_mqg_nonlinearadvection(0.005, "ForwardEuler", dev)
+    @test test_mqg_linearadvection(0.005, "ForwardEuler", dev)
+    @test test_mqg_energies(dev)
+    @test test_mqg_energysinglelayer(dev)
+    @test test_mqg_fluxes(dev)
+    @test test_mqg_fluxessinglelayer(dev)
+    @test test_mqg_setqsetψ(dev)
+    @test test_mqg_paramsconstructor(dev)
+    @test test_mqg_stochasticforcedproblemconstructor(dev)
+    @test test_mqg_problemtype(dev, Float32)
+    @test MultilayerQG.nothingfunction() == nothing
   end
 end
-
-dev = CPU()
-println("following tests only on "*string(typeof(dev)))
-
-@testset "MultilayerQG" begin
-  include("test_multilayerqg.jl")
-  
-  @test test_pvtofromstreamfunction_2layer(dev)
-  @test test_pvtofromstreamfunction_3layer(dev)
-  @test test_mqg_rossbywave("RK4", 1e-2, 20, dev)
-  @test test_mqg_nonlinearadvection(0.005, "ForwardEuler", dev)
-  @test test_mqg_linearadvection(0.005, "ForwardEuler", dev)
-  @test test_mqg_energies(dev)
-  @test test_mqg_energysinglelayer(dev)
-  @test test_mqg_fluxes(dev)
-  @test test_mqg_fluxessinglelayer(dev)
-  @test test_mqg_setqsetψ(dev)
-  @test test_mqg_paramsconstructor(dev)
-  @test test_mqg_stochasticforcedproblemconstructor(dev)
-  @test test_mqg_problemtype(dev, Float32)
-  @test MultilayerQG.nothingfunction() == nothing
-end
-
 end # time
 
 println("Total test time: ", testtime)

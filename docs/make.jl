@@ -24,8 +24,8 @@ examples = [
     "twodnavierstokes_stochasticforcing_budgets.jl",
     "barotropicqg_betadecay.jl",
     "barotropicqg_betaforced.jl",
-    "barotropicqg_acc.jl",
     "barotropicqgql_betaforced.jl",
+    "barotropicqg_decay_topography.jl",
     "multilayerqg_2layer.jl",
     "surfaceqg_decaying.jl",
 ]
@@ -51,7 +51,7 @@ Timer(t -> println(" "), 0, interval=240)
 format = Documenter.HTML(
   collapselevel = 2,
      prettyurls = get(ENV, "CI", nothing) == "true",
-      canonical = "https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/"
+      canonical = "https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/"
 )
 
 makedocs(
@@ -64,14 +64,6 @@ checkdocs = :all,
 sitename = "GeophysicalFlows.jl",
    pages = Any[
             "Home"    => "index.md",
-            "Forcing" => "forcing.md",
-            "Modules" => Any[
-              "modules/twodnavierstokes.md",
-              "modules/barotropicqg.md",
-              "modules/barotropicqgql.md",
-              "modules/multilayerqg.md",
-              "modules/surfaceqg.md"
-            ],
             "Examples" => [
               "TwoDNavierStokes" => Any[
                 "generated/twodnavierstokes_decaying.md",
@@ -81,7 +73,7 @@ sitename = "GeophysicalFlows.jl",
               "BarotropicQG" => Any[
                 "generated/barotropicqg_betadecay.md",
                 "generated/barotropicqg_betaforced.md",
-                "generated/barotropicqg_acc.md",
+                "generated/barotropicqg_decay_topography.md"
                 ],
               "BarotropicQGQL" => Any[
                 "generated/barotropicqgql_betaforced.md",
@@ -93,6 +85,14 @@ sitename = "GeophysicalFlows.jl",
                 "generated/surfaceqg_decaying.md"
                 ]
             ],
+            "Modules" => Any[
+              "modules/twodnavierstokes.md",
+              "modules/barotropicqg.md",
+              "modules/barotropicqgql.md",
+              "modules/multilayerqg.md",
+              "modules/surfaceqg.md"
+            ],
+            "Forcing" => "forcing.md",
             "DocStrings" => Any[
             "man/types.md",
             "man/functions.md"]
@@ -102,6 +102,7 @@ sitename = "GeophysicalFlows.jl",
 withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
   deploydocs(        repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
                 versions = ["stable" => "v^", "v#.#", "dev" => "dev"],
+               forcepush = true,
             push_preview = true
             )
 end

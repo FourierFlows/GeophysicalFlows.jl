@@ -13,7 +13,7 @@ function lambdipole(U, R, grid::TwoDGrid{T, A}; center=(mean(grid.x), mean(grid.
   r = @. sqrt( (x - xc)^2 + (y - yc)^2 )
   CUDA.@allowscalar besselj1 = A([besselj(1, k * r[i, j]) for i=1:grid.nx, j=1:grid.ny])
   q = @. q0 * besselj1 * (y - yc) / r
-  CUDA.@allowscalar @. q[r >= R] = 0
+  @. q = ifelse(r >= R, 0, q)
   return q
 end
 
