@@ -607,7 +607,7 @@ energies(prob) = energies(prob.vars, prob.params, prob.grid, prob.sol)
 
 Returns the lateral eddy fluxes within each fluid layer, lateralfluxes``_1,...,``lateralfluxes``_n``
 and also the vertical eddy fluxes at each fluid interface 
-verticalfluxes``_{3/2}``, ...,`` verticalfluxes``_{n-1/2}, where ``n`` is the number of layers in the fluid.
+verticalfluxes``_{3/2}``, ...,``verticalfluxes``_{n-1/2}, where ``n`` is the number of layers in the fluid.
 (When ``n=1``, only the lateral fluxes are returned.)
 
 The lateral eddy fluxes whithin the ``j``-th fluid layer are
