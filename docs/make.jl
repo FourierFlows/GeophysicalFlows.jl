@@ -70,7 +70,7 @@ sitename = "GeophysicalFlows.jl",
                 "generated/twodnavierstokes_stochasticforcing.md",
                 "generated/twodnavierstokes_stochasticforcing_budgets.md",
                 ],
-              "BarotropicQG" => Any[
+              "SingleLayerQG" => Any[
                 "generated/barotropicqg_betadecay.md",
                 "generated/barotropicqg_betaforced.md",
                 "generated/barotropicqg_decay_topography.md"
@@ -87,7 +87,7 @@ sitename = "GeophysicalFlows.jl",
             ],
             "Modules" => Any[
               "modules/twodnavierstokes.md",
-              "modules/barotropicqg.md",
+              "modules/singlelayerqg.md",
               "modules/barotropicqgql.md",
               "modules/multilayerqg.md",
               "modules/surfaceqg.md"
