@@ -7,7 +7,6 @@ export
 
   kinetic_energy,
   potential_energy,
-  
   energy_dissipation,
   energy_work,
   energy_drag,
