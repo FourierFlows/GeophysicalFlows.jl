@@ -42,6 +42,10 @@ function Problem(dev::Device=CPU();
           nν = 1,
            μ = 0,
           nμ = 0,
+           κ = 0,
+          nκ = 1,
+           ϰ = 0,
+          nϰ = 0,
   # Timestepper and equation options
      stepper = "RK4",
        calcF = nothingfunction,
@@ -50,11 +54,11 @@ function Problem(dev::Device=CPU();
 
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
 
-  params = Params{T}(ν, nν, μ, nμ, calcF)
+  params = Params{T}(ν, nν, μ, nμ, κ, nκ, ϰ, nϰ, calcF)
 
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
-  equation = Equation(params, grid)
+  equation = Equation(dev, params, grid)
 
   return FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end
@@ -74,6 +78,10 @@ struct Params{T} <: AbstractParams
       nν :: Int       # Vorticity hyperviscous order
        μ :: T         # Bottom drag or hypoviscosity
       nμ :: Int       # Order of hypodrag
+       κ :: T         # Vorticity viscosity
+      nκ :: Int       # Vorticity hyperviscous order
+       ϰ :: T         # Bottom drag or hypoviscosity
+      nϰ :: Int       # Order of hypodrag
   calcF! :: Function  # Function that calculates the forcing F
 end
 
@@ -89,9 +97,16 @@ Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
 
 Returns the equation for two-dimensional turbulence with `params` and `grid`.
 """
-function Equation(params::Params, grid::AbstractGrid)
-  L = @. - params.ν * grid.Krsq^params.nν - params.μ * grid.Krsq^params.nμ
-  CUDA.@allowscalar L[1, 1] = 0
+function Equation(::Dev, params::Params, grid::AbstractGrid) where Dev
+  T = eltype(grid)
+  @devzeros Dev T (grid.nkr, grid.nl, 2) L
+
+  L[:, :, 1] = @. - params.ν * grid.Krsq^params.nν - params.μ * grid.Krsq^params.nμ
+  L[:, :, 2] = @. - params.κ * grid.Krsq^params.nκ - params.ϰ * grid.Krsq^params.nϰ
+
+  CUDA.@allowscalar L[1, 1, 1] = 0
+  CUDA.@allowscalar L[1, 1, 2] = 0
+
   return FourierFlows.Equation(L, calcN!, grid)
 end
 
@@ -106,9 +121,15 @@ struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
      zeta :: Aphys
         u :: Aphys
         v :: Aphys
+        c :: Aphys
+       uc :: Aphys
+       vc :: Aphys
     zetah :: Atrans
        uh :: Atrans
        vh :: Atrans
+       ch :: Atrans
+      uch :: Atrans
+      vch :: Atrans
        Fh :: F
   prevsol :: P
 end
@@ -123,9 +144,9 @@ Returns the `vars` for unforced two-dimensional turbulence on device `dev` and w
 """
 function Vars(::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) zeta u v
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) zetah uh vh
-  return Vars(zeta, u, v, zetah, uh, vh, nothing, nothing)
+  @devzeros Dev T (grid.nx, grid.ny) zeta u v c uc vc
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) zetah uh vh ch uch vch
+  return Vars(zeta, u, v, c, zetah, uh, vh, ch, nothing, nothing)
 end
 
 """
@@ -135,8 +156,8 @@ Returns the vars for forced two-dimensional turbulence on device `dev` and with 
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) zeta u v
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) zetah uh vh Fh
+  @devzeros Dev T (grid.nx, grid.ny) zeta u v c uc vc
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) zetah uh vh ch uch vch
   return Vars(zeta, u, v, zetah, uh, vh, Fh, nothing)
 end
 
@@ -147,8 +168,8 @@ Returns the vars for stochastically forced two-dimensional turbulence on device 
 """
 function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) zeta u v
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) zetah uh vh Fh prevsol
+  @devzeros Dev T (grid.nx, grid.ny) zeta u v c uc vc
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) zetah uh vh ch uch vch
   return Vars(zeta, u, v, zetah, uh, vh, Fh, prevsol)
 end
 
@@ -163,13 +184,25 @@ end
 Calculates the advection term.
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
-  @. vars.uh =   im * grid.l  * grid.invKrsq * sol
-  @. vars.vh = - im * grid.kr * grid.invKrsq * sol
+  ζh = view(sol, :, :, 1)
+  ch = view(sol, :, :, 2)
+
+  @. vars.uh =   im * grid.l  * grid.invKrsq * ζh
+  @. vars.vh = - im * grid.kr * grid.invKrsq * ζh
   @. vars.zetah = sol
+
+  @. vars.ch = ch
 
   ldiv!(vars.u, grid.rfftplan, vars.uh)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
+  ldiv!(vars.c, grid.rfftplan, vars.ch)
   ldiv!(vars.zeta, grid.rfftplan, vars.zetah)
+
+  @. vars.uc = vars.u * vars.c
+  @. vars.vc = vars.v * vars.c
+
+  mul!(vars.uch, grid.rfftplan, vars.uc)
+  mul!(vars.vch, grid.rfftplan, vars.vc)
   
   uζ = vars.u        # use vars.u as scratch variable
   @. uζ *= vars.zeta # u*zeta
@@ -181,7 +214,9 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   vζh = vars.vh 
   mul!(vζh, grid.rfftplan, vζ) # \hat{v*zeta}
 
-  @. N = - im * grid.kr * uζh - im * grid.l * vζh
+  @. @views N[:, :, 1] = - im * grid.kr * uζh - im * grid.l * vζh
+  @. @views N[:, :, 2] = - im * grid.kr * vars.uch - im * grid.l * vars.vch
+
   return nothing
 end
 
@@ -220,29 +255,56 @@ Update variables in `vars` with solution in `sol`.
 """
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
-  @. vars.zetah = sol
-  @. vars.uh =   im * grid.l  * grid.invKrsq * sol
-  @. vars.vh = - im * grid.kr * grid.invKrsq * sol
+
+  ζh = view(sol, :, :, 1)
+  ch = view(sol, :, :, 2)
+  
+  @. vars.ch = ch
+  @. vars.zetah = ζh
+  @. vars.uh =   im * grid.l  * grid.invKrsq * ch
+  @. vars.vh = - im * grid.kr * grid.invKrsq * ch
+
   ldiv!(vars.zeta, grid.rfftplan, deepcopy(vars.zetah))
   ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh))
   ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh))
+  ldiv!(vars.c, grid.rfftplan, deepcopy(vars.ch))
+
   return nothing
 end
 
 """
     set_zeta!(prob, zeta)
 
-Set the solution `sol` as the transform of `zeta` and update variables.
+Set the first solution component `sol[:, :, 1]` as the transform of `zeta` and update variables.
 """
 function set_zeta!(prob, zeta)
-  mul!(prob.sol, prob.grid.rfftplan, zeta)
-  CUDA.@allowscalar prob.sol[1, 1] = 0 # zero domain average
+  mul!(prob.zetah, prob.grid.rfftplan, zeta)
+
+  @. @views prob.sol[:, :, 1] = prob.zetah
+  CUDA.@allowscalar prob.sol[1, 1, 1] = 0 # zero domain average
   
   updatevars!(prob)
   
   return nothing
 end
 
+"""
+    set_c!(prob, c)
+
+Set the second solution component `sol[:, :, 2]` as the transform of `c` and update variables.
+"""
+function set_c!(prob, c)
+  mul!(prob.ch, prob.grid.rfftplan, c)
+
+  @. @views prob.sol[:, :, 2] = prob.ch
+  CUDA.@allowscalar prob.sol[1, 1, 2] = 0 # zero domain average
+  
+  updatevars!(prob)
+  
+  return nothing
+end
+
+#=
 """
     energy(prob)
 
@@ -370,5 +432,6 @@ Returns the extraction of domain-averaged enstrophy by drag/hypodrag μ.
   CUDA.@allowscalar enstrophy_dragh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_dragh, grid)
 end
+=#
 
 end # module
