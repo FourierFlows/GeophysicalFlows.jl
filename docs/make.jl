@@ -90,7 +90,8 @@ sitename = "GeophysicalFlows.jl",
               "modules/barotropicqg.md",
               "modules/barotropicqgql.md",
               "modules/multilayerqg.md",
-              "modules/surfaceqg.md"
+              "modules/surfaceqg.md",
+              "modules/shallowwater.md"
             ],
             "Forcing" => "forcing.md",
             "DocStrings" => Any[
