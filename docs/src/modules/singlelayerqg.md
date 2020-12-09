@@ -1,4 +1,4 @@
-# BarotropicQG Module
+# SingleLayerQG Module
 
 ### Basic Equations
 

@@ -1,17 +1,17 @@
-# # Decaying barotropic QG turbulence over topography
+# # Decaying barotropic QG beta-plane turbulence
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqg_decay_topography.ipynb). 
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqg_decay_topography.ipynb).
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/singlelayerqg_betadecay.ipynb). 
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betadecay.ipynb).
 # 
-# An example of decaying barotropic quasi-geostrophic turbulence over topography.
+# An example of decaying barotropic quasi-geostrophic turbulence on a beta plane.
 
 using FourierFlows, Plots, Printf, Random
 
 using Statistics: mean
 using FFTW: irfft
 
-import GeophysicalFlows.BarotropicQG
-import GeophysicalFlows.BarotropicQG: energy, enstrophy
+import GeophysicalFlows.SingleLayerQG
+import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 
 # ## Choosing a device: CPU or GPU
@@ -25,7 +25,7 @@ nothing # hide
       n = 128            # 2D resolution = n²
 stepper = "FilteredRK4"  # timestepper
      dt = 0.05           # timestep
- nsteps = 2000           # total number of time-steps
+ nsteps = 1500           # total number of time-steps
  nsubs  = 10             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
@@ -33,21 +33,16 @@ nothing # hide
 # ## Physical parameters
 
 L = 2π        # domain size
-nothing # hide
-
-# Define the topographic potential vorticity, ``\eta = f_0 h(x, y)/H``. The topography here 
-# is an elliptical mound at ``(1, 1)``, and an elliptical depression at ``(-1, -1)``.
-σx, σy = 0.4, 0.8
-topographicPV(x, y) = 3exp(-(x-1)^2/(2σx^2) -(y-1)^2/(2σy^2)) - 2exp(-(x+1)^2/(2σx^2) -(y+1)^2/(2σy^2))
+β = 10.0      # planetary PV gradient
+μ = 0.0       # bottom drag
 nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. Not providing
 # a viscosity coefficient `ν` leads to the module's default value: `ν=0`. In this
-# example numerical instability due to accumulation of enstrophy in high wavenumbers
-# is taken care with the `FilteredTimestepper` we picked. The topophic PV is prescribed
-# via keyword argument `eta`.
-prob = BarotropicQG.Problem(dev; nx=n, Lx=L, eta=topographicPV, dt=dt, stepper=stepper)
+# example numerical instability due to accumulation of enstrophy at high wavenumbers
+# is taken care with the `FilteredTimestepper` we picked. 
+prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper)
 nothing # hide
 
 # and define some shortcuts
@@ -55,39 +50,27 @@ sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, p
 x, y = grid.x, grid.y
 nothing # hide
 
-# and let's plot the topographic PV:
-contourf(grid.x, grid.y, params.eta',
-          aspectratio = 1,
-            linewidth = 0,
-               levels = 10,
-                    c = :balance,
-                 clim = (-3, 3),
-                xlims = (-grid.Lx/2, grid.Lx/2),
-                ylims = (-grid.Ly/2, grid.Ly/2),
-               xticks = -3:3,
-               yticks = -3:3,
-               xlabel = "x",
-               ylabel = "y",
-                title = "topographic PV η=f₀h/H")
-
 
 # ## Setting initial conditions
 
 # Our initial condition consist of a flow that has power only at wavenumbers with
-# ``6 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 12`` and initial energy ``E_0``:
+# ``8 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 10`` and initial energy ``E_0``:
 
-E₀ = 0.04 # energy of initial condition
+E₀ = 0.1 # energy of initial condition
 
 K = @. sqrt(grid.Krsq)                          # a 2D array with the total wavenumber
+k = [grid.kr[i] for i=1:grid.nkr, j=1:grid.nl]  # a 2D array with the zonal wavenumber
 
 Random.seed!(1234)
 qih = randn(Complex{eltype(grid)}, size(sol))
-@. qih = ifelse(K < 6  * 2π/L, 0, qih)
-@. qih = ifelse(K > 12 * 2π/L, 0, qih)
-qih *= sqrt(E₀ / energy(qih, grid))             # normalize qi to have energy E₀
+@. qih = ifelse(K < 2  * 2π/L, 0, qih)
+@. qih = ifelse(K > 10 * 2π/L, 0, qih)
+@. qih = ifelse(k == 0 * 2π/L, 0, qih)   # no power at zonal wavenumber k=0 component
+Ein = energy(qih, grid)           # compute energy of qi
+qih *= sqrt(E₀ / Ein)             # normalize qi to have energy E₀
 qi = irfft(qih, grid.nx)
 
-BarotropicQG.set_zeta!(prob, qi)
+SingleLayerQG.set_zeta!(prob, qi)
 nothing # hide
 
 # Let's plot the initial vorticity field:
@@ -95,7 +78,7 @@ nothing # hide
 p1 = heatmap(x, y, vars.q',
          aspectratio = 1,
               c = :balance,
-           clim = (-8, 8),
+           clim = (-12, 12),
           xlims = (-grid.Lx/2, grid.Lx/2),
           ylims = (-grid.Ly/2, grid.Ly/2),
          xticks = -3:3,
@@ -108,8 +91,8 @@ p1 = heatmap(x, y, vars.q',
 p2 = contourf(x, y, vars.psi',
         aspectratio = 1,
              c = :viridis,
-        levels = range(-0.35, stop=0.35, length=10), 
-          clim = (-0.35, 0.35),
+        levels = range(-0.65, stop=0.65, length=10), 
+          clim = (-0.65, 0.65),
          xlims = (-grid.Lx/2, grid.Lx/2),
          ylims = (-grid.Ly/2, grid.Ly/2),
         xticks = -3:3,
@@ -120,7 +103,7 @@ p2 = contourf(x, y, vars.psi',
     framestyle = :box)
 
 l = @layout Plots.grid(1, 2)
-p = plot(p1, p2, layout=l, size=(900, 400))
+p = plot(p1, p2, layout=l, size = (900, 800))
 
 
 # ## Diagnostics
@@ -134,13 +117,16 @@ nothing # hide
 
 # ## Output
 
-# We choose folder for outputing `.jld2` files.
+# We choose folder for outputing `.jld2` files and snapshots (`.png` files).
 filepath = "."
+plotpath = "./plots_decayingbetaturb"
+plotname = "snapshots"
 filename = joinpath(filepath, "decayingbetaturb.jld2")
 nothing # hide
 
 # Do some basic file management,
 if isfile(filename); rm(filename); end
+if !isdir(plotpath); mkdir(plotpath); end
 nothing # hide
 
 # and then create Output.
@@ -157,13 +143,14 @@ nothing # hide
 function plot_output(prob)
   ζ = prob.vars.zeta
   ψ = prob.vars.psi
-  η = prob.params.eta
+  ζ̄ = mean(ζ, dims=1)'
+  ū = mean(prob.vars.u, dims=1)'
 
   pζ = heatmap(x, y, ζ',
        aspectratio = 1,
             legend = false,
                  c = :balance,
-              clim = (-6, 6),
+              clim = (-12, 12),
              xlims = (-grid.Lx/2, grid.Lx/2),
              ylims = (-grid.Ly/2, grid.Ly/2),
             xticks = -3:3,
@@ -172,21 +159,13 @@ function plot_output(prob)
             ylabel = "y",
              title = "vorticity ζ=∂v/∂x-∂u/∂y",
         framestyle = :box)
-  
-  contour!(pζ, x, y, η',
-          levels=0.5:0.5:3,
-          lw=2, c=:black, ls=:solid, alpha=0.7)
-  
-  contour!(pζ, x, y, η',
-          levels=-2:0.5:-0.5,
-          lw=2, c=:black, ls=:dash, alpha=0.7)
-    
+
   pψ = contourf(x, y, ψ',
        aspectratio = 1,
             legend = false,
                  c = :viridis,
-            levels = range(-0.7, stop=0.7, length=10), 
-              clim = (-0.7, 0.7),
+            levels = range(-0.65, stop=0.65, length=10), 
+              clim = (-0.65, 0.65),
              xlims = (-grid.Lx/2, grid.Lx/2),
              ylims = (-grid.Ly/2, grid.Ly/2),
             xticks = -3:3,
@@ -196,8 +175,28 @@ function plot_output(prob)
              title = "streamfunction ψ",
         framestyle = :box)
 
-  l = @layout Plots.grid(1, 2)
-  p = plot(pζ, pψ, layout = l, size = (900, 400))
+  pζm = plot(ζ̄, y,
+            legend = false,
+         linewidth = 2,
+             alpha = 0.7,
+            yticks = -3:3,
+             xlims = (-2.2, 2.2),
+            xlabel = "zonal mean ζ",
+            ylabel = "y")
+  plot!(pζm, 0*y, y, linestyle=:dash, linecolor=:black)
+
+  pum = plot(ū, y,
+            legend = false,
+         linewidth = 2,
+             alpha = 0.7,
+            yticks = -3:3,
+             xlims = (-0.55, 0.55),
+            xlabel = "zonal mean u",
+            ylabel = "y")
+  plot!(pum, 0*y, y, linestyle=:dash, linecolor=:black)
+
+  l = @layout Plots.grid(2, 2)
+  p = plot(pζ, pζm, pψ, pum, layout = l, size = (900, 800))
   
   return p
 end
@@ -214,7 +213,7 @@ p = plot_output(prob)
 
 anim = @animate for j = 0:round(Int, nsteps/nsubs)
 
-  if j % (1000 / nsubs) == 0
+  if j % (500 / nsubs) == 0
     cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
 
     log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, walltime: %.2f min",
@@ -225,10 +224,19 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
 
   p[1][1][:z] = vars.zeta
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
-  p[2][1][:z] = vars.psi
+  p[3][1][:z] = vars.psi
+  p[2][1][:x] = mean(vars.zeta, dims=1)'
+  p[4][1][:x] = mean(vars.u, dims=1)'
 
   stepforward!(prob, diags, nsubs)
-  BarotropicQG.updatevars!(prob)
+  SingleLayerQG.updatevars!(prob)
+
 end
 
-gif(anim, "barotropicqg_decay_topography.gif", fps=12)
+gif(anim, "barotropicqg_betadecay.gif", fps=8)
+
+# ## Save
+
+# Finally save the last snapshot.
+savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), clock.step)
+savefig(savename)

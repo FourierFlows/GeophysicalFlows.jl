@@ -5,7 +5,6 @@ export
   set_zeta!,
   updatevars!,
 
-
   kinetic_energy,
   potential_energy,
   energy_dissipation,
