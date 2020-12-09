@@ -5,8 +5,13 @@ export
   set_zeta!,
   updatevars!,
 
+<<<<<<< HEAD:src/singlelayerqg.jl
   k_energy,
   p_energy,
+=======
+  kinetic_energy,
+  potential_energy,
+>>>>>>> def_radius:src/barotropicqg.jl
   energy_dissipation,
   energy_work,
   energy_drag,
@@ -187,8 +192,15 @@ end
 
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.zetah = sol
+<<<<<<< HEAD:src/singlelayerqg.jl
   @. vars.psih  = - vars.zetah / (grid.Krsq .+ params.kdef^2)
   CUDA.@allowscalar vars.psih[1, 1] = 0
+=======
+  @. vars.psih  = - vars.zetah / (grid.Krsq + params.kdef^2)
+  if params.kdef == 0.0
+      CUDA.@allowscalar vars.psih[1, 1] = 0
+  end
+>>>>>>> def_radius:src/barotropicqg.jl
   @. vars.uh    = -im * grid.l  * vars.psih
   @. vars.vh    =  im * grid.kr * vars.psih
 
@@ -250,8 +262,15 @@ Update the variables in `vars` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
   @. vars.zetah = sol
+<<<<<<< HEAD:src/singlelayerqg.jl
   @. vars.psih  = - vars.zetah / (grid.Krsq .+ params.kdef^2)
   CUDA.@allowscalar vars.psih[1, 1] = 0
+=======
+  @. vars.psih  = - vars.zetah / (grid.Krsq + params.kdef^2)
+  if params.kdef == 0.0
+      CUDA.@allowscalar vars.psih[1, 1] = 0
+  end
+>>>>>>> def_radius:src/barotropicqg.jl
   @. vars.uh    = -im * grid.l  * vars.psih
   @. vars.vh    =  im * grid.kr * vars.psih
 
@@ -288,15 +307,23 @@ set_zeta!(prob, zeta) = set_zeta!(prob.sol, prob.vars, prob.params, prob.grid, z
 
 
 """
+<<<<<<< HEAD:src/singlelayerqg.jl
     k_energy(prob)
     p_energy(prob)
     k_energy(vars, grid)
     p_energy(vars, grid, params)
+=======
+    kinetic_energy(prob)
+    potential_energy(prob)
+    kinetic_energy(vars, grid)
+    potential_energy(vars, grid, params)
+>>>>>>> def_radius:src/barotropicqg.jl
 
 Returns the domain-averaged kinetic energy of solution `sol`: ∫ ½ (u²+v²) dxdy / (Lx Ly) = ∑ ½ k² |ψ̂|² / (Lx Ly).
 Returns the domain-averaged potential energy of solution `sol`: ½ kdef² ∫ ψ² dxdy / (Lx Ly) = ½ kdef² ∑ |ψ̂|² / (Lx Ly).
 
 """
+<<<<<<< HEAD:src/singlelayerqg.jl
 function k_energy(sol, grid, vars, params)
     @. vars.uh = sqrt.(grid.Krsq) .* sol ./(grid.Krsq .+ params.kdef^2) ## uh is a dummy variable
     CUDA.@allowscalar vars.uh[1, 1] = 0
@@ -311,6 +338,26 @@ end
 
 k_energy(prob) = k_energy(prob.sol, prob.grid, prob.vars, prob.params)
 p_energy(prob) = p_energy(prob.sol, prob.grid, prob.vars, prob.params)
+=======
+function kinetic_energy(sol, grid, vars, params)
+    @. vars.uh = sqrt.(grid.Krsq) * sol /(grid.Krsq + params.kdef^2) ## uh is a dummy variable
+    if params.kdef == 0.0
+        CUDA.@allowscalar vars.uh[1, 1] = 0
+    end
+    return parsevalsum2(vars.uh , grid) / (2 * grid.Lx * grid.Ly)
+end
+
+function potential_energy(sol, grid, vars, params)
+    @. vars.uh = sol /(grid.Krsq + params.kdef^2) ## uh is a dummy variable
+    if params.kdef == 0.0
+        CUDA.@allowscalar vars.uh[1, 1] = 0
+    end
+    return params.kdef^2*parsevalsum2(vars.uh, grid) / (2 * grid.Lx * grid.Ly)
+end
+
+kinetic_energy(prob) = kinetic_energy(prob.sol, prob.grid, prob.vars, prob.params)
+potential_energy(prob) = potential_energy(prob.sol, prob.grid, prob.vars, prob.params)
+>>>>>>> def_radius:src/barotropicqg.jl
 
 """
     enstrophy(prob)
