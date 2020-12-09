@@ -14,9 +14,9 @@ export
   enstrophy_work,
   enstrophy_drag
 
-  using
-    CUDA,
-    Reexport
+using
+  CUDA,
+  Reexport
 
 @reexport using FourierFlows
 
