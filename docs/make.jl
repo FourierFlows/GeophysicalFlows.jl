@@ -22,10 +22,10 @@ examples = [
     "twodnavierstokes_decaying.jl",
     "twodnavierstokes_stochasticforcing.jl",
     "twodnavierstokes_stochasticforcing_budgets.jl",
-    "barotropicqg_betadecay.jl",
-    "barotropicqg_betaforced.jl",
+    "singlelayerqg_betadecay.jl",
+    "singlelayerqg_betaforced.jl",
+    "singlelayerqg_decay_topography.jl",
     "barotropicqgql_betaforced.jl",
-    "barotropicqg_decay_topography.jl",
     "multilayerqg_2layer.jl",
     "surfaceqg_decaying.jl",
 ]
@@ -71,9 +71,9 @@ sitename = "GeophysicalFlows.jl",
                 "generated/twodnavierstokes_stochasticforcing_budgets.md",
                 ],
               "SingleLayerQG" => Any[
-                "generated/barotropicqg_betadecay.md",
-                "generated/barotropicqg_betaforced.md",
-                "generated/barotropicqg_decay_topography.md"
+                "generated/singlelayerqg_betadecay.md",
+                "generated/singlelayerqg_betaforced.md",
+                "generated/singlelayerqg_decay_topography.md"
                 ],
               "BarotropicQGQL" => Any[
                 "generated/barotropicqgql_betaforced.md",
@@ -102,7 +102,6 @@ sitename = "GeophysicalFlows.jl",
 withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
   deploydocs(        repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
                 versions = ["stable" => "v^", "v#.#", "dev" => "dev"],
-               forcepush = true,
             push_preview = true
             )
 end

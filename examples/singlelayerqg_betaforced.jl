@@ -1,7 +1,7 @@
 # # Forced-dissipative barotropic QG beta-plane turbulence
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqg_betaforced.ipynb). 
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqg_betaforced.ipynb).
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/singlelayerqg_betaforced.ipynb). 
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betaforced.ipynb).
 #
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane. The dynamics include linear drag and stochastic excitation.
@@ -13,8 +13,8 @@ using FFTW: irfft
 using Statistics: mean
 using Random: seed!
 
-import GeophysicalFlows.BarotropicQG
-import GeophysicalFlows.BarotropicQG: energy, enstrophy
+import GeophysicalFlows.SingleLayerQG
+import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 
 # ## Choosing a device: CPU or GPU
@@ -84,7 +84,7 @@ nothing # hide
 # a viscosity coefficient ν leads to the module's default value: ν=0. In this
 # example numerical instability due to accumulation of enstrophy in high wavenumbers
 # is taken care with the `FilteredTimestepper` we picked. 
-prob = BarotropicQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper, 
+prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper, 
                             calcF=calcF!, stochastic=true)
 nothing # hide
 
@@ -114,7 +114,7 @@ heatmap(x, y, irfft(vars.Fh, grid.nx)',
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
-BarotropicQG.set_zeta!(prob, zeros(grid.nx, grid.ny))
+SingleLayerQG.set_zeta!(prob, zeros(grid.nx, grid.ny))
 
 
 # ## Diagnostics
@@ -262,7 +262,7 @@ anim = @animate for j = 0:Int(nsteps / nsubs)
   push!(p[6][1], μ * Z.t[Z.i], Z.data[Z.i])
   
   stepforward!(prob, diags, nsubs)
-  BarotropicQG.updatevars!(prob)
+  SingleLayerQG.updatevars!(prob)
 end
 
 gif(anim, "barotropicqg_betaforced.gif", fps=18)
