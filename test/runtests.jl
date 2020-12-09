@@ -11,7 +11,8 @@ import # use 'import' rather than 'using' for submodules to keep namespace clean
   GeophysicalFlows.BarotropicQG,
   GeophysicalFlows.BarotropicQGQL,
   GeophysicalFlows.MultilayerQG,
-  GeophysicalFlows.SurfaceQG
+  GeophysicalFlows.SurfaceQG,
+  GeophysicalFlows.ShallowWater
 
 using FourierFlows: parsevalsum
 using GeophysicalFlows: lambdipole, peakedisotropicspectrum

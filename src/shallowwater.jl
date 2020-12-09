@@ -4,11 +4,11 @@ export
   Problem,
   updatevars!,
 
-  energy,
+  energy
 
-  using
-    CUDA,
-    Reexport
+using
+  CUDA,
+  Reexport
 
 @reexport using FourierFlows
 
