@@ -54,7 +54,7 @@ function Problem(dev::Device=CPU();
 
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
 
-  params = Params{T}(ν, nν, μ, nμ, κ, nκ, ϰ, nϰ, calcF)
+  params = Params(T(ν), nν, T(μ), nμ, T(κ), nκ, T(ϰ), nϰ, calcF)
 
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
@@ -73,20 +73,17 @@ end
 
 Returns the params for two-dimensional turbulence.
 """
-struct Params{T} <: AbstractParams
-       ν :: T         # Vorticity viscosity
-      nν :: Int       # Vorticity hyperviscous order
-       μ :: T         # Bottom drag or hypoviscosity
-      nμ :: Int       # Order of hypodrag
-       κ :: T         # Vorticity viscosity
-      nκ :: Int       # Vorticity hyperviscous order
-       ϰ :: T         # Bottom drag or hypoviscosity
-      nϰ :: Int       # Order of hypodrag
-  calcF! :: Function  # Function that calculates the forcing F
+struct Params{T, F} <: AbstractParams
+       ν :: T    # Vorticity viscosity
+      nν :: Int  # Vorticity hyperviscous order
+       μ :: T    # Bottom drag or hypoviscosity
+      nμ :: Int  # Order of hypodrag
+       κ :: T    # Vorticity viscosity
+      nκ :: Int  # Vorticity hyperviscous order
+       ϰ :: T    # Bottom drag or hypoviscosity
+      nϰ :: Int  # Order of hypodrag
+  calcF! :: F    # Function that calculates the forcing F
 end
-
-Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
-
 
 # ---------
 # Equations
@@ -146,7 +143,7 @@ function Vars(::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) zeta u v c uc vc
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) zetah uh vh ch uch vch
-  return Vars(zeta, u, v, c, zetah, uh, vh, ch, nothing, nothing)
+  return Vars(zeta, u, v, c, uc, vc, zetah, uh, vh, ch, uch, vch, nothing, nothing)
 end
 
 """
@@ -158,7 +155,7 @@ function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) zeta u v c uc vc
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) zetah uh vh ch uch vch
-  return Vars(zeta, u, v, zetah, uh, vh, Fh, nothing)
+  return Vars(zeta, u, v, c, uc, vc, zetah, uh, vh, ch, uch, vch, Fh, nothing)
 end
 
 """
@@ -170,7 +167,7 @@ function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) zeta u v c uc vc
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) zetah uh vh ch uch vch
-  return Vars(zeta, u, v, zetah, uh, vh, Fh, prevsol)
+  return Vars(zeta, u, v, c, uc, vc, zetah, uh, vh, ch, uch, vch, Fh, prevsol)
 end
 
 
