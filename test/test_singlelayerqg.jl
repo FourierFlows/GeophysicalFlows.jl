@@ -1,9 +1,9 @@
 """
-    test_bqg_rossbywave(stepper, dt, nsteps, dev; kwargs...)
+    test_1layerqg_rossbywave(stepper, dt, nsteps, dev; kwargs...)
 
 Evolves a Rossby wave and compares with the analytic solution.
 """
-function test_bqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
+function test_1layerqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
     nx = 64
     Lx = 2π
      β = 2.0
@@ -44,11 +44,11 @@ function test_bqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
 end
 
 """
-    test_bqg_stochasticforcing_energy_budgets(dev; kwargs...)
+    test_1layerqg_stochasticforcing_energy_budgets(dev; kwargs...)
 
 Tests if the energy budget is closed for a SingleLayerQG problem with stochastic forcing.
 """
-function test_bqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, T=Float64)
+function test_1layerqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, T=Float64)
   n, L  = 256, 2π
   ν, nν = 1e-7, 2
   μ = 1e-1
@@ -105,11 +105,11 @@ function test_bqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, dt=0.
 end
 
 """
-    test_bqg_deterministicforcing_energy_budgets(dev; kwargs...)
+    test_1layerqg_deterministicforcing_energy_budgets(dev; kwargs...)
 
 Tests if the energy budget is closed for a SingleLayerQG problem with deterministic forcing.
 """
-function test_bqg_deterministicforcing_energybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1)
+function test_1layerqg_deterministicforcing_energybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1)
   n, L  = 256, 2π
   ν, nν = 1e-7, 2
   μ = 1e-1
@@ -151,11 +151,11 @@ function test_bqg_deterministicforcing_energybudget(dev::Device=CPU(); n=256, dt
 end
 
 """
-    test_bqg_stochasticforcing_enstrophy_budgets(dev; kwargs...)
+    test_1layerqg_stochasticforcing_enstrophy_budgets(dev; kwargs...)
 
 Tests if the enstrophy budget is closed for a SingleLayerQG problem with stochastic forcing.
 """
-function test_bqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, T=Float64)
+function test_1layerqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, T=Float64)
   n, L  = 256, 2π
   ν, nν = 1e-7, 2
   μ = 1e-1
@@ -212,11 +212,11 @@ function test_bqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=256, dt
 end
 
 """
-    test_bqg_deterministicforcing_enstrophy_budgets(dev; kwargs...)
+    test_1layerqg_deterministicforcing_enstrophy_budgets(dev; kwargs...)
 
 Tests if the enstrophy budget is closed for a SingleLayerQG problem with deterministic forcing.
 """
-function test_bqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1)
+function test_1layerqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1)
   n, L  = 256, 2π
   ν, nν = 1e-7, 2
   μ = 1e-1
@@ -258,7 +258,7 @@ function test_bqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n=256,
 end
 
 """
-    test_bqg_nonlinearadvection(dt, stepper, dev; kwargs...)
+    test_1layerqg_nonlinearadvection(dt, stepper, dev; kwargs...)
 
 Tests the advection term in the SingleLayerQG module by timestepping a
 test problem with timestep dt and timestepper identified by the string stepper.
@@ -268,7 +268,7 @@ forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - ν∇²ζf. 
 to the vorticity equation forced by this Ff is then ζf. (This solution may not
 be realized, at least at long times, if it is unstable.)
 """
-function test_bqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1, μ=0.0)
+function test_1layerqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1, μ=0.0)
   n, L  = 128, 2π
   ν, nν = 1e-2, 1
    μ = 0.0
@@ -305,11 +305,11 @@ function test_bqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
 end
 
 """
-    test_bqg_energyenstrophy(dev)
+    test_1layerqg_energyenstrophy(dev)
 
 Tests the energy and enstrophy function for a SingleLayerQG problem.
 """
-function test_bqg_energyenstrophy(dev::Device=CPU())
+function test_1layerqg_energyenstrophy(dev::Device=CPU())
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
   grid = TwoDGrid(dev, nx, Lx, ny, Ly)
@@ -336,11 +336,11 @@ function test_bqg_energyenstrophy(dev::Device=CPU())
 end
 
 """
-    test_bqg_problemtype(dev, T)
+    test_1layerqg_problemtype(dev, T)
 
 Tests the SingleLayerQG problem constructor for different DataType `T`.
 """
-function test_bqg_problemtype(dev, T)
+function test_1layerqg_problemtype(dev, T)
   prob = SingleLayerQG.Problem(dev; T=T)
 
   A = ArrayType(dev)
