@@ -54,7 +54,7 @@ function Problem(dev::Device=CPU();
 
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
 
-  params = Params(T(ν), nν, T(μ), nμ, T(κ), nκ, T(ϰ), nϰ, calcF)
+  params = Params{T, typeof(calcF)}(T(ν), nν, T(μ), nμ, T(κ), nκ, T(ϰ), nϰ, calcF)
 
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
