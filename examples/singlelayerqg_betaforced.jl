@@ -14,7 +14,8 @@ using Statistics: mean
 using Random: seed!
 
 import GeophysicalFlows.SingleLayerQG
-import GeophysicalFlows.SingleLayerQG: energy, enstrophy
+import GeophysicalFlows.SingleLayerQG: kinetic_energy, enstrophy
+energy = kinetic_energy
 
 
 # ## Choosing a device: CPU or GPU

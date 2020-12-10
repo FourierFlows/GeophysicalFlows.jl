@@ -8,7 +8,7 @@ using
 
 import # use 'import' rather than 'using' for submodules to keep namespace clean
   GeophysicalFlows.TwoDNavierStokes,
-  GeophysicalFlows.BarotropicQG,
+  GeophysicalFlows.SingleLayerQG,
   GeophysicalFlows.BarotropicQGQL,
   GeophysicalFlows.MultilayerQG,
   GeophysicalFlows.SurfaceQG
@@ -54,8 +54,8 @@ for dev in devices
     @test TwoDNavierStokes.nothingfunction() == nothing
   end
    
-  @testset "BarotropicQG" begin
-    include("test_barotropicqg.jl")
+  @testset "SingleLayerQG" begin
+    include("test_singlelayerqg.jl")
 
     @test test_bqg_rossbywave("ETDRK4", 1e-2, 20, dev)
     @test test_bqg_rossbywave("FilteredETDRK4", 1e-2, 20, dev)
@@ -72,7 +72,7 @@ for dev in devices
     @test test_bqg_advection(0.0005, "ForwardEuler", dev)
     @test test_bqg_energyenstrophy(dev)
     @test test_bqg_problemtype(dev, Float32)
-    @test BarotropicQG.nothingfunction() == nothing
+    @test SingleLayerQG.nothingfunction() == nothing
   end
    
   @testset "BarotropicQGQL" begin

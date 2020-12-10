@@ -19,7 +19,7 @@ function test_bqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
     eta(x, y) = 0 * x
   end
 
-  prob = BarotropicQG.Problem(dev; nx=nx, Lx=Lx, eta=eta, β=β, μ=μ, ν=ν, stepper=stepper, dt=dt)
+  prob = SingleLayerQG.Problem(dev; nx=nx, Lx=Lx, eta=eta, β=β, μ=μ, ν=ν, stepper=stepper, dt=dt)
   sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
   x, y = gridpoints(grid)
@@ -32,11 +32,11 @@ function test_bqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
      ζ0 = @. ampl * cos(kwave * x) * cos(lwave * y)
     ζ0h = rfft(ζ0)
 
-  BarotropicQG.set_zeta!(prob, ζ0)
+  SingleLayerQG.set_zeta!(prob, ζ0)
 
   stepforward!(prob, nsteps)
   dealias!(sol, grid)
-  BarotropicQG.updatevars!(prob)
+  SingleLayerQG.updatevars!(prob)
 
   ζ_theory = @. ampl * cos(kwave * (x - ω/kwave * clock.t)) * cos(lwave * y)
 
@@ -46,7 +46,7 @@ end
 """
     test_bqg_stochasticforcing_energy_budgets(dev; kwargs...)
 
-Tests if the energy budget is closed for a BarotropicQG problem with stochastic forcing.
+Tests if the energy budget is closed for a SingleLayerQG problem with stochastic forcing.
 """
 function test_bqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, T=Float64)
   n, L  = 256, 2π
@@ -79,20 +79,20 @@ function test_bqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, dt=0.
     return nothing
   end
 
-  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
+  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=true)
 
-  BarotropicQG.set_zeta!(prob, 0*x)
+  SingleLayerQG.set_zeta!(prob, 0*x)
   
-  E = Diagnostic(BarotropicQG.energy,             prob, nsteps=nt)
-  D = Diagnostic(BarotropicQG.energy_dissipation, prob, nsteps=nt)
-  R = Diagnostic(BarotropicQG.energy_drag,        prob, nsteps=nt)
-  W = Diagnostic(BarotropicQG.energy_work,        prob, nsteps=nt)
+  E = Diagnostic(SingleLayerQG.energy,             prob, nsteps=nt)
+  D = Diagnostic(SingleLayerQG.energy_dissipation, prob, nsteps=nt)
+  R = Diagnostic(SingleLayerQG.energy_drag,        prob, nsteps=nt)
+  W = Diagnostic(SingleLayerQG.energy_work,        prob, nsteps=nt)
   diags = [E, D, W, R]
 
   stepforward!(prob, diags, nt)
 
-  BarotropicQG.updatevars!(prob)
+  SingleLayerQG.updatevars!(prob)
 
   dEdt_numerical = (E[2:E.i] - E[1:E.i-1]) / prob.clock.dt
 
@@ -107,7 +107,7 @@ end
 """
     test_bqg_deterministicforcing_energy_budgets(dev; kwargs...)
 
-Tests if the energy budget is closed for a BarotropicQG problem with deterministic forcing.
+Tests if the energy budget is closed for a SingleLayerQG problem with deterministic forcing.
 """
 function test_bqg_deterministicforcing_energybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1)
   n, L  = 256, 2π
@@ -129,20 +129,20 @@ function test_bqg_deterministicforcing_energybudget(dev::Device=CPU(); n=256, dt
     return nothing
   end
 
-  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
+  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=false)
 
-  BarotropicQG.set_zeta!(prob, 0*x)
+  SingleLayerQG.set_zeta!(prob, 0*x)
   
-  E = Diagnostic(BarotropicQG.energy,             prob, nsteps=nt)
-  D = Diagnostic(BarotropicQG.energy_dissipation, prob, nsteps=nt)
-  R = Diagnostic(BarotropicQG.energy_drag,        prob, nsteps=nt)
-  W = Diagnostic(BarotropicQG.energy_work,        prob, nsteps=nt)
+  E = Diagnostic(SingleLayerQG.energy,             prob, nsteps=nt)
+  D = Diagnostic(SingleLayerQG.energy_dissipation, prob, nsteps=nt)
+  R = Diagnostic(SingleLayerQG.energy_drag,        prob, nsteps=nt)
+  W = Diagnostic(SingleLayerQG.energy_work,        prob, nsteps=nt)
   diags = [E, D, W, R]
 
   stepforward!(prob, diags, round(Int, nt))
 
-  BarotropicQG.updatevars!(prob)
+  SingleLayerQG.updatevars!(prob)
 
   dEdt_numerical = (E[3:E.i] - E[1:E.i-2]) / (2 * prob.clock.dt)
   dEdt_computed  = W[2:E.i-1] - D[2:E.i-1] - R[2:E.i-1]
@@ -153,7 +153,7 @@ end
 """
     test_bqg_stochasticforcing_enstrophy_budgets(dev; kwargs...)
 
-Tests if the enstrophy budget is closed for a BarotropicQG problem with stochastic forcing.
+Tests if the enstrophy budget is closed for a SingleLayerQG problem with stochastic forcing.
 """
 function test_bqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1, T=Float64)
   n, L  = 256, 2π
@@ -186,20 +186,20 @@ function test_bqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=256, dt
     return nothing
   end
 
-  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
+  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=true)
 
-  BarotropicQG.set_zeta!(prob, 0*x)
+  SingleLayerQG.set_zeta!(prob, 0*x)
   
-  Z = Diagnostic(BarotropicQG.enstrophy,             prob, nsteps=nt)
-  D = Diagnostic(BarotropicQG.enstrophy_dissipation, prob, nsteps=nt)
-  R = Diagnostic(BarotropicQG.enstrophy_drag,        prob, nsteps=nt)
-  W = Diagnostic(BarotropicQG.enstrophy_work,        prob, nsteps=nt)
+  Z = Diagnostic(SingleLayerQG.enstrophy,             prob, nsteps=nt)
+  D = Diagnostic(SingleLayerQG.enstrophy_dissipation, prob, nsteps=nt)
+  R = Diagnostic(SingleLayerQG.enstrophy_drag,        prob, nsteps=nt)
+  W = Diagnostic(SingleLayerQG.enstrophy_work,        prob, nsteps=nt)
   diags = [Z, D, W, R]
 
   stepforward!(prob, diags, nt)
 
-  BarotropicQG.updatevars!(prob)
+  SingleLayerQG.updatevars!(prob)
 
   dZdt_numerical = (Z[2:Z.i] - Z[1:Z.i-1]) / prob.clock.dt
 
@@ -214,7 +214,7 @@ end
 """
     test_bqg_deterministicforcing_enstrophy_budgets(dev; kwargs...)
 
-Tests if the enstrophy budget is closed for a BarotropicQG problem with deterministic forcing.
+Tests if the enstrophy budget is closed for a SingleLayerQG problem with deterministic forcing.
 """
 function test_bqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, μ=1e-1)
   n, L  = 256, 2π
@@ -236,20 +236,20 @@ function test_bqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n=256,
     return nothing
   end
 
-  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
+  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=false)
 
-  BarotropicQG.set_zeta!(prob, 0*x)
+  SingleLayerQG.set_zeta!(prob, 0*x)
   
-  Z = Diagnostic(BarotropicQG.enstrophy,             prob, nsteps=nt)
-  D = Diagnostic(BarotropicQG.enstrophy_dissipation, prob, nsteps=nt)
-  R = Diagnostic(BarotropicQG.enstrophy_drag,        prob, nsteps=nt)
-  W = Diagnostic(BarotropicQG.enstrophy_work,        prob, nsteps=nt)
+  Z = Diagnostic(SingleLayerQG.enstrophy,             prob, nsteps=nt)
+  D = Diagnostic(SingleLayerQG.enstrophy_dissipation, prob, nsteps=nt)
+  R = Diagnostic(SingleLayerQG.enstrophy_drag,        prob, nsteps=nt)
+  W = Diagnostic(SingleLayerQG.enstrophy_work,        prob, nsteps=nt)
   diags = [Z, D, W, R]
 
   stepforward!(prob, diags, round(Int, nt))
 
-  BarotropicQG.updatevars!(prob)
+  SingleLayerQG.updatevars!(prob)
 
   dZdt_numerical = (Z[3:Z.i] - Z[1:Z.i-2]) / (2 * prob.clock.dt)
   dZdt_computed  = W[2:Z.i-1] - D[2:Z.i-1] - R[2:Z.i-1]
@@ -260,7 +260,7 @@ end
 """
     test_bqg_nonlinearadvection(dt, stepper, dev; kwargs...)
 
-Tests the advection term in the BarotropicQG module by timestepping a
+Tests the advection term in the SingleLayerQG module by timestepping a
 test problem with timestep dt and timestepper identified by the string stepper.
 The test problem is derived by picking a solution ζf (with associated
 streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
@@ -293,13 +293,13 @@ function test_bqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
     return nothing
   end
 
-  prob = BarotropicQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
+  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
 
-  BarotropicQG.set_zeta!(prob, qf)
+  SingleLayerQG.set_zeta!(prob, qf)
 
   stepforward!(prob, round(Int, nt))
 
-  BarotropicQG.updatevars!(prob)
+  SingleLayerQG.updatevars!(prob)
   
   return isapprox(prob.vars.q, qf, rtol=rtol_barotropicQG)
 end
@@ -307,7 +307,7 @@ end
 """
     test_bqg_energyenstrophy(dev)
 
-Tests the energy and enstrophy function for a BarotropicQG problem.
+Tests the energy and enstrophy function for a SingleLayerQG problem.
 """
 function test_bqg_energyenstrophy(dev::Device=CPU())
   nx, Lx  = 64, 2π
@@ -323,25 +323,25 @@ function test_bqg_energyenstrophy(dev::Device=CPU())
    psi0 = @. sin(2k₀*x) * cos(2l₀*y) + 2sin(k₀*x) * cos(3l₀*y)
   zeta0 = @. - ((2k₀)^2+(2l₀)^2) * sin(2k₀*x) * cos(2l₀*y) - (k₀^2+(3l₀)^2) * 2sin(k₀*x) * cos(3l₀*y)
 
-  prob = BarotropicQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta = eta, stepper="ForwardEuler")
+  prob = SingleLayerQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta = eta, stepper="ForwardEuler")
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-  BarotropicQG.set_zeta!(prob, zeta0)
-  BarotropicQG.updatevars!(prob)
+  SingleLayerQG.set_zeta!(prob, zeta0)
+  SingleLayerQG.updatevars!(prob)
 
-  energyzeta0 = BarotropicQG.energy(prob)
-  enstrophyzeta0 = BarotropicQG.enstrophy(prob)
+  energyzeta0 = SingleLayerQG.energy(prob)
+  enstrophyzeta0 = SingleLayerQG.enstrophy(prob)
 
   return isapprox(energyzeta0, energy_calc, rtol=rtol_barotropicQG) && isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_barotropicQG) &&
-  BarotropicQG.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing
+  SingleLayerQG.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing
 end
 
 """
     test_bqg_problemtype(dev, T)
 
-Tests the BarotropicQG problem constructor for different DataType `T`.
+Tests the SingleLayerQG problem constructor for different DataType `T`.
 """
 function test_bqg_problemtype(dev, T)
-  prob = BarotropicQG.Problem(dev; T=T)
+  prob = SingleLayerQG.Problem(dev; T=T)
 
   A = ArrayType(dev)
   
