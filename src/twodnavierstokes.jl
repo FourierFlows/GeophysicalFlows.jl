@@ -301,7 +301,6 @@ function set_c!(prob, c)
   return nothing
 end
 
-#=
 """
     energy(prob)
 
@@ -310,9 +309,26 @@ Returns the domain-averaged kinetic energy, ∫ ½(u²+v²)dxdy / (Lx Ly), for t
 @inline function energy(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
   energyh = vars.uh # use vars.uh as scratch variable
+
+  ζh = view(sol, :, :, 1)
   
-  @. energyh = 1 / 2 * grid.invKrsq * abs2(sol)
+  @. energyh = 1 / 2 * grid.invKrsq * abs2(ζh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energyh, grid)
+end
+
+"""
+    tracer_variance(prob)
+
+Returns the domain-averaged tracer variance, ∫ c² dxdy / (Lx Ly), for the solution in `sol`.
+"""
+@inline function tracer_variance(prob)
+  sol, vars, grid = prob.sol, prob.vars, prob.grid
+  c²h = vars.uh # use vars.uh as scratch variable
+
+  ch = view(sol, :, :, 2)
+  
+  @. c²h = abs2(ch)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(c²h, grid)
 end
 
 """
@@ -322,7 +338,8 @@ Returns the domain-averaged enstrophy, ∫ ½ ζ² dxdy / (Lx Ly), for the solut
 """
 @inline function enstrophy(prob)
   sol, grid = prob.sol, prob.grid
-  return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs2.(sol), grid)
+  ζh = view(sol, :, :, 1)
+  return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs2.(ζh), grid)
 end
 
 """
@@ -333,8 +350,10 @@ Returns the domain-averaged energy dissipation rate. `nν` must be >= 1.
 @inline function energy_dissipation(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   energy_dissipationh = vars.uh # use vars.uh as scratch variable
+
+  ζh = view(sol, :, :, 1)
   
-  @. energy_dissipationh = params.ν * grid.Krsq^(params.nν - 1) * abs2(sol)
+  @. energy_dissipationh = params.ν * grid.Krsq^(params.nν - 1) * abs2(ζh)
   CUDA.@allowscalar energy_dissipationh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_dissipationh, grid)
 end
@@ -347,8 +366,10 @@ Returns the domain-averaged enstrophy dissipation rate. `nν` must be >= 1.
 @inline function enstrophy_dissipation(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   enstrophy_dissipationh = vars.uh # use vars.uh as scratch variable
+
+  ζh = view(sol, :, :, 1)
   
-  @. enstrophy_dissipationh = params.ν * grid.Krsq^params.nν * abs2(sol)
+  @. enstrophy_dissipationh = params.ν * grid.Krsq^params.nν * abs2(ζh)
   CUDA.@allowscalar enstrophy_dissipationh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_dissipationh, grid)
 end
@@ -429,6 +450,5 @@ Returns the extraction of domain-averaged enstrophy by drag/hypodrag μ.
   CUDA.@allowscalar enstrophy_dragh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_dragh, grid)
 end
-=#
 
 end # module
