@@ -186,7 +186,7 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
 
   @. vars.uh =   im * grid.l  * grid.invKrsq * ζh
   @. vars.vh = - im * grid.kr * grid.invKrsq * ζh
-  @. vars.zetah = sol
+  @. vars.zetah = ζh
 
   @. vars.ch = ch
 
@@ -275,9 +275,9 @@ end
 Set the first solution component `sol[:, :, 1]` as the transform of `zeta` and update variables.
 """
 function set_zeta!(prob, zeta)
-  mul!(prob.zetah, prob.grid.rfftplan, zeta)
+  mul!(prob.vars.zetah, prob.grid.rfftplan, zeta)
 
-  @. @views prob.sol[:, :, 1] = prob.zetah
+  @. @views prob.sol[:, :, 1] = prob.vars.zetah
   CUDA.@allowscalar prob.sol[1, 1, 1] = 0 # zero domain average
   
   updatevars!(prob)
@@ -291,9 +291,9 @@ end
 Set the second solution component `sol[:, :, 2]` as the transform of `c` and update variables.
 """
 function set_c!(prob, c)
-  mul!(prob.ch, prob.grid.rfftplan, c)
+  mul!(prob.vars.ch, prob.grid.rfftplan, c)
 
-  @. @views prob.sol[:, :, 2] = prob.ch
+  @. @views prob.sol[:, :, 2] = prob.vars.ch
   CUDA.@allowscalar prob.sol[1, 1, 2] = 0 # zero domain average
   
   updatevars!(prob)
