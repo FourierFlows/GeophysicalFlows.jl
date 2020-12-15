@@ -32,7 +32,7 @@ testtime = @elapsed begin
 for dev in devices
   
   println("testing on "*string(typeof(dev)))
-    
+  
   @testset "Utils" begin
     include("test_utils.jl")
 

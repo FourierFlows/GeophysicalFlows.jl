@@ -29,10 +29,10 @@ function test_1layerqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
   kwave = 3 * 2π/grid.Lx
   lwave = 2 * 2π/grid.Ly
       ω = -params.β * kwave / (kwave^2 + lwave^2)
-     ζ0 = @. ampl * cos(kwave * x) * cos(lwave * y)
-    ζ0h = rfft(ζ0)
+    ζ₀  = @. ampl * cos(kwave * x) * cos(lwave * y)
+    ζ₀h = rfft(ζ₀)
 
-  SingleLayerQG.set_ζ!(prob, ζ0)
+  SingleLayerQG.set_ζ!(prob, ζ₀)
 
   stepforward!(prob, nsteps)
   dealias!(sol, grid)
