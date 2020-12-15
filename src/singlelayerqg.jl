@@ -31,7 +31,7 @@ nothingfunction(args...) = nothing
 """
     Problem(; parameters...)
 
-Construct a BarotropicQG turbulence problem.
+Construct a SingleLayerQG problem.
 """
 
 function Problem(dev::Device=CPU();
@@ -45,7 +45,7 @@ function Problem(dev::Device=CPU();
                    β = 0.0,
   deformation_radius = Inf,
                  eta = nothing,
-  # Drag and/or hyper-/hypo-viscosity
+  # Drag and (hyper-)viscosity
                    ν = 0.0,
                   nν = 1,
                    μ = 0.0,
@@ -62,7 +62,7 @@ function Problem(dev::Device=CPU();
   # topographic PV
   eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
 
-  params = !(typeof(eta) <: ArrayType(dev)) ? Params(grid, β, deformation_radius, eta, μ, ν, nν, calcF) : Params(β, deformation_radius, eta, rfft(eta), μ, ν, nν, calcF)
+  params = deformation_radius == Inf ? BarotropicQGParams(grid, T(β), eta, T(μ), T(ν), nν, calcF) : EquivalentBarotropicQGParams(grid, T(β), T(deformation_radius), eta, T(μ), T(ν), nν, calcF)
 
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
@@ -81,9 +81,11 @@ end
 
 Returns the params for an unforced two-dimensional barotropic QG problem.
 """
-struct Params{T, Aphys, Atrans} <: AbstractParams
+abstract type SingleLayerQGParams <: AbstractParams end
+
+struct Params{T, Aphys, Atrans, ℓ} <: SingleLayerQGParams
                    β :: T            # Planetary vorticity y-gradient
-  deformation_radius :: T            # deformation radius
+  deformation_radius :: ℓ            # deformation radius
                  eta :: Aphys        # Topographic PV
                 etah :: Atrans       # FFT of Topographic PV
                    μ :: T            # Linear drag
@@ -92,15 +94,31 @@ struct Params{T, Aphys, Atrans} <: AbstractParams
               calcF! :: Function     # Function that calculates the forcing on QGPV q
 end
 
-"""
-    Params(g::TwoDGrid, β, eta::Function, μ, ν, nν, calcF)
+const BarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, Nothing}
+const EquivalentBarotropicQGParams = Params{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractFloat}
 
-Constructor for Params that accepts a generating function for the topographic PV.
+get_topographicPV_grid_values(eta::Function, grid::AbstractGrid{T, A}) where {T, A} = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
+
 """
-function Params(grid::AbstractGrid{T, A}, β, deformation_radius, eta::Function, μ, ν, nν::Int, calcF) where {T, A}
-  etagrid = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
-  etah = rfft(etagrid)
-  return Params(β, deformation_radius, etagrid, etah, μ, ν, nν, calcF)
+    BarotropicQGParams(grid::TwoDGrid, β, eta, μ, ν, nν::Int, calcF
+
+Constructor for BarotropicQGParams (infinite Rossby radius of deformation).
+"""
+function BarotropicQGParams(grid::AbstractGrid{T, A}, β, eta, μ, ν, nν::Int, calcF) where {T, A}
+  eta_grid = typeof(eta) <: AbstractArray ? eta : get_topographicPV_grid_values(eta, grid)
+  eta_gridh = rfft(eta_grid)
+  return Params(β, nothing, eta_grid, eta_gridh, μ, ν, nν, calcF)
+end
+
+"""
+    EquivalentBarotropicQGParams(grid::TwoDGrid, β, deformation_radius, eta, μ, ν, nν::Int, calcF
+
+Constructor for EquivalentBarotropicQGParams (finite Rossby radius of deformation).
+"""
+function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, β, deformation_radius, eta, μ, ν, nν::Int, calcF) where {T, A}
+  eta_grid = typeof(eta) <: AbstractArray ? eta : get_topographicPV_grid_values(eta, grid)
+  eta_gridh = rfft(eta_grid)
+  return Params(β, deformation_radius, eta_grid, eta_gridh, μ, ν, nν, calcF)
 end
 
 
@@ -124,9 +142,9 @@ end
 # Vars
 # ----
 
-abstract type BarotropicQGVars <: AbstractVars end
+abstract type SingleLayerQGVars <: AbstractVars end
 
-struct Vars{Aphys, Atrans, F, P} <: BarotropicQGVars
+struct Vars{Aphys, Atrans, F, P} <: SingleLayerQGVars
         q :: Aphys
         ζ :: Aphys
         ψ :: Aphys
@@ -187,12 +205,9 @@ end
 
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.ζh = sol
-  @. vars.ψh  = - vars.ζh / (grid.Krsq + 1 / params.deformation_radius^2)
-  if params.deformation_radius == Inf
-    CUDA.@allowscalar vars.ψh[1, 1] = 0
-  end
-  @. vars.uh    = -im * grid.l  * vars.ψh
-  @. vars.vh    =  im * grid.kr * vars.ψh
+  streamfunctionfrompv!(vars.ψh, vars.ζh, params, grid)
+  @. vars.uh = -im * grid.l  * vars.ψh
+  @. vars.vh =  im * grid.kr * vars.ψh
 
   ldiv!(vars.ζ, grid.rfftplan, vars.ζh)
   ldiv!(vars.u, grid.rfftplan, vars.uh)
@@ -240,6 +255,19 @@ function addforcing!(N, sol, t, clock, vars::StochasticForcedVars, params, grid)
   return nothing
 end
 
+"""
+    streamfunctionfrompv!(ψh, qh, params, grid)
+
+Invert the Fourier transform of PV to obtain the Fourier transform of the streamfunction `ψh`.
+"""
+function streamfunctionfrompv!(ψh, qh, params::BarotropicQGParams, grid)
+  @. ψh =  - grid.invKrsq * qh
+end
+
+function streamfunctionfrompv!(ψh, qh, params::EquivalentBarotropicQGParams, grid)
+  @. ψh  = - qh / (grid.Krsq + 1 / params.deformation_radius^2)
+end
+
 
 # ----------------
 # Helper functions
@@ -252,12 +280,9 @@ Update the variables in `vars` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
   @. vars.ζh = sol
-  @. vars.ψh  = - vars.ζh / (grid.Krsq + 1 / params.deformation_radius^2)
-  if params.deformation_radius == Inf
-    CUDA.@allowscalar vars.ψh[1, 1] = 0
-  end
-  @. vars.uh    = -im * grid.l  * vars.ψh
-  @. vars.vh    =  im * grid.kr * vars.ψh
+  streamfunctionfrompv!(vars.ψh, vars.ζh, params, grid)
+  @. vars.uh = -im * grid.l  * vars.ψh
+  @. vars.vh =  im * grid.kr * vars.ψh
 
   ldiv!(vars.ζ, grid.rfftplan, deepcopy(vars.ζh))
   ldiv!(vars.ψ, grid.rfftplan, deepcopy(vars.ψh))
@@ -293,31 +318,32 @@ set_ζ!(prob, ζ) = set_ζ!(prob.sol, prob.vars, prob.params, prob.grid, ζ)
 
 """
     kinetic_energy(prob)
-    potential_energy(prob)
-    kinetic_energy(vars, grid)
-    potential_energy(vars, grid, params)
+    kinetic_energy(sol, grid, vars, params)
 
 Returns the domain-averaged kinetic energy of solution `sol`: ∫ ½ (u²+v²) dxdy / (Lx Ly) = ∑ ½ k² |ψ̂|² / (Lx Ly).
-Returns the domain-averaged potential energy of solution `sol`: ½ 1 / deformation_radius² ∫ ψ² dxdy / (Lx Ly) = ½ 1 / deformation_radius² ∑ |ψ̂|² / (Lx Ly).
-
 """
 function kinetic_energy(sol, grid, vars, params)
-    @. vars.uh = sqrt.(grid.Krsq) * sol / (grid.Krsq + 1 / params.deformation_radius^2) ## uh is a dummy variable
-    if params.deformation_radius == Inf
-        CUDA.@allowscalar vars.uh[1, 1] = 0
-    end
-    return parsevalsum2(vars.uh , grid) / (2 * grid.Lx * grid.Ly)
-end
+  streamfunctionfrompv!(vars.ψh, sol, params, grid)
+  @. vars.uh = sqrt.(grid.Krsq) * vars.ψh      # vars.uh is a dummy variable
 
-function potential_energy(sol, grid, vars, params)
-    @. vars.uh = sol /(grid.Krsq + 1 / params.deformation_radius^2) ## uh is a dummy variable
-    if params.deformation_radius == Inf
-        CUDA.@allowscalar vars.uh[1, 1] = 0
-    end
-    return 1 / params.deformation_radius^2 * parsevalsum2(vars.uh, grid) / (2 * grid.Lx * grid.Ly)
+  return parsevalsum2(vars.uh , grid) / (2 * grid.Lx * grid.Ly)
 end
 
 kinetic_energy(prob) = kinetic_energy(prob.sol, prob.grid, prob.vars, prob.params)
+
+"""
+    potential_energy(prob)
+    potential_energy(sol, grid, vars, params)
+
+    Returns the domain-averaged potential energy of solution `sol`: ½ 1 / deformation_radius² ∫ ψ² dxdy / (Lx Ly) = ½ 1 / deformation_radius² ∑ |ψ̂|² / (Lx Ly).
+"""
+function potential_energy(sol, grid, vars, params::EquivalentBarotropicQGParams)
+  streamfunctionfrompv!(vars.ψh, sol, params, grid)
+  return 1 / params.deformation_radius^2 * parsevalsum2(vars.ψh, grid) / (2 * grid.Lx * grid.Ly)
+end
+
+potential_energy(sol, grid, vars, params::BarotropicQGParams) = 0
+
 potential_energy(prob) = potential_energy(prob.sol, prob.grid, prob.vars, prob.params)
 
 """
