@@ -22,9 +22,9 @@ devices = (CPU(),)
 
 const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
 const rtol_twodnavierstokes = 1e-13 # tolerance for twodnavierstokes forcing tests
-const rtol_barotropicQG = 1e-13 # tolerance for barotropicqg forcing tests
+const rtol_singlelayerqg = 1e-13 # tolerance for singlelayerqg forcing tests
 const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
-const rtol_surfaceqg = 1e-13 # tolerance for multilayerqg forcing tests
+const rtol_surfaceqg = 1e-13 # tolerance for surfaceqg forcing tests
 
 
 # Run tests
@@ -53,7 +53,7 @@ for dev in devices
     @test test_twodnavierstokes_problemtype(dev, Float32)
     @test TwoDNavierStokes.nothingfunction() == nothing
   end
-   
+  
   @testset "SingleLayerQG" begin
     include("test_singlelayerqg.jl")
 

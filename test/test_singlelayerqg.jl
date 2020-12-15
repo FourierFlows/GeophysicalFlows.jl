@@ -13,7 +13,7 @@ function test_1layerqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
 
   # the following if statement is called so that all the cases of
   # Problem() fuction are tested
-  if stepper=="ForwardEuler"
+  if stepper == "ForwardEuler"
     eta = zeros(dev, T, (nx, nx))
   else
     eta(x, y) = 0 * x
@@ -32,15 +32,15 @@ function test_1layerqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
      ζ0 = @. ampl * cos(kwave * x) * cos(lwave * y)
     ζ0h = rfft(ζ0)
 
-  SingleLayerQG.set_zeta!(prob, ζ0)
+  SingleLayerQG.set_ζ!(prob, ζ0)
 
   stepforward!(prob, nsteps)
   dealias!(sol, grid)
   SingleLayerQG.updatevars!(prob)
 
-  ζ_theory = @. ampl * cos(kwave * (x - ω/kwave * clock.t)) * cos(lwave * y)
+  ζ_theory = @. ampl * cos(kwave * (x - ω / kwave * clock.t)) * cos(lwave * y)
 
-  return isapprox(ζ_theory, vars.zeta, rtol=grid.nx * grid.ny * nsteps * 1e-12)
+  return isapprox(ζ_theory, vars.ζ, rtol=grid.nx * grid.ny * nsteps * 1e-12)
 end
 
 """
@@ -68,7 +68,7 @@ function test_1layerqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, 
   @. forcing_spectrum = ifelse(grid.Krsq < 2^2,  0, forcing_spectrum)   # no power at low wavenumbers
   @. forcing_spectrum = ifelse(grid.Krsq > 20^2, 0, forcing_spectrum)   # no power at high wavenumbers
   ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
-  forcing_spectrum .= ε / ε0 * forcing_spectrum
+  @. forcing_spectrum = ε / ε0 * forcing_spectrum
 
   Random.seed!(1234)
 
@@ -76,15 +76,16 @@ function test_1layerqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, 
     eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
     @. Fh = eta * sqrt(forcing_spectrum)
+    
     return nothing
   end
 
   prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=true)
 
-  SingleLayerQG.set_zeta!(prob, 0*x)
+  SingleLayerQG.set_ζ!(prob, 0*x)
   
-  E = Diagnostic(SingleLayerQG.energy,             prob, nsteps=nt)
+  E = Diagnostic(SingleLayerQG.kinetic_energy,     prob, nsteps=nt)
   D = Diagnostic(SingleLayerQG.energy_dissipation, prob, nsteps=nt)
   R = Diagnostic(SingleLayerQG.energy_drag,        prob, nsteps=nt)
   W = Diagnostic(SingleLayerQG.energy_work,        prob, nsteps=nt)
@@ -118,7 +119,7 @@ function test_1layerqg_deterministicforcing_energybudget(dev::Device=CPU(); n=25
 
   grid = TwoDGrid(dev, n, L)
   x, y = gridpoints(grid)
-  k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly
+  k₀, l₀ = 2π / grid.Lx, 2π/grid.Ly
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
   f = @. 0.01 * cos(4k₀*x) * cos(5l₀*y)
@@ -126,15 +127,16 @@ function test_1layerqg_deterministicforcing_energybudget(dev::Device=CPU(); n=25
   
   function calcF!(Fh, sol, t, clock, vars, params, grid)
     @. Fh = fh * cos(2t)
+    
     return nothing
   end
 
   prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=false)
 
-  SingleLayerQG.set_zeta!(prob, 0*x)
+  SingleLayerQG.set_ζ!(prob, 0*x)
   
-  E = Diagnostic(SingleLayerQG.energy,             prob, nsteps=nt)
+  E = Diagnostic(SingleLayerQG.kinetic_energy,     prob, nsteps=nt)
   D = Diagnostic(SingleLayerQG.energy_dissipation, prob, nsteps=nt)
   R = Diagnostic(SingleLayerQG.energy_drag,        prob, nsteps=nt)
   W = Diagnostic(SingleLayerQG.energy_work,        prob, nsteps=nt)
@@ -183,13 +185,14 @@ function test_1layerqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=25
     eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
     @. Fh = eta * sqrt(forcing_spectrum)
+    
     return nothing
   end
 
   prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=true)
 
-  SingleLayerQG.set_zeta!(prob, 0*x)
+  SingleLayerQG.set_ζ!(prob, 0*x)
   
   Z = Diagnostic(SingleLayerQG.enstrophy,             prob, nsteps=nt)
   D = Diagnostic(SingleLayerQG.enstrophy_dissipation, prob, nsteps=nt)
@@ -228,7 +231,7 @@ function test_1layerqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n
   k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
-  f = @. 0.01 * cos(4k₀*x) * cos(5l₀*y)
+  f = @. 0.01 * cos(4k₀ * x) * cos(5l₀ * y)
   fh = rfft(f)
   
   function calcF!(Fh, sol, t, clock, vars, params, grid)
@@ -239,7 +242,7 @@ function test_1layerqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n
   prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt,
    stepper="RK4", calcF=calcF!, stochastic=false)
 
-  SingleLayerQG.set_zeta!(prob, 0*x)
+  SingleLayerQG.set_ζ!(prob, 0*x)
   
   Z = Diagnostic(SingleLayerQG.enstrophy,             prob, nsteps=nt)
   D = Diagnostic(SingleLayerQG.enstrophy_dissipation, prob, nsteps=nt)
@@ -288,20 +291,20 @@ function test_1layerqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, �
 
   Ffh = rfft(Ff)
 
-  function calcF!(Fh, sol, t, cl, v, p, g)
+  function calcF!(Fh, sol, t, clock, vars, params, grid)
     Fh .= Ffh
     return nothing
   end
 
   prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
 
-  SingleLayerQG.set_zeta!(prob, qf)
+  SingleLayerQG.set_ζ!(prob, qf)
 
   stepforward!(prob, round(Int, nt))
 
   SingleLayerQG.updatevars!(prob)
   
-  return isapprox(prob.vars.q, qf, rtol=rtol_barotropicQG)
+  return isapprox(prob.vars.q, qf, rtol=rtol_singlelayerqg)
 end
 
 """
@@ -317,22 +320,22 @@ function test_1layerqg_energyenstrophy(dev::Device=CPU())
   x, y = gridpoints(grid)
 
   energy_calc = 29/9
-  enstrophy_calc = 2701/162
+  enstrophy_calc = 10885/648
 
-    eta = @. cos(10k₀*x) * cos(10l₀*y)
-   psi0 = @. sin(2k₀*x) * cos(2l₀*y) + 2sin(k₀*x) * cos(3l₀*y)
-  zeta0 = @. - ((2k₀)^2+(2l₀)^2) * sin(2k₀*x) * cos(2l₀*y) - (k₀^2+(3l₀)^2) * 2sin(k₀*x) * cos(3l₀*y)
+  η  = @. cos(10k₀ * x) * cos(10l₀ * y)
+  ψ₀ = @. sin(2k₀ * x) * cos(2l₀ * y) + 2sin(k₀ * x) * cos(3l₀ * y)
+  ζ₀ = @. - ((2k₀)^2 + (2l₀)^2) * sin(2k₀ * x) * cos(2l₀ * y) - (k₀^2 + (3l₀)^2) * 2sin(k₀ * x) * cos(3l₀*y)
 
-  prob = SingleLayerQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta = eta, stepper="ForwardEuler")
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-  SingleLayerQG.set_zeta!(prob, zeta0)
+  prob = SingleLayerQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta=η, stepper="ForwardEuler")
+  sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+  SingleLayerQG.set_ζ!(prob, ζ₀)
   SingleLayerQG.updatevars!(prob)
 
-  energyzeta0 = SingleLayerQG.energy(prob)
-  enstrophyzeta0 = SingleLayerQG.enstrophy(prob)
+  energyζ₀ = SingleLayerQG.kinetic_energy(prob)
+  enstrophyζ₀ = SingleLayerQG.enstrophy(prob)
 
-  return isapprox(energyzeta0, energy_calc, rtol=rtol_barotropicQG) && isapprox(enstrophyzeta0, enstrophy_calc, rtol=rtol_barotropicQG) &&
-  SingleLayerQG.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing
+  return isapprox(energyζ₀, energy_calc, rtol=rtol_singlelayerqg) && isapprox(enstrophyζ₀, enstrophy_calc, rtol=rtol_singlelayerqg) &&
+  SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid) == nothing
 end
 
 """

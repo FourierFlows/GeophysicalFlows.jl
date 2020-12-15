@@ -37,6 +37,7 @@ Construct a BarotropicQG turbulence problem.
 function Problem(dev::Device=CPU();
   # Numerical parameters
                   nx = 256,
+                  ny = nx,
                   Lx = 2π,
                   Ly = Lx,
                   dt = 0.01,
