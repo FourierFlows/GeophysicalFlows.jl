@@ -106,7 +106,7 @@ p1 = heatmap(x, y, vars.q',
           title = "initial vorticity ζ=∂v/∂x-∂u/∂y",
      framestyle = :box)
 
-p2 = contourf(x, y, vars.psi',
+p2 = contourf(x, y, vars.ψ',
         aspectratio = 1,
              c = :viridis,
         levels = range(-0.35, stop=0.35, length=10), 
@@ -157,7 +157,7 @@ nothing # hide
 
 function plot_output(prob)
   ζ = prob.vars.zeta
-  ψ = prob.vars.psi
+  ψ = prob.vars.ψ
   η = prob.params.eta
 
   pζ = heatmap(x, y, ζ',
@@ -226,7 +226,7 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
 
   p[1][1][:z] = vars.zeta
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
-  p[2][1][:z] = vars.psi
+  p[2][1][:z] = vars.ψ
 
   stepforward!(prob, diags, nsubs)
   SingleLayerQG.updatevars!(prob)

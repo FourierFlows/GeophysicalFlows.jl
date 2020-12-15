@@ -88,7 +88,7 @@ p1 = heatmap(x, y, vars.q',
           title = "initial vorticity ζ=∂v/∂x-∂u/∂y",
      framestyle = :box)
 
-p2 = contourf(x, y, vars.psi',
+p2 = contourf(x, y, vars.ψ',
         aspectratio = 1,
              c = :viridis,
         levels = range(-0.65, stop=0.65, length=10), 
@@ -142,7 +142,7 @@ nothing # hide
 
 function plot_output(prob)
   ζ = prob.vars.zeta
-  ψ = prob.vars.psi
+  ψ = prob.vars.ψ
   ζ̄ = mean(ζ, dims=1)'
   ū = mean(prob.vars.u, dims=1)'
 
@@ -224,7 +224,7 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
 
   p[1][1][:z] = vars.zeta
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
-  p[3][1][:z] = vars.psi
+  p[3][1][:z] = vars.ψ
   p[2][1][:x] = mean(vars.zeta, dims=1)'
   p[4][1][:x] = mean(vars.u, dims=1)'
 
