@@ -70,7 +70,7 @@ Ein = energy(qih, grid, vars, params)    # compute energy of qi
 qih *= sqrt(E₀ / Ein)                    # normalize qi to have energy E₀
 qi = irfft(qih, grid.nx)
 
-SingleLayerQG.set_zeta!(prob, qi)
+SingleLayerQG.set_ζ!(prob, qi)
 nothing # hide
 
 # Let's plot the initial vorticity field:
@@ -141,7 +141,7 @@ nothing # hide
 # their corresponding zonal mean structure.
 
 function plot_output(prob)
-  ζ = prob.vars.zeta
+  ζ = prob.vars.ζ
   ψ = prob.vars.ψ
   ζ̄ = mean(ζ, dims=1)'
   ū = mean(prob.vars.u, dims=1)'
@@ -222,10 +222,10 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.zeta
+  p[1][1][:z] = vars.ζ
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
   p[3][1][:z] = vars.ψ
-  p[2][1][:x] = mean(vars.zeta, dims=1)'
+  p[2][1][:x] = mean(vars.ζ, dims=1)'
   p[4][1][:x] = mean(vars.u, dims=1)'
 
   stepforward!(prob, diags, nsubs)

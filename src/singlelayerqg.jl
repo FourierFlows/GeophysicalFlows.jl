@@ -2,7 +2,7 @@ module SingleLayerQG
 
 export
   Problem,
-  set_zeta!,
+  set_ζ!,
   updatevars!,
 
   kinetic_energy,
@@ -127,12 +127,12 @@ abstract type BarotropicQGVars <: AbstractVars end
 
 struct Vars{Aphys, Atrans, F, P} <: BarotropicQGVars
         q :: Aphys
-     zeta :: Aphys
+        ζ :: Aphys
         ψ :: Aphys
         u :: Aphys
         v :: Aphys
        qh :: Atrans
-    zetah :: Atrans
+       ζh :: Atrans
        ψh :: Atrans
        uh :: Atrans
        vh :: Atrans
@@ -150,9 +150,9 @@ Returns the vars for unforced two-dimensional barotropic QG problem on device `d
 """
 function Vars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) q u v ψ zeta
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh zetah
-  Vars(q, zeta, ψ, u, v, qh, zetah, ψh, uh, vh, nothing, nothing)
+  @devzeros Dev T (grid.nx, grid.ny) q u v ψ ζ
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh ζh
+  Vars(q, ζ, ψ, u, v, qh, ζh, ψh, uh, vh, nothing, nothing)
 end
 
 """
@@ -162,9 +162,9 @@ Returns the vars for forced two-dimensional barotropic QG problem on device dev 
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) q u v ψ zeta
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh zetah Fh
-  return Vars(q, zeta, ψ, u, v, qh, zetah, ψh, uh, vh, Fh, nothing)
+  @devzeros Dev T (grid.nx, grid.ny) q u v ψ ζ
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh ζh Fh
+  return Vars(q, ζ, ψ, u, v, qh, ζh, ψh, uh, vh, Fh, nothing)
 end
 
 """
@@ -174,9 +174,9 @@ Returns the vars for stochastically forced two-dimensional barotropic QG problem
 """
 function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) q u v ψ zeta
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh zetah Fh prevsol
-  return Vars(q, zeta, ψ, u, v, qh, zetah, ψh, uh, vh, Fh, prevsol)
+  @devzeros Dev T (grid.nx, grid.ny) q u v ψ ζ
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh ζh Fh prevsol
+  return Vars(q, ζ, ψ, u, v, qh, ζh, ψh, uh, vh, Fh, prevsol)
 end
 
 
@@ -185,19 +185,19 @@ end
 # -------
 
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
-  @. vars.zetah = sol
-  @. vars.ψh  = - vars.zetah / (grid.Krsq + 1 / params.deformation_radius^2)
+  @. vars.ζh = sol
+  @. vars.ψh  = - vars.ζh / (grid.Krsq + 1 / params.deformation_radius^2)
   if params.deformation_radius == Inf
-      CUDA.@allowscalar vars.ψh[1, 1] = 0
+    CUDA.@allowscalar vars.ψh[1, 1] = 0
   end
   @. vars.uh    = -im * grid.l  * vars.ψh
   @. vars.vh    =  im * grid.kr * vars.ψh
 
-  ldiv!(vars.zeta, grid.rfftplan, vars.zetah)
+  ldiv!(vars.ζ, grid.rfftplan, vars.ζh)
   ldiv!(vars.u, grid.rfftplan, vars.uh)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
 
-  @. vars.q = vars.zeta + params.eta
+  @. vars.q = vars.ζ + params.eta
   uq = vars.u                                            # use vars.u as scratch variable
   @. uq *= vars.q                                        # u*q
   vq = vars.v                                            # use vars.v as scratch variable
@@ -250,20 +250,20 @@ end
 Update the variables in `vars` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
-  @. vars.zetah = sol
-  @. vars.ψh  = - vars.zetah / (grid.Krsq + 1 / params.deformation_radius^2)
+  @. vars.ζh = sol
+  @. vars.ψh  = - vars.ζh / (grid.Krsq + 1 / params.deformation_radius^2)
   if params.deformation_radius == Inf
-      CUDA.@allowscalar vars.ψh[1, 1] = 0
+    CUDA.@allowscalar vars.ψh[1, 1] = 0
   end
   @. vars.uh    = -im * grid.l  * vars.ψh
   @. vars.vh    =  im * grid.kr * vars.ψh
 
-  ldiv!(vars.zeta, grid.rfftplan, deepcopy(vars.zetah))
+  ldiv!(vars.ζ, grid.rfftplan, deepcopy(vars.ζh))
   ldiv!(vars.ψ, grid.rfftplan, deepcopy(vars.ψh))
   ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh))
   ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh))
 
-  @. vars.q = vars.zeta + params.eta
+  @. vars.q = vars.ζ + params.eta
 
   return nothing
 end
@@ -271,23 +271,23 @@ end
 updatevars!(prob) = updatevars!(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
-    set_zeta!(prob, zeta)
-    set_zeta!(sol, vars, params, grid)
+    set_ζ!(prob, ζ)
+    set_ζ!(sol, vars, params, grid)
 
-Set the solution `sol` as the transform of zeta and update variables `vars`
+Set the solution `sol` as the transform of ζ and update variables `vars`
 on the `grid`.
 """
-function set_zeta!(sol, vars, params, grid, zeta)
-  mul!(vars.zetah, grid.rfftplan, zeta)
+function set_ζ!(sol, vars, params, grid, ζ)
+  mul!(vars.ζh, grid.rfftplan, ζ)
 
-  @. sol = vars.zetah
+  @. sol = vars.ζh
 
   updatevars!(sol, vars, params, grid)
 
   return nothing
 end
 
-set_zeta!(prob, zeta) = set_zeta!(prob.sol, prob.vars, prob.params, prob.grid, zeta)
+set_ζ!(prob, ζ) = set_ζ!(prob.sol, prob.vars, prob.params, prob.grid, ζ)
 
 
 """
@@ -330,14 +330,14 @@ Returns the domain-averaged reduced enstrophy ½ ∫(ζ² + 2ζη) dxdy / (Lx Ly
 
 """
 function enstrophy(sol, grid, vars, params)
-  @. vars.zetah = sol
-  return 0.5*parsevalsum2(vars.zetah + params.etah, grid) / (grid.Lx * grid.Ly)
+  @. vars.ζh = sol
+  return parsevalsum2(vars.ζh + params.etah, grid) / (2 * grid.Lx * grid.Ly)
 end
 enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars, prob.params)
 
 function reduced_enstrophy(sol, grid, vars, params)
-  @. vars.zetah = sol
-  return 0.5*parsevalsum(abs2.(vars.zetah) .+ 2* vars.zetah .* params.etah, grid) / (grid.Lx * grid.Ly)
+  @. vars.ζh = sol
+  return parsevalsum(abs2.(vars.ζh) .+ 2 * vars.ζh .* params.etah, grid) / (2 * grid.Lx * grid.Ly)
 end
 reduced_enstrophy(prob) = reduced_enstrophy(prob.sol, prob.grid, prob.vars, prob.params)
 

@@ -88,7 +88,7 @@ qih = randn(Complex{eltype(grid)}, size(sol))
 qih *= sqrt(E₀ / energy(qih, grid, vars, params))  # normalize qi to have energy E₀
 qi = irfft(qih, grid.nx)
 
-SingleLayerQG.set_zeta!(prob, qi)
+SingleLayerQG.set_ζ!(prob, qi)
 nothing # hide
 
 # Let's plot the initial vorticity field:
@@ -156,7 +156,7 @@ nothing # hide
 # their corresponding zonal mean structure.
 
 function plot_output(prob)
-  ζ = prob.vars.zeta
+  ζ = prob.vars.ζ
   ψ = prob.vars.ψ
   η = prob.params.eta
 
@@ -224,7 +224,7 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.zeta
+  p[1][1][:z] = vars.ζ
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
   p[2][1][:z] = vars.ψ
 
