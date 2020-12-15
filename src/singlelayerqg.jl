@@ -5,6 +5,7 @@ export
   set_ζ!,
   updatevars!,
 
+  energy,
   kinetic_energy,
   potential_energy,
   energy_dissipation,
@@ -322,51 +323,63 @@ set_ζ!(prob, ζ) = set_ζ!(prob.sol, prob.vars, prob.params, prob.grid, ζ)
 
 Returns the domain-averaged kinetic energy of solution `sol`: ∫ ½ (u²+v²) dxdy / (Lx Ly) = ∑ ½ k² |ψ̂|² / (Lx Ly).
 """
-function kinetic_energy(sol, grid, vars, params)
+function kinetic_energy(sol, vars, params, grid)
   streamfunctionfrompv!(vars.ψh, sol, params, grid)
   @. vars.uh = sqrt.(grid.Krsq) * vars.ψh      # vars.uh is a dummy variable
 
   return parsevalsum2(vars.uh , grid) / (2 * grid.Lx * grid.Ly)
 end
 
-kinetic_energy(prob) = kinetic_energy(prob.sol, prob.grid, prob.vars, prob.params)
+kinetic_energy(prob) = kinetic_energy(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
     potential_energy(prob)
     potential_energy(sol, grid, vars, params)
 
-    Returns the domain-averaged potential energy of solution `sol`: ½ 1 / deformation_radius² ∫ ψ² dxdy / (Lx Ly) = ½ 1 / deformation_radius² ∑ |ψ̂|² / (Lx Ly).
+Returns the domain-averaged potential energy of solution `sol`: ½ 1 / deformation_radius² ∫ ψ² dxdy / (Lx Ly) = ½ 1 / deformation_radius² ∑ |ψ̂|² / (Lx Ly).
 """
-function potential_energy(sol, grid, vars, params::EquivalentBarotropicQGParams)
+function potential_energy(sol, vars, params::EquivalentBarotropicQGParams, grid)
   streamfunctionfrompv!(vars.ψh, sol, params, grid)
   return 1 / params.deformation_radius^2 * parsevalsum2(vars.ψh, grid) / (2 * grid.Lx * grid.Ly)
 end
+potential_energy(sol, vars, params::BarotropicQGParams, grid) = 0
+potential_energy(prob) = potential_energy(prob.sol, prob.vars, prob.params, prob.grid)
 
-potential_energy(sol, grid, vars, params::BarotropicQGParams) = 0
+"""
+    energy(prob)
+    energy(sol, grid, vars, params)
 
-potential_energy(prob) = potential_energy(prob.sol, prob.grid, prob.vars, prob.params)
+Returns the total domain-averaged energy of solution `sol`. This is the kinetic energy for a
+pure barotropic flow or the sum of kinetic and potential energies for an equivalent barotropic
+flow.
+"""
+energy(prob) = energy(prob.sol, prob.vars, prob.params, prob.grid)
+energy(sol, vars, params::BarotropicQGParams, grid) = kinetic_energy(sol, vars, params, grid)
+energy(sol, vars, params::EquivalentBarotropicQGParams, grid) = kinetic_energy(sol, vars, params, grid) + potential_energy(sol, vars, params, grid)
 
 """
     enstrophy(prob)
-    enstrophy(sol, grid, vars)
-    reduced_enstrophy(prob)
-    reduced_enstrophy(sol, grid, vars)
+    enstrophy(sol, vars, params, grid)
 
 Returns the domain-averaged enstrophy ½ ∫ q² dxdy / (Lx Ly), with q = ζ + η and sol = ζ.
-Returns the domain-averaged reduced enstrophy ½ ∫(ζ² + 2ζη) dxdy / (Lx Ly) .
-
 """
-function enstrophy(sol, grid, vars, params)
+function enstrophy(sol, vars, params, grid)
   @. vars.ζh = sol
   return parsevalsum2(vars.ζh + params.etah, grid) / (2 * grid.Lx * grid.Ly)
 end
-enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars, prob.params)
+enstrophy(prob) = enstrophy(prob.sol, prob.vars, prob.params, prob.grid)
 
-function reduced_enstrophy(sol, grid, vars, params)
+"""
+    reduced_enstrophy(prob)
+    reduced_enstrophy(sol, vars, params, grid)
+
+Returns the domain-averaged reduced enstrophy ½ ∫(ζ² + 2ζη) dxdy / (Lx Ly) .
+"""
+function reduced_enstrophy(sol, vars, params, grid)
   @. vars.ζh = sol
   return parsevalsum(abs2.(vars.ζh) .+ 2 * vars.ζh .* params.etah, grid) / (2 * grid.Lx * grid.Ly)
 end
-reduced_enstrophy(prob) = reduced_enstrophy(prob.sol, prob.grid, prob.vars, prob.params)
+reduced_enstrophy(prob) = reduced_enstrophy(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
     energy_dissipation(prob)
