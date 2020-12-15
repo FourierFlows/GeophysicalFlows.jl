@@ -38,7 +38,7 @@ function Problem(dev::Device=CPU();
   # Numerical parameters
                   nx = 256,
                   Lx = 2π,
-                   Ly = Lx,
+                  Ly = Lx,
                   dt = 0.01,
   # Physical parameters
                    β = 0.0,
@@ -61,7 +61,7 @@ function Problem(dev::Device=CPU();
   # topographic PV
   eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
 
-  params = !(typeof(eta)<:ArrayType(dev)) ? Params(grid, β, deformation_radius, eta, μ, ν, nν, calcF) : Params(β, deformation_radius, eta, rfft(eta), μ, ν, nν, calcF)
+  params = !(typeof(eta) <: ArrayType(dev)) ? Params(grid, β, deformation_radius, eta, μ, ν, nν, calcF) : Params(β, deformation_radius, eta, rfft(eta), μ, ν, nν, calcF)
 
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
@@ -128,12 +128,12 @@ abstract type BarotropicQGVars <: AbstractVars end
 struct Vars{Aphys, Atrans, F, P} <: BarotropicQGVars
         q :: Aphys
      zeta :: Aphys
-      psi :: Aphys
+        ψ :: Aphys
         u :: Aphys
         v :: Aphys
        qh :: Atrans
     zetah :: Atrans
-     psih :: Atrans
+       ψh :: Atrans
        uh :: Atrans
        vh :: Atrans
        Fh :: F
@@ -150,9 +150,9 @@ Returns the vars for unforced two-dimensional barotropic QG problem on device `d
 """
 function Vars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) q u v psi zeta
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh psih zetah
-  Vars(q, zeta, psi, u, v, qh, zetah, psih, uh, vh, nothing, nothing)
+  @devzeros Dev T (grid.nx, grid.ny) q u v ψ zeta
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh zetah
+  Vars(q, zeta, ψ, u, v, qh, zetah, ψh, uh, vh, nothing, nothing)
 end
 
 """
@@ -162,9 +162,9 @@ Returns the vars for forced two-dimensional barotropic QG problem on device dev 
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) q u v psi zeta
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh psih zetah Fh
-  return Vars(q, zeta, psi, u, v, qh, zetah, psih, uh, vh, Fh, nothing)
+  @devzeros Dev T (grid.nx, grid.ny) q u v ψ zeta
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh zetah Fh
+  return Vars(q, zeta, ψ, u, v, qh, zetah, ψh, uh, vh, Fh, nothing)
 end
 
 """
@@ -174,9 +174,9 @@ Returns the vars for stochastically forced two-dimensional barotropic QG problem
 """
 function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) q u v psi zeta
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh psih zetah Fh prevsol
-  return Vars(q, zeta, psi, u, v, qh, zetah, psih, uh, vh, Fh, prevsol)
+  @devzeros Dev T (grid.nx, grid.ny) q u v ψ zeta
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh zetah Fh prevsol
+  return Vars(q, zeta, ψ, u, v, qh, zetah, ψh, uh, vh, Fh, prevsol)
 end
 
 
@@ -186,12 +186,12 @@ end
 
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.zetah = sol
-  @. vars.psih  = - vars.zetah / (grid.Krsq + 1 / params.deformation_radius^2)
+  @. vars.ψh  = - vars.zetah / (grid.Krsq + 1 / params.deformation_radius^2)
   if params.deformation_radius == Inf
-      CUDA.@allowscalar vars.psih[1, 1] = 0
+      CUDA.@allowscalar vars.ψh[1, 1] = 0
   end
-  @. vars.uh    = -im * grid.l  * vars.psih
-  @. vars.vh    =  im * grid.kr * vars.psih
+  @. vars.uh    = -im * grid.l  * vars.ψh
+  @. vars.vh    =  im * grid.kr * vars.ψh
 
   ldiv!(vars.zeta, grid.rfftplan, vars.zetah)
   ldiv!(vars.u, grid.rfftplan, vars.uh)
@@ -251,15 +251,15 @@ Update the variables in `vars` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
   @. vars.zetah = sol
-  @. vars.psih  = - vars.zetah / (grid.Krsq + 1 / params.deformation_radius^2)
+  @. vars.ψh  = - vars.zetah / (grid.Krsq + 1 / params.deformation_radius^2)
   if params.deformation_radius == Inf
-      CUDA.@allowscalar vars.psih[1, 1] = 0
+      CUDA.@allowscalar vars.ψh[1, 1] = 0
   end
-  @. vars.uh    = -im * grid.l  * vars.psih
-  @. vars.vh    =  im * grid.kr * vars.psih
+  @. vars.uh    = -im * grid.l  * vars.ψh
+  @. vars.vh    =  im * grid.kr * vars.ψh
 
   ldiv!(vars.zeta, grid.rfftplan, deepcopy(vars.zetah))
-  ldiv!(vars.psi, grid.rfftplan, deepcopy(vars.psih))
+  ldiv!(vars.ψ, grid.rfftplan, deepcopy(vars.ψh))
   ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh))
   ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh))
 
