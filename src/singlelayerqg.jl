@@ -36,24 +36,23 @@ Construct a BarotropicQG turbulence problem.
 
 function Problem(dev::Device=CPU();
   # Numerical parameters
-          nx = 256,
-          Lx = 2π,
-          ny = nx,
-          Ly = Lx,
-          dt = 0.01,
+                  nx = 256,
+                  Lx = 2π,
+                   Ly = Lx,
+                  dt = 0.01,
   # Physical parameters
-           β = 0.0,
-        kdef = 0.0,
-         eta = nothing,
+                   β = 0.0,
+  deformation_radius = Inf,
+                 eta = nothing,
   # Drag and/or hyper-/hypo-viscosity
-           ν = 0.0,
-          nν = 1,
-           μ = 0.0,
+                   ν = 0.0,
+                  nν = 1,
+                   μ = 0.0,
   # Timestepper and equation options
-     stepper = "RK4",
-       calcF = nothingfunction,
-  stochastic = false,
-           T = Float64)
+             stepper = "RK4",
+               calcF = nothingfunction,
+          stochastic = false,
+                   T = Float64)
 
   # the grid
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
@@ -62,7 +61,7 @@ function Problem(dev::Device=CPU();
   # topographic PV
   eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
 
-  params = !(typeof(eta)<:ArrayType(dev)) ? Params(grid, β, kdef, eta, μ, ν, nν, calcF) : Params(β, kdef, eta, rfft(eta), μ, ν, nν, calcF)
+  params = !(typeof(eta)<:ArrayType(dev)) ? Params(grid, β, deformation_radius, eta, μ, ν, nν, calcF) : Params(β, deformation_radius, eta, rfft(eta), μ, ν, nν, calcF)
 
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
@@ -82,14 +81,14 @@ end
 Returns the params for an unforced two-dimensional barotropic QG problem.
 """
 struct Params{T, Aphys, Atrans} <: AbstractParams
-        β :: T            # Planetary vorticity y-gradient
-     kdef :: T            # deformation wavenumber
-      eta :: Aphys        # Topographic PV
-     etah :: Atrans       # FFT of Topographic PV
-        μ :: T            # Linear drag
-        ν :: T            # Viscosity coefficient
-       nν :: Int          # Hyperviscous order (nν=1 is plain old viscosity)
-   calcF! :: Function     # Function that calculates the forcing on QGPV q
+                   β :: T            # Planetary vorticity y-gradient
+  deformation_radius :: T            # deformation radius
+                 eta :: Aphys        # Topographic PV
+                etah :: Atrans       # FFT of Topographic PV
+                   μ :: T            # Linear drag
+                   ν :: T            # Viscosity coefficient
+                  nν :: Int          # Hyperviscous order (nν=1 is plain old viscosity)
+              calcF! :: Function     # Function that calculates the forcing on QGPV q
 end
 
 """
@@ -97,10 +96,10 @@ end
 
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function Params(grid::AbstractGrid{T, A}, β, kdef, eta::Function, μ, ν, nν::Int, calcF) where {T, A}
+function Params(grid::AbstractGrid{T, A}, β, deformation_radius, eta::Function, μ, ν, nν::Int, calcF) where {T, A}
   etagrid = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
   etah = rfft(etagrid)
-  return Params(β, kdef, etagrid, etah, μ, ν, nν, calcF)
+  return Params(β, deformation_radius, etagrid, etah, μ, ν, nν, calcF)
 end
 
 
@@ -187,8 +186,8 @@ end
 
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.zetah = sol
-  @. vars.psih  = - vars.zetah / (grid.Krsq + params.kdef^2)
-  if params.kdef == 0.0
+  @. vars.psih  = - vars.zetah / (grid.Krsq + 1 / params.deformation_radius^2)
+  if params.deformation_radius == Inf
       CUDA.@allowscalar vars.psih[1, 1] = 0
   end
   @. vars.uh    = -im * grid.l  * vars.psih
@@ -252,8 +251,8 @@ Update the variables in `vars` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
   @. vars.zetah = sol
-  @. vars.psih  = - vars.zetah / (grid.Krsq + params.kdef^2)
-  if params.kdef == 0.0
+  @. vars.psih  = - vars.zetah / (grid.Krsq + 1 / params.deformation_radius^2)
+  if params.deformation_radius == Inf
       CUDA.@allowscalar vars.psih[1, 1] = 0
   end
   @. vars.uh    = -im * grid.l  * vars.psih
@@ -298,23 +297,23 @@ set_zeta!(prob, zeta) = set_zeta!(prob.sol, prob.vars, prob.params, prob.grid, z
     potential_energy(vars, grid, params)
 
 Returns the domain-averaged kinetic energy of solution `sol`: ∫ ½ (u²+v²) dxdy / (Lx Ly) = ∑ ½ k² |ψ̂|² / (Lx Ly).
-Returns the domain-averaged potential energy of solution `sol`: ½ kdef² ∫ ψ² dxdy / (Lx Ly) = ½ kdef² ∑ |ψ̂|² / (Lx Ly).
+Returns the domain-averaged potential energy of solution `sol`: ½ 1 / deformation_radius² ∫ ψ² dxdy / (Lx Ly) = ½ 1 / deformation_radius² ∑ |ψ̂|² / (Lx Ly).
 
 """
 function kinetic_energy(sol, grid, vars, params)
-    @. vars.uh = sqrt.(grid.Krsq) * sol /(grid.Krsq + params.kdef^2) ## uh is a dummy variable
-    if params.kdef == 0.0
+    @. vars.uh = sqrt.(grid.Krsq) * sol / (grid.Krsq + 1 / params.deformation_radius^2) ## uh is a dummy variable
+    if params.deformation_radius == Inf
         CUDA.@allowscalar vars.uh[1, 1] = 0
     end
     return parsevalsum2(vars.uh , grid) / (2 * grid.Lx * grid.Ly)
 end
 
 function potential_energy(sol, grid, vars, params)
-    @. vars.uh = sol /(grid.Krsq + params.kdef^2) ## uh is a dummy variable
-    if params.kdef == 0.0
+    @. vars.uh = sol /(grid.Krsq + 1 / params.deformation_radius^2) ## uh is a dummy variable
+    if params.deformation_radius == Inf
         CUDA.@allowscalar vars.uh[1, 1] = 0
     end
-    return params.kdef^2*parsevalsum2(vars.uh, grid) / (2 * grid.Lx * grid.Ly)
+    return 1 / params.deformation_radius^2 * parsevalsum2(vars.uh, grid) / (2 * grid.Lx * grid.Ly)
 end
 
 kinetic_energy(prob) = kinetic_energy(prob.sol, prob.grid, prob.vars, prob.params)
