@@ -11,8 +11,7 @@ using Statistics: mean
 using FFTW: irfft
 
 import GeophysicalFlows.SingleLayerQG
-import GeophysicalFlows.SingleLayerQG: kinetic_energy, enstrophy
-energy = kinetic_energy
+import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 
 # ## Choosing a device: CPU or GPU
@@ -85,7 +84,7 @@ Random.seed!(1234)
 qih = randn(Complex{eltype(grid)}, size(sol))
 @. qih = ifelse(K < 6  * 2π/L, 0, qih)
 @. qih = ifelse(K > 12 * 2π/L, 0, qih)
-qih *= sqrt(E₀ / energy(qih, grid, vars, params))  # normalize qi to have energy E₀
+qih *= sqrt(E₀ / energy(qih, vars, params, grid))  # normalize qi to have energy E₀
 qi = irfft(qih, grid.nx)
 
 SingleLayerQG.set_ζ!(prob, qi)
