@@ -22,9 +22,9 @@ devices = (CPU(),)
 
 const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
 const rtol_twodnavierstokes = 1e-13 # tolerance for twodnavierstokes forcing tests
-const rtol_barotropicQG = 1e-13 # tolerance for barotropicqg forcing tests
+const rtol_singlelayerqg = 1e-13 # tolerance for singlelayerqg forcing tests
 const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
-const rtol_surfaceqg = 1e-13 # tolerance for multilayerqg forcing tests
+const rtol_surfaceqg = 1e-13 # tolerance for surfaceqg forcing tests
 
 
 # Run tests
@@ -53,25 +53,25 @@ for dev in devices
     @test test_twodnavierstokes_problemtype(dev, Float32)
     @test TwoDNavierStokes.nothingfunction() == nothing
   end
-   
+  
   @testset "SingleLayerQG" begin
     include("test_singlelayerqg.jl")
 
-    @test test_bqg_rossbywave("ETDRK4", 1e-2, 20, dev)
-    @test test_bqg_rossbywave("FilteredETDRK4", 1e-2, 20, dev)
-    @test test_bqg_rossbywave("RK4", 1e-2, 20, dev)
-    @test test_bqg_rossbywave("FilteredRK4", 1e-2, 20, dev)
-    @test test_bqg_rossbywave("AB3", 1e-3, 200, dev)
-    @test test_bqg_rossbywave("FilteredAB3", 1e-3, 200, dev)
-    @test test_bqg_rossbywave("ForwardEuler", 1e-4, 2000, dev)
-    @test test_bqg_rossbywave("FilteredForwardEuler", 1e-4, 2000, dev)
-    @test test_bqg_deterministicforcing_energybudget(dev)
-    @test test_bqg_stochasticforcing_energybudget(dev)
-    @test test_bqg_deterministicforcing_enstrophybudget(dev)
-    @test test_bqg_stochasticforcing_enstrophybudget(dev)
-    @test test_bqg_advection(0.0005, "ForwardEuler", dev)
-    @test test_bqg_energyenstrophy(dev)
-    @test test_bqg_problemtype(dev, Float32)
+    @test test_1layerqg_rossbywave("ETDRK4", 1e-2, 20, dev)
+    @test test_1layerqg_rossbywave("FilteredETDRK4", 1e-2, 20, dev)
+    @test test_1layerqg_rossbywave("RK4", 1e-2, 20, dev)
+    @test test_1layerqg_rossbywave("FilteredRK4", 1e-2, 20, dev)
+    @test test_1layerqg_rossbywave("AB3", 1e-3, 200, dev)
+    @test test_1layerqg_rossbywave("FilteredAB3", 1e-3, 200, dev)
+    @test test_1layerqg_rossbywave("ForwardEuler", 1e-4, 2000, dev)
+    @test test_1layerqg_rossbywave("FilteredForwardEuler", 1e-4, 2000, dev)
+    @test test_1layerqg_deterministicforcing_energybudget(dev)
+    @test test_1layerqg_stochasticforcing_energybudget(dev)
+    @test test_1layerqg_deterministicforcing_enstrophybudget(dev)
+    @test test_1layerqg_stochasticforcing_enstrophybudget(dev)
+    @test test_1layerqg_advection(0.0005, "ForwardEuler", dev)
+    @test test_1layerqg_energyenstrophy(dev)
+    @test test_1layerqg_problemtype(dev, Float32)
     @test SingleLayerQG.nothingfunction() == nothing
   end
    

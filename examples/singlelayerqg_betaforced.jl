@@ -115,7 +115,7 @@ heatmap(x, y, irfft(vars.Fh, grid.nx)',
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
-SingleLayerQG.set_zeta!(prob, zeros(grid.nx, grid.ny))
+SingleLayerQG.set_ζ!(prob, zeros(grid.nx, grid.ny))
 
 
 # ## Diagnostics
@@ -154,8 +154,8 @@ nothing # hide
 # corresponding zonal mean structure and timeseries of energy and enstrophy.
 
 function plot_output(prob)
-  ζ = prob.vars.zeta
-  ψ = prob.vars.psi
+  ζ = prob.vars.ζ
+  ψ = prob.vars.ψ
   ζ̄ = mean(ζ, dims=1)'
   ū = mean(prob.vars.u, dims=1)'
   
@@ -254,10 +254,10 @@ anim = @animate for j = 0:Int(nsteps / nsubs)
     println(log)
   end  
   
-  p[1][1][:z] = vars.zeta
+  p[1][1][:z] = vars.ζ
   p[1][:title] = "vorticity, μt="*@sprintf("%.2f", μ * clock.t)
-  p[4][1][:z] = vars.psi
-  p[2][1][:x] = mean(vars.zeta, dims=1)'
+  p[4][1][:z] = vars.ψ
+  p[2][1][:x] = mean(vars.ζ, dims=1)'
   p[5][1][:x] = mean(vars.u, dims=1)'
   push!(p[3][1], μ * E.t[E.i], E.data[E.i])
   push!(p[6][1], μ * Z.t[Z.i], Z.data[Z.i])

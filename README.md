@@ -47,7 +47,7 @@ Some animations created with GeophysicalFlows.jl are [online @ youtube].
 All modules provide solvers on two-dimensional domains. We currently provide
 
 * `TwoDNavierStokes`: the two-dimensional vorticity equation.
-* `BarotropicQG`: the barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography and Coriolis parameters of the form `f = f₀ + βy`.
+* `SingleLayerQG`: the barotropic or equivalent-barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography and Coriolis parameters of the form `f = f₀ + βy` and finite Rossby radius of deformation.
 * `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
 * `MultilayerQG`: a multi-layer quasi-geostrophic model over topography and with the ability to impose a zonal flow `U_n(y)` in each layer.
 * `SurfaceQG`: a surface quasi-geostrophic model.
