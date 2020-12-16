@@ -141,7 +141,7 @@ nothing # hide
 function plot_output(prob)
   q = prob.vars.q
   ψ = prob.vars.ψ
-  q̄ = mean(q̄, dims=1)'
+  q̄ = mean(q, dims=1)'
   ū = mean(prob.vars.u, dims=1)'
 
   pq = heatmap(x, y, q',
