@@ -114,7 +114,7 @@ heatmap(x, y, irfft(vars.Fh, grid.nx)',
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
-SingleLayerQG.set_ζ!(prob, zeros(grid.nx, grid.ny))
+SingleLayerQG.set_q!(prob, zeros(grid.nx, grid.ny))
 
 
 # ## Diagnostics

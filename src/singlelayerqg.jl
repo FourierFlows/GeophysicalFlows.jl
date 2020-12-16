@@ -2,7 +2,7 @@ module SingleLayerQG
 
 export
   Problem,
-  set_ζ!,
+  set_q!,
   updatevars!,
 
   energy,
@@ -153,12 +153,10 @@ abstract type SingleLayerQGVars <: AbstractVars end
 
 struct Vars{Aphys, Atrans, F, P} <: SingleLayerQGVars
         q :: Aphys
-        ζ :: Aphys
         ψ :: Aphys
         u :: Aphys
         v :: Aphys
        qh :: Atrans
-       ζh :: Atrans
        ψh :: Atrans
        uh :: Atrans
        vh :: Atrans
@@ -176,9 +174,9 @@ Returns the vars for unforced two-dimensional barotropic QG problem on device `d
 """
 function Vars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) q u v ψ ζ
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh ζh
-  Vars(q, ζ, ψ, u, v, qh, ζh, ψh, uh, vh, nothing, nothing)
+  @devzeros Dev T (grid.nx, grid.ny) q u v ψ
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh
+  Vars(q, ψ, u, v, qh, ψh, uh, vh, nothing, nothing)
 end
 
 """
@@ -188,9 +186,9 @@ Returns the vars for forced two-dimensional barotropic QG problem on device dev 
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) q u v ψ ζ
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh ζh Fh
-  return Vars(q, ζ, ψ, u, v, qh, ζh, ψh, uh, vh, Fh, nothing)
+  @devzeros Dev T (grid.nx, grid.ny) q u v ψ
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh Fh
+  return Vars(q, ψ, u, v, qh, ψh, uh, vh, Fh, nothing)
 end
 
 """
@@ -200,9 +198,9 @@ Returns the vars for stochastically forced two-dimensional barotropic QG problem
 """
 function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) q u v ψ ζ
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh ζh Fh prevsol
-  return Vars(q, ζ, ψ, u, v, qh, ζh, ψh, uh, vh, Fh, prevsol)
+  @devzeros Dev T (grid.nx, grid.ny) q u v ψ
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh Fh prevsol
+  return Vars(q, ψ, u, v, qh, ψh, uh, vh, Fh, prevsol)
 end
 
 
@@ -211,27 +209,26 @@ end
 # -------
 
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
-  @. vars.ζh = sol
-  streamfunctionfrompv!(vars.ψh, vars.ζh, params, grid)
+  @. vars.qh = sol
+  streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
   @. vars.uh = -im * grid.l  * vars.ψh
   @. vars.vh =  im * grid.kr * vars.ψh
 
-  ldiv!(vars.ζ, grid.rfftplan, vars.ζh)
+  ldiv!(vars.q, grid.rfftplan, vars.qh)
   ldiv!(vars.u, grid.rfftplan, vars.uh)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
 
-  @. vars.q = vars.ζ + params.eta
-  uq = vars.u                                            # use vars.u as scratch variable
-  @. uq *= vars.q                                        # u*q
-  vq = vars.v                                            # use vars.v as scratch variable
-  @. vq *= vars.q                                        # v*q
+  uq_plus_η = vars.u                                            # use vars.u as scratch variable
+  @. uq_plus_η *= vars.q + params.eta                           # u*(q+η)
+  vq_plus_η = vars.v                                            # use vars.v as scratch variable
+  @. vq_plus_η *= vars.q + params.eta                           # v*(q+η)
 
-  uqh = vars.uh                                          # use vars.uh as scratch variable
-  mul!(uqh, grid.rfftplan, uq)                           # \hat{u*q}
-  vqh = vars.vh                                          # use vars.vh as scratch variable
-  mul!(vqh, grid.rfftplan, vq)                           # \hat{v*q}
+  uq_plus_ηh = vars.uh                                          # use vars.uh as scratch variable
+  mul!(uq_plus_ηh, grid.rfftplan, uq_plus_η)                    # \hat{u*(q+η)}
+  vq_plus_ηh = vars.vh                                          # use vars.vh as scratch variable
+  mul!(vq_plus_ηh, grid.rfftplan, vq_plus_η)                    # \hat{v*(q+η)}
 
-  @. N = -im * grid.kr * uqh - im * grid.l * vqh         # -∂(u*q)/∂x -∂(v*q)/∂y
+  @. N = -im * grid.kr * uq_plus_ηh - im * grid.l * vq_plus_ηh  # -∂[u*(q+η)]/∂x -∂[v*(q+η)]/∂y
   return nothing
 end
 
@@ -286,17 +283,15 @@ end
 Update the variables in `vars` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
-  @. vars.ζh = sol
-  streamfunctionfrompv!(vars.ψh, vars.ζh, params, grid)
+  @. vars.qh = sol
+  streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
   @. vars.uh = -im * grid.l  * vars.ψh
   @. vars.vh =  im * grid.kr * vars.ψh
 
-  ldiv!(vars.ζ, grid.rfftplan, deepcopy(vars.ζh))
+  ldiv!(vars.q, grid.rfftplan, deepcopy(vars.qh))
   ldiv!(vars.ψ, grid.rfftplan, deepcopy(vars.ψh))
   ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh))
   ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh))
-
-  @. vars.q = vars.ζ + params.eta
 
   return nothing
 end
@@ -304,23 +299,23 @@ end
 updatevars!(prob) = updatevars!(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
-    set_ζ!(prob, ζ)
-    set_ζ!(sol, vars, params, grid)
+    set_q!(prob, q)
+    set_q!(sol, vars, params, grid)
 
-Set the solution `sol` as the transform of ζ and update variables `vars`
+Set the solution `sol` as the transform of q and update variables `vars`
 on the `grid`.
 """
-function set_ζ!(sol, vars, params, grid, ζ)
-  mul!(vars.ζh, grid.rfftplan, ζ)
+function set_q!(sol, vars, params, grid, q)
+  mul!(vars.qh, grid.rfftplan, q)
 
-  @. sol = vars.ζh
+  @. sol = vars.qh
 
   updatevars!(sol, vars, params, grid)
 
   return nothing
 end
 
-set_ζ!(prob, ζ) = set_ζ!(prob.sol, prob.vars, prob.params, prob.grid, ζ)
+set_q!(prob, q) = set_q!(prob.sol, prob.vars, prob.params, prob.grid, q)
 
 
 """
@@ -383,11 +378,11 @@ flow.
     enstrophy(prob)
     enstrophy(sol, vars, params, grid)
 
-Returns the domain-averaged enstrophy ½ ∫ q² dxdy / (Lx Ly), with q = ζ + η and sol = ζ.
+Returns the domain-averaged enstrophy ½ ∫ (q + η)² dxdy / (Lx Ly), where `sol = q`.
 """
 function enstrophy(sol, vars, params, grid)
-  @. vars.ζh = sol
-  return parsevalsum2(vars.ζh + params.etah, grid) / (2 * grid.Lx * grid.Ly)
+  @. vars.qh = sol
+  return parsevalsum2(vars.qh + params.etah, grid) / (2 * grid.Lx * grid.Ly)
 end
 
 @inline enstrophy(prob) = enstrophy(prob.sol, prob.vars, prob.params, prob.grid)
@@ -396,11 +391,11 @@ end
     reduced_enstrophy(prob)
     reduced_enstrophy(sol, vars, params, grid)
 
-Returns the domain-averaged reduced enstrophy ½ ∫(ζ² + 2ζη) dxdy / (Lx Ly) .
+Returns the domain-averaged reduced enstrophy ½ ∫[(q+η)² + 2qη] dxdy / (Lx Ly) .
 """
 function reduced_enstrophy(sol, vars, params, grid)
-  @. vars.ζh = sol
-  return parsevalsum(abs2.(vars.ζh) .+ 2 * vars.ζh .* params.etah, grid) / (2 * grid.Lx * grid.Ly)
+  @. vars.qh = sol
+  return parsevalsum(abs2.(vars.qh) .+ 2 * vars.qh .* params.etah, grid) / (2 * grid.Lx * grid.Ly)
 end
 
 @inline reduced_enstrophy(prob) = reduced_enstrophy(prob.sol, prob.vars, prob.params, prob.grid)

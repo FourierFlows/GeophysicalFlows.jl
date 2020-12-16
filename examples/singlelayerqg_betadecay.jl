@@ -68,7 +68,7 @@ qih = randn(Complex{eltype(grid)}, size(sol))
 qih *= sqrt(E₀ / energy(qih, vars, params, grid)) # normalize qi to have energy E₀
 qi = irfft(qih, grid.nx)
 
-SingleLayerQG.set_ζ!(prob, qi)
+SingleLayerQG.set_q!(prob, qi)
 nothing # hide
 
 # Let's plot the initial vorticity field:

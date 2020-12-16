@@ -15,19 +15,20 @@ fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). He
 
 where ``\ell`` is the Rossby radius of deformation. Purely barotropic dynamics corresponds to 
 infinite Rossby radius of deformation (``\ell = \infty``), while a flow with a finite Rossby 
-radius follows is said to obey equivalent-barotropic dynamics.
+radius follows is said to obey equivalent-barotropic dynamics. We denote the sum of the relative
+vorticity and the vortex stretching contributions to the QGPV with ``q = \nabla\^2\psi - \psi/\ell^2``.
+Also, we denote the topographic PV with ``\eta \equiv f_0 h / H``.
 
-The dynamical variable is the component of the vorticity of the flow normal to the plane of 
-motion, ``\zeta \equiv \partial_x \upsilon- \partial_y u = \nabla^2\psi``. Also, we denote the topographic PV with ``\eta \equiv f_0 h / H``. Thus, the equation solved by the module is:
+The dynamical variable is ``q``.  Thus, the equation solved by the module is:
 
 ```math
-\partial_t \zeta + \mathsf{J}(\psi, \underbrace{\zeta + \eta}_{\equiv q}) +
-\beta\partial_x\psi = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
-\right] \zeta }_{\textrm{dissipation}} + f \ .
+\partial_t q + \mathsf{J}(\psi, q + \eta) +
+\beta \partial_x \psi = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
+\right] q}_{\textrm{dissipation}} + f \ .
 ```
 
 where ``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x b)``. On 
-the right hand side, ``f(x, y, t)`` is forcing, ``\mu`` is linear drag, and ``\nu`` is hyperviscosity of order ``n_\nu``. Plain old viscosity corresponds to ``n_\nu = 1``. The sum of relative vorticity and topographic PV is denoted with ``q \equiv \zeta + \eta``.
+the right hand side, ``f(x, y, t)`` is forcing, ``\mu`` is linear drag, and ``\nu`` is hyperviscosity of order ``n_\nu``. Plain old viscosity corresponds to ``n_\nu = 1``.
 
 The kinetic energy of the fluid is computed via:
 
@@ -52,7 +53,7 @@ GeophysicalFlows.SingleLayerQG.energy
 The equation is time-stepped forward in Fourier space:
 
 ```math
-\partial_t \widehat{\zeta} = - \widehat{\mathsf{J}(\psi, q)} + \beta \frac{\mathrm{i} k_x}{k^2} \widehat{\zeta} - \left(\mu + \nu k^{2n_\nu} \right) \widehat{\zeta} + \widehat{f} \ .
+\partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q + \eta)} + \beta \frac{\mathrm{i} k_x}{k^2} \widehat{q} - \left(\mu + \nu k^{2n_\nu} \right) \widehat{q} + \widehat{f} \ .
 ```
 
 In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) =
@@ -62,8 +63,8 @@ Thus:
 
 ```math
 \begin{aligned}
-\mathcal{L} & = \beta \frac{\mathrm{i} k_x}{k^2} - \mu - \nu k^{2n_\nu} \ , \\
-\mathcal{N}(\widehat{\zeta}) & = - \mathrm{i} k_x \mathrm{FFT}(u q) - \mathrm{i} k_y \mathrm{FFT}(\upsilon q) \ .
+\mathcal{L} & = \beta \frac{\mathrm{i} k_x}{k^2 + 1/\ell^2} - \mu - \nu k^{2n_\nu} \ , \\
+\mathcal{N}(\widehat{q}) & = - \mathrm{i} k_x \mathrm{FFT}[u (q+\eta)] - \mathrm{i} k_y \mathrm{FFT}[\upsilon (q+\eta)] \ .
 \end{aligned}
 ```
 
