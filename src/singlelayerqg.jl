@@ -321,7 +321,10 @@ set_ζ!(prob, ζ) = set_ζ!(prob.sol, prob.vars, prob.params, prob.grid, ζ)
     kinetic_energy(prob)
     kinetic_energy(sol, grid, vars, params)
 
-Returns the domain-averaged kinetic energy of solution `sol`: ∫ ½ (u²+v²) dxdy / (Lx Ly) = ∑ ½ k² |ψ̂|² / (Lx Ly).
+Returns the domain-averaged kinetic energy of the fluid, 
+```math
+\\textrm{KE} = \\int \\frac1{2} |\\boldsymbol{\\nabla} \\psi|^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ .
+```
 """
 function kinetic_energy(sol, vars, params, grid)
   streamfunctionfrompv!(vars.ψh, sol, params, grid)
@@ -336,7 +339,10 @@ kinetic_energy(prob) = kinetic_energy(prob.sol, prob.vars, prob.params, prob.gri
     potential_energy(prob)
     potential_energy(sol, grid, vars, params)
 
-Returns the domain-averaged potential energy of solution `sol`: ½ 1 / deformation_radius² ∫ ψ² dxdy / (Lx Ly) = ½ 1 / deformation_radius² ∑ |ψ̂|² / (Lx Ly).
+Returns the domain-averaged potential energy of the fluid, 
+```math
+\\textrm{PE} = \\int \\frac1{2 \ell^2} \\psi^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ .
+```
 """
 function potential_energy(sol, vars, params::EquivalentBarotropicQGParams, grid)
   streamfunctionfrompv!(vars.ψh, sol, params, grid)
@@ -349,7 +355,7 @@ potential_energy(prob) = potential_energy(prob.sol, prob.vars, prob.params, prob
     energy(prob)
     energy(sol, grid, vars, params)
 
-Returns the total domain-averaged energy of solution `sol`. This is the kinetic energy for a
+Returns the domain-averaged total energy of solution `sol`. This is the kinetic energy for a
 pure barotropic flow or the sum of kinetic and potential energies for an equivalent barotropic
 flow.
 """
