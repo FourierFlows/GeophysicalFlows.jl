@@ -16,7 +16,7 @@ fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). He
 where ``\ell`` is the Rossby radius of deformation. Purely barotropic dynamics corresponds to 
 infinite Rossby radius of deformation (``\ell = \infty``), while a flow with a finite Rossby 
 radius follows is said to obey equivalent-barotropic dynamics. We denote the sum of the relative
-vorticity and the vortex stretching contributions to the QGPV with ``q = \nabla\^2\psi - \psi/\ell^2``.
+vorticity and the vortex stretching contributions to the QGPV with ``q = \nabla^2 \psi - \psi / \ell^2``.
 Also, we denote the topographic PV with ``\eta \equiv f_0 h / H``.
 
 The dynamical variable is ``q``.  Thus, the equation solved by the module is:
@@ -53,7 +53,7 @@ GeophysicalFlows.SingleLayerQG.energy
 The equation is time-stepped forward in Fourier space:
 
 ```math
-\partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q + \eta)} + \beta \frac{\mathrm{i} k_x}{k^2} \widehat{q} - \left(\mu + \nu k^{2n_\nu} \right) \widehat{q} + \widehat{f} \ .
+\partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q + \eta)} + \beta \frac{\mathrm{i} k_x}{k^2 + 1/\ell^2} \widehat{q} - \left(\mu + \nu k^{2n_\nu} \right) \widehat{q} + \widehat{f} \ .
 ```
 
 In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) =

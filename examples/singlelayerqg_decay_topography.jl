@@ -102,7 +102,7 @@ p1 = heatmap(x, y, vars.q',
          yticks = -3:3,
          xlabel = "x",
          ylabel = "y",
-          title = "initial vorticity ζ=∂v/∂x-∂u/∂y",
+          title = "initial vorticity ∂v/∂x-∂u/∂y",
      framestyle = :box)
 
 p2 = contourf(x, y, vars.ψ',
@@ -155,11 +155,11 @@ nothing # hide
 # their corresponding zonal mean structure.
 
 function plot_output(prob)
-  ζ = prob.vars.ζ
+  q = prob.vars.q
   ψ = prob.vars.ψ
   η = prob.params.eta
 
-  pζ = heatmap(x, y, ζ',
+  pq = heatmap(x, y, q',
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -170,14 +170,14 @@ function plot_output(prob)
             yticks = -3:3,
             xlabel = "x",
             ylabel = "y",
-             title = "vorticity ζ=∂v/∂x-∂u/∂y",
+             title = "vorticity ∂v/∂x-∂u/∂y",
         framestyle = :box)
   
-  contour!(pζ, x, y, η',
+  contour!(pq, x, y, η',
           levels=0.5:0.5:3,
           lw=2, c=:black, ls=:solid, alpha=0.7)
   
-  contour!(pζ, x, y, η',
+  contour!(pq, x, y, η',
           levels=-2:0.5:-0.5,
           lw=2, c=:black, ls=:dash, alpha=0.7)
     
@@ -197,7 +197,7 @@ function plot_output(prob)
         framestyle = :box)
 
   l = @layout Plots.grid(1, 2)
-  p = plot(pζ, pψ, layout = l, size = (900, 400))
+  p = plot(pq, pψ, layout = l, size = (900, 400))
   
   return p
 end
@@ -223,7 +223,7 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.ζ
+  p[1][1][:z] = vars.q
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
   p[2][1][:z] = vars.ψ
 

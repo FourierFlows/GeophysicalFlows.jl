@@ -324,10 +324,7 @@ set_q!(prob, q) = set_q!(prob.sol, prob.vars, prob.params, prob.grid, q)
 
 Returns the domain-averaged kinetic energy of the fluid, 
 ```math
-\\begin{aligned}
-\\textrm{KE} & = \\int \\frac1{2} |\\boldsymbol{\\nabla} \\psi|^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\\\
-& = \\sum_{\\boldsymbol{k}} \\frac1{2} |\\boldsymbol{k}|^2 |\\hat{\\psi}|^2 \\ .
-\\end{aligned}
+\\textrm{KE} = \\int \\frac1{2} |\\boldsymbol{\\nabla} \\psi|^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} = \\sum_{\\boldsymbol{k}} \\frac1{2} |\\boldsymbol{k}|^2 |\\hat{\\psi}|^2 \\ .
 ```
 """
 function kinetic_energy(sol, vars, params, grid)
@@ -345,10 +342,7 @@ kinetic_energy(prob) = kinetic_energy(prob.sol, prob.vars, prob.params, prob.gri
 
 Returns the domain-averaged potential energy of the fluid, 
 ```math
-\\begin{aligned}
-\\textrm{PE} & = \\int \\frac1{2} \\frac{\\psi^2}{\\ell^2} \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\\\
-& = \\sum_{\\boldsymbol{k}} \\frac1{2} \frac{|\\hat{\\psi}|^2}{\\ell^2} \\ .
-\\end{aligned}
+\\textrm{PE} = \\int \\frac1{2} \\frac{\\psi^2}{\\ell^2} \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} = \\sum_{\\boldsymbol{k}} \\frac1{2} \\frac{|\\hat{\\psi}|^2}{\\ell^2} \\ .
 ```
 """
 function potential_energy(sol, vars, params::EquivalentBarotropicQGParams, grid)

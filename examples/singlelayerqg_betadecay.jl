@@ -83,7 +83,7 @@ p1 = heatmap(x, y, vars.q',
          yticks = -3:3,
          xlabel = "x",
          ylabel = "y",
-          title = "initial vorticity ζ=∂v/∂x-∂u/∂y",
+          title = "initial vorticity ∂v/∂x-∂u/∂y",
      framestyle = :box)
 
 p2 = contourf(x, y, vars.ψ',
@@ -139,12 +139,12 @@ nothing # hide
 # their corresponding zonal mean structure.
 
 function plot_output(prob)
-  ζ = prob.vars.ζ
+  q = prob.vars.q
   ψ = prob.vars.ψ
-  ζ̄ = mean(ζ, dims=1)'
+  q̄ = mean(q̄, dims=1)'
   ū = mean(prob.vars.u, dims=1)'
 
-  pζ = heatmap(x, y, ζ',
+  pq = heatmap(x, y, q',
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -155,7 +155,7 @@ function plot_output(prob)
             yticks = -3:3,
             xlabel = "x",
             ylabel = "y",
-             title = "vorticity ζ=∂v/∂x-∂u/∂y",
+             title = "vorticity ∂v/∂x-∂u/∂y",
         framestyle = :box)
 
   pψ = contourf(x, y, ψ',
@@ -173,15 +173,15 @@ function plot_output(prob)
              title = "streamfunction ψ",
         framestyle = :box)
 
-  pζm = plot(ζ̄, y,
+  pqm = plot(q̄, y,
             legend = false,
          linewidth = 2,
              alpha = 0.7,
             yticks = -3:3,
              xlims = (-2.2, 2.2),
-            xlabel = "zonal mean ζ",
+            xlabel = "zonal mean q",
             ylabel = "y")
-  plot!(pζm, 0*y, y, linestyle=:dash, linecolor=:black)
+  plot!(pqm, 0*y, y, linestyle=:dash, linecolor=:black)
 
   pum = plot(ū, y,
             legend = false,
@@ -194,7 +194,7 @@ function plot_output(prob)
   plot!(pum, 0*y, y, linestyle=:dash, linecolor=:black)
 
   l = @layout Plots.grid(2, 2)
-  p = plot(pζ, pζm, pψ, pum, layout = l, size = (900, 800))
+  p = plot(pq, pqm, pψ, pum, layout = l, size = (900, 800))
   
   return p
 end
@@ -220,10 +220,10 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.ζ
+  p[1][1][:z] = vars.q
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
   p[3][1][:z] = vars.ψ
-  p[2][1][:x] = mean(vars.ζ, dims=1)'
+  p[2][1][:x] = mean(vars.q, dims=1)'
   p[4][1][:x] = mean(vars.u, dims=1)'
 
   stepforward!(prob, diags, nsubs)

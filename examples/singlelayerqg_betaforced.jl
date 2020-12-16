@@ -153,12 +153,12 @@ nothing # hide
 # corresponding zonal mean structure and timeseries of energy and enstrophy.
 
 function plot_output(prob)
-  ζ = prob.vars.ζ
+  q = prob.vars.q
   ψ = prob.vars.ψ
-  ζ̄ = mean(ζ, dims=1)'
+  q̄ = mean(q, dims=1)'
   ū = mean(prob.vars.u, dims=1)'
   
-  pζ = heatmap(x, y, ζ',
+  pq = heatmap(x, y, q',
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -169,7 +169,7 @@ function plot_output(prob)
             yticks = -3:3,
             xlabel = "x",
             ylabel = "y",
-             title = "vorticity ζ=∂v/∂x-∂u/∂y",
+             title = "vorticity ∂v/∂x-∂u/∂y",
         framestyle = :box)
 
   pψ = contourf(x, y, ψ',
@@ -188,15 +188,15 @@ function plot_output(prob)
              title = "streamfunction ψ",
         framestyle = :box)
 
-  pζm = plot(ζ̄, y,
+  pqm = plot(q̄, y,
             legend = false,
          linewidth = 2,
              alpha = 0.7,
             yticks = -3:3,
              xlims = (-3, 3),
-            xlabel = "zonal mean ζ",
+            xlabel = "zonal mean q",
             ylabel = "y")
-  plot!(pζm, 0*y, y, linestyle=:dash, linecolor=:black)
+  plot!(pqm, 0*y, y, linestyle=:dash, linecolor=:black)
 
   pum = plot(ū, y,
             legend = false,
@@ -227,7 +227,7 @@ function plot_output(prob)
             xlabel = "μt")
 
   l = @layout Plots.grid(2, 3)
-  p = plot(pζ, pζm, pE, pψ, pum, pZ, layout=l, size = (1000, 600))
+  p = plot(pq, pqm, pE, pψ, pum, pZ, layout=l, size = (1000, 600))
 
   return p
 end
@@ -253,10 +253,10 @@ anim = @animate for j = 0:Int(nsteps / nsubs)
     println(log)
   end  
   
-  p[1][1][:z] = vars.ζ
+  p[1][1][:z] = vars.q
   p[1][:title] = "vorticity, μt="*@sprintf("%.2f", μ * clock.t)
   p[4][1][:z] = vars.ψ
-  p[2][1][:x] = mean(vars.ζ, dims=1)'
+  p[2][1][:x] = mean(vars.q, dims=1)'
   p[5][1][:x] = mean(vars.u, dims=1)'
   push!(p[3][1], μ * E.t[E.i], E.data[E.i])
   push!(p[6][1], μ * Z.t[Z.i], Z.data[Z.i])
