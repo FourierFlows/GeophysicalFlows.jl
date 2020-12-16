@@ -132,8 +132,14 @@ end
 
 Returns the equation for two-dimensional barotropic QG problem with `params` and `grid`.
 """
-function Equation(params::Params, grid::AbstractGrid)
+function Equation(params::BarotropicQGParams, grid::AbstractGrid)
   L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq
+  CUDA.@allowscalar L[1, 1] = 0
+  return FourierFlows.Equation(L, calcN!, grid)
+end
+
+function Equation(params::EquivalentBarotropicQGParams, grid::AbstractGrid)
+  L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr / (grid.Krsq + 1 / params.deformation_radius^2)
   CUDA.@allowscalar L[1, 1] = 0
   return FourierFlows.Equation(L, calcN!, grid)
 end
