@@ -96,7 +96,7 @@ struct Params{T, Aphys, Atrans, ℓ} <: SingleLayerQGParams
 end
 
 const BarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, Nothing}
-const EquivalentBarotropicQGParams = Params{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractFloat}
+const EquivalentBarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:AbstractFloat}
 
 get_topographicPV_grid_values(eta::Function, grid::AbstractGrid{T, A}) where {T, A} = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
 
