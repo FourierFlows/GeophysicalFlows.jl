@@ -29,6 +29,24 @@ motion, ``\zeta \equiv \partial_x \upsilon- \partial_y u = \nabla^2\psi``. Also,
 where ``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x b)``. On 
 the right hand side, ``f(x, y, t)`` is forcing, ``\mu`` is linear drag, and ``\nu`` is hyperviscosity of order ``n_\nu``. Plain old viscosity corresponds to ``n_\nu = 1``. The sum of relative vorticity and topographic PV is denoted with ``q \equiv \zeta + \eta``.
 
+The kinetic energy of the fluid is computed via:
+
+```@docs
+GeophysicalFlows.SingleLayerQG.kinetic_energy
+```
+
+while the potential energy, for an equivalent barotropic fluid, is computed via:
+
+```@docs
+GeophysicalFlows.SingleLayerQG.potential_energy
+```
+
+The total energy is:
+
+```@docs
+GeophysicalFlows.SingleLayerQG.energy
+```
+
 ### Implementation
 
 The equation is time-stepped forward in Fourier space:
