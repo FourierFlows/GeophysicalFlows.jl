@@ -3,19 +3,19 @@
 ### Basic Equations
 
 This module solves the barotropic or equivalent barotropic quasi-geostrophic vorticity equation 
-on a beta-plane of variable fluid depth ``H - h(x, y)``. The flow is obtained through a streamfunction ``\psi`` as ``(u, \upsilon) = (-\partial_y\psi, \partial_x\psi)``. All flow 
+on a beta-plane of variable fluid depth ``H - h(x, y)``. The flow is obtained through a streamfunction ``\psi`` as ``(u, \upsilon) = (-\partial_y \psi, \partial_x \psi)``. All flow 
 fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
 
 ```math
-	\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{(\partial_x \upsilon
-	- \partial_y u)}_{\text{relative vorticity}} +
-	\underbrace{\frac{1}{\ell^2} \psi}_{\text{vortex stretching}} + 
+	\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{\partial_x \upsilon
+	- \partial_y u}_{\text{relative vorticity}} - \!\!
+	\underbrace{\frac{1}{\ell^2} \psi}_{\text{vortex stretching}} \!\! + 
 	\underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}} \ ,
 ```
 
 where ``\ell`` is the Rossby radius of deformation. Purely barotropic dynamics corresponds to 
-infinite Rossby radius of deformation (``\ell = \infty``), while a flow with finite Rossby 
-radius follows, so-called, equivalent barotropic dynamics.
+infinite Rossby radius of deformation (``\ell = \infty``), while a flow with a finite Rossby 
+radius follows is said to obey equivalent-barotropic dynamics.
 
 The dynamical variable is the component of the vorticity of the flow normal to the plane of 
 motion, ``\zeta \equiv \partial_x \upsilon- \partial_y u = \nabla^2\psi``. Also, we denote the topographic PV with ``\eta \equiv f_0 h / H``. Thus, the equation solved by the module is:
