@@ -56,25 +56,29 @@ for dev in devices
   
   @testset "SingleLayerQG" begin
     include("test_singlelayerqg.jl")
-
-    @test test_1layerqg_rossbywave("ETDRK4", 1e-2, 20, dev)
-    @test test_1layerqg_rossbywave("FilteredETDRK4", 1e-2, 20, dev)
-    @test test_1layerqg_rossbywave("RK4", 1e-2, 20, dev)
-    @test test_1layerqg_rossbywave("FilteredRK4", 1e-2, 20, dev)
-    @test test_1layerqg_rossbywave("AB3", 1e-3, 200, dev)
-    @test test_1layerqg_rossbywave("FilteredAB3", 1e-3, 200, dev)
-    @test test_1layerqg_rossbywave("ForwardEuler", 1e-4, 2000, dev)
-    @test test_1layerqg_rossbywave("FilteredForwardEuler", 1e-4, 2000, dev)
+    
+    for deformation_radius in [Inf, 1.23]
+      @test test_1layerqg_rossbywave("ETDRK4", 1e-2, 20, dev, deformation_radius=deformation_radius)
+      @test test_1layerqg_rossbywave("FilteredETDRK4", 1e-2, 20, dev, deformation_radius=deformation_radius)
+      @test test_1layerqg_rossbywave("RK4", 1e-2, 20, dev, deformation_radius=deformation_radius)
+      @test test_1layerqg_rossbywave("FilteredRK4", 1e-2, 20, dev, deformation_radius=deformation_radius)
+      @test test_1layerqg_rossbywave("AB3", 1e-3, 200, dev, deformation_radius=deformation_radius)
+      @test test_1layerqg_rossbywave("FilteredAB3", 1e-3, 200, dev, deformation_radius=deformation_radius)
+      @test test_1layerqg_rossbywave("ForwardEuler", 1e-4, 2000, dev, deformation_radius=deformation_radius)
+      @test test_1layerqg_rossbywave("FilteredForwardEuler", 1e-4, 2000, dev, deformation_radius=deformation_radius)
+      @test test_1layerqg_problemtype(dev, Float32, deformation_radius=deformation_radius)
+    end
+    @test test_1layerqg_advection(0.0005, "ForwardEuler", dev)
+    @test test_streamfunctionfrompv(dev; deformation_radius=1.23)
+    @test test_1layerqg_energies_EquivalentBarotropicQG(dev; deformation_radius=1.23)
+    @test test_1layerqg_energyenstrophy_BarotropicQG(dev)
     @test test_1layerqg_deterministicforcing_energybudget(dev)
     @test test_1layerqg_stochasticforcing_energybudget(dev)
     @test test_1layerqg_deterministicforcing_enstrophybudget(dev)
     @test test_1layerqg_stochasticforcing_enstrophybudget(dev)
-    @test test_1layerqg_advection(0.0005, "ForwardEuler", dev)
-    @test test_1layerqg_energyenstrophy(dev)
-    @test test_1layerqg_problemtype(dev, Float32)
     @test SingleLayerQG.nothingfunction() == nothing
   end
-   
+  
   @testset "BarotropicQGQL" begin
     include("test_barotropicqgql.jl")
 
