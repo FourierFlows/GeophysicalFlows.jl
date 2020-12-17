@@ -372,7 +372,10 @@ flow.
     enstrophy(prob)
     enstrophy(sol, vars, params, grid)
 
-Returns the domain-averaged enstrophy ½ ∫ (q + η)² dxdy / (Lx Ly), where `sol = q`.
+Returns the domain-averaged enstrophy
+```math
+\\int \\frac1{2} (q + \eta)^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} = \\sum_{\\boldsymbol{k}} \\frac1{2} |\\hat{q} + \hat{\\eta}|^2 \\ .
+```
 """
 function enstrophy(sol, vars, params, grid)
   @. vars.qh = sol
@@ -385,7 +388,10 @@ end
     reduced_enstrophy(prob)
     reduced_enstrophy(sol, vars, params, grid)
 
-Returns the domain-averaged reduced enstrophy ½ ∫[(q+η)² + 2qη] dxdy / (Lx Ly) .
+Returns the domain-averaged reduced enstrophy ½ ∫(q² + 2qη) dxdy / (Lx Ly) .
+```math
+\\int \\frac1{2} (q^2 + 2 q \eta) \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} = \\sum_{\\boldsymbol{k}} \\frac1{2} |\\hat{q}|^2 + 2 \hat{q} \hat{\eta} \\ .
+```
 """
 function reduced_enstrophy(sol, vars, params, grid)
   @. vars.qh = sol
