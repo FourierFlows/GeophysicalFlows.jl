@@ -389,13 +389,15 @@ end
 
 Returns the domain-averaged energy dissipation rate. nν must be >= 1.
 """
-@inline function energy_dissipation(sol, vars, params, grid)
+@inline function energy_dissipation(sol, vars, params::BarotropicQGParams, grid)
   energy_dissipationh = vars.uh # use vars.uh as scratch variable
 
   @. energy_dissipationh = params.ν * grid.Krsq^(params.nν-1) * abs2(sol)
   CUDA.@allowscalar energy_dissipationh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_dissipationh, grid)
 end
+
+energy_dissipation(sol, vars, params::EquivalentBarotropicQGParams, grid) = error("not implemented for finite deformation radius")
 
 @inline energy_dissipation(prob) = energy_dissipation(prob.sol, prob.vars, prob.params, prob.grid)
 
@@ -405,7 +407,7 @@ end
 
 Returns the domain-averaged enstrophy dissipation rate. nν must be >= 1.
 """
-@inline function enstrophy_dissipation(sol, vars, params, grid)
+@inline function enstrophy_dissipation(sol, vars, params::BarotropicQGParams, grid)
   enstrophy_dissipationh = vars.uh # use vars.uh as scratch variable
 
   @. enstrophy_dissipationh = params.ν * grid.Krsq^params.nν * abs2(sol)
@@ -413,22 +415,24 @@ Returns the domain-averaged enstrophy dissipation rate. nν must be >= 1.
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_dissipationh, grid)
 end
 
+@inline enstrophy_dissipation(sol, vars, params::EquivalentBarotropicQGParams, grid) = error("not implemented for finite deformation radius")
+
 @inline enstrophy_dissipation(prob) = enstrophy_dissipation(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
     energy_work(prob)
-    energy_work(sol, vars, grid)
+    energy_work(sol, vars, params, grid)
 
 Returns the domain-averaged rate of work of energy by the forcing `Fh`.
 """
-@inline function energy_work(sol, vars::ForcedVars, grid)
+@inline function energy_work(sol, vars::ForcedVars, params::BarotropicQGParams, grid)
   energy_workh = vars.uh # use vars.uh as scratch variable
 
   @. energy_workh = grid.invKrsq * sol * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_workh, grid)
 end
 
-@inline function energy_work(sol, vars::StochasticForcedVars, grid)
+@inline function energy_work(sol, vars::StochasticForcedVars, params::BarotropicQGParams, grid)
   energy_workh = vars.uh # use vars.uh as scratch variable
 
   @. energy_workh = grid.invKrsq * (vars.prevsol + sol)/2 * conj(vars.Fh) # Stratonovich
@@ -436,22 +440,24 @@ end
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
-@inline energy_work(prob) = energy_work(prob.sol, prob.vars, prob.grid)
+@inline energy_work(sol, vars, params::EquivalentBarotropicQGParams, grid) = error("not implemented for finite deformation radius")
+
+@inline energy_work(prob) = energy_work(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
     enstrophy_work(prob)
-    enstrophy_work(sol, vars, grid)
+    enstrophy_work(sol, vars, params, grid)
 
 Returns the domain-averaged rate of work of enstrophy by the forcing `Fh`.
 """
-@inline function enstrophy_work(sol, vars::ForcedVars, grid)
+@inline function enstrophy_work(sol, vars::ForcedVars, params::BarotropicQGParams, grid)
   enstrophy_workh = vars.uh # use vars.uh as scratch variable
 
   @. enstrophy_workh = sol * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_workh, grid)
 end
 
-@inline function enstrophy_work(sol, vars::StochasticForcedVars, grid)
+@inline function enstrophy_work(sol, vars::StochasticForcedVars, params::BarotropicQGParams, grid)
   enstrophy_workh = vars.uh # use vars.uh as scratch variable
 
   @. enstrophy_workh = (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
@@ -459,15 +465,17 @@ end
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_workh, grid)
 end
 
-@inline enstrophy_work(prob) = enstrophy_work(prob.sol, prob.vars, prob.grid)
+@inline enstrophy_work(sol, vars, params::EquivalentBarotropicQGParams, grid) = error("not implemented for finite deformation radius")
+
+@inline enstrophy_work(prob) = enstrophy_work(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
     energy_drag(prob)
+    energy_drag(sol, vars, params, grid)
 
 Returns the extraction of domain-averaged energy by drag μ.
 """
-@inline function energy_drag(prob)
-  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
+@inline function energy_drag(sol, vars, params::BarotropicQGParams, grid)
   energy_dragh = vars.uh # use vars.uh as scratch variable
 
   @. energy_dragh = params.μ * grid.invKrsq * abs2(sol)
@@ -475,18 +483,26 @@ Returns the extraction of domain-averaged energy by drag μ.
   return  1 / (grid.Lx * grid.Ly) * parsevalsum(energy_dragh, grid)
 end
 
+@inline energy_drag(sol, vars, params::EquivalentBarotropicQGParams, grid) = error("not implemented for finite deformation radius")
+
+@inline energy_drag(prob) = energy_drag(prob.sol, prob.vars, prob.params, prob.grid)
+
 """
     enstrophy_drag(prob)
+    enstrophy_drag(sol, vars, params, grid)
 
 Returns the extraction of domain-averaged enstrophy by drag/hypodrag μ.
 """
-@inline function enstrophy_drag(prob)
-  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
+@inline function enstrophy_drag(sol, vars, params::BarotropicQGParams, grid)
   enstrophy_dragh = vars.uh # use vars.uh as scratch variable
 
   @. enstrophy_dragh = params.μ * abs2(sol)
   CUDA.@allowscalar enstrophy_dragh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_dragh, grid)
 end
+
+@inline enstrophy_drag(sol, vars, params::EquivalentBarotropicQGParams, grid) = error("not implemented for finite deformation radius")
+
+@inline enstrophy_drag(prob) = enstrophy_drag(prob.sol, prob.vars, prob.params, prob.grid)
 
 end # module
