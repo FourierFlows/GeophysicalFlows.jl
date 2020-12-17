@@ -12,7 +12,6 @@ export
   energy_work,
   energy_drag,
   enstrophy,
-  reduced_enstrophy,
   enstrophy_dissipation,
   enstrophy_work,
   enstrophy_drag
@@ -383,22 +382,6 @@ function enstrophy(sol, vars, params, grid)
 end
 
 @inline enstrophy(prob) = enstrophy(prob.sol, prob.vars, prob.params, prob.grid)
-
-"""
-    reduced_enstrophy(prob)
-    reduced_enstrophy(sol, vars, params, grid)
-
-Returns the domain-averaged reduced enstrophy ½ ∫(q² + 2qη) dxdy / (Lx Ly) .
-```math
-\\int \\frac1{2} (q^2 + 2 q \\eta) \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} = \\sum_{\\boldsymbol{k}} \\frac1{2} ( | \\hat{q}|^2 + 2 \\hat{q} \\hat{\eta} ) \\ .
-```
-"""
-function reduced_enstrophy(sol, vars, params, grid)
-  @. vars.qh = sol
-  return parsevalsum(abs2.(vars.qh) .+ 2 * vars.qh .* params.etah, grid) / (2 * grid.Lx * grid.Ly)
-end
-
-@inline reduced_enstrophy(prob) = reduced_enstrophy(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
     energy_dissipation(prob)
