@@ -35,8 +35,8 @@ nothing # hide
 L = 2π        # domain size
 nothing # hide
 
-# Define the topographic potential vorticity, ``\eta = f_0 h(x, y)/H``. The topography here 
-# is an elliptical mound at ``(1, 1)``, and an elliptical depression at ``(-1, -1)``.
+# Define the topographic potential vorticity, ``\eta = f_0 h(x, y)/H``. The topography here is 
+# an elliptical mount at ``(x, y) = (1, 1)``, and an elliptical depression at ``(x, y) = (-1, -1)``.
 σx, σy = 0.4, 0.8
 topographicPV(x, y) = 3exp(-(x-1)^2/(2σx^2) -(y-1)^2/(2σy^2)) - 2exp(-(x+1)^2/(2σx^2) -(y+1)^2/(2σy^2))
 nothing # hide
