@@ -100,17 +100,6 @@ const EquivalentBarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:
 get_topographicPV_grid_values(eta::Function, grid::AbstractGrid{T, A}) where {T, A} = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
 
 """
-    BarotropicQGParams(grid::TwoDGrid, β, eta, μ, ν, nν::Int, calcF
-
-Constructor for BarotropicQGParams (infinite Rossby radius of deformation).
-"""
-function BarotropicQGParams(grid::AbstractGrid{T, A}, β, eta, μ, ν, nν::Int, calcF) where {T, A}
-  eta_grid = typeof(eta) <: AbstractArray ? eta : get_topographicPV_grid_values(eta, grid)
-  eta_gridh = rfft(eta_grid)
-  return Params(β, nothing, eta_grid, eta_gridh, μ, ν, nν, calcF)
-end
-
-"""
     EquivalentBarotropicQGParams(grid::TwoDGrid, β, deformation_radius, eta, μ, ν, nν::Int, calcF
 
 Constructor for EquivalentBarotropicQGParams (finite Rossby radius of deformation).
@@ -121,6 +110,14 @@ function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, β, deformation_
   return Params(β, deformation_radius, eta_grid, eta_gridh, μ, ν, nν, calcF)
 end
 
+"""
+    BarotropicQGParams(grid::TwoDGrid, β, eta, μ, ν, nν::Int, calcF
+
+Constructor for BarotropicQGParams (infinite Rossby radius of deformation).
+"""
+BarotropicQGParams(grid::AbstractGrid{T, A}, β, eta, μ, ν, nν::Int, calcF) where {T, A} =
+    EquivalentBarotropicQGParams(grid, β, nothing, eta, μ, ν, nν, calcF)
+    
 
 # ---------
 # Equations
@@ -299,23 +296,19 @@ updatevars!(prob) = updatevars!(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
     set_q!(prob, q)
-    set_q!(sol, vars, params, grid)
 
-Set the solution `sol` as the transform of q and update variables `vars`
-on the `grid`.
+Set the solution of problem, `prob.sol` as the transform of ``q`` and update variables `prob.vars`.
 """
-function set_q!(sol, vars, params, grid, q)
+function set_q!(prob, q)
+  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
+  
   mul!(vars.qh, grid.rfftplan, q)
-
   @. sol = vars.qh
 
   updatevars!(sol, vars, params, grid)
 
   return nothing
 end
-
-set_q!(prob, q) = set_q!(prob.sol, prob.vars, prob.params, prob.grid, q)
-
 
 """
     kinetic_energy(prob)
