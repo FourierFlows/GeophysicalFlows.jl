@@ -76,3 +76,5 @@ Thus:
 - `examples/singlelayerqg_betaforced.jl`: A script that simulates forced-dissipative quasi-geostrophic flow on a beta plane demonstrating zonation. The forcing is temporally delta-correlated with isotropic spatial structure with power in a narrow annulus in wavenumber space that corresponds to total wavenumber ``k_f``.
 
 - `examples/singlelayerqg_decay_topography.jl`: A script that simulates two dimensional turbulence (barotropic quasi-geostrophic flow with ``\beta=0``) above topography.
+
+- `examples/singlelayerqg_decaying_barotropic_equivalentbarotropic.jl`: A script that simulates two dimensional turbulence (``\beta=0``) with both infinite and finite Rossby radius of deformation and compares the evolution of the two.

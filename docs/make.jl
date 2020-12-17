@@ -25,6 +25,7 @@ examples = [
     "singlelayerqg_betadecay.jl",
     "singlelayerqg_betaforced.jl",
     "singlelayerqg_decay_topography.jl",
+    "singlelayerqg_decaying_barotropic_equivalentbarotropic",
     "barotropicqgql_betaforced.jl",
     "multilayerqg_2layer.jl",
     "surfaceqg_decaying.jl",
