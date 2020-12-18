@@ -74,7 +74,7 @@ sitename = "GeophysicalFlows.jl",
               "SingleLayerQG" => Any[
                 "generated/singlelayerqg_betadecay.md",
                 "generated/singlelayerqg_betaforced.md",
-                "generated/singlelayerqg_decay_topography.md"
+                "generated/singlelayerqg_decay_topography.md",
                 "generated/singlelayerqg_decaying_barotropic_equivalentbarotropic.md"
                 ],
               "BarotropicQGQL" => Any[
