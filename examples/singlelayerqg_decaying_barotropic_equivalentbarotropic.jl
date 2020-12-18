@@ -55,14 +55,14 @@ nothing # hide
 
 # `SingleLayerQG` allows us to set up the initial ``q`` for each problem via `set_q!()` function.
 # To initialize both `prob_bqg` and `prob_eqbqg` with the same flow, we first find the streamfunction
-# the corresponds to the relative vorticity structure we computed above.
+# the corresponds to the relative vorticity structure we computed above,
 ∇²ψ₀h = rfft(∇²ψ₀)
 ψ₀h = @. 0*∇²ψ₀h
 SingleLayerQG.streamfunctionfrompv!(ψ₀h, ∇²ψ₀h, prob_bqg.params, prob_bqg.grid)
 nothing # hide
 
-# and then compute
-q₀_bqg = irfft(-prob_bqg.grid.Krsq .* ψ₀h, prob_bqg.grid.nx)
+# and then use the streamfunction to compute the corresponding ``q_0`` for each problem,
+q₀_bqg   = irfft(-prob_bqg.grid.Krsq .* ψ₀h, prob_bqg.grid.nx)
 q₀_eqbqg = irfft(-(prob_eqbqg.grid.Krsq .+ 1/prob_eqbqg.params.deformation_radius^2) .* ψ₀h, prob_bqg.grid.nx)
 nothing # hide
 
@@ -73,8 +73,10 @@ nothing # hide
 
 
 # Let's plot the initial vorticity field for each problem. A function that returns relative 
-# vorticity from each problem's state variable will prove useful.
-relativevorticity(prob) = irfft(-prob.grid.Krsq .* prob.vars.ψh, prob.grid.nx)  
+# vorticity from each problem's state variable will prove useful. Since `relativevorticity()` 
+# is only used for plotting purposes, we call `collect()` at the end to bring its output on 
+# CPU in the case `vars` are on the GPU.
+relativevorticity(prob) = collect(irfft(-prob.grid.Krsq .* prob.vars.ψh, prob.grid.nx))
 
 x, y = prob_bqg.grid.x, prob_bqg.grid.y
 
@@ -105,7 +107,7 @@ p_eqbqg = heatmap(x, y, relativevorticity(prob_eqbqg)',
           framestyle = :box)
 
 l = @layout Plots.grid(1, 2)
-p = plot(p_bqg, p_eqbqg, layout = l, size = (900, 400))
+p = plot(p_bqg, p_eqbqg, layout = l, size = (800, 380))
 
 
 # ## Time-stepping the `Problem` forward
