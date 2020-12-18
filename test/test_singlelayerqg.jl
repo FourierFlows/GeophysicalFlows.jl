@@ -334,7 +334,7 @@ function test_1layerqg_energyenstrophy_BarotropicQG(dev::Device=CPU())
   energyq₀ = SingleLayerQG.energy(prob)
   enstrophyq₀ = SingleLayerQG.enstrophy(prob)
 
-  return isapprox(energyq₀, energy_calc, rtol=rtol_singlelayerqg) && isapprox(enstrophyq₀, enstrophy_calc, rtol=rtol_singlelayerqg) &&
+  return isapprox(energyq₀, energy_calc, rtol=rtol_singlelayerqg) && isapprox(enstrophyq₀, enstrophy_calc, rtol=rtol_singlelayerqg) && SingleLayerQG.potential_energy(prob)==0 &&
   SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid) == nothing
 end
 
@@ -405,4 +405,40 @@ function test_streamfunctionfrompv(dev; deformation_radius=1.23)
   SingleLayerQG.streamfunctionfrompv!(prob_equivalentbarotropicQG.vars.ψh, prob_equivalentbarotropicQG.vars.qh, prob_equivalentbarotropicQG.params, prob_equivalentbarotropicQG.grid)
   
   return (prob_barotropicQG.vars.ψ ≈ ψ && prob_equivalentbarotropicQG.vars.ψ ≈ ψ)
+end
+
+function test_1layerqg_energy_dissipation(dev; deformation_radius=2.23)
+  prob = SingleLayerQG.Problem(dev; nx=16, deformation_radius=deformation_radius)
+  SingleLayerQG.energy_dissipation(prob)
+  return nothing
+end
+
+function test_1layerqg_enstrophy_dissipation(dev; deformation_radius=2.23)
+  prob = SingleLayerQG.Problem(dev; nx=16, deformation_radius=deformation_radius)
+  SingleLayerQG.enstrophy_dissipation(prob)
+  return nothing
+end
+
+function test_1layerqg_energy_work(dev; deformation_radius=2.23)
+  prob = SingleLayerQG.Problem(dev; nx=16, deformation_radius=deformation_radius)
+  SingleLayerQG.energy_work(prob)
+  return nothing
+end
+
+function test_1layerqg_enstrophy_work(dev; deformation_radius=2.23)
+  prob = SingleLayerQG.Problem(dev; nx=16, deformation_radius=deformation_radius)
+  SingleLayerQG.enstrophy_work(prob)
+  return nothing
+end
+
+function test_1layerqg_energy_drag(dev; deformation_radius=2.23)
+  prob = SingleLayerQG.Problem(dev; nx=16, deformation_radius=deformation_radius)
+  SingleLayerQG.energy_drag(prob)
+  return nothing
+end
+
+function test_1layerqg_enstrophy_drag(dev; deformation_radius=2.23)
+  prob = SingleLayerQG.Problem(dev; nx=16, deformation_radius=deformation_radius)
+  SingleLayerQG.enstrophy_drag(prob)
+  return nothing
 end
