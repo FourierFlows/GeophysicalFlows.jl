@@ -1,4 +1,4 @@
-module MultilayerQG
+module MultiLayerQG
 
 export
   fwdtransform!,
