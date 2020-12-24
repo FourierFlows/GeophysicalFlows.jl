@@ -12,15 +12,15 @@ authors:
   - name: Gregory LeClaire Wagner
     orcid: 0000-0001-5317-2445
     affiliation: 3
-  - name: Brodie Pearson
-    orcid: 0000-0002-0202-0481
-    affiliation: 4
-  - name: André Palóczy
-    orcid: 0000-0001-8231-8298
-    affiliation: 5
   - name: Lia Siegelman
     orcid: 0000-0003-3330-082X
+    affiliation: 4
+  - name: Brodie Pearson
+    orcid: 0000-0002-0202-0481
     affiliation: 5
+  - name: André Palóczy
+    orcid: 0000-0001-8231-8298
+    affiliation: 4
 affiliations:
  - name: Australian National University
    index: 1
@@ -28,11 +28,11 @@ affiliations:
    index: 2
  - name: Massachussetts Institute of Technology
    index: 3
- - name: Oregon State University
-   index: 4
  - name: University of California San Diego
+   index: 4
+ - name: Oregon State University
    index: 5
-date: 3 December 2020
+date: 24 December 2020
 bibliography: paper.bib
 ---
 
