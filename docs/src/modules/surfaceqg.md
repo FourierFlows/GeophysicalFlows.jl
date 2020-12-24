@@ -7,7 +7,7 @@ buoyancy $b_s = b(x, y, z=0)$, as described in Capet et al., 2008. The buoyancy 
 velocity at the surface are related through a streamfunction $\psi$ via:
 
 ```math
-(u_s, \upsilon_s, b_s) = (-\partial_y \psi, \partial_x \psi, -\partial_z \psi) .
+(u_s, v_s, b_s) = (-\partial_y \psi, \partial_x \psi, -\partial_z \psi) .
 ```
 
 The SQG model evolves the surface buoyancy,
@@ -46,9 +46,9 @@ In doing so the Jacobian is computed in the conservative form: $\mathsf{J}(f,g) 
 Thus:
 ```math
 \begin{aligned}
-\widehat{u} &= \frac{\mathrm{i} k_y}{k} \widehat{b_s}, \qquad \widehat{\upsilon} = -\frac{\mathrm{i} k_x}{k} \widehat{b_s}, \\
+\widehat{u} &= \frac{\mathrm{i} k_y}{k} \widehat{b_s}, \qquad \widehat{v} = -\frac{\mathrm{i} k_x}{k} \widehat{b_s}, \\
 \mathcal{L} & = - \nu k^{2n_\nu},\\
-\mathcal{N}(\widehat{b_s}) & = - \mathrm{i} k_x \mathrm{FFT}(u b) - \mathrm{i} k_y \mathrm{FFT}(\upsilon b) .
+\mathcal{N}(\widehat{b_s}) & = - \mathrm{i} k_x \mathrm{FFT}(u b) - \mathrm{i} k_y \mathrm{FFT}(v b) .
 \end{aligned}
 ```
 

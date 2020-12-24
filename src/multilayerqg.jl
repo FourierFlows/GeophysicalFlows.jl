@@ -612,14 +612,14 @@ verticalfluxes``_{3/2},...,``verticalfluxes``_{n-1/2}``, where ``n`` is the tota
 
 The lateral eddy fluxes whithin the ``j``-th fluid layer are
 ```math
-\\textrm{lateralfluxes}_j = \\frac{H_j}{H} \\int U_j \\, \\upsilon_j \\, \\partial_y u_j 
+\\textrm{lateralfluxes}_j = \\frac{H_j}{H} \\int U_j \\, v_j \\, \\partial_y u_j 
 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n \\ ,
 ```
 while the vertical eddy fluxes at the ``j+1/2``-th fluid interface  (i.e., interface between 
 the ``j``-th and ``(j+1)``-th fluid layer) are
 ```math
 \\textrm{verticalfluxes}_{j+1/2} = \\int \\frac{f_0^2}{g'_{j+1/2} H} (U_j - U_{j+1}) \\, 
-\\upsilon_{j+1} \\, \\psi_{j} \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad 
+v_{j+1} \\, \\psi_{j} \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad 
 j = 1 , \\dots , n-1.
 ```
 """

@@ -4,9 +4,9 @@
 ### Basic Equations
 
 This module solves two-dimensional incompressible turbulence. The flow is given
-through a streamfunction $\psi$ as $(u,\upsilon) = (-\partial_y\psi, \partial_x\psi)$.
+through a streamfunction $\psi$ as $(u,v) = (-\partial_y\psi, \partial_x\psi)$.
 The dynamical variable used here is the component of the vorticity of the flow
-normal to the plane of motion, $\zeta=\partial_x \upsilon- \partial_y u = \nabla^2\psi$.
+normal to the plane of motion, $\zeta=\partial_x v- \partial_y u = \nabla^2\psi$.
 The equation solved by the module is:
 
 $$\partial_t \zeta + \mathsf{J}(\psi, \zeta) = \underbrace{-\left[\mu(-1)^{n_\mu} \nabla^{2n_\mu}
@@ -31,7 +31,7 @@ Thus:
 
 $$\mathcal{L} = -\mu k^{-2n_\mu} - \nu k^{2n_\nu}\ ,$$
 $$\mathcal{N}(\widehat{\zeta}) = - \mathrm{i}k_x \mathrm{FFT}(u \zeta)-
-	\mathrm{i}k_y \mathrm{FFT}(\upsilon \zeta) + \widehat{f}\ .$$
+	\mathrm{i}k_y \mathrm{FFT}(v \zeta) + \widehat{f}\ .$$
 
 
 ### AbstractTypes and Functions
@@ -53,11 +53,11 @@ For the forced case ($f\ne 0$) parameters AbstractType is build with `ForcedPara
 For the unforced case ($f=0$) variables AbstractType is build with `Vars` and it includes:
 - `zeta`: Array of Floats; relative vorticity.
 - `u`: Array of Floats; $x$-velocity, $u$.
-- `v`: Array of Floats; $y$-velocity, $\upsilon$.
+- `v`: Array of Floats; $y$-velocity, $v$.
 - `sol`: Array of Complex; the solution, $\widehat{\zeta}$.
 - `zetah`: Array of Complex; the Fourier transform $\widehat{\zeta}$.
 - `uh`: Array of Complex; the Fourier transform $\widehat{u}$.
-- `vh`: Array of Complex; the Fourier transform $\widehat{\upsilon}$.
+- `vh`: Array of Complex; the Fourier transform $\widehat{v}$.
 
 For the forced case ($f\ne 0$) variables AbstractType is build with `ForcedVars`. It includes all variables in `Vars` and additionally:
 - `Fh`: Array of Complex; the Fourier transform $\widehat{f}$.
@@ -73,7 +73,7 @@ The nonlinear term $\mathcal{N}(\widehat{\zeta})$ is computed via functions:
 
 - `calcN_forced!`: computes $- \widehat{\mathsf{J}(\psi, \zeta)}$ via `calcN_advection!` and then adds to it the forcing $\widehat{f}$ computed via `calcF!` function. Also saves the solution $\widehat{\zeta}$ of the previous time-step in array `prevsol`.
 
-- `updatevars!`: uses `sol` to compute $\zeta$, $u$, $\upsilon$, $\widehat{u}$, and $\widehat{\upsilon}$ and stores them into corresponding arrays of `Vars`/`ForcedVars`.
+- `updatevars!`: uses `sol` to compute $\zeta$, $u$, $v$, $\widehat{u}$, and $\widehat{v}$ and stores them into corresponding arrays of `Vars`/`ForcedVars`.
 
 
 ## Examples

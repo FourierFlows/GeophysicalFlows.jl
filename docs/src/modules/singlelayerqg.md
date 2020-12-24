@@ -3,11 +3,11 @@
 ### Basic Equations
 
 This module solves the barotropic or equivalent barotropic quasi-geostrophic vorticity equation 
-on a beta-plane of variable fluid depth ``H - h(x, y)``. The flow is obtained through a streamfunction ``\psi`` as ``(u, \upsilon) = (-\partial_y \psi, \partial_x \psi)``. All flow 
+on a beta-plane of variable fluid depth ``H - h(x, y)``. The flow is obtained through a streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. All flow 
 fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
 
 ```math
-	\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{\partial_x \upsilon
+	\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{\partial_x v
 	- \partial_y u}_{\text{relative vorticity}} - \!\!
 	\underbrace{\frac{1}{\ell^2} \psi}_{\text{vortex stretching}} \!\! + 
 	\underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}} \ ,
@@ -64,7 +64,7 @@ Thus:
 ```math
 \begin{aligned}
 \mathcal{L} & = \beta \frac{\mathrm{i} k_x}{k^2 + 1/\ell^2} - \mu - \nu k^{2n_\nu} \ , \\
-\mathcal{N}(\widehat{q}) & = - \mathrm{i} k_x \mathrm{FFT}[u (q+\eta)] - \mathrm{i} k_y \mathrm{FFT}[\upsilon (q+\eta)] \ .
+\mathcal{N}(\widehat{q}) & = - \mathrm{i} k_x \mathrm{FFT}[u (q+\eta)] - \mathrm{i} k_y \mathrm{FFT}[v (q+\eta)] \ .
 \end{aligned}
 ```
 
