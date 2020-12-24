@@ -1,5 +1,5 @@
 ---
-title: 'GeophysicalFlows.jl: A Julia package for solving geophysical-fluid-dynamics problems on periodic domains on CPUs and GPUs'
+title: 'GeophysicalFlows.jl: A Julia package for solving geophysical fluid dynamics problems on periodic domains, both on CPUs and GPUs'
 tags:
   - julia
   - geophysical fluid dynamics
@@ -89,6 +89,6 @@ Fenced code blocks are rendered with syntax highlighting:
 
 # Acknowledgements
 
-We acknowledge fruitful discussions with Cesar B. Rocha and Keaton Burns.
+We acknowledge fruitful discussions with Keaton Burns, Cesar Rocha, and William Young.
 
 # References
