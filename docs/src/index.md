@@ -15,19 +15,30 @@ Examples aim to demonstrate the main functionalities of each module. Have a look
     
     Fourier methods are based on Fourier expansions. Throughout the documentation we denote
     symbols with overhat, e.g., ``\hat{u}``, to be the Fourier transform of ``u`` like, e.g.,
+    
     ```math
-    u(x, t) = \sum_{k_x} \hat{u}(k_x, t) \, \mathrm{e}^{\mathrm{i} k_x x} \ ,
+    u(x) = \sum_{k_x} \hat{u}(k_x) \, e^{i k_x x} \ ,
     ```
     
     The convention used inside modules for the Fourier transforms of variable `u` is `uh` (with
-    `h` denoting "hat"). Note, however, that `uh` _is not_ exactly ``\hat{u}`` but rather they 
-    differ by a normalization factor. Read more in the [FourierFlows.jl Documentation](https://fourierflows.github.io/FourierFlowsDocumentation/stable/grids/).
+    `h` denoting "hat"). Note, however, that `uh` _is not_ exactly ``\hat{u}`` due to different
+    normalization factors by FFT algorithm. Instead,
+    
+    ```math
+    \hat{u}(k_x) = \frac{𝚞𝚑}{n_x e^{- i k_x x_0}} ,
+    ```
+    
+    where ``n_x`` is the total number of grid points in ``x`` and ``x_0`` is the left-most 
+    point of our grid.
+    
+    Read more in the [FourierFlows.jl Documentation](https://fourierflows.github.io/FourierFlowsDocumentation/stable/grids/).
 
 
 !!! info "Unicode"
-    Oftentimes we use unicode symbols for variables or parameters in the modules. For example,
-    `ψ` for streamfunction. Unicode symbols can be entered in the REPL by typing, e.g., `\psi`
-    followed by `tab` key. Read more in the [Julia Documentation](https://docs.julialang.org/en/v1/manual/unicode-input/).
+    Oftentimes unicode symbols appear in modules for variables or parameters. For example,
+    `ψ` is commonly used to denote the  streamfunction. Unicode symbols can be entered in 
+    the Julia REPL by typing, e.g., `\psi` followed by `tab` key. Read more about Unicode 
+    symbols in the [Julia Documentation](https://docs.julialang.org/en/v1/manual/unicode-input/).
 
 
 ## Developers
