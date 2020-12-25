@@ -14,13 +14,13 @@ where overline above denotes a zonal mean, $\overline{\phi}(y, t) = \int \phi(x,
 - Constantinou, N. C., Farrell, B. F., and Ioannou, P. J. (2014). [Emergence and equilibration of jets in beta-plane turbulence: applications of Stochastic Structural Stability Theory.](http://doi.org/10.1175/JAS-D-13-076.1) *J. Atmos. Sci.*, **71 (5)**, 1818-1842.
 
 
-As in the [BarotropicQG module](barotropicqg.md), the flow is obtained through a streamfunction $\psi$ as $(u, \upsilon) = (-\partial_y\psi, \partial_x\psi)$. All flow fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
+As in the [BarotropicQG module](barotropicqg.md), the flow is obtained through a streamfunction $\psi$ as $(u, v) = (-\partial_y\psi, \partial_x\psi)$. All flow fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
 
-$$\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{(\partial_x \upsilon
+$$\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{(\partial_x v
 	- \partial_y u)}_{\text{relative vorticity}} +
 	\underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}}.$$
 
-The dynamical variable is the component of the vorticity of the flow normal to the plane of motion, $\zeta\equiv \partial_x \upsilon- \partial_y u = \nabla^2\psi$. Also, we denote the topographic PV with $\eta\equiv f_0 h/H$. After we apply the eddy-mean flow decomposition above, the QGPV dynamics are:
+The dynamical variable is the component of the vorticity of the flow normal to the plane of motion, $\zeta\equiv \partial_x v- \partial_y u = \nabla^2\psi$. Also, we denote the topographic PV with $\eta\equiv f_0 h/H$. After we apply the eddy-mean flow decomposition above, the QGPV dynamics are:
 
 $$\partial_t \overline{\zeta} + \mathsf{J}(\overline{\psi}, \underbrace{\overline{\zeta} + \overline{\eta}}_{\equiv \overline{q}}) + \overline{\mathsf{J}(\psi', \underbrace{\zeta' + \eta'}_{\equiv q'})} = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
 \right] \overline{\zeta} }_{\textrm{dissipation}} \ .$$
@@ -47,7 +47,7 @@ Thus:
 
 $$\mathcal{L} = \beta\frac{\mathrm{i}k_x}{k^2} - \mu - \nu k^{2n_\nu}\ ,$$
 $$\mathcal{N}(\widehat{\zeta}) = - \mathrm{i}k_x \mathrm{FFT}(u q)^{\textrm{QL}}-
-	\mathrm{i}k_y \mathrm{FFT}(\upsilon q)^{\textrm{QL}}\ .$$
+	\mathrm{i}k_y \mathrm{FFT}(v q)^{\textrm{QL}}\ .$$
 
 
 ## Examples
