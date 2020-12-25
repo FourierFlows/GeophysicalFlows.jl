@@ -175,7 +175,7 @@ function computetendencies_and_makeplot(prob, diags)
 
   t = E.t[2:E.i]
 
-  p1E = plot(μ * t, [Wᵋ[2:E.i] ε.+0*t + Dᵋ[1:E.i-1] + Rᵋ[1:E.i-1]],
+  p1E = plot(μ * t, [Wᵋ[2:E.i] ε.+0*t Dᵋ[1:E.i-1] Rᵋ[1:E.i-1]],
              label = ["energy work, Wᵋ" "ensemble mean energy work, <Wᵋ>" "dissipation, Dᵋ" "drag, Rᵋ = - 2μE"],
          linestyle = [:solid :dash :solid :solid],
          linewidth = 2,
@@ -199,7 +199,7 @@ function computetendencies_and_makeplot(prob, diags)
 
   t = Z.t[2:E.i]
 
-  p1Z = plot(μ * t, [Wᶻ[2:Z.i] εᶻ.+0*t + Dᶻ[1:Z.i-1] + Rᶻ[1:Z.i-1]],
+  p1Z = plot(μ * t, [Wᶻ[2:Z.i] εᶻ.+0*t Dᶻ[1:Z.i-1] Rᶻ[1:Z.i-1]],
            label = ["enstrophy work, Wᶻ" "mean enstrophy work, <Wᶻ>" "enstrophy dissipation, Dᶻ" "enstrophy drag, Rᶻ = - 2μZ"],
        linestyle = [:solid :dash :solid :solid],
        linewidth = 2,
