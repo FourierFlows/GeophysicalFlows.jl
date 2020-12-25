@@ -111,7 +111,7 @@ heatmap(x, y, irfft(vars.Fh, grid.nx)',
 # ## Setting initial conditions
 
 # Our initial condition is a fluid at rest.
-TwoDNavierStokes.set_zeta!(prob, zeros(grid.nx, grid.ny))
+TwoDNavierStokes.set_ζ!(prob, zeros(grid.nx, grid.ny))
 
 
 # ## Diagnostics
@@ -149,15 +149,15 @@ function computetendencies_and_makeplot(prob, diags)
   dEdt_numerical = (E[2:E.i] - E[1:E.i-1]) / clock.dt # numerical first-order approximation of energy tendency
   dZdt_numerical = (Z[2:Z.i] - Z[1:Z.i-1]) / clock.dt # numerical first-order approximation of enstrophy tendency
 
-  dEdt_computed = Wᵋ[2:E.i] - Dᵋ[1:E.i-1] - Rᵋ[1:E.i-1]
-  dZdt_computed = Wᶻ[2:Z.i] - Dᶻ[1:Z.i-1] - Rᶻ[1:Z.i-1]
+  dEdt_computed = Wᵋ[2:E.i] + Dᵋ[1:E.i-1] + Rᵋ[1:E.i-1]
+  dZdt_computed = Wᶻ[2:Z.i] + Dᶻ[1:Z.i-1] + Rᶻ[1:Z.i-1]
 
   residual_E = dEdt_computed - dEdt_numerical
   residual_Z = dZdt_computed - dZdt_numerical
 
   εᶻ = parsevalsum(forcing_spectrum / 2, grid) / (grid.Lx * grid.Ly)
 
-  pzeta = heatmap(x, y, vars.zeta',
+  pζ = heatmap(x, y, vars.ζ',
             aspectratio = 1,
             legend = false,
                  c = :viridis,
@@ -171,11 +171,11 @@ function computetendencies_and_makeplot(prob, diags)
              title = "∇²ψ(x, y, μt=" * @sprintf("%.2f", μ * clock.t) * ")",
         framestyle = :box)
 
-  pζ = plot(pzeta, size = (400, 400))
+  pζ = plot(pζ, size = (400, 400))
 
   t = E.t[2:E.i]
 
-  p1E = plot(μ * t, [Wᵋ[2:E.i] ε.+0*t -Dᵋ[1:E.i-1] -Rᵋ[1:E.i-1]],
+  p1E = plot(μ * t, [Wᵋ[2:E.i] ε.+0*t + Dᵋ[1:E.i-1] + Rᵋ[1:E.i-1]],
              label = ["energy work, Wᵋ" "ensemble mean energy work, <Wᵋ>" "dissipation, Dᵋ" "drag, Rᵋ = - 2μE"],
          linestyle = [:solid :dash :solid :solid],
          linewidth = 2,
@@ -199,7 +199,7 @@ function computetendencies_and_makeplot(prob, diags)
 
   t = Z.t[2:E.i]
 
-  p1Z = plot(μ * t, [Wᶻ[2:Z.i] εᶻ.+0*t -Dᶻ[1:Z.i-1] -Rᶻ[1:Z.i-1]],
+  p1Z = plot(μ * t, [Wᶻ[2:Z.i] εᶻ.+0*t + Dᶻ[1:Z.i-1] + Rᶻ[1:Z.i-1]],
            label = ["enstrophy work, Wᶻ" "mean enstrophy work, <Wᶻ>" "enstrophy dissipation, Dᶻ" "enstrophy drag, Rᶻ = - 2μZ"],
        linestyle = [:solid :dash :solid :solid],
        linewidth = 2,
