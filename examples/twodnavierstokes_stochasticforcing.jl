@@ -61,8 +61,8 @@ seed!(1234)
 nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
-function calcF!(Fh, sol, t, clock, vars, params, grid::AbstractGrid{T, A}) where {T, A}
-  ξ = A(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
+function calcF!(Fh, sol, t, clock, vars, params, grid)
+  ξ = ArrayType(dev)(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
   ξ[1, 1] = 0
   @. Fh = ξ * sqrt(forcing_spectrum)
   
