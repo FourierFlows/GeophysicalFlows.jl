@@ -316,8 +316,7 @@ plot_E = plot(μ * t, [E_theory mean(E_ito, dims=2)],
 	                 xlabel = "μ t",
 	                 ylabel = "E",
 	                 legend = :bottomright,
-	                  title = "Ito: 𝖽Eₜ = (-2μ Eₜ + ½σ) 𝖽t + xₜ √σ 𝖽W"
-										)
+	                  title = "Ito: 𝖽Eₜ = (-2μ Eₜ + ½σ) 𝖽t + xₜ √σ 𝖽W")
 
 plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_ito[1:nsteps-1, 1] work_ito[1:nsteps-1, 1]-diss_ito[1:nsteps-1, 1] dEdt_theory[1:nsteps-1]],
                 linestyle = [:dash :dashdot :solid],
@@ -349,8 +348,7 @@ plot_E = plot(μ * t, [E_theory mean(E_str, dims=2)],
                    xlabel = "μ t",
                    ylabel = "E",
                    legend = :bottomright,
-                    title = "Stratonovich: 𝖽Eₜ = -2μ Eₜ 𝖽t + xₜ ∘ √σ 𝖽W"
-										)
+                    title = "Stratonovich: 𝖽Eₜ = -2μ Eₜ 𝖽t + xₜ ∘ √σ 𝖽W")
 
 plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_str[1:nsteps-1] work_str[1:nsteps-1]-diss_str[1:nsteps-1] dEdt_theory[1:nsteps-1]],
                 linestyle = [:dash :dashdot :solid],

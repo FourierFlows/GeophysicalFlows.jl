@@ -19,16 +19,16 @@ const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 
 examples = [
-    "twodnavierstokes_decaying.jl",
-    "twodnavierstokes_stochasticforcing.jl",
-    "twodnavierstokes_stochasticforcing_budgets.jl",
-    "singlelayerqg_betadecay.jl",
-    "singlelayerqg_betaforced.jl",
-    "singlelayerqg_decay_topography.jl",
-    "singlelayerqg_decaying_barotropic_equivalentbarotropic.jl",
-    "barotropicqgql_betaforced.jl",
-    "multilayerqg_2layer.jl",
-    "surfaceqg_decaying.jl",
+    # "twodnavierstokes_decaying.jl",
+    # "twodnavierstokes_stochasticforcing.jl",
+    # "twodnavierstokes_stochasticforcing_budgets.jl",
+    # "singlelayerqg_betadecay.jl",
+    # "singlelayerqg_betaforced.jl",
+    # "singlelayerqg_decay_topography.jl",
+    # "singlelayerqg_decaying_barotropic_equivalentbarotropic.jl",
+    # "barotropicqgql_betaforced.jl",
+    # "multilayerqg_2layer.jl",
+    # "surfaceqg_decaying.jl",
 ]
 
 for example in examples
@@ -65,28 +65,28 @@ checkdocs = :all,
 sitename = "GeophysicalFlows.jl",
    pages = Any[
             "Home"    => "index.md",
-            "Examples" => [
-              "TwoDNavierStokes" => Any[
-                "generated/twodnavierstokes_decaying.md",
-                "generated/twodnavierstokes_stochasticforcing.md",
-                "generated/twodnavierstokes_stochasticforcing_budgets.md",
-                ],
-              "SingleLayerQG" => Any[
-                "generated/singlelayerqg_betadecay.md",
-                "generated/singlelayerqg_betaforced.md",
-                "generated/singlelayerqg_decay_topography.md",
-                "generated/singlelayerqg_decaying_barotropic_equivalentbarotropic.md"
-                ],
-              "BarotropicQGQL" => Any[
-                "generated/barotropicqgql_betaforced.md",
-                ],
-              "MultilayerQG" => Any[
-                "generated/multilayerqg_2layer.md"
-                ],
-              "SurfaceQG" => Any[
-                "generated/surfaceqg_decaying.md"
-                ]
-            ],
+            # "Examples" => [
+            #   "TwoDNavierStokes" => Any[
+            #     "generated/twodnavierstokes_decaying.md",
+            #     "generated/twodnavierstokes_stochasticforcing.md",
+            #     "generated/twodnavierstokes_stochasticforcing_budgets.md",
+            #     ],
+            #   "SingleLayerQG" => Any[
+            #     "generated/singlelayerqg_betadecay.md",
+            #     "generated/singlelayerqg_betaforced.md",
+            #     "generated/singlelayerqg_decay_topography.md",
+            #     "generated/singlelayerqg_decaying_barotropic_equivalentbarotropic.md"
+            #     ],
+            #   "BarotropicQGQL" => Any[
+            #     "generated/barotropicqgql_betaforced.md",
+            #     ],
+            #   "MultilayerQG" => Any[
+            #     "generated/multilayerqg_2layer.md"
+            #     ],
+            #   "SurfaceQG" => Any[
+            #     "generated/surfaceqg_decaying.md"
+            #     ]
+            # ],
             "Modules" => Any[
               "modules/twodnavierstokes.md",
               "modules/singlelayerqg.md",
