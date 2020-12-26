@@ -14,7 +14,7 @@ where overline above denotes a zonal mean, $\overline{\phi}(y, t) = \int \phi(x,
 - Constantinou, N. C., Farrell, B. F., and Ioannou, P. J. (2014). [Emergence and equilibration of jets in beta-plane turbulence: applications of Stochastic Structural Stability Theory.](http://doi.org/10.1175/JAS-D-13-076.1) *J. Atmos. Sci.*, **71 (5)**, 1818-1842.
 
 
-As in the [BarotropicQG module](barotropicqg.md), the flow is obtained through a streamfunction $\psi$ as $(u, v) = (-\partial_y\psi, \partial_x\psi)$. All flow fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
+As in the [SingleLayerQG module](singlelayerqg.md), the flow is obtained through a streamfunction $\psi$ as $(u, v) = (-\partial_y\psi, \partial_x\psi)$. All flow fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
 
 $$\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{(\partial_x v
 	- \partial_y u)}_{\text{relative vorticity}} +
