@@ -1,15 +1,13 @@
-# Forcing
+# Stochastic Forcing
 
-Forcing of the equations is implemented in various modules. Forcing can be either 
-deterministic or stochastic (random). For deterministic forcing the implementation is 
-straightforward; for stochastic forcing there are two main train of thoughts: 
-Itô calculus and Stratonovich calculus.
+Forcing terms are implemented in various modules. Forcing can be either deterministic or 
+stochastic (random). For deterministic forcing the implementation is straightforward; for 
+stochastic forcing there are two main train of thoughts: Itô calculus and Stratonovich calculus.
 
-Both stochastic calculi give the same results. But once we decide to use one of 
-the two calculi we have to remain consistent and use that calculus for everywhere. 
-There is a lot of confusion and mostly the confusion stems from not using the same 
-stochastic calculus consistently throughout the computation but rather interchanging 
-between the two.
+Both stochastic calculi give the same results. But once we decide to use one of the two calculi 
+we have to remain consistent and use that calculus throughout. There can be a lot of confusion 
+and oftentimes confusion stems from mixing the two different stochastic calculi in a single 
+computation but rather consistently using one of the two all along.
 
 !!! note "Convention chosen in GeophysicalFlows.jl"
     All modules included in GeophysicalFlows.jl use Stratonovich calculus.
@@ -35,7 +33,7 @@ A differential equation in the form:
 can also be written in an integral form:
 
 ```math
-	x(t) = \int_{t_0}^{t} f(x(s)) \, \mathrm{d} s.
+	x(t) = \int_{t_0}^t f(x(s)) \, \mathrm{d} s.
 ```
 
 In a similar manner, a stochastic differential equation
@@ -126,7 +124,7 @@ Luckily, here there is no need to distinguish between Itô and Stratonovich. Thi
 
 How do we time-step this SDE numerically? Let us assume a discretization of time into time-steps
 of ``\tau``: ``t_j = (j-1) \tau``. (What follows can be easily carried on for non-uniform time discretization.)
-With that, we denote ``x_j \equiv x(t_j)``. Then the Euler--Mayorama time-step scheme for \eqref{2} is
+With that, we denote ``x_j \equiv x(t_j)``. Then the Euler--Mayorama time-step scheme for (2) is
 
 ```math
 	x_{j+1} = x_j + (-\mu x_j) \tau + \sqrt{\sigma} (W_{j+1} - W_j).
@@ -155,7 +153,7 @@ How do we compute the work ``P`` done by the noise? It is:
 Say we didn't know the rules for transforming Stratonovich to Itô and we were wondering what is the extra drift term
 we have to include in the Itô formulations, i.e. the ``\tfrac{1}{2} \sigma`` term. We can compute the Itô's drift-term using
 that it is exactly equal to ``\langle x_t \circ \sqrt{\sigma} \mathrm{d} W_t \rangle``; and for the latter we can use the "usual" calculus.
-That is, rewrite \eqref{1} as:
+That is, rewrite (1) as:
 
 ```math
 \dot{x} = -\mu x + \xi , \tag{5}
@@ -168,7 +166,7 @@ understood in terms of distributions. The forcing ``\xi`` has the properties:
 \left \langle \xi(t) \right \rangle = 0 \quad \text{and} \quad \left \langle \xi(t) \xi(t') \right \rangle = \sigma \delta(t - t').
 ```
 
-Thus we need to compute ``\langle P_t \rangle = \langle x(t) \xi(t) \rangle``. But \eqref{5} has formally the solution:
+Thus we need to compute ``\langle P_t \rangle = \langle x(t) \xi(t) \rangle``. But (5) has formally the solution:
 
 ```math
 x(t) = e^{-\mu t} x(0) + \int_0^t e^{-\mu (t - s)} \xi(s) \, \mathrm{d} s .
@@ -187,30 +185,31 @@ of stochastic integrals.
 
 ### Numerical implementation
 
-How do we time-step \eqref{3}? We use the Euler--Maruyama time-stepping scheme:
+How do we time-step (3)? We use the Euler--Maruyama time-stepping scheme:
 
 ```math
 	E_{j+1} = E_j + \left ( -2 \mu E_j + \frac{\sigma}{2} \right ) \tau + \sqrt{\sigma} x_j (W_{j+1} - W_j).
 ```
-However, we cannot use Euler--Maruyama for time-stepping \eqref{4} since the Euler--Maruyama is "Itô"-thinking.
-To time-step \eqref{4} we have to approximate ``g`` in the middle of the time-step. There are many ways to do
+However, we cannot use Euler--Maruyama for time-stepping (3) since the Euler--Maruyama is "Itô"-thinking.
+To time-step (4) we have to approximate ``g`` in the middle of the time-step. There are many ways to do
 that, one of which is the, so called, Euler--Heun method:
 
 ```math
-	\widetilde{E}_{j+1} = E_j + (- 2\mu E_j) \tau + \sqrt{\sigma} x_j (W_{j+1} - W_j),\\
-	E_{j+1} = E_j + \left( -2 \mu \frac{E_j + \widetilde{E}_{j + 1}}{2} \right)\tau + \sqrt{\sigma}\frac{x_j + x_{j+1}}{2} (W_{j+1} - W_j).
+	\begin{aligned}
+	\widetilde{E}_{j+1} &= E_j + (- 2\mu E_j) \tau + \sqrt{\sigma} x_j (W_{j+1} - W_j), \\
+	E_{j+1} &= E_j + \left( -2 \mu \frac{E_j + \widetilde{E}_{j + 1}}{2} \right)\tau + \sqrt{\sigma}\frac{x_j + x_{j+1}}{2} (W_{j+1} - W_j) .
+	\end{aligned}
 ```
 
 ![energy_comparison](assets/energy_comparison.png)
 
 Figure above shows a comparison of the energy evolution as done from:
 - direct computation as ``\tfrac{1}{2} x_t^2``,
-- time-integration of \eqref{3}, and
-- time-integration of \eqref{4}.
+- time-integration of (3), and
+- time-integration of (4).
 
 Figures below show the ensemble mean energy budgets (using 1000 ensemble members) as computed using Itô and
-Stratonovich. For the energy budget to close we have to be consistent: if we time-step the energy equation based
-on Stratonovich calculus then we must compute the work also according to Stratonovich.
+Stratonovich. For the energy budget to close we have to be consistent: if we time-step the energy equation based on Stratonovich calculus then we must compute the work also according to Stratonovich.
 (For more details see `examples/forcing/simpleSDEItoStratonovich.jl`.
 
 ![energy_budgets_Ito](assets/energy_budgets_Ito.png)
@@ -230,8 +229,8 @@ which is also equivalently written as:
 \mathrm{d} \nabla^2 \psi_{t}(\bm{x}) = - \mu \nabla^2 \psi_{t} (\bm{x}) \mathrm{d} t + \sqrt{\sigma} \mathrm{d} W_{t} (\bm{x}) .
 ```
 
-The form \eqref{6} is the continuous version understood in the Stratonovich interpretation
-(similar to \eqref{5}). Thus, forcing ``\xi`` obeys now:
+The form (6) is the continuous version understood in the Stratonovich interpretation
+(similar to (5)). Thus, forcing ``\xi`` obeys now:
 
 ```math
 \langle \xi(\bm{x},t) \rangle = 0 \quad \text{and} \quad \langle \xi(\bm{x},t) \xi(\bm{x}',t') \rangle= Q(\bm{x} - \bm{x}') \delta(t-t'),
@@ -249,7 +248,7 @@ E = \tfrac{1}{2} \overline{|\bm{\nabla}\psi|^2}^{x,y} = -\tfrac{1}{2} \overline{
 ```
 
 where the overbar denotes average over ``x`` and ``y``. To obtain the energy equation we multiply
-\eqref{6} with ``-\psi`` and average over the whole domain. Thus, the work done by the forcing is given by the term:
+(6) with ``-\psi`` and average over the whole domain. Thus, the work done by the forcing is given by the term:
 
 ```math
 P = - \, \overline{\psi \, \xi}^{x,y},
@@ -280,7 +279,7 @@ mean of the Stratonovich work, i.e.:
 \textrm{Ito drift}= - \overline{\langle \underbrace{\psi(\bm{x}, t) \circ  \xi(\bm{x}, t)}_{\textrm{Stratonovich}} \rangle}^{x,y},
 ```
 
-But again the above can be computed relatively easy if we use the "formal" solution of \eqref{6}:
+But again the above can be computed relatively easy if we use the "formal" solution of (6):
 
 ```math
 \psi(\bm{x}, t) = e^{-\mu t} \psi(\bm{x}, 0) + \int_0^t e^{- \mu (t - s)} \nabla^{-2} \xi(\bm{x}, s) \, \mathrm{d} s ,
@@ -320,7 +319,7 @@ and by sampling over various forcing realizations:
 \langle \mathrm{d} P_t \rangle = \frac{\sigma}{2} \mathrm{d} t = \langle \sqrt{\sigma} x_t \circ \mathrm{d} W_t \rangle .
 ```
 
-All modules in GeophysicalFlows.jl use Stratonovich calculus formalism. For example, the energy injected per unit time by the forcing in the `TwoDNavierStokes` module is computed based on \eqref{8} via
+All modules in GeophysicalFlows.jl use Stratonovich calculus formalism. For example, the energy injected per unit time by the forcing in the `TwoDNavierStokes` module is computed based on (8) via
 
 ```@docs
 GeophysicalFlows.TwoDNavierStokes.energy_work
@@ -335,7 +334,7 @@ It turns out that nothing changes if we include the nonlinear terms in the vorti
 ```
 
 The nonlinearity does not alter the Itô drift; thus the ensemble mean energy input by the stochastic forcing,
-remains the same. We can easily verify this from the "formal" solution of \eqref{9}:
+remains the same. We can easily verify this from the "formal" solution of (9):
 
 ```math
 \psi(\bm{x}, t) = e^{-\mu t} \psi(\bm{x}, 0) + \int_0^t e^{- \mu (t - s)} \nabla^{-2} \xi(\bm{x}, s) \, \mathrm{d} s - \int_0^t \nabla^{-2} \mathsf{J} \left ( \psi(\bm{x}, s), \nabla^2 \psi(\bm{x}, s) \right ) \, \mathrm{d} s ,
