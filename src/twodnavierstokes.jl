@@ -82,6 +82,8 @@ struct Params{T} <: AbstractParams
   calcF! :: Function  # function that calculates the forcing F̂
 end
 
+Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
+
 
 # ---------
 # Equations
