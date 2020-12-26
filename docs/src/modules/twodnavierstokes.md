@@ -29,9 +29,9 @@ In doing so the Jacobian is computed in the conservative form: $\mathsf{J}(a,b) 
 
 Thus:
 
-$$\mathcal{L} = -\mu k^{-2n_\mu} - \nu k^{2n_\nu}\ ,$$
-$$\mathcal{N}(\widehat{\zeta}) = - \mathrm{i}k_x \mathrm{FFT}(u \zeta)-
-	\mathrm{i}k_y \mathrm{FFT}(v \zeta) + \widehat{f}\ .$$
+$$L = -\mu k^{-2n_\mu} - \nu k^{2n_\nu}\ ,$$
+$$N(\widehat{\zeta}) = - ik_x \mathrm{FFT}(u \zeta)-
+	ik_y \mathrm{FFT}(v \zeta) + \widehat{f}\ .$$
 
 
 ### AbstractTypes and Functions
@@ -67,7 +67,7 @@ For the forced case ($f\ne 0$) variables AbstractType is build with `ForcedVars`
 
 **`calcN!` function**
 
-The nonlinear term $\mathcal{N}(\widehat{\zeta})$ is computed via functions:
+The nonlinear term $N(\widehat{\zeta})$ is computed via functions:
 
 - `calcN_advection!`: computes $- \widehat{\mathsf{J}(\psi, \zeta)}$ and stores it in array `N`.
 

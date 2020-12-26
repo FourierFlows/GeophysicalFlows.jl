@@ -66,10 +66,7 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
 
   dEdt_numerical = (E[2:E.i] - E[1:E.i-1]) / prob.clock.dt
 
-  # If the Ito interpretation was used for the work
-  # then we need to add the drift term
-  # dEdt_computed = W[2:E.i] + ε - D[1:E.i-1] - R[1:E.i-1]      # Ito
-  dEdt_computed = W[2:E.i] - D[1:E.i-1] - R[1:E.i-1]        # Stratonovich
+  dEdt_computed = W[2:E.i] - D[1:E.i-1] - R[1:E.i-1]
 
   return isapprox(dEdt_numerical, dEdt_computed, rtol = 1e-3)
 end
@@ -119,10 +116,7 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
 
   dZdt_numerical = (Z[2:Z.i] - Z[1:Z.i-1]) / prob.clock.dt
 
-  # If the Ito interpretation was used for the work
-  # then we need to add the drift term
-  # dZdt_computed = W[2:Z.i] + εᶻ - D[1:Z.i-1] - R[1:Z.i-1]      # Ito
-  dZdt_computed = W[2:Z.i] - D[1:Z.i-1] - R[1:Z.i-1]        # Stratonovich
+  dZdt_computed = W[2:Z.i] - D[1:Z.i-1] - R[1:Z.i-1]
 
   return isapprox(dZdt_numerical, dZdt_computed, rtol = 1e-3)
 end

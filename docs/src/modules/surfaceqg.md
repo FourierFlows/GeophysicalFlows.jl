@@ -27,7 +27,7 @@ with the boundary conditions $b_s = -\partial_z\psi|_{z=0}$ and $\psi \rightarro
 These equations describe a system where the streamfunction (and hence the dynamics) at all depths is prescribed entirely by the surface buoyancy. By taking the Fourier transform in the horizontal ($x$ and $y$), the streamfunction-buoyancy relation is:
 
 ```math
-\widehat{\psi}(k_x, k_y, z, t) = -\frac{\widehat{b_s}}{k} \,\mathrm{e}^{kz}, 
+\widehat{\psi}(k_x, k_y, z, t) = -\frac{\widehat{b_s}}{k} \,e^{kz}, 
 ```
 
 where $k = \sqrt{k_x^2 + k_y^2}$ is the total horizontal wavenumber.
@@ -46,9 +46,9 @@ In doing so the Jacobian is computed in the conservative form: $\mathsf{J}(f,g) 
 Thus:
 ```math
 \begin{aligned}
-\widehat{u} &= \frac{\mathrm{i} k_y}{k} \widehat{b_s}, \qquad \widehat{v} = -\frac{\mathrm{i} k_x}{k} \widehat{b_s}, \\
-\mathcal{L} & = - \nu k^{2n_\nu},\\
-\mathcal{N}(\widehat{b_s}) & = - \mathrm{i} k_x \mathrm{FFT}(u b) - \mathrm{i} k_y \mathrm{FFT}(v b) .
+\widehat{u} &= \frac{i k_y}{k} \widehat{b_s}, \qquad \widehat{v} = -\frac{i k_x}{k} \widehat{b_s}, \\
+L & = - \nu k^{2n_\nu},\\
+N(\widehat{b_s}) & = - i k_x \mathrm{FFT}(u b) - i k_y \mathrm{FFT}(v b) .
 \end{aligned}
 ```
 

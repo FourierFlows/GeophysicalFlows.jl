@@ -33,9 +33,9 @@ In view of the relationships above, when we convert to Fourier space ``q``'s and
 related via the matrix equation
 
 ```math
-\begin{pmatrix} \widehat{q}_{\boldsymbol{k}, 1}\\\vdots\\\widehat{q}_{\boldsymbol{k}, n} \end{pmatrix} =
-\underbrace{\left(-|\boldsymbol{k}|^2 \mathbb{1} + \mathbb{F} \right)}_{\equiv \mathbb{S}_{\boldsymbol{k}}}
-\begin{pmatrix} \widehat{\psi}_{\boldsymbol{k}, 1}\\\vdots\\\widehat{\psi}_{\boldsymbol{k}, n} \end{pmatrix}
+\begin{pmatrix} \widehat{q}_{\bm{k}, 1}\\\vdots\\\widehat{q}_{\bm{k}, n} \end{pmatrix} =
+\underbrace{\left(-|\bm{k}|^2 \mathbb{1} + \mathbb{F} \right)}_{\equiv \mathbb{S}_{\bm{k}}}
+\begin{pmatrix} \widehat{\psi}_{\bm{k}, 1}\\\vdots\\\widehat{\psi}_{\bm{k}, n} \end{pmatrix}
 ```
 
 where
@@ -79,7 +79,7 @@ GeophysicalFlows.MultilayerQG.fluxes
 
 ### Implementation
 
-Matrices ``\mathbb{S}_{\boldsymbol{k}}`` as well as ``\mathbb{S}^{-1}_{\boldsymbol{k}}`` are included 
+Matrices ``\mathbb{S}_{\bm{k}}`` as well as ``\mathbb{S}^{-1}_{\bm{k}}`` are included 
 in `params` as `params.S` and `params.S⁻¹` respectively. Additionally, the background PV gradients 
 ``\partial_x Q`` and ``\partial_y Q`` are also included in the `params` as `params.Qx` and `params.Qy`.
 
@@ -103,8 +103,8 @@ Thus:
 
 ```math
 \begin{aligned}
-\mathcal{L} & = - \nu k^{2n_\nu} \ , \\
-\mathcal{N}(\widehat{q}_j) & = - \widehat{\mathsf{J}(\psi_j, q_j)} - \widehat{U_j \partial_x Q_j} - \widehat{U_j \partial_x q_j}
+L & = - \nu k^{2n_\nu} \ , \\
+N(\widehat{q}_j) & = - \widehat{\mathsf{J}(\psi_j, q_j)} - \widehat{U_j \partial_x Q_j} - \widehat{U_j \partial_x q_j}
  + \widehat{(\partial_y \psi_j)(\partial_x Q_j)} - \widehat{(\partial_x \psi_j)(\partial_y Q_j)} + \delta_{j,n} \mu k^{2} \widehat{\psi}_n\ .
 \end{aligned}
 ```

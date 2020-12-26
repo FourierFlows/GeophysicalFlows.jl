@@ -37,7 +37,7 @@ where $\mathsf{J}(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x
 
 The equation is time-stepped forward in Fourier space:
 
-$$\partial_t \widehat{\zeta} = - \widehat{\mathsf{J}(\psi, q)}^{\textrm{QL}} +\beta\frac{\mathrm{i}k_x}{k^2}\widehat{\zeta} -\left(\mu
+$$\partial_t \widehat{\zeta} = - \widehat{\mathsf{J}(\psi, q)}^{\textrm{QL}} +\beta\frac{ik_x}{k^2}\widehat{\zeta} -\left(\mu
 +\nu k^{2n_\nu}\right) \widehat{\zeta}  + \widehat{f}\ .$$
 
 In doing so the Jacobian is computed in the conservative form: $\mathsf{J}(f,g) =
@@ -45,9 +45,9 @@ In doing so the Jacobian is computed in the conservative form: $\mathsf{J}(f,g) 
 
 Thus:
 
-$$\mathcal{L} = \beta\frac{\mathrm{i}k_x}{k^2} - \mu - \nu k^{2n_\nu}\ ,$$
-$$\mathcal{N}(\widehat{\zeta}) = - \mathrm{i}k_x \mathrm{FFT}(u q)^{\textrm{QL}}-
-	\mathrm{i}k_y \mathrm{FFT}(v q)^{\textrm{QL}}\ .$$
+$$L = \beta\frac{ik_x}{k^2} - \mu - \nu k^{2n_\nu}\ ,$$
+$$N(\widehat{\zeta}) = - ik_x \mathrm{FFT}(u q)^{\textrm{QL}}-
+	ik_y \mathrm{FFT}(v q)^{\textrm{QL}}\ .$$
 
 
 ## Examples

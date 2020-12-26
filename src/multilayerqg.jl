@@ -561,11 +561,11 @@ is the number of layers in the fluid. (When ``n=1``, only the kinetic energy is 
 
 The kinetic energy at the ``j``-th fluid layer is 
 ```math
-\\textrm{KE}_j = \\frac{H_j}{H} \\int \\frac1{2} |\\boldsymbol{\\nabla} \\psi_j|^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n \\ ,
+\\textrm{KE}_j = \\frac{H_j}{H} \\int \\frac1{2} |\\bm{\\nabla} \\psi_j|^2 \\frac{\\mathrm{d}^2 \\bm{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n \\ ,
 ```
 while the potential energy that corresponds to the interface ``j+1/2`` (i.e., interface between the ``j``-th and ``(j+1)``-th fluid layer) is
 ```math
-\\textrm{PE}_{j+1/2} = \\int \\frac1{2} \\frac{f_0^2}{g'_{j+1/2}} (\\psi_j - \\psi_{j+1})^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n-1 \\ .
+\\textrm{PE}_{j+1/2} = \\int \\frac1{2} \\frac{f_0^2}{g'_{j+1/2}} (\\psi_j - \\psi_{j+1})^2 \\frac{\\mathrm{d}^2 \\bm{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n-1 \\ .
 ```
 """
 function energies(vars, params, grid, sol)
@@ -613,13 +613,13 @@ verticalfluxes``_{3/2},...,``verticalfluxes``_{n-1/2}``, where ``n`` is the tota
 The lateral eddy fluxes whithin the ``j``-th fluid layer are
 ```math
 \\textrm{lateralfluxes}_j = \\frac{H_j}{H} \\int U_j \\, v_j \\, \\partial_y u_j 
-\\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n \\ ,
+\\frac{\\mathrm{d}^2 \\bm{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n \\ ,
 ```
 while the vertical eddy fluxes at the ``j+1/2``-th fluid interface  (i.e., interface between 
 the ``j``-th and ``(j+1)``-th fluid layer) are
 ```math
 \\textrm{verticalfluxes}_{j+1/2} = \\int \\frac{f_0^2}{g'_{j+1/2} H} (U_j - U_{j+1}) \\, 
-v_{j+1} \\, \\psi_{j} \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad 
+v_{j+1} \\, \\psi_{j} \\frac{\\mathrm{d}^2 \\bm{x}}{L_x L_y} \\ , \\quad 
 j = 1 , \\dots , n-1.
 ```
 """

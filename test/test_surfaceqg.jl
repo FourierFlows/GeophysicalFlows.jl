@@ -208,10 +208,7 @@ function test_sqg_stochasticforcing_buoyancy_variance_budget(dev::Device=CPU(); 
 
   dBdt_numerical = (B[2:B.i] - B[1:B.i-1]) / prob.clock.dt
 
-  # If the Ito interpretation was used for the work
-  # then we need to add the drift term
-  # dBdt_computed = W[2:B.i] + εᵇ - D[1:B.i-1]      # Ito
-  dBdt_computed = W[2:B.i] - D[1:B.i-1]        # Stratonovich
+  dBdt_computed = W[2:B.i] - D[1:B.i-1]
   
   return isapprox(dBdt_numerical, dBdt_computed, rtol = 1e-4)
 end

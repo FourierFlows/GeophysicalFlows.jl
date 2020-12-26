@@ -310,8 +310,7 @@ end
 @inline function energy_work(sol, vars::StochasticForcedVars, grid)
   energy_workh = vars.uh # use vars.uh as scratch variable
   
-  @. energy_workh = grid.invKrsq * (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
-  # @. energy_workh = grid.invKrsq * vars.prevsol * conj(vars.Fh)           # Ito
+  @. energy_workh = grid.invKrsq * (vars.prevsol + sol) / 2 * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_workh, grid)
 end
 
@@ -333,8 +332,7 @@ end
 @inline function enstrophy_work(sol, vars::StochasticForcedVars, grid)
   enstrophy_workh = vars.uh # use vars.uh as scratch variable
   
-  @. enstrophy_workh = (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
-  # @. enstrophy_workh = grid.invKrsq * vars.prevsol * conj(vars.Fh)           # Ito
+  @. enstrophy_workh = (vars.prevsol + sol) / 2 * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_workh, grid)
 end
 
