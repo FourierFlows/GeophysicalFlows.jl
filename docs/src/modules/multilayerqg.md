@@ -10,7 +10,7 @@ is the number of fluid layers.
 The QGPV in each layer is
 
 ```math
-\mathrm{QGPV}_j = q_j  + \underbrace{f_0 + \beta y}_{\textrm{planetary PV}} + \delta_{j,n} \underbrace{\frac{f_0 h}{H_n}}_{\textrm{topographic PV}}, \quad j = 1, \dots, n \ .
+\mathrm{QGPV}_j = q_j + \underbrace{f_0 + \beta y}_{\textrm{planetary PV}} + \delta_{j, n} \underbrace{\frac{f_0 h}{H_n}}_{\textrm{topographic PV}}, \quad j = 1, \dots, n \ .
 ```
 
 where ``q_j`` incorporates the relative vorticity in each layer ``\nabla^2\psi_j`` and the 
@@ -53,14 +53,14 @@ where
 Including an imposed zonal flow ``U_j(y)`` in each layer, the equations of motion are:
 
 ```math
-\partial_t q_j + \mathsf{J}(\psi_j, q_j ) + (U_j - \partial_y\psi_j) \partial_x Q_j +  U_j \partial_x q_j  + (\partial_y Q_j)(\partial_x \psi_j) = -\delta_{j, n} \mu \nabla^2 \psi_n - \nu (-1)^{n_\nu} \nabla^{2n_\nu} q_j,
+\partial_t q_j + \mathsf{J}(\psi_j, q_j ) + (U_j - \partial_y\psi_j) \partial_x Q_j +  U_j \partial_x q_j  + (\partial_y Q_j)(\partial_x \psi_j) = -\delta_{j, n} \mu \nabla^2 \psi_n - \nu (-1)^{n_\nu} \nabla^{2 n_\nu} q_j,
 ```
 
 with
 
 ```math
 \partial_y Q_j \equiv \beta - \partial_y^2 U_j - (1-\delta_{j,1}) F_{j-1/2, j} (U_{j-1} - U_j) - (1 - \delta_{j,n}) F_{j+1/2, j} (U_{j+1} - U_j) + \delta_{j,n} \partial_y \eta \ , \\
-\partial_x Q_j \equiv \delta_{j,n} \partial_x \eta \ .
+\partial_x Q_j \equiv \delta_{j, n} \partial_x \eta \ .
 ```
 
 The eddy kinetic energy in each layer and the eddy potential energy that corresponds to each 
@@ -91,7 +91,7 @@ The equations of motion are time-stepped forward in Fourier space:
 
 ```math
 \partial_t \widehat{q}_j = - \widehat{\mathsf{J}(\psi_j, q_j)}  - \widehat{U_j \partial_x Q_j} - \widehat{U_j \partial_x q_j}
-+ \widehat{(\partial_y \psi_j) \partial_x Q_j}  - \widehat{(\partial_x\psi_j)(\partial_y Q_j)} + \delta_{j,n} \mu k^{2} \widehat{\psi}_n - \nu k^{2n_\nu} \widehat{q}_j \ .
++ \widehat{(\partial_y \psi_j) \partial_x Q_j}  - \widehat{(\partial_x \psi_j)(\partial_y Q_j)} + \delta_{j, n} \mu |𝐤|^{2} \widehat{\psi}_n - \nu |𝐤|^{2n_\nu} \widehat{q}_j \ .
 ```
 
 In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) =
@@ -103,9 +103,9 @@ Thus:
 
 ```math
 \begin{aligned}
-L & = - \nu k^{2n_\nu} \ , \\
+L & = - \nu |𝐤|^{2n_\nu} \ , \\
 N(\widehat{q}_j) & = - \widehat{\mathsf{J}(\psi_j, q_j)} - \widehat{U_j \partial_x Q_j} - \widehat{U_j \partial_x q_j}
- + \widehat{(\partial_y \psi_j)(\partial_x Q_j)} - \widehat{(\partial_x \psi_j)(\partial_y Q_j)} + \delta_{j,n} \mu k^{2} \widehat{\psi}_n\ .
+ + \widehat{(\partial_y \psi_j)(\partial_x Q_j)} - \widehat{(\partial_x \psi_j)(\partial_y Q_j)} + \delta_{j,n} \mu |𝐤|^{2} \widehat{\psi}_n\ .
 \end{aligned}
 ```
  

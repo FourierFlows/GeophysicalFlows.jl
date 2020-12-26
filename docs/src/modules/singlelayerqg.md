@@ -53,7 +53,7 @@ GeophysicalFlows.SingleLayerQG.energy
 The equation is time-stepped forward in Fourier space:
 
 ```math
-\partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q + \eta)} + \beta \frac{i k_x}{k^2 + 1/\ell^2} \widehat{q} - \left(\mu + \nu k^{2n_\nu} \right) \widehat{q} + \widehat{f} \ .
+\partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q + \eta)} + \beta \frac{i k_x}{|𝐤|^2 + 1/\ell^2} \widehat{q} - \left(\mu + \nu |𝐤|^{2n_\nu} \right) \widehat{q} + \widehat{f} \ .
 ```
 
 In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) =
@@ -63,7 +63,7 @@ Thus:
 
 ```math
 \begin{aligned}
-L & = \beta \frac{i k_x}{k^2 + 1/\ell^2} - \mu - \nu k^{2n_\nu} \ , \\
+L & = \beta \frac{i k_x}{|𝐤|^2 + 1/\ell^2} - \mu - \nu |𝐤|^{2n_\nu} \ , \\
 N(\widehat{q}) & = - i k_x \mathrm{FFT}[u (q+\eta)] - i k_y \mathrm{FFT}[v (q+\eta)] \ .
 \end{aligned}
 ```

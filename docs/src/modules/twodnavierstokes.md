@@ -21,15 +21,15 @@ viscosity corresponds to $n_{\nu}=1$.
 
 The equation is time-stepped forward in Fourier space:
 
-$$\partial_t \widehat{\zeta} = - \widehat{\mathsf{J}(\psi, \zeta)} -\left(\mu k^{2n_\mu}
-+\nu k^{2n_\nu}\right) \widehat{\zeta}  + \widehat{f}\ .$$
+$$\partial_t \widehat{\zeta} = - \widehat{\mathsf{J}(\psi, \zeta)} -\left(\mu |𝐤|^{2n_\mu}
++\nu |𝐤|^{2n_\nu}\right) \widehat{\zeta}  + \widehat{f}\ .$$
 
 In doing so the Jacobian is computed in the conservative form: $\mathsf{J}(a,b) =
 \partial_y [ (\partial_x a) b] -\partial_x[ (\partial_y a) b]$.
 
 Thus:
 
-$$L = -\mu k^{-2n_\mu} - \nu k^{2n_\nu}\ ,$$
+$$L = -\mu |𝐤|^{-2n_\mu} - \nu |𝐤|^{2n_\nu}\ ,$$
 $$N(\widehat{\zeta}) = - ik_x \mathrm{FFT}(u \zeta)-
 	ik_y \mathrm{FFT}(v \zeta) + \widehat{f}\ .$$
 
