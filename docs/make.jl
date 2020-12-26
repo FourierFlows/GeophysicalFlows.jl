@@ -94,7 +94,7 @@ sitename = "GeophysicalFlows.jl",
               "modules/multilayerqg.md",
               "modules/surfaceqg.md"
             ],
-            "Forcing" => "forcing.md",
+            "Forcing" => "stockastic_forcing.md",
             "DocStrings" => Any[
             "man/types.md",
             "man/functions.md"]
