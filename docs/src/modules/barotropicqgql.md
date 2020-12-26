@@ -15,12 +15,11 @@ where overline above denotes a zonal mean, ``\overline{\phi}(y, t) = \int \phi(x
 - Srinivasan, K. and Young, W. R. (2012). [Zonostrophic instability.](http://doi.org/10.1175/JAS-D-11-0200.1) *J. Atmos. Sci.*, **69 (5)**, 1633-1656.
 - Constantinou, N. C., Farrell, B. F., and Ioannou, P. J. (2014). [Emergence and equilibration of jets in beta-plane turbulence: applications of Stochastic Structural Stability Theory.](http://doi.org/10.1175/JAS-D-13-076.1) *J. Atmos. Sci.*, **71 (5)**, 1818-1842.
 
-As in the [BarotropicQG module](barotropicqg.md), the flow is obtained through a streamfunction $\psi$ as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. All flow fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
+As in the [SingleLayerQG module](singlelayerqg.md), the flow is obtained through a streamfunction $\psi$ as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. All flow fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
 
 ```math
 \underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{(\partial_x v
-	- \partial_y u)}_{\text{relative vorticity}} +
-	\underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}} .
+	- \partial_y u)}_{\text{relative vorticity}} + \underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}} .
 ```
 
 The dynamical variable is the component of the vorticity of the flow normal to the plane of motion, ``\zeta \equiv \partial_x v - \partial_y u = \nabla^2 \psi``. Also, we denote the topographic PV with ``\eta \equiv f_0 h/H``. After we apply the eddy-mean flow decomposition above, the QGPV dynamics are:
