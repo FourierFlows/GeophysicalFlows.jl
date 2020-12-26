@@ -65,19 +65,22 @@ end
 # ----------
 
 """
-    Params(ν, nν, μ, nμ, calcF!)
+    Params{T}(ν, nν, μ, nμ, calcF!)
 
 Returns the params for two-dimensional Navier-Stokes.
 """
 struct Params{T} <: AbstractParams
-       ν :: T         # Viscosity
-      nν :: Int       # Hyperviscous order
-       μ :: T         # Hypoviscosity
-      nμ :: Int       # Hypoviscosity order
-  calcF! :: Function  # Function that calculates the forcing F̂
+    "small-scale (hyper)-viscosity coefficient"
+       ν :: T
+    "(hyper)-viscosity order, `nν ≥ 1`"
+      nν :: Int
+    "large-scale (hypo)-viscosity coefficient"
+       μ :: T
+    "(hypo)-viscosity order, `nν ≤ 0`"
+      nμ :: Int
+    "function that calculates the forcing F̂"
+   calcF :: Function  # function that calculates the forcing F̂
 end
-
-Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
 
 
 # ---------
@@ -112,14 +115,27 @@ end
 
 abstract type TwoDNavierStokesVars <: AbstractVars end
 
+"""
+    Vars{Aphys, Atrans, F, P}(ζ, u, v, ζh, uh, vh, Fh, prevsol)
+
+Returns the vars for two-dimensional Navier-Stokes.
+"""
 struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
+    "relative vorticity"
         ζ :: Aphys
+    "x-component of velocity"
         u :: Aphys
+    "y-component of velocity"
         v :: Aphys
+    "Fourier transform of relative vorticity"
        ζh :: Atrans
+    "Fourier transform of x-component of velocity"
        uh :: Atrans
+    "Fourier transform of y-component of velocity"
        vh :: Atrans
+    "Fourier transform of forcing"
        Fh :: F
+    "`sol` at previous time-step"
   prevsol :: P
 end
 
