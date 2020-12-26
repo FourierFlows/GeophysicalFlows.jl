@@ -62,30 +62,28 @@ GeophysicalFlows.TwoDNavierStokes.addforcing!
 
 **Params**
 
-For the unforced case (``f=0``) parameters AbstractType is build with `Params` and it includes:
-- `ν`:   Float; viscosity or hyperviscosity coefficient.
-- `nν`: Integer ``>0``; the order of viscosity ``n_ν``. Case ``n_ν = 1`` gives normal viscosity.
-- `μ`: Float; bottom drag or hypoviscosity coefficient.
-- `nμ`: Integer ``\ge 0``; the order of hypodrag ``n_μ``. Case ``n_μ = 0`` gives plain linear drag ``μ``.
-
-For the forced case (``F\ne 0``) parameters AbstractType is build with `ForcedParams`. It includes all parameters in `Params` and additionally:
-- `calcF!`: Function that calculates the forcing ``\widehat{F}``
-
+For the unforced case (``F = 0``), the `params` struct is build with `Params` and it includes:
+- `ν :: Float`: small-scale (hyper)-viscosity coefficient,
+- `nν :: Int`: (hyper)-viscosity order, `nν ≥ 1`,
+- `μ :: Float`: large-scale (hypo)-viscosity coefficient,
+- `nμ :: Int`: (hypo)-viscosity order, `nν ≤ 0`,
+- `calcF :: Function`: Function that computes the forcing ``F̂``.
 
 **Vars**
 
-For the unforced case (``F=0``) variables AbstractType is build with `Vars` and it includes:
-- `ζ`: Array of Floats; relative vorticity.
-- `u`: Array of Floats; ``x``-velocity, ``u``.
-- `v`: Array of Floats; ``y``-velocity, ``v``.
-- `sol`: Array of Complex; the solution, ``\widehat{\zeta}``.
-- `ζh`: Array of Complex; the Fourier transform ``\widehat{\zeta}``.
-- `uh`: Array of Complex; the Fourier transform ``\widehat{u}``.
-- `vh`: Array of Complex; the Fourier transform ``\widehat{v}``.
+For the unforced case (``F=0``) the `vars` struct with `Vars` and it includes:
+- `ζ :: Array{Float}`: relative vorticity, ``ζ``,
+- `u :: Array{Float}`: ``x``-velocity, ``u``,
+- `v :: Array{Float}`: ``y``-velocity, ``v``,
+- `ζh :: Array{Complex{Float}}`: the Fourier transform of ``ζ``,
+- `uh :: Array{Complex{Float}}`: the Fourier transform of ``u``,
+- `vh :: Array{Complex{Float}}`: the Fourier transform of ``v``.
 
-For the forced case (``f \ne 0``) variables AbstractType is build with `ForcedVars`. It includes all variables in `Vars` and additionally:
-- `Fh`: Array of Complex; the Fourier transform ``\widehat{f}``.
-- `prevsol`: Array of Complex; the values of the solution `sol` at the previous time-step (useful for calculating the work done by the forcing).
+The state variable `sol` is `ζh`.
+
+For the forced case (``F \ne 0``) the `vars` struct is build with `ForcedVars` or `StochasticForcedVars`. It includes all variables in `Vars` and additionally:
+- `Fh :: Complex{Float}`: the Fourier transform ``\widehat{f}``.
+- `prevsol :: Array{Complex{Float}}`: the solution `sol` at the previous time-step (needed to calculate the work done by the forcing when forcing is stochastic).
 
 ### Helper functions
 
@@ -102,33 +100,18 @@ GeophysicalFlows.TwoDNavierStokes.set_ζ!
 
 ```@docs
 GeophysicalFlows.TwoDNavierStokes.energy
-```
-
-```@docs
 GeophysicalFlows.TwoDNavierStokes.enstrophy
 ```
 
 ```@docs
 GeophysicalFlows.TwoDNavierStokes.energy_dissipation
-```
-
-```@docs
-GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation
-```
-
-```@docs
 GeophysicalFlows.TwoDNavierStokes.energy_drag
-```
-
-```@docs
-GeophysicalFlows.TwoDNavierStokes.enstrophy_drag
-```
-
-```@docs
 GeophysicalFlows.TwoDNavierStokes.energy_work
 ```
 
 ```@docs
+GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation
+GeophysicalFlows.TwoDNavierStokes.enstrophy_drag
 GeophysicalFlows.TwoDNavierStokes.enstrophy_work
 ```
 
