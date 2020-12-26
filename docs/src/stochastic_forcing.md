@@ -361,7 +361,7 @@ savefig("assets/energy_budgets_Stratonovich.svg"); nothing # hide
 We want now to transfer all the knowledge we got from the previous sections to PDEs. In particular we'll focus on the simple SPDE:
 
 ```math
-\partial_t \nabla^2 \psi(\bm{x}, t) =  -\mu \nabla^2 \psi(\bm{x}, t) + \xi(\bm{x}, t) , \tag{6}
+\partial_t \nabla^2 \psi(\bm{x}, t) =  - \mu \nabla^2 \psi(\bm{x}, t) + \xi(\bm{x}, t) , \tag{6}
 ```
 
 which is also equivalently written as:
@@ -370,19 +370,20 @@ which is also equivalently written as:
 \mathrm{d} \nabla^2 \psi_{t}(\bm{x}) = - \mu \nabla^2 \psi_{t} (\bm{x}) \mathrm{d} t + \sqrt{\sigma} \mathrm{d} W_{t} (\bm{x}) .
 ```
 
-The form (6) is the continuous version understood in the Stratonovich interpretation
-(similar to (5)). Thus, forcing ``\xi`` obeys now:
+The form (6) is the continuous version understood in the Stratonovich interpretation (similar 
+to (5)). Thus, the forcing forcing ``\xi`` obeys:
 
 ```math
-\langle \xi(\bm{x},t) \rangle = 0 \quad \text{and} \quad \langle \xi(\bm{x},t) \xi(\bm{x}',t') \rangle= Q(\bm{x} - \bm{x}') \delta(t-t'),
+\langle \xi(\bm{x},t) \rangle = 0 \quad \text{and} \quad \langle \xi(\bm{x}, t) \xi(\bm{x}', t') \rangle= Q(\bm{x} - \bm{x}') \delta(t-t'),
 ```
 
-that is the forcing is white in time but spatially correlated; its spatial correlation is prescribed by the
-function ``Q`` which is, necessarily, homogeneous in all its arguments
+that is the forcing is white in time but spatially correlated; its spatial correlation is 
+prescribed by the function ``Q`` which is, necessarily, homogeneous in all its arguments
 (see discussion by [Constantinou](http://arxiv.org/abs/1503.07644); Appendix A).
 
-The above describes the vorticity evolution of a two-dimensional fluid ``\nabla^2 \psi`` which is sstochastically
-forced while dissipated by linear drag ``\mu``. The energy of the fluid is:
+The above describes the vorticity evolution of a two-dimensional fluid ``\nabla^2 \psi`` 
+that is stochastically forced while dissipated by linear drag ``\mu``. The energy of the 
+fluid is:
 
 ```math
 E = \tfrac{1}{2} \overline{|\bm{\nabla}\psi|^2}^{x,y} = -\tfrac{1}{2} \overline{\psi \nabla^2\psi}^{x,y},
@@ -397,30 +398,31 @@ P = - \, \overline{\psi \, \xi}^{x,y},
 
 but the above is a stochastic integral and it is meaningless without a rule for computing the stochastic integral.
 
-Numerically, the work done by the forcing can be obtained Stratonovich-wise as:
+Numerically, the work done by the forcing at the ``j``-th timestep can be obtained 
+Stratonovich-wise via:
 
 ```math
 \begin{aligned}
-P_j = - \, \overline{\frac{\psi(\bm{x}, t_j) + \psi(\bm{x}, t_{j+1})}{2}  \xi(\bm{x}, t_{j+1}) }^{x,y},
+P_j = - \, \overline{\frac{\psi(\bm{x}, t_j) + \psi(\bm{x}, t_{j+1})}{2}  \xi(\bm{x}, t_{j+1}) }^{x,y} ,
 \end{aligned}
 ```
 
-or Itô-wise
+or Itô-wise as
 
 ```math
 \begin{aligned}
-P_j = -\, \overline{ \psi(\bm{x}, t_j) \xi(\bm{x}, t_{j+1}) }^{x,y} + \text{drift},
+P_j = -\, \overline{ \psi(\bm{x}, t_j) \xi(\bm{x}, t_{j+1}) }^{x,y} + \text{drift} .
 \end{aligned}
 ```
 
-But how much is the Itô drift term in this case? As in the previous section, the drift is *precisely* the ensemble
-mean of the Stratonovich work, i.e.:
+But how much is the Itô drift term in this case? As in the previous section, the drift is 
+*precisely* the ensemble mean of the Stratonovich work, i.e.:
 
 ```math
-\textrm{Ito drift}= - \overline{\langle \underbrace{\psi(\bm{x}, t) \circ  \xi(\bm{x}, t)}_{\textrm{Stratonovich}} \rangle}^{x,y},
+\textrm{Ito drift}= - \overline{\langle \underbrace{\psi(\bm{x}, t) \circ  \xi(\bm{x}, t)}_{\textrm{Stratonovich}} \rangle}^{x,y} .
 ```
 
-But again the above can be computed relatively easy if we use the "formal" solution of (6):
+But again, the above can be computed using the "formal" solution of (6):
 
 ```math
 \psi(\bm{x}, t) = e^{-\mu t} \psi(\bm{x}, 0) + \int_0^t e^{- \mu (t - s)} \nabla^{-2} \xi(\bm{x}, s) \, \mathrm{d} s ,
@@ -435,14 +437,15 @@ which implies
 = \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \frac{\widehat{Q}(\bm{k})}{2 |\bm{k}|^2} .
 ```
 
-Thus, the drift, or in this case the mean energy input rate by the stochastic forcing, is precisely determined
-from the spatial correlation of the forcing. Let us denote:
+Thus, the drift, or in this case the mean energy input rate by the stochastic forcing, is 
+precisely determined from the spatial correlation of the forcing. Let us denote:
 
 ```math
 \varepsilon \equiv \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \frac{\widehat{Q}(\bm{k})}{2 |\bm{k}|^2} . \tag{7}
 ```
 
-Therefore, work for a single forcing realization is computed numerically as:
+Therefore, work for a single forcing realization at the ``j``-th timestep is numerically 
+computed as:
 
 ```math
 \begin{aligned}
@@ -460,29 +463,34 @@ and by sampling over various forcing realizations:
 \langle \mathrm{d} P_t \rangle = \frac{\sigma}{2} \mathrm{d} t = \langle \sqrt{\sigma} x_t \circ \mathrm{d} W_t \rangle .
 ```
 
-All modules in GeophysicalFlows.jl use Stratonovich calculus formalism. For example, the energy injected per unit time by the forcing in the `TwoDNavierStokes` module is computed based on (8) via
+All modules in GeophysicalFlows.jl follow Stratonovich calculus. For example, the energy 
+injected per unit time by the forcing in the `TwoDNavierStokes` module is computed based 
+on (8) via
 
 ```@docs
 GeophysicalFlows.TwoDNavierStokes.energy_work
 ```
 
-## A less-simple SPDE
+## A bit more elaborate SPDE
 
-It turns out that nothing changes if we include the nonlinear terms in the vorticity equation:
+It turns out everything carries through if in our SPDE above for the 2D vorticity equation we 
+also include the nonlinear advection terms:
 
 ```math
 \partial_t \nabla^2 \psi(\bm{x}, t) + \mathsf{J}(\psi, \nabla^2 \psi) = -\mu \nabla^2 \psi(\bm{x}, t) + \xi(\bm{x}, t) . \tag{9}
 ```
 
-The nonlinearity does not alter the Itô drift; thus the ensemble mean energy input by the stochastic forcing,
-remains the same. We can easily verify this from the "formal" solution of (9):
+The nonlinearity does not alter the Itô drift; thus the ensemble mean energy input by the 
+stochastic forcing, remains the same. We can easily verify this from the "formal" solution 
+of (9):
 
 ```math
 \psi(\bm{x}, t) = e^{-\mu t} \psi(\bm{x}, 0) + \int_0^t e^{- \mu (t - s)} \nabla^{-2} \xi(\bm{x}, s) \, \mathrm{d} s - \int_0^t \nabla^{-2} \mathsf{J} \left ( \psi(\bm{x}, s), \nabla^2 \psi(\bm{x}, s) \right ) \, \mathrm{d} s ,
 ```
 
 When multiplied with ``\xi(\bm{x}, t)`` the last term vanishes since its only non-zero 
-contribution comes from the point ``s=t`` which is of measure zero (in the integrated sense). 
+contribution comes from the point ``s=t``, which is of measure zero (in the integrated sense). 
+
 A demonstration of the energy budgets for stochastic forcing can be found in an 
 [example of the TwoDNavierStokes](dev/generated/twodnavierstokes_stochasticforcing_budgets/) 
 module.
