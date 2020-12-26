@@ -79,7 +79,7 @@ struct Params{T} <: AbstractParams
     "(hypo)-viscosity order, `nν ≤ 0`"
       nμ :: Int
     "function that calculates the forcing F̂"
-   calcF :: Function  # function that calculates the forcing F̂
+  calcF! :: Function  # function that calculates the forcing F̂
 end
 
 

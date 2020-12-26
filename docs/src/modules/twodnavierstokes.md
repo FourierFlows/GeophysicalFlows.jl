@@ -67,7 +67,7 @@ For the unforced case (``F = 0``), the `params` struct is build with `Params` an
 - `nν :: Int`: (hyper)-viscosity order, `nν ≥ 1`,
 - `μ :: Float`: large-scale (hypo)-viscosity coefficient,
 - `nμ :: Int`: (hypo)-viscosity order, `nν ≤ 0`,
-- `calcF :: Function`: Function that computes the forcing ``F̂``.
+- `calcF! :: Function`: Function that computes the forcing ``F̂``.
 
 **Vars**
 
