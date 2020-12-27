@@ -3,8 +3,9 @@
 ### Basic Equations
 
 This module solves the barotropic or equivalent barotropic quasi-geostrophic vorticity equation 
-on a beta-plane of variable fluid depth ``H - h(x, y)``. The flow is obtained through a streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. All flow 
-fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
+on a beta-plane of variable fluid depth ``H - h(x, y)``. The flow is obtained through a 
+streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. All flow fields 
+can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
 
 ```math
 	\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{\partial_x v
@@ -16,19 +17,19 @@ fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). He
 where ``\ell`` is the Rossby radius of deformation. Purely barotropic dynamics corresponds to 
 infinite Rossby radius of deformation (``\ell = \infty``), while a flow with a finite Rossby 
 radius follows is said to obey equivalent-barotropic dynamics. We denote the sum of the relative
-vorticity and the vortex stretching contributions to the QGPV with ``q = \nabla^2 \psi - \psi / \ell^2``.
+vorticity and the vortex stretching contributions to the QGPV with ``q \equiv \nabla^2 \psi - \psi / \ell^2``.
 Also, we denote the topographic PV with ``\eta \equiv f_0 h / H``.
 
 The dynamical variable is ``q``.  Thus, the equation solved by the module is:
 
 ```math
-\partial_t q + \mathsf{J}(\psi, q + \eta) +
-\beta \partial_x \psi = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
-\right] q}_{\textrm{dissipation}} + f \ .
+\partial_t q + \mathsf{J}(\psi, q + \eta) + \beta \partial_x \psi = 
+\underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] q}_{\textrm{dissipation}} + F \ .
 ```
 
 where ``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x b)``. On 
-the right hand side, ``f(x, y, t)`` is forcing, ``\mu`` is linear drag, and ``\nu`` is hyperviscosity of order ``n_\nu``. Plain old viscosity corresponds to ``n_\nu = 1``.
+the right hand side, ``F(x, y, t)`` is forcing, ``\mu`` is linear drag, and ``\nu`` is 
+hyperviscosity of order ``n_\nu``. Plain old viscosity corresponds to ``n_\nu = 1``.
 
 The kinetic energy of the fluid is computed via:
 
@@ -53,7 +54,7 @@ GeophysicalFlows.SingleLayerQG.energy
 The equation is time-stepped forward in Fourier space:
 
 ```math
-\partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q + \eta)} + \beta \frac{i k_x}{|𝐤|^2 + 1/\ell^2} \widehat{q} - \left(\mu + \nu |𝐤|^{2n_\nu} \right) \widehat{q} + \widehat{f} \ .
+\partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q + \eta)} + \beta \frac{i k_x}{|𝐤|^2 + 1/\ell^2} \widehat{q} - \left(\mu + \nu |𝐤|^{2n_\nu} \right) \widehat{q} + \widehat{F} \ .
 ```
 
 In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) =
@@ -64,7 +65,7 @@ Thus:
 ```math
 \begin{aligned}
 L & = \beta \frac{i k_x}{|𝐤|^2 + 1/\ell^2} - \mu - \nu |𝐤|^{2n_\nu} \ , \\
-N(\widehat{q}) & = - i k_x \mathrm{FFT}[u (q+\eta)] - i k_y \mathrm{FFT}[v (q+\eta)] \ .
+N(\widehat{q}) & = - i k_x \mathrm{FFT}[u (q + \eta)] - i k_y \mathrm{FFT}[v (q + \eta)] + \widehat{F}  \ .
 \end{aligned}
 ```
 

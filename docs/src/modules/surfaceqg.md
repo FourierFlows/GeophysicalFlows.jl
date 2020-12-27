@@ -13,7 +13,7 @@ velocity at the surface are related through a streamfunction ``\psi`` via:
 The SQG model evolves the surface buoyancy,
 
 ```math
-\partial_t b_s + \mathsf{J}(\psi, b_s) = \underbrace{-\nu(-1)^{n_\nu} \nabla^{2n_\nu} b_s}_{\textrm{buoyancy diffusion}} + \underbrace{f}_{\textrm{forcing}} .
+\partial_t b_s + \mathsf{J}(\psi, b_s) = \underbrace{-\nu(-1)^{n_\nu} \nabla^{2n_\nu} b_s}_{\textrm{buoyancy diffusion}} + \underbrace{F}_{\textrm{forcing}} .
 ```
 
 The evolution of buoyancy is only solved for the surface layer, but ``b_s`` is a function of the vertical gradient of ``\psi``. In the SQG system, the potential vorticity in the interior of the flow is identically zero. That is, relative vorticity is identical and opposite to the vertical stretching of buoyancy layers,
