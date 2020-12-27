@@ -457,10 +457,10 @@ Therefore, work for a single forcing realization at the ``j``-th timestep is num
 computed as:
 
 ```math
-\begin{aligned}
-{\color{Green} \text{Itô}} &: {\color{Green} P_j = -\overline{\psi(\bm{x}, t_j) \xi(\bm{x}, t_{j+1})}^{x,y} + \varepsilon} ,\\
-{\color{Magenta} \text{Stratonovich}} &: {\color{Magenta} P_j = -\overline{\frac{\psi(\bm{x}, t_j) + \psi(\bm{x}, t_{j+1})}{2} \xi(\bm{x}, t_{j+1})}^{x,y}} . \tag{8}
-\end{aligned}
+\hspace{3.35em} {\color{Green} \text{Itô}} : {\color{Green} P_j = -\overline{\psi(\bm{x}, t_j) \xi(\bm{x}, t_{j+1})}^{x,y} + \varepsilon} , \tag{8}
+```
+```math
+\hspace{-3.35em} {\color{Magenta} \text{Stratonovich}} : {\color{Magenta} P_j = -\overline{\frac{\psi(\bm{x}, t_j) + \psi(\bm{x}, t_{j+1})}{2} \xi(\bm{x}, t_{j+1})}^{x,y}} . \tag{8}
 ```
 
 Remember, previously the work done by the stochastic forcing was:
@@ -472,9 +472,9 @@ and by sampling over various forcing realizations:
 \langle \mathrm{d} P_t \rangle = \frac{\sigma}{2} \mathrm{d} t = \langle \sqrt{\sigma} x_t \circ \mathrm{d} W_t \rangle .
 ```
 
-All modules in GeophysicalFlows.jl follow Stratonovich calculus. For example, the energy 
-injected per unit time by the forcing in the `TwoDNavierStokes` module is computed based 
-on (8) via
+All modules in GeophysicalFlows.jl use Stratonovich calculus. For example, the domain-averaged 
+energy injected per unit time by the forcing in the `TwoDNavierStokes` module is computed 
+using (9) via
 
 ```@docs
 GeophysicalFlows.TwoDNavierStokes.energy_work
