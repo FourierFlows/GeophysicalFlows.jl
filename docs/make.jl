@@ -97,7 +97,8 @@ sitename = "GeophysicalFlows.jl",
             "Stochastic Forcing" => "stochastic_forcing.md",
             "DocStrings" => Any[
             "man/types.md",
-            "man/functions.md"]
+            "man/functions.md"
+            ]
            ]
 )
 
