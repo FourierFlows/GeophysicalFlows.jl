@@ -440,27 +440,30 @@ But again, the above can be computed using the "formal" solution of (6):
 which implies
 
 ```math
-\text{drift} = -\overline{e^{-\mu t} \underbrace{\left \langle \psi(\bm{x}, 0)  \xi(\bm{x}, t) \right \rangle}_{=0}}^{x,y} - \int_0^t e^{- \mu (t - s)} \overline{\nabla^{-2} \left \langle \xi(\bm{x}, s) \xi(\bm{x}, t) \right\rangle}^{x,y} \, \mathrm{d} s \\
-= -\int_0^t e^{-\mu(t - s)} \overline{\underbrace{\left [ \nabla^{-2} Q (\bm{x}) \right ] \big|_{\bm{x}=0}}_{\text{independent of }x,y} \, \delta(t - s)}^{x,y} \, \mathrm{d} s = -\frac1{2} \nabla^{-2} Q(\bm{x}) \big|_{\bm{x}=0} \\
-= - \frac1{2} \left [ \nabla^{-2} \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \widehat{Q}(\bm{k}) \, e^{i \bm{k} \bm{\cdot}\bm{x}} \right ]_{\bm{x}=0}
-= \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \frac{\widehat{Q}(\bm{k})}{2 |\bm{k}|^2} .
+\begin{aligned}
+\text{drift} & = -\overline{e^{-\mu t} \underbrace{\left \langle \psi(\bm{x}, 0)  \xi(\bm{x}, t) \right \rangle}_{=0}}^{x,y} - \int_0^t e^{- \mu (t - s)} \overline{\nabla^{-2} \left \langle \xi(\bm{x}, s) \xi(\bm{x}, t) \right\rangle}^{x,y} \, \mathrm{d} s \\
+& = -\int_0^t e^{-\mu(t - s)} \overline{\underbrace{\left [ \nabla^{-2} Q (\bm{x}) \right ] \big|_{\bm{x}=0}}_{\text{independent of }x,y} \, \delta(t - s)}^{x,y} \, \mathrm{d} s \\
+& = -\frac1{2} \nabla^{-2} Q(\bm{x}) \big|_{\bm{x}=0} \\
+& = - \frac1{2} \left [ \nabla^{-2} \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \widehat{Q}(\bm{k}) \, e^{i \bm{k} \bm{\cdot}\bm{x}} \right ]_{\bm{x}=0} \\
+& = \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \frac{\widehat{Q}(\bm{k})}{2 |\bm{k}|^2} .
+\end{aligned}
 ```
 
 Thus, the drift, or in this case the mean energy input rate by the stochastic forcing, is 
-precisely determined from the spatial correlation of the forcing. Let us denote:
+precisely determined from the spatial correlation of the forcing. Let us denote the drift as:
 
 ```math
 \varepsilon \equiv \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \frac{\widehat{Q}(\bm{k})}{2 |\bm{k}|^2} . \tag{7}
 ```
 
-Therefore, work for a single forcing realization at the ``j``-th timestep is numerically 
+Using the above, the work for a single forcing realization at the ``j``-th timestep is numerically 
 computed as:
 
 ```math
-\hspace{3.35em} {\color{Green} \text{Itô}} : {\color{Green} P_j = -\overline{\psi(\bm{x}, t_j) \xi(\bm{x}, t_{j+1})}^{x,y} + \varepsilon} , \tag{8}
+{\color{Green} \text{Itô}} : {\color{Green} P_j = -\overline{\psi(\bm{x}, t_j) \xi(\bm{x}, t_{j+1})}^{x,y} + \varepsilon} , \tag{8}
 ```
 ```math
-\hspace{-3.35em} {\color{Magenta} \text{Stratonovich}} : {\color{Magenta} P_j = -\overline{\frac{\psi(\bm{x}, t_j) + \psi(\bm{x}, t_{j+1})}{2} \xi(\bm{x}, t_{j+1})}^{x,y}} . \tag{8}
+{\color{Magenta} \text{Stratonovich}} : {\color{Magenta} P_j = -\overline{\frac{\psi(\bm{x}, t_j) + \psi(\bm{x}, t_{j+1})}{2} \xi(\bm{x}, t_{j+1})}^{x,y}} . \tag{9}
 ```
 
 Remember, previously the work done by the stochastic forcing was:
@@ -486,19 +489,19 @@ It turns out everything carries through if in our SPDE above for the 2D vorticit
 also include the nonlinear advection terms:
 
 ```math
-\partial_t \nabla^2 \psi(\bm{x}, t) + \mathsf{J}(\psi, \nabla^2 \psi) = -\mu \nabla^2 \psi(\bm{x}, t) + \xi(\bm{x}, t) . \tag{9}
+\partial_t \nabla^2 \psi(\bm{x}, t) + \mathsf{J}(\psi, \nabla^2 \psi) = - \mu \nabla^2 \psi(\bm{x}, t) + \xi(\bm{x}, t) . \tag{10}
 ```
 
 The nonlinearity does not alter the Itô drift; thus the ensemble mean energy input by the 
 stochastic forcing, remains the same. We can easily verify this from the "formal" solution 
-of (9):
+of (10):
 
 ```math
-\psi(\bm{x}, t) = e^{-\mu t} \psi(\bm{x}, 0) + \int_0^t e^{- \mu (t - s)} \nabla^{-2} \xi(\bm{x}, s) \, \mathrm{d} s - \int_0^t \nabla^{-2} \mathsf{J} \left ( \psi(\bm{x}, s), \nabla^2 \psi(\bm{x}, s) \right ) \, \mathrm{d} s ,
+\psi(\bm{x}, t) = e^{- \mu t} \psi(\bm{x}, 0) + \int_0^t e^{- \mu (t - s)} \nabla^{-2} \xi(\bm{x}, s) \, \mathrm{d} s - \int_0^t \nabla^{-2} \mathsf{J} \left ( \psi(\bm{x}, s), \nabla^2 \psi(\bm{x}, s) \right ) \mathrm{d} s ,
 ```
 
 When multiplied with ``\xi(\bm{x}, t)`` the last term vanishes since its only non-zero 
-contribution comes from the point ``s=t``, which is of measure zero (in the integrated sense). 
+contribution comes from the point ``s = t``, which is of measure zero (in the integrated sense). 
 
 A demonstration of the energy budgets for stochastic forcing can be found in an 
 [example of the TwoDNavierStokes](dev/generated/twodnavierstokes_stochasticforcing_budgets/) 
