@@ -348,7 +348,7 @@ end
     calcS⁻¹!(S, Fp, Fm, nlayers, grid)
 
 Constructs the array ``𝕊⁻¹``, which consists of `nlayer` x `nlayer` static arrays ``(𝕊_𝐤)⁻¹`` 
-that relate the ``q̂_j``'s and ``ψ̂_j``'s at every wavenumber: ``ψ̂_𝐤 = (𝕊_𝐤)⁻¹ * q̂_𝐤``.
+that relate the ``q̂_j``'s and ``ψ̂_j``'s at every wavenumber: ``ψ̂_𝐤 = (𝕊_𝐤)⁻¹ q̂_𝐤``.
 """
 function calcS⁻¹!(S⁻¹, Fp, Fm, nlayers, grid)
   T = eltype(grid)
