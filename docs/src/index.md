@@ -31,14 +31,17 @@ Examples aim to demonstrate the main functionalities of each module. Have a look
     where ``n_x`` is the total number of grid points in ``x`` and ``x_0`` is the left-most 
     point of our grid.
     
-    Read more in the [FourierFlows.jl Documentation](https://fourierflows.github.io/FourierFlowsDocumentation/stable/grids/).
+    Read more in the FourierFlows.jl Documentation; see 
+    [Grids](https://fourierflows.github.io/FourierFlowsDocumentation/stable/grids/) section.
 
 
 !!! info "Unicode"
-    Oftentimes unicode symbols appear in modules for variables or parameters. For example,
-    `ψ` is commonly used to denote the  streamfunction. Unicode symbols can be entered in 
-    the Julia REPL by typing, e.g., `\psi` followed by `tab` key. Read more about Unicode 
-    symbols in the [Julia Documentation](https://docs.julialang.org/en/v1/manual/unicode-input/).
+    Oftentimes unicode symbols are used in modules for certain variables or parameters. For 
+    example, `ψ` is commonly used to denote the  streamfunction of the flow. Unicode symbols 
+    can be entered in the Julia REPL by typing, e.g., `\psi` followed by `tab` key. 
+    
+    Read more about Unicode symbols in the 
+    [Julia Documentation](https://docs.julialang.org/en/v1/manual/unicode-input/).
 
 
 ## Developers
