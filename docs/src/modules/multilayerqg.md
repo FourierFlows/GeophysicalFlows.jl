@@ -66,9 +66,9 @@ with
 ### Helper functions
 
 ```@docs
-GeophysicalFlows.MultilayerQG.set_q!
-GeophysicalFlows.MultilayerQG.set_ψ!
-GeophysicalFlows.MultilayerQG.updatevars!
+GeophysicalFlows.MultiLayerQG.set_q!
+GeophysicalFlows.MultiLayerQG.set_ψ!
+GeophysicalFlows.MultiLayerQG.updatevars!
 ```
 
 ### Diagnostics
@@ -105,31 +105,31 @@ The equations of motion are time-stepped forward in Fourier space:
 ```
 
 In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) =
-\partial_y [ (\partial_x f) g] -\partial_x[ (\partial_y f) g]``.
+\partial_y [ (\partial_x f) g] - \partial_x[ (\partial_y f) g]``.
 
 Equations are formulated using $q_j$ as the state variables, i.e., `sol = qh`.
 
 The linear operator is constructed in `Equation`
 
 ```@docs
-GeophysicalFlows.MultilayerQG.Equation
-GeophysicalFlows.MultilayerQG.hyperviscosity
+GeophysicalFlows.MultiLayerQG.Equation
+GeophysicalFlows.MultiLayerQG.hyperviscosity
 ```
 
 The nonlinear terms is computed via
 
 ```@docs
-GeophysicalFlows.MultilayerQG.calcN!
+GeophysicalFlows.MultiLayerQG.calcN!
 ```
 which, in turn, calls 
 
 ```@docs
-GeophysicalFlows.MultilayerQG.calcN_advection!
+GeophysicalFlows.MultiLayerQG.calcN_advection!
 ```
 and
 
 ```@docs
-GeophysicalFlows.MultilayerQG.addforcing!
+GeophysicalFlows.MultiLayerQG.addforcing!
 ```
  
  
