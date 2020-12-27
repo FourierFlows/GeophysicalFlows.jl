@@ -80,7 +80,7 @@ sitename = "GeophysicalFlows.jl",
               "BarotropicQGQL" => Any[
                 "generated/barotropicqgql_betaforced.md",
                 ],
-              "MultilayerQG" => Any[
+              "MultiLayerQG" => Any[
                 "generated/multilayerqg_2layer.md"
                 ],
               "SurfaceQG" => Any[
