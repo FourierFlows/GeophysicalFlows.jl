@@ -243,7 +243,7 @@ The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via
 `hyperviscosity(dev, params, grid)`. The nonlinear term is computed via function `calcN!()`.
 """
 function Equation(dev, params, grid)
-  L = hyperviscosity(dev, params, grid)
+  L = hyperdissipation(dev, params, grid)
   return FourierFlows.Equation(L, calcN!, grid)
 end
 
