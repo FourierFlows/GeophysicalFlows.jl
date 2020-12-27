@@ -33,10 +33,10 @@ Private = false
 Order = [:function]
 ```
 
-## Functions exported from `MultilayerQG`:
+## Functions exported from `MultiLayerQG`:
 
 ```@autodocs
-Modules = [GeophysicalFlows.MultilayerQG]
+Modules = [GeophysicalFlows.MultiLayerQG]
 Private = false
 Order = [:function]
 ```
