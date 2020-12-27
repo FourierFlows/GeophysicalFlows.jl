@@ -13,7 +13,7 @@ The QGPV in each layer is
 \mathrm{QGPV}_j = q_j + \underbrace{f_0 + \beta y}_{\textrm{planetary PV}} + \delta_{j, n} \underbrace{\frac{f_0 h}{H_n}}_{\textrm{topographic PV}}, \quad j = 1, \dots, n \ .
 ```
 
-where ``q_j`` incorporates the relative vorticity in each layer ``\nabla^2\psi_j`` and the 
+where ``q_j`` incorporates the relative vorticity in each layer ``\nabla^2 \psi_j`` and the 
 vortex stretching terms:
 
 ```math
@@ -33,9 +33,9 @@ In view of the relationships above, when we convert to Fourier space ``q``'s and
 related via the matrix equation
 
 ```math
-\begin{pmatrix} \widehat{q}_{\bm{k}, 1}\\\vdots\\\widehat{q}_{\bm{k}, n} \end{pmatrix} =
-\underbrace{\left(-|\bm{k}|^2 \mathbb{1} + \mathbb{F} \right)}_{\equiv \mathbb{S}_{\bm{k}}}
-\begin{pmatrix} \widehat{\psi}_{\bm{k}, 1}\\\vdots\\\widehat{\psi}_{\bm{k}, n} \end{pmatrix}
+\begin{pmatrix} \widehat{q}_{𝐤, 1}\\\vdots\\\widehat{q}_{𝐤, n} \end{pmatrix} =
+\underbrace{\left(-|𝐤|^2 \mathbb{1} + \mathbb{F} \right)}_{\equiv \mathbb{S}_{𝐤}}
+\begin{pmatrix} \widehat{\psi}_{𝐤, 1}\\\vdots\\\widehat{\psi}_{𝐤, n} \end{pmatrix}
 ```
 
 where
@@ -63,6 +63,16 @@ with
 \partial_x Q_j \equiv \delta_{j, n} \partial_x \eta \ .
 ```
 
+### Helper functions
+
+```@docs
+GeophysicalFlows.MultilayerQG.set_q!
+GeophysicalFlows.MultilayerQG.set_ψ!
+GeophysicalFlows.MultilayerQG.updatevars!
+```
+
+### Diagnostics
+
 The eddy kinetic energy in each layer and the eddy potential energy that corresponds to each 
 fluid interface is computed via `energies()`:
 
@@ -79,13 +89,13 @@ GeophysicalFlows.MultilayerQG.fluxes
 
 ### Implementation
 
-Matrices ``\mathbb{S}_{\bm{k}}`` as well as ``\mathbb{S}^{-1}_{\bm{k}}`` are included 
-in `params` as `params.S` and `params.S⁻¹` respectively. Additionally, the background PV gradients 
-``\partial_x Q`` and ``\partial_y Q`` are also included in the `params` as `params.Qx` and `params.Qy`.
+Matrices ``\mathbb{S}_{𝐤}`` as well as ``\mathbb{S}^{-1}_{𝐤}`` are included in `params` as 
+`params.S` and `params.S⁻¹` respectively. Additionally, the background PV gradients 
+``\partial_x Q`` and ``\partial_y Q`` are also included in the `params` as `params.Qx` and 
+`params.Qy`.
 
-You can get ``\widehat{\psi}_j`` from ``\widehat{q}_j`` with `streamfunctionfrompv!(psih, qh, params, grid)`, 
-while to get ``\widehat{q}_j`` from ``\widehat{\psi}_j`` you need to call `pvfromstreamfunction!(qh, psih, params, grid)`.
-
+One can get the ``\widehat{\psi}_j`` from ``\widehat{q}_j`` via 
+`streamfunctionfrompv!(psih, qh, params, grid)`, while the inverse, i.e. obtain ``\widehat{q}_j`` from ``\widehat{\psi}_j``, is done via  `pvfromstreamfunction!(qh, psih, params, grid)`.
 
 The equations of motion are time-stepped forward in Fourier space:
 
@@ -99,17 +109,30 @@ In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g)
 
 Equations are formulated using $q_j$ as the state variables, i.e., `sol = qh`.
 
-Thus:
+The linear operator is constructed in `Equation`
 
-```math
-\begin{aligned}
-L & = - \nu |𝐤|^{2n_\nu} \ , \\
-N(\widehat{q}_j) & = - \widehat{\mathsf{J}(\psi_j, q_j)} - \widehat{U_j \partial_x Q_j} - \widehat{U_j \partial_x q_j}
- + \widehat{(\partial_y \psi_j)(\partial_x Q_j)} - \widehat{(\partial_x \psi_j)(\partial_y Q_j)} + \delta_{j,n} \mu |𝐤|^{2} \widehat{\psi}_n\ .
-\end{aligned}
+```@docs
+GeophysicalFlows.MultilayerQG.Equation
+GeophysicalFlows.MultilayerQG.hyperviscosity
+```
+
+The nonlinear terms is computed via
+
+```@docs
+GeophysicalFlows.MultilayerQG.calcN!
+```
+which, in turn, calls 
+
+```@docs
+GeophysicalFlows.MultilayerQG.calcN_advection!
+```
+and
+
+```@docs
+GeophysicalFlows.MultilayerQG.addforcing!
 ```
  
-
+ 
  ## Examples
 
  - `examples/multilayerqg_2layer.jl`: A script that simulates the growth and equilibration of baroclinic eddy turbulence in the Phillips 2-layer model.
