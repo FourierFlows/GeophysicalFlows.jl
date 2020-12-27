@@ -129,18 +129,18 @@ One of the simpler SDEs is the Ornstein--Uhlenbeck process. A variation of which
 x(t) = - \int_{t_0}^{t} \mu x(s) \, \mathrm{d} s + \int_{t_0}^{t} \sqrt{\sigma} \, \mathrm{d} W_s . \tag{1}
 ```
 
-Note that in differential form (1) is:
+Ndote that in differential form (1) is:
 
 ```math
-\mathrm{d} x_t = - \mu x_t \, \mathrm{d} t + \sqrt{\sigma} \, \mathrm{d} W_s . \tag{2}
+\mathrm{d} x_t = - \mu x_t \, \mathrm{d} t + \sqrt{\sigma} \, \mathrm{d} W_t . \tag{2}
 ```
 
-Luckily, here there is no need to distinguish between Itô and Stratonovich here. This is 
-because ``g`` is independent of ``x(t)``. But note that oftentimes this is not the case; that 
+Luckily, for (2) we don't need to distinguish between Itô and Stratonovich. This is because 
+``g`` is independent of ``x(t)``. But note that oftentimes this is not the case; that 
 ``g`` is independent of ``x(t)`` is only a fortuitous coincident for this particular SDE.
 
 How do we time-step SDE (2) numerically? Let us assume a discretization of time into time-steps
-of ``\tau``, i.e., ``t_j = (j-1) \tau``, ``j=1, 2, \dots``. (What follows can be easily 
+of duration ``\tau``, i.e., ``t_j = (j-1) \tau``, ``j=1, 2, \dots``. (What follows can be easily 
 carried on for non-uniform time discretization.) With that in mind, we denote ``x_j \equiv x(t_j)``. 
 Then the Euler--Mayorama time-step scheme for (2) is
 
@@ -154,7 +154,7 @@ In other words, if we are interested in the evolution of the "energy", defined a
 To answer that we first have to find the SDE that energy ``E`` obeys. But, in doing so, it 
 is important to adopt a single interpretation for computing stochastic integrals as now a 
 transformation of variables is needed. That is, depending on whether we choose to interpret 
-the stochastic integrals according to Itô or to Stratonovich calculus, ``E`` evolves as:
+the stochastic integrals according to Itô or to Stratonovich calculus, ``E`` evolves with:
 
 ```math
 \hspace{3.35em} {\color{Green} \text{Itô}} : {\color{Green} \mathrm{d} E_t = \left ( -2 \mu E_t + \tfrac{1}{2} \sigma \right ) \mathrm{d} t + x_t \sqrt{\sigma} \mathrm{d} W_t} , \tag{3}
@@ -163,8 +163,9 @@ the stochastic integrals according to Itô or to Stratonovich calculus, ``E`` ev
 \hspace{-3.35em} {\color{Magenta} \text{Stratonovich}} : {\color{Magenta} \mathrm{d} E_t = -2 \mu E_t \mathrm{d} t + x_t \circ \sqrt{\sigma} \mathrm{d} W_t} . \tag{4}
 ```
 
-The term ``-2 \mu E_t`` in both case is the dissipation of energy by the ``\mu`` term; the 
-of the terms involve the noise. How do we compute the work ``P`` done by the noise? Well, it is:
+The term ``-2 \mu E_t`` in both cases is the dissipation of energy by the ``\mu`` term; the 
+rest of the terms involve the noise. How do we compute the work ``P`` done by the noise? 
+Well, it follows:
 
 ```math
 \begin{aligned}
@@ -227,6 +228,12 @@ E_{j+1} &= E_j + \left( -2 \mu \frac{E_j + \widetilde{E}_{j + 1}}{2} \right)\tau
 Let's apply Euler--Maruyama and Euler--Heun to time-step (3) and (4) and compare the results 
 with those obtained from time-stepping (2) and computing ``E`` a posteriori.
 
+Figure below compares the energy evolution as predicted by:
+- direct computation from the ``x_t`` time-series: ``\tfrac{1}{2} x_t^2``,
+- time-integration of (3), and
+- time-integration of (4).
+
+
 ```@setup 1
 using Plots
 Plots.default(lw=2)
@@ -238,18 +245,18 @@ using Statistics: mean
 using Random: randn, seed!
 seed!(1234) # for reproducing the same plots
 
-             μ = 0.2	 	# drag
-             σ = 1/5	 	# noise strength
-            dt = 0.01	  # timestep
-        nsteps = 2001	  # total timesteps
-n_realizations = 1000	  # how many forcing realizations
+             μ = 0.2    # drag
+             σ = 1/5    # noise strength
+            dt = 0.01   # timestep
+        nsteps = 2001   # total timesteps
+n_realizations = 1000   # how many forcing realizations
 
 t = 0:dt:(nsteps-1)*dt 	# time
 
 ΔW = sqrt(σ) * randn(nsteps, n_realizations) / sqrt(dt) # noise
 
-# Theoretical results
-E_theory = @. σ/4μ * (1 - exp(-2μ * t))
+# theoretical results
+   E_theory = @. σ/4μ * (1 - exp(-2μ * t))
 dEdt_theory = @. σ/2  * exp(-2μ * t)
 
 # Numerical calculation
@@ -259,11 +266,15 @@ E_str = zeros(size(ΔW))
 E_numerical = zeros(size(ΔW))
 
 for j = 1:nsteps-1 # time step the equation
+	
+	# time-step dxₜ = -μ xₜ + √σ dWₜ
   @views @. X[j+1, :] = X[j, :] + (-μ * X[j, :] + ΔW[j, :]) * dt
 
+	# time-step dEₜ = (-2μ Eₜ + ½σ) dt + xₜ √σ dWₜ
   @views @. E_ito[j+1, :] = E_ito[j, :] + (-2μ * E_ito[j, :]
 		+ σ/2) * dt + X[j, :] * ΔW[j, :] * dt
 
+  # time-step dEₜ = -2μ Eₜ dt + xₜ ∘ √σ dWₜ
   Ebar = @. E_str[j, :] + (-2μ * E_str[j, :]) * dt + X[j, :] * ΔW[j, :] * dt
   @views @. E_str[j+1, :] = E_str[j, :] + (-2μ * (0.5 * (E_str[j, :]
 		+ Ebar))) * dt + (0.5 * (X[j, :]+X[j+1, :])) * ΔW[j, :] * dt
@@ -272,7 +283,7 @@ end
 # direct computation of E from xₜ
 @views @. E_numerical = 0.5 * X^2
 
-# Compare E(t) evolution Ito, Stratonovich, direct 0.5*x^2
+# compare the three E(t) solutions
 plot(μ * t, [E_numerical[:, 1] E_ito[:, 1] E_str[:, 1]],
           linewidth = [3 2 1],
               label = ["½ xₜ²" "Eₜ (Ito)" "Eₜ (Stratonovich) "],
@@ -287,15 +298,10 @@ savefig("assets/energy_comparison.svg"); nothing # hide
 
 ![energy_comparison](assets/energy_comparison.svg)
 
-Figure above shows a comparison of the energy evolution as done from:
-- direct computation as ``\tfrac{1}{2} x_t^2``,
-- time-integration of (3), and
-- time-integration of (4).
-
 Now we can further compute the "energy" budgets, i.e., the work done by the noise versus the
 energy loss by the ``\mu`` term, using Itô and Stratonovich formalisms. Figures below show 
 the ensemble mean energy budgets (using 1000 ensemble members) as computed using Itô and
-Stratonovich. For the energy budget to close we have to be consistent: if we time-step the 
+Stratonovich calculus. For the energy budget to close we have to be consistent: if we time-step the 
 energy equation based on Stratonovich calculus then we must compute the work also according 
 to Stratonovich and vice versa.
 
@@ -340,7 +346,7 @@ dEdt_str = mean((E_str[2:nsteps, :] - E_str[1:nsteps-1, :]) / dt, dims=2)
 # compute the work and dissipation
 work_str = mean(ΔW[1:nsteps-1, :] .* (X[1:nsteps-1, :] .+ X[2:nsteps, :])/2, dims=2)
 diss_str = 2*μ * (mean(E_str[1:nsteps-1, :], dims=2))
-
+d
 plot_E = plot(μ * t, [E_theory mean(E_str, dims=2)],
                 linewidth = [3 2],
                     label = ["theoretical ⟨E⟩" "⟨E⟩ from $n_realizations ensemble member(s)"],
@@ -503,6 +509,6 @@ of (10):
 When multiplied with ``\xi(\bm{x}, t)`` the last term vanishes since its only non-zero 
 contribution comes from the point ``s = t``, which is of measure zero (in the integrated sense). 
 
-A demonstration of the energy budgets for stochastic forcing can be found in an 
+A demonstration of the energy budgets for stochastic forcing can bed found in an 
 [example of the TwoDNavierStokes](dev/generated/twodnavierstokes_stochasticforcing_budgets/) 
 module.
