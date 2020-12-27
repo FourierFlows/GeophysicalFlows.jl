@@ -452,7 +452,12 @@ end
 """
     calcN_linearadvection!(N, sol, vars, params, grid)
 
-Calculates the advection term of the linearized equations.
+Compute the advection term of the linearized equations and stores it in `N`:
+```math
+N(q̂_j) = - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
+ + \\widehat{(∂_y ψ_j)(∂_x Q_j)} - \\widehat{(∂_x ψ_j)(∂_y Q_j)} .
+```
+
 """
 function calcN_linearadvection!(N, sol, vars, params, grid)
   @. vars.qh = sol
@@ -500,6 +505,7 @@ addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
 function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
   params.calcFq!(vars.Fqh, sol, t, clock, vars, params, grid)
   @. N += vars.Fqh
+  
   return nothing
 end
 
@@ -563,8 +569,8 @@ set_q!(prob, q) = set_q!(prob.sol, prob.params, prob.vars, prob.grid, q)
     set_ψ!(params, vars, grid, sol, ψ)
     set_ψ!(prob)
 
-Set the solution `prob.sol` to correspond to the transform of streamfunction `ψ` and
-updates variables.
+Set the solution `prob.sol` to the transform `qh` that corresponds to streamfunction `ψ` 
+and updates variables.
 """
 function set_ψ!(sol, params, vars, grid, ψ)
   A = typeof(vars.ψ)
@@ -679,7 +685,7 @@ function fluxes(vars, params, grid, sol)
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   for j = 1:nlayers-1
-    CUDA.@allowscalar verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j] ; dims=(1, 2))[1]
+    CUDA.@allowscalar verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
     CUDA.@allowscalar verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
   end
 
