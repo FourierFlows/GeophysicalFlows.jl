@@ -32,10 +32,10 @@ Public = false
 Order = [:type]
 ```
 
-## Private types in module `MultilayerQG`:
+## Private types in module `MultiLayerQG`:
 
 ```@autodocs
-Modules = [GeophysicalFlows.MultilayerQG]
+Modules = [GeophysicalFlows.MultiLayerQG]
 Public = false
 Order = [:type]
 ```

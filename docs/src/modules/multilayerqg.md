@@ -1,4 +1,4 @@
-# MultilayerQG Module
+# MultiLayerQG Module
 
 ### Basic Equations
 
@@ -67,14 +67,14 @@ The eddy kinetic energy in each layer and the eddy potential energy that corresp
 fluid interface is computed via `energies()`:
 
 ```@docs
-GeophysicalFlows.MultilayerQG.energies
+GeophysicalFlows.MultiLayerQG.energies
 ```
 
 The lateral eddy fluxes in each layer and the vertical fluxes across fluid interfaces are
 computed via `fluxes()`:
 
 ```@docs
-GeophysicalFlows.MultilayerQG.fluxes
+GeophysicalFlows.MultiLayerQG.fluxes
 ```
 
 ### Implementation

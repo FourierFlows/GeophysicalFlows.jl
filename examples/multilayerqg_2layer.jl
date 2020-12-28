@@ -11,8 +11,8 @@ using FourierFlows, Plots, Printf
 
 using FFTW: rfft, irfft
 using Random: seed!
-import GeophysicalFlows.MultilayerQG
-import GeophysicalFlows.MultilayerQG: energies
+import GeophysicalFlows.MultiLayerQG
+import GeophysicalFlows.MultiLayerQG: energies
 
 
 # ## Choosing a device: CPU or GPU
@@ -49,7 +49,7 @@ nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments,
-prob = MultilayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
+prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
 nothing # hide
 
 # and define some shortcuts.
@@ -68,7 +68,7 @@ q_i  = 4e-3randn((grid.nx, grid.ny, nlayers))
 qh_i = prob.timestepper.filter .* rfft(q_i, (1, 2)) # only apply rfft in dims=1, 2
 q_i  = irfft(qh_i, grid.nx, (1, 2)) # only apply irfft in dims=1, 2
 
-MultilayerQG.set_q!(prob, q_i)
+MultiLayerQG.set_q!(prob, q_i)
 nothing # hide
 
 
@@ -209,7 +209,7 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
   push!(p[6][1], μ * E.t[E.i], E.data[E.i][2][1])
   
   stepforward!(prob, diags, nsubs)
-  MultilayerQG.updatevars!(prob)
+  MultiLayerQG.updatevars!(prob)
 end
 
 gif(anim, "multilayerqg_2layer.gif", fps=18)
