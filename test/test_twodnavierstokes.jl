@@ -57,10 +57,10 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
 
   TwoDNavierStokes.set_ζ!(prob, 0*x)
   
-  E = Diagnostic(TwoDNavierStokes.energy,             prob, nsteps=nt)
-  D = Diagnostic(TwoDNavierStokes.energy_dissipation, prob, nsteps=nt)
-  R = Diagnostic(TwoDNavierStokes.energy_drag,        prob, nsteps=nt)
-  W = Diagnostic(TwoDNavierStokes.energy_work,        prob, nsteps=nt)
+  E = Diagnostic(TwoDNavierStokes.energy,                            prob, nsteps=nt)
+  D = Diagnostic(TwoDNavierStokes.energy_dissipation_hyperviscosity, prob, nsteps=nt)
+  R = Diagnostic(TwoDNavierStokes.energy_dissipation_hypoviscosity,  prob, nsteps=nt)
+  W = Diagnostic(TwoDNavierStokes.energy_work,                       prob, nsteps=nt)
   diags = [E, D, W, R]
 
   stepforward!(prob, diags, nt)
@@ -112,10 +112,10 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
 
   TwoDNavierStokes.set_ζ!(prob, 0*x)
   
-  Z = Diagnostic(TwoDNavierStokes.enstrophy,             prob, nsteps=nt)
-  D = Diagnostic(TwoDNavierStokes.enstrophy_dissipation, prob, nsteps=nt)
-  R = Diagnostic(TwoDNavierStokes.enstrophy_drag,        prob, nsteps=nt)
-  W = Diagnostic(TwoDNavierStokes.enstrophy_work,        prob, nsteps=nt)
+  Z = Diagnostic(TwoDNavierStokes.enstrophy,                            prob, nsteps=nt)
+  D = Diagnostic(TwoDNavierStokes.enstrophy_dissipation_hyperviscosity, prob, nsteps=nt)
+  R = Diagnostic(TwoDNavierStokes.enstrophy_dissipation_hypoviscosity,  prob, nsteps=nt)
+  W = Diagnostic(TwoDNavierStokes.enstrophy_work,                       prob, nsteps=nt)
   diags = [Z, D, W, R]
 
   stepforward!(prob, diags, nt)
@@ -157,10 +157,10 @@ function test_twodnavierstokes_deterministicforcing_energybudget(dev::Device=CPU
 
   TwoDNavierStokes.set_ζ!(prob, 0*x)
 
-  E = Diagnostic(TwoDNavierStokes.energy,             prob, nsteps=nt)
-  D = Diagnostic(TwoDNavierStokes.energy_dissipation, prob, nsteps=nt)
-  R = Diagnostic(TwoDNavierStokes.energy_drag,        prob, nsteps=nt)
-  W = Diagnostic(TwoDNavierStokes.energy_work,        prob, nsteps=nt)
+  E = Diagnostic(TwoDNavierStokes.energy,                            prob, nsteps=nt)
+  D = Diagnostic(TwoDNavierStokes.energy_dissipation_hyperviscosity, prob, nsteps=nt)
+  R = Diagnostic(TwoDNavierStokes.energy_dissipation_hypoviscosity,  prob, nsteps=nt)
+  W = Diagnostic(TwoDNavierStokes.energy_work,                       prob, nsteps=nt)
   diags = [E, D, W, R]
 
   stepforward!(prob, diags, nt)
@@ -198,10 +198,10 @@ function test_twodnavierstokes_deterministicforcing_enstrophybudget(dev::Device=
 
   TwoDNavierStokes.set_ζ!(prob, 0*x)
 
-  Z = Diagnostic(TwoDNavierStokes.enstrophy,             prob, nsteps=nt)
-  D = Diagnostic(TwoDNavierStokes.enstrophy_dissipation, prob, nsteps=nt)
-  R = Diagnostic(TwoDNavierStokes.enstrophy_drag,        prob, nsteps=nt)
-  W = Diagnostic(TwoDNavierStokes.enstrophy_work,        prob, nsteps=nt)
+  Z = Diagnostic(TwoDNavierStokes.enstrophy,                            prob, nsteps=nt)
+  D = Diagnostic(TwoDNavierStokes.enstrophy_dissipation_hyperviscosity, prob, nsteps=nt)
+  R = Diagnostic(TwoDNavierStokes.enstrophy_dissipation_hypoviscosity,  prob, nsteps=nt)
+  W = Diagnostic(TwoDNavierStokes.enstrophy_work,                       prob, nsteps=nt)
   diags = [Z, D, W, R]
 
   stepforward!(prob, diags, nt)

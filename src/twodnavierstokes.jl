@@ -6,13 +6,13 @@ export
   updatevars!,
 
   energy,
-  energy_dissipation,
+  energy_dissipation_hyperviscosity,
+  energy_dissipation_hypoviscosity,
   energy_work,
-  energy_drag,
   enstrophy,
-  enstrophy_dissipation,
-  enstrophy_work,
-  enstrophy_drag
+  enstrophy_dissipation_hyperviscosity,
+  enstrophy_dissipation_hypoviscosity,
+  enstrophy_work
 
 using
   CUDA,
@@ -334,75 +334,50 @@ Returns the domain-averaged enstrophy,
 end
 
 """
-    energy_dissipation(prob)
+    energy_dissipation(prob, ξ, νξ)
 
-Returns the domain-averaged energy dissipation rate done by the ``ν`` viscous term,
+Returns the domain-averaged energy dissipation rate done by the viscous term,
 ```math
-- ν (-1)^{n_ν+1} \\int ψ ∇^{2 n_ν}ζ \\frac{𝖽x 𝖽y}{L_x L_y} = - ν \\sum_{𝐤} |𝐤|^{2(n_ν-1)} |ζ̂|² .
+- ξ (-1)^{n_ξ+1} \\int ψ ∇^{2n_ξ} ζ \\frac{𝖽x 𝖽y}{L_x L_y} = - ξ \\sum_{𝐤} |𝐤|^{2(n_ξ-1)} |ζ̂|² .
 ```
+where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`` and its order 
+``nν``, or the hypo-viscocity coefficient ``μ`` and its order ``nμ``.
 """
-@inline function energy_dissipation(prob)
-  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
+@inline function energy_dissipation(prob, ξ, nξ)
+  sol, vars, grid = prob.sol, prob.vars, prob.grid
   energy_dissipationh = vars.uh # use vars.uh as scratch variable
   
-  @. energy_dissipationh = - params.ν * grid.Krsq^(params.nν - 1) * abs2(sol)
+  @. energy_dissipationh = - ξ * grid.Krsq^(nξ - 1) * abs2(sol)
   CUDA.@allowscalar energy_dissipationh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_dissipationh, grid)
 end
 
-"""
-    enstrophy_dissipation(prob)
+energy_dissipation_hyperviscosity(prob) = energy_dissipation(prob, prob.params.ν, prob.params.nν)
 
-Returns the domain-averaged enstrophy dissipation rate done by the ``ν`` viscous term,
+energy_dissipation_hypoviscosity(prob) = energy_dissipation(prob, prob.params.μ, prob.params.nμ)
+
+"""
+    enstrophy_dissipation(prob, ξ, νξ)
+
+Returns the domain-averaged enstrophy dissipation rate done by the viscous term,
 ```math
-ν (-1)^{n_ν+1} \\int ζ ∇^{2 n_ν}ζ \\frac{𝖽x 𝖽y}{L_x L_y} = - ν \\sum_{𝐤} |𝐤|^{2n_ν} |ζ̂|² .
+ξ (-1)^{n_ξ+1} \\int ζ ∇^{2n_ξ} ζ \\frac{𝖽x 𝖽y}{L_x L_y} = - ξ \\sum_{𝐤} |𝐤|^{2n_ξ} |ζ̂|² ,
+where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`` and its order 
+``nν``, or the hypo-viscocity coefficient ``μ`` and its order ``nμ``.
 ```
 """
-@inline function enstrophy_dissipation(prob)
-  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
+@inline function enstrophy_dissipation(prob, ξ, nξ)
+  sol, vars, grid = prob.sol, prob.vars, prob.grid
   enstrophy_dissipationh = vars.uh # use vars.uh as scratch variable
   
-  @. enstrophy_dissipationh = - params.ν * grid.Krsq^params.nν * abs2(sol)
+  @. enstrophy_dissipationh = - ξ * grid.Krsq^nξ * abs2(sol)
   CUDA.@allowscalar enstrophy_dissipationh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_dissipationh, grid)
 end
 
-"""
-    energy_drag(prob)
+enstrophy_dissipation_hyperviscosity(prob) = enstrophy_dissipation(prob, prob.params.ν, prob.params.nν)
 
-Returns the extraction of domain-averaged energy done by the ``μ`` viscous term,
-```math
-- μ (-1)^{n_μ+1} \\int ψ ∇^{2 n_μ}ζ \\frac{𝖽x 𝖽y}{L_x L_y} = - ν \\sum_{𝐤} |𝐤|^{2(n_μ-1)} |ζ̂|² .
-```
-"""
-@inline function energy_drag(prob)
-  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  
-  energy_dragh = vars.uh # use vars.uh as scratch variable
-  
-  @. energy_dragh = - params.μ * grid.Krsq^(params.nμ - 1) * abs2(sol)
-  CUDA.@allowscalar energy_dragh[1, 1] = 0
-  
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_dragh, grid)
-end
-
-"""
-    enstrophy_drag(prob)
-
-Returns the extraction of domain-averaged enstrophy by the ``μ`` viscous term,
-```math
-μ (-1)^{n_μ+1} \\int ζ ∇^{2 n_μ}ζ \\frac{𝖽x 𝖽y}{L_x L_y} = - μ \\sum_{𝐤} |𝐤|^{2n_μ} |ζ̂|² .
-```
-"""
-@inline function enstrophy_drag(prob)
-  sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-
-  enstrophy_dragh = vars.uh # use vars.uh as scratch variable
-  
-  @. enstrophy_dragh = - params.μ * grid.Krsq^params.nμ * abs2(sol)
-  CUDA.@allowscalar enstrophy_dragh[1, 1] = 0
-  return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_dragh, grid)
-end
+enstrophy_dissipation_hypoviscosity(prob) = enstrophy_dissipation(prob, prob.params.μ, prob.params.nμ)
 
 """
     energy_work(prob)

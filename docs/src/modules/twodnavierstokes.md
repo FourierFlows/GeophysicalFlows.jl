@@ -105,13 +105,11 @@ GeophysicalFlows.TwoDNavierStokes.enstrophy
 
 ```@docs
 GeophysicalFlows.TwoDNavierStokes.energy_dissipation
-GeophysicalFlows.TwoDNavierStokes.energy_drag
 GeophysicalFlows.TwoDNavierStokes.energy_work
 ```
 
 ```@docs
 GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation
-GeophysicalFlows.TwoDNavierStokes.enstrophy_drag
 GeophysicalFlows.TwoDNavierStokes.enstrophy_work
 ```
 
