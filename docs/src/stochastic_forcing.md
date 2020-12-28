@@ -183,7 +183,7 @@ Well, it follows that:
 
 ```math
 \begin{aligned}
-{\color{Green} \text{Itô}} &: {\color{Green} P_t = \tfrac{1}{2} \sigma \mathrm{d} t + \sqrt{\sigma} x_t \mathrm{d} W_t \approx \tfrac{1}{2} \sigma + \sqrt{\sigma} x_j (W_{j+1} - W_j)} , \\
+{\color{Green} \text{Itô}} &: {\color{Green} P_t = \tfrac{1}{2} \sigma \mathrm{d} t + \sqrt{\sigma} x_t \mathrm{d} W_t \approx \tfrac{1}{2} \sigma \, \mathrm{d}t + \sqrt{\sigma} x_j (W_{j+1} - W_j)} , \\
 {\color{Magenta} \text{Stratonovich}} &: {\color{Magenta} P_t =  x_t \circ \sqrt{\sigma} \mathrm{d} W_t \approx \sqrt{\sigma} x \left ( \tfrac{1}{2} (t_j + t_{j+1}) \right ) (W_{j+1} - W_j)} .
 \end{aligned}
 ```
@@ -223,7 +223,7 @@ with the Stratonovich symmetric interpretation of stochastic integrals.
 
 ### Numerical implementation
 
-How do we time-step the equation for ``E``? In the case of Itô's interpretaion, (3), we use 
+How do we time-step the equation for ``E``? In the case of Itô's interpretation, (3), we use 
 the Euler--Maruyama time-stepping scheme:
 
 ```math
@@ -263,14 +263,14 @@ using Random: randn, seed!
 seed!(1234) # for reproducing the same plots
 
              μ = 0.2    # drag
-             σ = 1/5    # noise strength
+             σ = 0.2    # noise strength
             dt = 0.01   # timestep
         nsteps = 2001   # total timesteps
 n_realizations = 1000   # how many forcing realizations
 
 t = 0:dt:(nsteps-1)*dt 	# time
 
-ΔW = sqrt(σ) * randn(nsteps, n_realizations) / sqrt(dt) # noise
+ΔW = randn(nsteps, n_realizations) * sqrt(dt) # noise
 
 # Numerical calculation
 x = zeros(size(ΔW))
@@ -281,16 +281,17 @@ E_numerical = zeros(size(ΔW))
 for j = 2:nsteps # time step the equation
 	
 	# time-step dxₜ = -μ xₜ + √σ dWₜ
-  @. x[j, :] = x[j-1, :] + (-μ * x[j-1, :] + ΔW[j-1, :]) * dt
+  @. x[j, :] = x[j-1, :] + -μ * x[j-1, :] * dt + sqrt(σ) * ΔW[j-1, :]
 
-	# time-step dEₜ = (-2μ Eₜ + ½σ) dt + xₜ √σ dWₜ
+	# time-step dEₜ = (-2μ Eₜ + ½σ) dt + √σ xₜ dWₜ
   @. E_ito[j, :] = E_ito[j-1, :] + (-2μ * E_ito[j-1, :]
-		+ σ/2) * dt + x[j-1, :] * ΔW[j-1, :] * dt
+	                   + σ/2) * dt + sqrt(σ) * x[j-1, :] * ΔW[j-1, :]
 
-  # time-step dEₜ = -2μ Eₜ dt + xₜ ∘ √σ dWₜ
-  Ebar = @. E_str[j-1, :] + (-2μ * E_str[j-1, :]) * dt + x[j-1, :] * ΔW[j-1, :] * dt
-  @. E_str[j, :] = E_str[j-1, :] + (-2μ * (0.5 * (E_str[j-1, :]
-		+ Ebar))) * dt + (0.5 * (x[j-1, :] + x[j, :])) * ΔW[j-1, :] * dt
+  # time-step dEₜ = -2μ Eₜ dt + √σ xₜ ∘ dWₜ
+	xbar = @. x[j-1, :] - μ * x[j-1, :] * dt + sqrt(σ) * ΔW[j-1, :]
+	Ebar = @. E_str[j-1, :] + (-2μ * E_str[j-1, :]) * dt + sqrt(σ) * x[j-1, :] * ΔW[j-1, :]
+  @. E_str[j, :] = E_str[j-1, :] + (-2μ * (E_str[j-1, :]
+		+ Ebar) / 2) * dt + sqrt(σ) * (x[j-1, :] + xbar) / 2 * ΔW[j-1, :]
 end
 
 # direct computation of E from xₜ
