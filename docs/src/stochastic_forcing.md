@@ -315,8 +315,8 @@ savefig("assets/energy_comparison.svg"); nothing # hide
 Now we can further compute the "energy" budgets, i.e., the work done by the noise versus the
 energy loss by the ``\mu`` term, using Itô and Stratonovich formalisms. Figures below show 
 the ensemble mean energy budgets (using 1000 ensemble members) as computed using Itô and
-Stratonovich calculus. For the energy budget to close we have to be consistent: if we time-step the 
-energy equation based on Stratonovich calculus then we must compute the work also according 
+Stratonovich calculus. For the energy budget to close we have to be consistent: if we time-step 
+the  energy equation based on Stratonovich calculus then we must compute the work also according 
 to Stratonovich and vice versa.
 
 ```@example 1
@@ -325,28 +325,27 @@ to Stratonovich and vice versa.
 dEdt_theory = @. σ/2  * exp(-2μ * t)
 
 # compute d⟨E⟩/dt numerically
-dEdt_ito = mean((E_ito[2:nsteps, :] - E_ito[1:nsteps-1, :]) / dt, dims=2)
+dEdt_ito = mean(E_ito[2:nsteps, :] .- E_ito[1:nsteps-1, :], dims=2) / dt
 
 # compute the work and dissipation
-work_ito = mean(ΔW[1:nsteps-1, :] .* x[1:nsteps-1, :], dims=2) .+ σ/2
+work_ito = mean(sqrt(σ) * ΔW[1:nsteps-1, :] / dt .* x[1:nsteps-1, :] .+ σ/2, dims=2) 
 diss_ito = 2*μ * (mean(E_ito[1:nsteps-1, :], dims=2))
 
 # Ensemble mean energy budgets from the Itô integration
 
 plot_E = plot(μ * t, [E_theory mean(E_ito, dims=2)],
                 linewidth = [3 2],
-                linestyle = [:dash :solid],
 	                  label = ["theoretical ⟨E⟩" "⟨E⟩ from $n_realizations ensemble member(s)"],
 	                 xlabel = "μ t",
 	                 ylabel = "E",
 	                 legend = :bottomright,
 	                  title = "Ito: 𝖽Eₜ = (-2μ Eₜ + ½σ) 𝖽t + xₜ √σ 𝖽Wₜ")
 
-plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_ito[1:nsteps-1, 1] work_ito[1:nsteps-1, 1]-diss_ito[1:nsteps-1, 1] dEdt_theory[1:nsteps-1]],
+plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_ito work_ito.-diss_ito dEdt_theory[1:nsteps-1]],
                 linestyle = [:dash :dashdot :solid],
                 linewidth = [2 1 3],
-                    label = ["numerical 𝖽⟨E⟩/𝖽t" "⟨work - dissipation⟩" "numerical 𝖽⟨E⟩/𝖽t"],
-                   legend = :bottomleft,
+                    label = ["numerical 𝖽⟨E⟩/𝖽t" "⟨work - dissipation⟩" "theoretical 𝖽⟨E⟩/𝖽t"],
+                   legend = :topright,
                    xlabel = "μ t")
 
 plot(plot_E, plot_Ebudget, layout=(2, 1))
@@ -359,22 +358,21 @@ savefig("assets/energy_budgets_Ito.svg"); nothing # hide
 
 ```@example 1
 # compute d⟨E⟩/dt numerically
-dEdt_str = mean((E_str[2:nsteps, :] - E_str[1:nsteps-1, :]) / dt, dims=2)
+dEdt_str = mean(E_str[2:nsteps, :] .- E_str[1:nsteps-1, :], dims=2) / dt
 
 # compute the work and dissipation
-work_str = mean(ΔW[1:nsteps-1, :] .* (x[1:nsteps-1, :] .+ x[2:nsteps, :])/2, dims=2)
+work_str = mean(sqrt(σ) * ΔW[1:nsteps-1, :] / dt .* (x[1:nsteps-1, :] .+ x[2:nsteps, :])/2, dims=2)
 diss_str = 2*μ * (mean(E_str[1:nsteps-1, :], dims=2))
 
 plot_E = plot(μ * t, [E_theory mean(E_str, dims=2)],
                 linewidth = [3 2],
                     label = ["theoretical ⟨E⟩" "⟨E⟩ from $n_realizations ensemble member(s)"],
-                linestyle = [:dash :solid],
                    xlabel = "μ t",
                    ylabel = "E",
                    legend = :bottomright,
                     title = "Stratonovich: 𝖽Eₜ = -2μ Eₜ 𝖽t + xₜ ∘ √σ 𝖽Wₜ")
 
-plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_str[1:nsteps-1] work_str[1:nsteps-1]-diss_str[1:nsteps-1] dEdt_theory[1:nsteps-1]],
+plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_str[1:nsteps-1] work_str[1:nsteps-1].-diss_str[1:nsteps-1] dEdt_theory[1:nsteps-1]],
                 linestyle = [:dash :dashdot :solid],
                 linewidth = [2 1 3],
                     label = ["numerical 𝖽⟨E⟩/𝖽t" "⟨work - dissipation⟩" "theoretical 𝖽⟨E⟩/𝖽t"],
