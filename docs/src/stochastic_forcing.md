@@ -533,5 +533,5 @@ When multiplied with ``\xi(\bm{x}, t)`` the last term vanishes since its only no
 contribution comes from the point ``s = t``, which is of measure zero (in the integrated sense). 
 
 A demonstration of how the energy budgets can be computed for a case with stochastic forcing 
-can be found in an [example of the TwoDNavierStokes](stable/generated/twodnavierstokes_stochasticforcing_budgets/) 
+can be found in an [example of the TwoDNavierStokes](../generated/twodnavierstokes_stochasticforcing_budgets/) 
 module.

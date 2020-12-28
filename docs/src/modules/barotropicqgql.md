@@ -21,8 +21,8 @@ streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. All
 can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here, the QGPV is
 
 ```math
-\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{(\partial_x v
-	- \partial_y u)}_{\text{relative vorticity}} + \underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}} .
+\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{\partial_x v
+	- \partial_y u}_{\text{relative vorticity}} + \underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}} .
 ```
 
 The dynamical variable is the component of the vorticity of the flow normal to the plane of 
