@@ -21,10 +21,10 @@ Examples aim to demonstrate the main functionalities of each module. Have a look
     u(x) = \sum_{k_x} \hat{u}(k_x) \, e^{i k_x x} \ .
     ```
     
-    The convention used inside modules for the Fourier transforms of variable, e.g., `u` is 
-    `uh` (where the trailing `h` is there to denote "hat"). Note, however, that `uh` are 
-    obtained as the FFT of `u` and due to different normalization factors that FFT algorithm 
-    uses, `uh` _is not_ exactly ``\hat{u}``. Instead,
+    The convention used inside modules is that the Fourier transform of a variable, e.g., `u` 
+    is denoted with `uh` (where the trailing `h` is there to imply "hat"). Note, however, 
+    that `uh` is obtained via a FFT of `u` and due to different normalization factors that the 
+    FFT algorithm uses, `uh` _is not_ exactly the same as ``\hat{u}`` above. Instead,
     
     ```math
     \hat{u}(k_x) = \frac{𝚞𝚑}{n_x e^{- i k_x x_0}} ,
