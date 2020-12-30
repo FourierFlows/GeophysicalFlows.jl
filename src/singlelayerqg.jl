@@ -316,7 +316,7 @@ end
 
 Returns the domain-averaged kinetic energy of the fluid, 
 ```math
-\\textrm{KE} = \\int \\frac1{2} |\\boldsymbol{\\nabla} \\psi|^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} = \\sum_{\\boldsymbol{k}} \\frac1{2} |\\boldsymbol{k}|^2 |\\hat{\\psi}|^2 \\ .
+\\textrm{KE} = \\int \\frac1{2} |\\bm{\\nabla} \\psi|^2 \\frac{\\mathrm{d}^2 \\bm{x}}{L_x L_y} = \\sum_{\\bm{k}} \\frac1{2} |\\bm{k}|^2 |\\hat{\\psi}|^2 \\ .
 ```
 """
 function kinetic_energy(sol, vars, params, grid)
@@ -334,7 +334,7 @@ kinetic_energy(prob) = kinetic_energy(prob.sol, prob.vars, prob.params, prob.gri
 
 Returns the domain-averaged potential energy of the fluid, 
 ```math
-\\textrm{PE} = \\int \\frac1{2} \\frac{\\psi^2}{\\ell^2} \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} = \\sum_{\\boldsymbol{k}} \\frac1{2} \\frac{|\\hat{\\psi}|^2}{\\ell^2} \\ .
+\\textrm{PE} = \\int \\frac1{2} \\frac{\\psi^2}{\\ell^2} \\frac{\\mathrm{d}^2 \\bm{x}}{L_x L_y} = \\sum_{\\bm{k}} \\frac1{2} \\frac{|\\hat{\\psi}|^2}{\\ell^2} \\ .
 ```
 """
 function potential_energy(sol, vars, params::EquivalentBarotropicQGParams, grid)
@@ -366,7 +366,7 @@ flow.
 
 Returns the domain-averaged enstrophy
 ```math
-\\int \\frac1{2} (q + \\eta)^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} = \\sum_{\\boldsymbol{k}} \\frac1{2} |\\hat{q} + \\hat{\\eta}|^2 \\ .
+\\int \\frac1{2} (q + \\eta)^2 \\frac{\\mathrm{d}^2 \\bm{x}}{L_x L_y} = \\sum_{\\bm{k}} \\frac1{2} |\\hat{q} + \\hat{\\eta}|^2 \\ .
 ```
 """
 function enstrophy(sol, vars, params, grid)
@@ -428,8 +428,7 @@ end
 @inline function energy_work(sol, vars::StochasticForcedVars, params::BarotropicQGParams, grid)
   energy_workh = vars.uh # use vars.uh as scratch variable
 
-  @. energy_workh = grid.invKrsq * (vars.prevsol + sol)/2 * conj(vars.Fh) # Stratonovich
-  # @. energy_workh = grid.invKrsq * vars.prevsol * conj(vars.Fh)             # Ito
+  @. energy_workh = grid.invKrsq * (vars.prevsol + sol)/2 * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
@@ -453,8 +452,7 @@ end
 @inline function enstrophy_work(sol, vars::StochasticForcedVars, params::BarotropicQGParams, grid)
   enstrophy_workh = vars.uh # use vars.uh as scratch variable
 
-  @. enstrophy_workh = (vars.prevsol + sol) / 2 * conj(vars.Fh) # Stratonovich
-  # @. enstrophy_workh = grid.invKrsq * vars.prevsol * conj(vars.Fh)           # Ito
+  @. enstrophy_workh = (vars.prevsol + sol) / 2 * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_workh, grid)
 end
 

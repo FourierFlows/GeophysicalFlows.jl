@@ -209,21 +209,42 @@ numberoflayers(::SingleLayerParams) = 1
 # Equations
 # ---------
 
-function hyperdissipation(dev, params, grid)
+"""
+    hyperviscosity(dev, params, grid)
+Returns the linear operator `L` that corresponds to (hyper)-viscosity of order ``n_ν`` with 
+coefficient ``ν`` for ``n`` fluid layers.
+```math
+L_j = - ν |𝐤|^{2 n_ν}, j = 1, ...,n .
+```
+"""
+function hyperviscosity(dev, params, grid)
   T = eltype(grid)
   L = ArrayType(dev){T}(undef, (grid.nkr, grid.nl, numberoflayers(params)))
   @. L = - params.ν * grid.Krsq^params.nν
   @views @. L[1, 1, :] = 0
+  
   return L
 end
 
+"""
+    LinearEquation(dev, params, grid)
+Returns the `equation` for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
+The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via 
+`hyperviscosity(dev, params, grid)`. The nonlinear term is computed via function `calcNlinear!()`.
+"""
 function LinearEquation(dev, params, grid)
-  L = hyperdissipation(dev, params, grid)
+  L = hyperviscosity(dev, params, grid)
   return FourierFlows.Equation(L, calcNlinear!, grid)
 end
-
+ 
+"""
+    Equation(dev, params, grid)
+Returns the `equation` for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
+The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via 
+`hyperviscosity(dev, params, grid)`. The nonlinear term is computed via function `calcN!()`.
+"""
 function Equation(dev, params, grid)
-  L = hyperdissipation(dev, params, grid)
+  L = hyperviscosity(dev, params, grid)
   return FourierFlows.Equation(L, calcN!, grid)
 end
 
@@ -319,8 +340,8 @@ end
 """
     calcS!(S, Fp, Fm, nlayers, grid)
 
-Constructs the array S, which consists of nlayer x nlayer static arrays S_kl that relate 
-the q's and ψ's at every wavenumber: q̂_{k, l} = S_kl * ψ̂_{k, l}.
+Constructs the array ``𝕊``, which consists of `nlayer` x `nlayer` static arrays ``𝕊_𝐤`` that 
+relate the ``q̂_j``'s and ``ψ̂_j``'s at every wavenumber: ``q̂_𝐤 = 𝕊_𝐤 ψ̂_𝐤``.
 """
 function calcS!(S, Fp, Fm, nlayers, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
@@ -335,8 +356,8 @@ end
 """
     calcS⁻¹!(S, Fp, Fm, nlayers, grid)
 
-Constructs the array S⁻¹, which consists of nlayer x nlayer static arrays (S_kl)⁻¹ that 
-relate the q's and ψ's at every wavenumber: ψ̂_{k, l} = (S_kl)⁻¹ * q̂_{k, l}.
+Constructs the array ``𝕊⁻¹``, which consists of `nlayer` x `nlayer` static arrays ``(𝕊_𝐤)⁻¹`` 
+that relate the ``q̂_j``'s and ``ψ̂_j``'s at every wavenumber: ``ψ̂_𝐤 = (𝕊_𝐤)⁻¹ q̂_𝐤``.
 """
 function calcS⁻¹!(S⁻¹, Fp, Fm, nlayers, grid)
   T = eltype(grid)
@@ -355,6 +376,15 @@ end
 # Solvers
 # -------
 
+"""
+    calcN!(N, sol, t, clock, vars, params, grid)
+Compute the nonlinear term, that is the advection term and the forcing,
+```math
+N(q̂_j) = - \\widehat{𝖩(ψ_j, q_j)} - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
+ + \\widehat{(∂_y ψ_j)(∂_x Q_j)} - \\widehat{(∂_x ψ_j)(∂_y Q_j)} + δ_{j, n} μ |𝐤|^2 ψ̂_n + F̂_j ,
+```
+by calling `calcN_advection!` and `addforcing!`.
+"""
 function calcN!(N, sol, t, clock, vars, params, grid)
   nlayers = numberoflayers(params)
   calcN_advection!(N, sol, vars, params, grid)
@@ -374,7 +404,11 @@ end
 """
     calcN_advection!(N, sol, vars, params, grid)
 
-Calculates the advection term.
+Compute the advection term and stores it in `N`:
+```math
+N(q̂_j) = - \\widehat{𝖩(ψ_j, q_j)} - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
+ + \\widehat{(∂_y ψ_j)(∂_x Q_j)} - \\widehat{(∂_x ψ_j)(∂_y Q_j)} .
+```
 """
 function calcN_advection!(N, sol, vars, params, grid)
   @. vars.qh = sol
@@ -418,7 +452,12 @@ end
 """
     calcN_linearadvection!(N, sol, vars, params, grid)
 
-Calculates the advection term of the linearized equations.
+Compute the advection term of the linearized equations and stores it in `N`:
+```math
+N(q̂_j) = - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
+ + \\widehat{(∂_y ψ_j)(∂_x Q_j)} - \\widehat{(∂_x ψ_j)(∂_y Q_j)} .
+```
+
 """
 function calcN_linearadvection!(N, sol, vars, params, grid)
   @. vars.qh = sol
@@ -456,11 +495,17 @@ function calcN_linearadvection!(N, sol, vars, params, grid)
   return nothing
 end
 
+"""
+    addforcing!(N, sol, t, clock, vars, params, grid)
+When the problem includes forcing, calculate the forcing term ``F̂_j`` and add it to the 
+nonlinear term ``N``.
+"""
 addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
 
 function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
   params.calcFq!(vars.Fqh, sol, t, clock, vars, params, grid)
   @. N += vars.Fqh
+  
   return nothing
 end
 
@@ -524,8 +569,8 @@ set_q!(prob, q) = set_q!(prob.sol, prob.params, prob.vars, prob.grid, q)
     set_ψ!(params, vars, grid, sol, ψ)
     set_ψ!(prob)
 
-Set the solution `prob.sol` to correspond to the transform of streamfunction `ψ` and
-updates variables.
+Set the solution `prob.sol` to the transform `qh` that corresponds to streamfunction `ψ` 
+and updates variables.
 """
 function set_ψ!(sol, params, vars, grid, ψ)
   A = typeof(vars.ψ)
@@ -561,11 +606,12 @@ is the number of layers in the fluid. (When ``n=1``, only the kinetic energy is 
 
 The kinetic energy at the ``j``-th fluid layer is 
 ```math
-\\textrm{KE}_j = \\frac{H_j}{H} \\int \\frac1{2} |\\boldsymbol{\\nabla} \\psi_j|^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n \\ ,
+𝖪𝖤_j = \\frac{H_j}{H} \\int \\frac1{2} |{\\bf ∇} ψ_j|^2 \\frac{𝖽x 𝖽y}{L_x L_y} = \\frac1{2} \\frac{H_j}{H} \\sum_{𝐤} |𝐤|² |ψ̂_j|², \\ j = 1, ..., n \\ ,
 ```
-while the potential energy that corresponds to the interface ``j+1/2`` (i.e., interface between the ``j``-th and ``(j+1)``-th fluid layer) is
+while the potential energy that corresponds to the interface ``j+1/2`` (i.e., the interface 
+between the ``j``-th and ``(j+1)``-th fluid layer) is
 ```math
-\\textrm{PE}_{j+1/2} = \\int \\frac1{2} \\frac{f_0^2}{g'_{j+1/2}} (\\psi_j - \\psi_{j+1})^2 \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n-1 \\ .
+𝖯𝖤_{j+1/2} = \\int \\frac1{2} \\frac{f₀^2}{g'_{j+1/2}} (ψ_j - ψ_{j+1})^2 \\frac{𝖽x 𝖽y}{L_x L_y} = \\frac1{2} \\frac{f₀^2}{g'_{j+1/2}} \\sum_{𝐤} |ψ_j - ψ_{j+1}|², \\ j = 1, ..., n-1 \\ .
 ```
 """
 function energies(vars, params, grid, sol)
@@ -612,15 +658,14 @@ verticalfluxes``_{3/2},...,``verticalfluxes``_{n-1/2}``, where ``n`` is the tota
 
 The lateral eddy fluxes whithin the ``j``-th fluid layer are
 ```math
-\\textrm{lateralfluxes}_j = \\frac{H_j}{H} \\int U_j \\, v_j \\, \\partial_y u_j 
-\\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad j = 1, \\dots, n \\ ,
+\\textrm{lateralfluxes}_j = \\frac{H_j}{H} \\int U_j v_j ∂_y u_j 
+\\frac{𝖽x 𝖽y}{L_x L_y} , \\  j = 1, ..., n \\ ,
 ```
 while the vertical eddy fluxes at the ``j+1/2``-th fluid interface  (i.e., interface between 
 the ``j``-th and ``(j+1)``-th fluid layer) are
 ```math
-\\textrm{verticalfluxes}_{j+1/2} = \\int \\frac{f_0^2}{g'_{j+1/2} H} (U_j - U_{j+1}) \\, 
-v_{j+1} \\, \\psi_{j} \\frac{\\mathrm{d}^2 \\boldsymbol{x}}{L_x L_y} \\ , \\quad 
-j = 1 , \\dots , n-1.
+\\textrm{verticalfluxes}_{j+1/2} = \\int \\frac{f₀²}{g'_{j+1/2} H} (U_j - U_{j+1}) \\, 
+v_{j+1} ψ_{j} \\frac{𝖽x 𝖽y}{L_x L_y} , \\ j = 1, ..., n-1.
 ```
 """
 function fluxes(vars, params, grid, sol)
@@ -640,7 +685,7 @@ function fluxes(vars, params, grid, sol)
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   for j = 1:nlayers-1
-    CUDA.@allowscalar verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j] ; dims=(1, 2))[1]
+    CUDA.@allowscalar verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
     CUDA.@allowscalar verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
   end
 
