@@ -103,7 +103,7 @@ sitename = "GeophysicalFlows.jl",
 )
 
 withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
-  deploydocs(        repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
+  deploydocs(       repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
                 versions = ["stable" => "v^", "v#.#", "dev" => "dev"],
             push_preview = false
             )
