@@ -280,7 +280,7 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
   BarotropicQGQL.updatevars!(prob)
 end
 
-gif(anim, "barotropicqgql_betaforced.gif", fps=18)
+mp4(anim, "barotropicqgql_betaforced.mp4", fps=18)
 
 
 # ## Save
