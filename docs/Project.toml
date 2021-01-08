@@ -9,3 +9,4 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
 FourierFlows = "≥ 0.4.5"
+Plots = "≥ 1.10.1"

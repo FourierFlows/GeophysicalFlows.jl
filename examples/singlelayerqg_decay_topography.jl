@@ -231,4 +231,4 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
   SingleLayerQG.updatevars!(prob)
 end
 
-gif(anim, "barotropicqg_decay_topography.gif", fps=12)
+mp4(anim, "barotropicqg_decay_topography.mp4", fps=12)

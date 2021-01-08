@@ -159,7 +159,7 @@ anim = @animate for j = 0:Int(nsteps/nsubs)
   TwoDNavierStokes.updatevars!(prob)  
 end
 
-gif(anim, "twodturb.gif", fps=18)
+mp4(anim, "twodturb.mp4", fps=18)
 
 
 # Last we save the output.
