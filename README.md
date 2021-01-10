@@ -11,10 +11,10 @@
         <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/geophysicalflows-jl/master?label=Window&logo=appveyor&logoColor=white&style=flat-square">
     </a>
     <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/">
-        <img src="https://img.shields.io/badge/docs-stable-blue.svg">
+        <img src="https://img.shields.io/badge/documentation-stable%20release-blue">
     </a>
     <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/">
-        <img src="https://img.shields.io/badge/docs-dev-blue.svg">
+        <img src="https://img.shields.io/badge/documentation-in%20development-orange">
     </a>
     <a href="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl">
         <img src="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl/branch/master/graph/badge.svg" />
@@ -22,7 +22,6 @@
     <a href="https://doi.org/10.5281/zenodo.1463809">
         <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1463809.svg" alt="DOI">
     </a>
-
 </p>
 
 This package leverages the [FourierFlows.jl] framework to provide modules for solving problems in
