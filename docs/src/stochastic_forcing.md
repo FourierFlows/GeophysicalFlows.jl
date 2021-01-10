@@ -41,7 +41,7 @@ In a similar manner, a stochastic differential equation
 	\mathrm{d} x = f(x) \, \mathrm{d} t + g(x) \, \mathrm{d} W_t , \quad x(t_0) = 0 ,
 ```
 
-with ``W_t`` a brownian motions or Wiener process.
+with ``W_t`` a brownian motion or Wiener process.
 
 !!! tip "Wiener process"
     A Wiener process is a random variable ``W_t`` that depends continuously on ``t \ge 0`` and satisfies the following properties:
