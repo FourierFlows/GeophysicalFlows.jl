@@ -262,7 +262,7 @@ using Statistics: mean
 using Random: randn, seed!
 seed!(1234) # for reproducing the same plots
 
-             μ = 0.2    # drag
+             μ = 0.2
              σ = 0.2    # noise strength
             dt = 0.01   # timestep
         nsteps = 2001   # total timesteps
@@ -278,29 +278,29 @@ E_ito = zeros(size(ΔW))
 E_str = zeros(size(ΔW))
 E_numerical = zeros(size(ΔW))
 
-for j = 2:nsteps # time step the equation
+for j = 2:nsteps # time step the equations
 	
-	# time-step dxₜ = -μ xₜ + √σ dWₜ
-  @. x[j, :] = x[j-1, :] + -μ * x[j-1, :] * dt + sqrt(σ) * ΔW[j-1, :]
+  # time-step dx = - μ x dt + √σ dW
+  @. x[j, :] = x[j-1, :] - μ * x[j-1, :] * dt + sqrt(σ) * ΔW[j-1, :]
 
-	# time-step dEₜ = (-2μ Eₜ + ½σ) dt + √σ xₜ dWₜ
+  # time-step dE = (- 2μ E + ½σ) dt + √σ x dW
   @. E_ito[j, :] = E_ito[j-1, :] + (-2μ * E_ito[j-1, :]
 	                   + σ/2) * dt + sqrt(σ) * x[j-1, :] * ΔW[j-1, :]
 
-  # time-step dEₜ = -2μ Eₜ dt + √σ xₜ ∘ dWₜ
-	xbar = @. x[j-1, :] - μ * x[j-1, :] * dt + sqrt(σ) * ΔW[j-1, :]
-	Ebar = @. E_str[j-1, :] + (-2μ * E_str[j-1, :]) * dt + sqrt(σ) * x[j-1, :] * ΔW[j-1, :]
+  # time-step dE = - 2μ E dt + √σ x ∘ dW
+  xbar = @. x[j-1, :] - μ * x[j-1, :] * dt + sqrt(σ) * ΔW[j-1, :]
+  Ebar = @. E_str[j-1, :] + (-2μ * E_str[j-1, :]) * dt + sqrt(σ) * x[j-1, :] * ΔW[j-1, :]
   @. E_str[j, :] = E_str[j-1, :] + (-2μ * (E_str[j-1, :]
 		+ Ebar) / 2) * dt + sqrt(σ) * (x[j-1, :] + xbar) / 2 * ΔW[j-1, :]
 end
 
-# direct computation of E from xₜ
+# direct computation of E from x
 @. E_numerical = 0.5 * x^2
 
 # compare the three E(t) solutions
 plot(μ * t, [E_numerical[:, 1] E_ito[:, 1] E_str[:, 1]],
           linewidth = [3 2 1],
-              label = ["½ xₜ²" "Eₜ (Ito)" "Eₜ (Stratonovich) "],
+              label = ["½ xₜ²" "Eₜ (Ito)" "Eₜ (Stratonovich)"],
           linestyle = [:solid :dash :dashdot],
              xlabel = "μ t",
              ylabel = "E",
