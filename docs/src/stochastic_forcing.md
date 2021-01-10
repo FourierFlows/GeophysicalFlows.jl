@@ -521,7 +521,7 @@ stochastic forcing, remains the same. We can easily verify this from the "formal
 of (10):
 
 ```math
-\psi(\bm{x}, t) = e^{- \mu t} \psi(\bm{x}, 0) + \int_0^t e^{- \mu (t - s)} \nabla^{-2} \xi(\bm{x}, s) \, \mathrm{d} s - \int_0^t \nabla^{-2} \mathsf{J} \left ( \psi(\bm{x}, s), \nabla^2 \psi(\bm{x}, s) \right ) \mathrm{d} s ,
+\psi(\bm{x}, t) = e^{- \mu t} \psi(\bm{x}, 0) + \int_0^t e^{- \mu (t - s)} \nabla^{-2} \xi(\bm{x}, s) \, \mathrm{d} s - \int_0^t \nabla^{-2} \mathsf{J} \left ( \psi(\bm{x}, s), \nabla^2 \psi(\bm{x}, s) \right ) \mathrm{d} s .
 ```
 
 When multiplied with ``\xi(\bm{x}, t)`` the last term vanishes since its only non-zero 
