@@ -62,11 +62,9 @@ end
 Returns the params for two-dimensional turbulence.
 """
 struct Params{T} <: AbstractParams
-       ν :: T         # Vorticity viscosity
-      nν :: Int       # Vorticity hyperviscous order
-       μ :: T         # Bottom drag or hypoviscosity
-      nμ :: Int       # Order of hypodrag
-  calcF! :: Function  # Function that calculates the forcing F
+       ν :: T         # Viscosity
+      nν :: Int       # (Hyper)-viscous order
+  calcF! :: Function  # Function that calculates the forcing `Fh`
 end
 
 
@@ -80,8 +78,15 @@ end
 Returns the equation for two-dimensional turbulence with `params` and `grid`.
 """
 function Equation(params::Params, grid::AbstractGrid)
-  L = @. - params.ν * grid.Krsq^params.nν - params.μ * grid.Krsq^params.nμ
-  CUDA.@allowscalar L[1, 1] = 0
+  D = @. - params.ν * grid.Krsq^params.nν
+  CUDA.@allowscalar D[1, 1] = 0
+  
+  L = zeros(dev, T, (grid.nkr, grid.nl, 3))
+  
+  L[:, :, 1] .= D # for u equation
+  L[:, :, 2] .= D # for v equation
+  L[:, :, 3] .= D # for η equation
+  
   return FourierFlows.Equation(L, calcN!, grid)
 end
 
@@ -90,15 +95,16 @@ end
 # Vars
 # ----
 
-abstract type TwoDNavierStokesVars <: AbstractVars end
+abstract type ShallowWaterVars <: AbstractVars end
 
-struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
+struct Vars{Aphys, Atrans, S, F, P} <: ShallowWaterVars
         u :: Aphys
         v :: Aphys
         η :: Aphys
        uh :: Atrans
        vh :: Atrans
        ηh :: Atrans
+    stete :: S
        Fh :: F
   prevsol :: P
 end
@@ -111,11 +117,12 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 
 Returns the `vars` for unforced two-dimensional turbulence on device `dev` and with `grid`.
 """
-function Vars(::Dev, grid::AbstractGrid) where Dev
+function Vars(::Dev, grid::TwoDGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) u v η
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) uh vh ηh
-  return Vars(u, v, η, uh, vh, ηh, nothing, nothing)
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl, 3) state
+  return Vars(u, v, η, uh, vh, ηh, state, nothing, nothing)
 end
 
 """
@@ -123,11 +130,12 @@ end
 
 Returns the vars for forced two-dimensional turbulence on device `dev` and with `grid`.
 """
-function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function ForcedVars(dev::Dev, grid::TwoDGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) u v η
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) uh vh ηh Fh
-  return Vars(u, v, η, uh, vh, ηh, Fh, nothing)
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl, 3) state
+  return Vars(u, v, η, uh, vh, ηh, state, Fh, nothing)
 end
 
 """
@@ -135,11 +143,12 @@ end
 
 Returns the vars for stochastically forced two-dimensional turbulence on device `dev` and with `grid`.
 """
-function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function StochasticForcedVars(dev::Dev, grid::TwoDGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) u v η
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) uh vh ηh Fh prevsol
-  return Vars(u, v, η, uh, vh, ηh, Fh, prevsol)
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl, 3) state
+  return Vars(u, v, η, uh, vh, ηh, state, Fh, prevsol)
 end
 
 
@@ -153,6 +162,9 @@ end
 Calculates the advection term.
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
+  state = vars.state
+  state = (hu = view(sol, :, :, 1), hv = view(sol, :, :, 2), h = view(sol, :, :, 3))
+  
   @. N = 0 * sol
   
   return nothing
@@ -196,7 +208,15 @@ Update variables in `vars` with solution in `sol`.
 """
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
- 
+  
+  @. vars.uh = sol[:, :, 1]
+  @. vars.vh = sol[:, :, 2]
+  @. vars.ηh = sol[:, :, 3]
+  
+  ldiv!(vars.u, grid.rfftplan, deepcopy(sol[:, :, 1])) # use deepcopy() because irfft destroys its input
+  ldiv!(vars.v, grid.rfftplan, deepcopy(sol[:, :, 2])) # use deepcopy() because irfft destroys its input
+  ldiv!(vars.η, grid.rfftplan, deepcopy(sol[:, :, 3])) # use deepcopy() because irfft destroys its input
+  
   return nothing
 end
 
