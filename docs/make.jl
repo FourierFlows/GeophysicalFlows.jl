@@ -22,10 +22,11 @@ examples = [
     "twodnavierstokes_decaying.jl",
     "twodnavierstokes_stochasticforcing.jl",
     "twodnavierstokes_stochasticforcing_budgets.jl",
-    "barotropicqg_betadecay.jl",
-    "barotropicqg_betaforced.jl",
+    "singlelayerqg_betadecay.jl",
+    "singlelayerqg_betaforced.jl",
+    "singlelayerqg_decay_topography.jl",
+    "singlelayerqg_decaying_barotropic_equivalentbarotropic.jl",
     "barotropicqgql_betaforced.jl",
-    "barotropicqg_decay_topography.jl",
     "multilayerqg_2layer.jl",
     "surfaceqg_decaying.jl",
 ]
@@ -70,15 +71,16 @@ sitename = "GeophysicalFlows.jl",
                 "generated/twodnavierstokes_stochasticforcing.md",
                 "generated/twodnavierstokes_stochasticforcing_budgets.md",
                 ],
-              "BarotropicQG" => Any[
-                "generated/barotropicqg_betadecay.md",
-                "generated/barotropicqg_betaforced.md",
-                "generated/barotropicqg_decay_topography.md"
+              "SingleLayerQG" => Any[
+                "generated/singlelayerqg_betadecay.md",
+                "generated/singlelayerqg_betaforced.md",
+                "generated/singlelayerqg_decay_topography.md",
+                "generated/singlelayerqg_decaying_barotropic_equivalentbarotropic.md"
                 ],
               "BarotropicQGQL" => Any[
                 "generated/barotropicqgql_betaforced.md",
                 ],
-              "MultilayerQG" => Any[
+              "MultiLayerQG" => Any[
                 "generated/multilayerqg_2layer.md"
                 ],
               "SurfaceQG" => Any[
@@ -87,22 +89,23 @@ sitename = "GeophysicalFlows.jl",
             ],
             "Modules" => Any[
               "modules/twodnavierstokes.md",
-              "modules/barotropicqg.md",
+              "modules/singlelayerqg.md",
               "modules/barotropicqgql.md",
               "modules/multilayerqg.md",
               "modules/surfaceqg.md",
               "modules/shallowwater.md"
             ],
-            "Forcing" => "forcing.md",
+            "Stochastic Forcing" => "stochastic_forcing.md",
             "DocStrings" => Any[
             "man/types.md",
-            "man/functions.md"]
+            "man/functions.md"
+            ]
            ]
 )
 
 withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
-  deploydocs(        repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
+  deploydocs(       repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
                 versions = ["stable" => "v^", "v#.#", "dev" => "dev"],
-            push_preview = true
+            push_preview = false
             )
 end

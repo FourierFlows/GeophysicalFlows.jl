@@ -1,7 +1,7 @@
 # # Decaying barotropic QG beta-plane turbulence
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqg_betadecay.ipynb). 
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqg_betadecay.ipynb).
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/singlelayerqg_betadecay.ipynb). 
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betadecay.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence on a beta plane.
 
@@ -10,9 +10,8 @@ using FourierFlows, Plots, Printf, Random
 using Statistics: mean
 using FFTW: irfft
 
-import GeophysicalFlows.BarotropicQG
-import GeophysicalFlows.BarotropicQG: energy, enstrophy
-
+import GeophysicalFlows.SingleLayerQG
+import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 # ## Choosing a device: CPU or GPU
 
@@ -42,7 +41,7 @@ nothing # hide
 # a viscosity coefficient `ν` leads to the module's default value: `ν=0`. In this
 # example numerical instability due to accumulation of enstrophy at high wavenumbers
 # is taken care with the `FilteredTimestepper` we picked. 
-prob = BarotropicQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper)
+prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper)
 nothing # hide
 
 # and define some shortcuts
@@ -65,12 +64,11 @@ Random.seed!(1234)
 qih = randn(Complex{eltype(grid)}, size(sol))
 @. qih = ifelse(K < 2  * 2π/L, 0, qih)
 @. qih = ifelse(K > 10 * 2π/L, 0, qih)
-@. qih = ifelse(k == 0 * 2π/L, 0, qih)   # no power at zonal wavenumber k=0 component
-Ein = energy(qih, grid)           # compute energy of qi
-qih *= sqrt(E₀ / Ein)             # normalize qi to have energy E₀
+@. qih = ifelse(k == 0 * 2π/L, 0, qih)            # no power at zonal wavenumber k=0 component
+qih *= sqrt(E₀ / energy(qih, vars, params, grid)) # normalize qi to have energy E₀
 qi = irfft(qih, grid.nx)
 
-BarotropicQG.set_zeta!(prob, qi)
+SingleLayerQG.set_q!(prob, qi)
 nothing # hide
 
 # Let's plot the initial vorticity field:
@@ -85,10 +83,10 @@ p1 = heatmap(x, y, vars.q',
          yticks = -3:3,
          xlabel = "x",
          ylabel = "y",
-          title = "initial vorticity ζ=∂v/∂x-∂u/∂y",
+          title = "initial vorticity ∂v/∂x-∂u/∂y",
      framestyle = :box)
 
-p2 = contourf(x, y, vars.psi',
+p2 = contourf(x, y, vars.ψ',
         aspectratio = 1,
              c = :viridis,
         levels = range(-0.65, stop=0.65, length=10), 
@@ -141,12 +139,12 @@ nothing # hide
 # their corresponding zonal mean structure.
 
 function plot_output(prob)
-  ζ = prob.vars.zeta
-  ψ = prob.vars.psi
-  ζ̄ = mean(ζ, dims=1)'
+  q = prob.vars.q
+  ψ = prob.vars.ψ
+  q̄ = mean(q, dims=1)'
   ū = mean(prob.vars.u, dims=1)'
 
-  pζ = heatmap(x, y, ζ',
+  pq = heatmap(x, y, q',
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -157,7 +155,7 @@ function plot_output(prob)
             yticks = -3:3,
             xlabel = "x",
             ylabel = "y",
-             title = "vorticity ζ=∂v/∂x-∂u/∂y",
+             title = "vorticity ∂v/∂x-∂u/∂y",
         framestyle = :box)
 
   pψ = contourf(x, y, ψ',
@@ -175,15 +173,15 @@ function plot_output(prob)
              title = "streamfunction ψ",
         framestyle = :box)
 
-  pζm = plot(ζ̄, y,
+  pqm = plot(q̄, y,
             legend = false,
          linewidth = 2,
              alpha = 0.7,
             yticks = -3:3,
              xlims = (-2.2, 2.2),
-            xlabel = "zonal mean ζ",
+            xlabel = "zonal mean q",
             ylabel = "y")
-  plot!(pζm, 0*y, y, linestyle=:dash, linecolor=:black)
+  plot!(pqm, 0*y, y, linestyle=:dash, linecolor=:black)
 
   pum = plot(ū, y,
             legend = false,
@@ -196,7 +194,7 @@ function plot_output(prob)
   plot!(pum, 0*y, y, linestyle=:dash, linecolor=:black)
 
   l = @layout Plots.grid(2, 2)
-  p = plot(pζ, pζm, pψ, pum, layout = l, size = (900, 800))
+  p = plot(pq, pqm, pψ, pum, layout = l, size = (900, 800))
   
   return p
 end
@@ -222,18 +220,18 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.zeta
+  p[1][1][:z] = vars.q
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
-  p[3][1][:z] = vars.psi
-  p[2][1][:x] = mean(vars.zeta, dims=1)'
+  p[3][1][:z] = vars.ψ
+  p[2][1][:x] = mean(vars.q, dims=1)'
   p[4][1][:x] = mean(vars.u, dims=1)'
 
   stepforward!(prob, diags, nsubs)
-  BarotropicQG.updatevars!(prob)
+  SingleLayerQG.updatevars!(prob)
 
 end
 
-gif(anim, "barotropicqg_betadecay.gif", fps=8)
+mp4(anim, "barotropicqg_betadecay.mp4", fps=8)
 
 # ## Save
 

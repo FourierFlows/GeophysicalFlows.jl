@@ -1,7 +1,7 @@
 # # Forced-dissipative barotropic QG beta-plane turbulence
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqg_betaforced.ipynb). 
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqg_betaforced.ipynb).
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/singlelayerqg_betaforced.ipynb). 
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betaforced.ipynb).
 #
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane. The dynamics include linear drag and stochastic excitation.
@@ -13,8 +13,8 @@ using FFTW: irfft
 using Statistics: mean
 using Random: seed!
 
-import GeophysicalFlows.BarotropicQG
-import GeophysicalFlows.BarotropicQG: energy, enstrophy
+import GeophysicalFlows.SingleLayerQG
+import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 
 # ## Choosing a device: CPU or GPU
@@ -84,7 +84,7 @@ nothing # hide
 # a viscosity coefficient ν leads to the module's default value: ν=0. In this
 # example numerical instability due to accumulation of enstrophy in high wavenumbers
 # is taken care with the `FilteredTimestepper` we picked. 
-prob = BarotropicQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper, 
+prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper, 
                             calcF=calcF!, stochastic=true)
 nothing # hide
 
@@ -114,7 +114,7 @@ heatmap(x, y, irfft(vars.Fh, grid.nx)',
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
-BarotropicQG.set_zeta!(prob, zeros(grid.nx, grid.ny))
+SingleLayerQG.set_q!(prob, zeros(grid.nx, grid.ny))
 
 
 # ## Diagnostics
@@ -153,12 +153,12 @@ nothing # hide
 # corresponding zonal mean structure and timeseries of energy and enstrophy.
 
 function plot_output(prob)
-  ζ = prob.vars.zeta
-  ψ = prob.vars.psi
-  ζ̄ = mean(ζ, dims=1)'
+  q = prob.vars.q
+  ψ = prob.vars.ψ
+  q̄ = mean(q, dims=1)'
   ū = mean(prob.vars.u, dims=1)'
   
-  pζ = heatmap(x, y, ζ',
+  pq = heatmap(x, y, q',
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -169,7 +169,7 @@ function plot_output(prob)
             yticks = -3:3,
             xlabel = "x",
             ylabel = "y",
-             title = "vorticity ζ=∂v/∂x-∂u/∂y",
+             title = "vorticity ∂v/∂x-∂u/∂y",
         framestyle = :box)
 
   pψ = contourf(x, y, ψ',
@@ -188,15 +188,15 @@ function plot_output(prob)
              title = "streamfunction ψ",
         framestyle = :box)
 
-  pζm = plot(ζ̄, y,
+  pqm = plot(q̄, y,
             legend = false,
          linewidth = 2,
              alpha = 0.7,
             yticks = -3:3,
              xlims = (-3, 3),
-            xlabel = "zonal mean ζ",
+            xlabel = "zonal mean q",
             ylabel = "y")
-  plot!(pζm, 0*y, y, linestyle=:dash, linecolor=:black)
+  plot!(pqm, 0*y, y, linestyle=:dash, linecolor=:black)
 
   pum = plot(ū, y,
             legend = false,
@@ -227,7 +227,7 @@ function plot_output(prob)
             xlabel = "μt")
 
   l = @layout Plots.grid(2, 3)
-  p = plot(pζ, pζm, pE, pψ, pum, pZ, layout=l, size = (1000, 600))
+  p = plot(pq, pqm, pE, pψ, pum, pZ, layout=l, size = (1000, 600))
 
   return p
 end
@@ -253,19 +253,19 @@ anim = @animate for j = 0:Int(nsteps / nsubs)
     println(log)
   end  
   
-  p[1][1][:z] = vars.zeta
+  p[1][1][:z] = vars.q
   p[1][:title] = "vorticity, μt="*@sprintf("%.2f", μ * clock.t)
-  p[4][1][:z] = vars.psi
-  p[2][1][:x] = mean(vars.zeta, dims=1)'
+  p[4][1][:z] = vars.ψ
+  p[2][1][:x] = mean(vars.q, dims=1)'
   p[5][1][:x] = mean(vars.u, dims=1)'
   push!(p[3][1], μ * E.t[E.i], E.data[E.i])
   push!(p[6][1], μ * Z.t[Z.i], Z.data[Z.i])
   
   stepforward!(prob, diags, nsubs)
-  BarotropicQG.updatevars!(prob)
+  SingleLayerQG.updatevars!(prob)
 end
 
-gif(anim, "barotropicqg_betaforced.gif", fps=18)
+mp4(anim, "barotropicqg_betaforced.mp4", fps=18)
 
 
 # ## Save

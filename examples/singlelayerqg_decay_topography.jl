@@ -1,7 +1,7 @@
 # # Decaying barotropic QG turbulence over topography
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqg_decay_topography.ipynb). 
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqg_decay_topography.ipynb).
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/singlelayerqg_decay_topography.ipynb). 
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decay_topography.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence over topography.
 
@@ -10,8 +10,8 @@ using FourierFlows, Plots, Printf, Random
 using Statistics: mean
 using FFTW: irfft
 
-import GeophysicalFlows.BarotropicQG
-import GeophysicalFlows.BarotropicQG: energy, enstrophy
+import GeophysicalFlows.SingleLayerQG
+import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 
 # ## Choosing a device: CPU or GPU
@@ -35,8 +35,8 @@ nothing # hide
 L = 2π        # domain size
 nothing # hide
 
-# Define the topographic potential vorticity, ``\eta = f_0 h(x, y)/H``. The topography here 
-# is an elliptical mound at ``(1, 1)``, and an elliptical depression at ``(-1, -1)``.
+# Define the topographic potential vorticity, ``\eta = f_0 h(x, y)/H``. The topography here is 
+# an elliptical mount at ``(x, y) = (1, 1)``, and an elliptical depression at ``(x, y) = (-1, -1)``.
 σx, σy = 0.4, 0.8
 topographicPV(x, y) = 3exp(-(x-1)^2/(2σx^2) -(y-1)^2/(2σy^2)) - 2exp(-(x+1)^2/(2σx^2) -(y+1)^2/(2σy^2))
 nothing # hide
@@ -47,7 +47,7 @@ nothing # hide
 # example numerical instability due to accumulation of enstrophy in high wavenumbers
 # is taken care with the `FilteredTimestepper` we picked. The topophic PV is prescribed
 # via keyword argument `eta`.
-prob = BarotropicQG.Problem(dev; nx=n, Lx=L, eta=topographicPV, dt=dt, stepper=stepper)
+prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, eta=topographicPV, dt=dt, stepper=stepper)
 nothing # hide
 
 # and define some shortcuts
@@ -78,16 +78,16 @@ contourf(grid.x, grid.y, params.eta',
 
 E₀ = 0.04 # energy of initial condition
 
-K = @. sqrt(grid.Krsq)                          # a 2D array with the total wavenumber
+K = @. sqrt(grid.Krsq)                             # a 2D array with the total wavenumber
 
 Random.seed!(1234)
 qih = randn(Complex{eltype(grid)}, size(sol))
 @. qih = ifelse(K < 6  * 2π/L, 0, qih)
 @. qih = ifelse(K > 12 * 2π/L, 0, qih)
-qih *= sqrt(E₀ / energy(qih, grid))             # normalize qi to have energy E₀
+qih *= sqrt(E₀ / energy(qih, vars, params, grid))  # normalize qi to have energy E₀
 qi = irfft(qih, grid.nx)
 
-BarotropicQG.set_zeta!(prob, qi)
+SingleLayerQG.set_q!(prob, qi)
 nothing # hide
 
 # Let's plot the initial vorticity field:
@@ -102,10 +102,10 @@ p1 = heatmap(x, y, vars.q',
          yticks = -3:3,
          xlabel = "x",
          ylabel = "y",
-          title = "initial vorticity ζ=∂v/∂x-∂u/∂y",
+          title = "initial vorticity ∂v/∂x-∂u/∂y",
      framestyle = :box)
 
-p2 = contourf(x, y, vars.psi',
+p2 = contourf(x, y, vars.ψ',
         aspectratio = 1,
              c = :viridis,
         levels = range(-0.35, stop=0.35, length=10), 
@@ -155,11 +155,11 @@ nothing # hide
 # their corresponding zonal mean structure.
 
 function plot_output(prob)
-  ζ = prob.vars.zeta
-  ψ = prob.vars.psi
+  q = prob.vars.q
+  ψ = prob.vars.ψ
   η = prob.params.eta
 
-  pζ = heatmap(x, y, ζ',
+  pq = heatmap(x, y, q',
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -170,14 +170,14 @@ function plot_output(prob)
             yticks = -3:3,
             xlabel = "x",
             ylabel = "y",
-             title = "vorticity ζ=∂v/∂x-∂u/∂y",
+             title = "vorticity ∂v/∂x-∂u/∂y",
         framestyle = :box)
   
-  contour!(pζ, x, y, η',
+  contour!(pq, x, y, η',
           levels=0.5:0.5:3,
           lw=2, c=:black, ls=:solid, alpha=0.7)
   
-  contour!(pζ, x, y, η',
+  contour!(pq, x, y, η',
           levels=-2:0.5:-0.5,
           lw=2, c=:black, ls=:dash, alpha=0.7)
     
@@ -197,7 +197,7 @@ function plot_output(prob)
         framestyle = :box)
 
   l = @layout Plots.grid(1, 2)
-  p = plot(pζ, pψ, layout = l, size = (900, 400))
+  p = plot(pq, pψ, layout = l, size = (900, 400))
   
   return p
 end
@@ -223,12 +223,12 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.zeta
+  p[1][1][:z] = vars.q
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
-  p[2][1][:z] = vars.psi
+  p[2][1][:z] = vars.ψ
 
   stepforward!(prob, diags, nsubs)
-  BarotropicQG.updatevars!(prob)
+  SingleLayerQG.updatevars!(prob)
 end
 
-gif(anim, "barotropicqg_decay_topography.gif", fps=12)
+mp4(anim, "barotropicqg_decay_topography.mp4", fps=12)

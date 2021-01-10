@@ -16,10 +16,10 @@ Public = false
 Order = [:type]
 ```
 
-## Private types in module `BarotropicQG`:
+## Private types in module `SingleLayerQG`:
 
 ```@autodocs
-Modules = [GeophysicalFlows.BarotropicQG]
+Modules = [GeophysicalFlows.SingleLayerQG]
 Public = false
 Order = [:type]
 ```
@@ -32,10 +32,10 @@ Public = false
 Order = [:type]
 ```
 
-## Private types in module `MultilayerQG`:
+## Private types in module `MultiLayerQG`:
 
 ```@autodocs
-Modules = [GeophysicalFlows.MultilayerQG]
+Modules = [GeophysicalFlows.MultiLayerQG]
 Public = false
 Order = [:type]
 ```

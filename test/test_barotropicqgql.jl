@@ -96,10 +96,7 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   
   dEdt_numerical = (E[2:E.i] - E[1:E.i-1]) / prob.clock.dt
 
-  # If the Ito interpretation was used for the work
-  # then we need to add the drift term
-  # dEdt_computed = W[2:E.i] + ε - D[1:E.i-1] - R[1:E.i-1]      # Ito
-  dEdt_computed = W[2:E.i] - D[1:E.i-1] - R[1:E.i-1]        # Stratonovich
+  dEdt_computed = W[2:E.i] - D[1:E.i-1] - R[1:E.i-1]
 
   return isapprox(dEdt_numerical, dEdt_computed, rtol=1e-3)
 end

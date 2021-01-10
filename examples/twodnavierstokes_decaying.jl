@@ -54,11 +54,11 @@ nothing # hide
 seed!(1234)
 k₀, E₀ = 6, 0.5
 ζ₀ = peakedisotropicspectrum(grid, k₀, E₀, mask=prob.timestepper.filter)
-TwoDNavierStokes.set_zeta!(prob, ζ₀)
+TwoDNavierStokes.set_ζ!(prob, ζ₀)
 nothing # hide
 
 # Let's plot the initial vorticity field:
-heatmap(x, y, vars.zeta',
+heatmap(x, y, vars.ζ',
          aspectratio = 1,
               c = :balance,
            clim = (-40, 40),
@@ -108,7 +108,7 @@ nothing # hide
 # We initialize a plot with the vorticity field and the time-series of
 # energy and enstrophy diagnostics.
 
-p1 = heatmap(x, y, vars.zeta',
+p1 = heatmap(x, y, vars.ζ',
          aspectratio = 1,
                    c = :balance,
                 clim = (-40, 40),
@@ -131,7 +131,7 @@ p2 = plot(2, # this means "a plot with two series"
                ylims = (0, 1.1))
 
 l = @layout Plots.grid(1, 2)
-p = plot(p1, p2, layout = l, size = (900, 400))
+p = plot(p1, p2, layout = l, size = (800, 360))
 
 
 # ## Time-stepping the `Problem` forward
@@ -150,7 +150,7 @@ anim = @animate for j = 0:Int(nsteps/nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.zeta
+  p[1][1][:z] = vars.ζ
   p[1][:title] = "vorticity, t=" * @sprintf("%.2f", clock.t)
   push!(p[2][1], E.t[E.i], E.data[E.i]/E.data[1])
   push!(p[2][2], Z.t[Z.i], Z.data[Z.i]/Z.data[1])
@@ -159,7 +159,7 @@ anim = @animate for j = 0:Int(nsteps/nsubs)
   TwoDNavierStokes.updatevars!(prob)  
 end
 
-gif(anim, "twodturb.gif", fps=18)
+mp4(anim, "twodturb.mp4", fps=18)
 
 
 # Last we save the output.

@@ -11,10 +11,10 @@
         <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/geophysicalflows-jl/master?label=Window&logo=appveyor&logoColor=white&style=flat-square">
     </a>
     <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/">
-        <img src="https://img.shields.io/badge/docs-stable-blue.svg">
+        <img src="https://img.shields.io/badge/documentation-stable%20release-blue">
     </a>
     <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/">
-        <img src="https://img.shields.io/badge/docs-dev-blue.svg">
+        <img src="https://img.shields.io/badge/documentation-in%20development-orange">
     </a>
     <a href="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl">
         <img src="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl/branch/master/graph/badge.svg" />
@@ -22,7 +22,6 @@
     <a href="https://doi.org/10.5281/zenodo.1463809">
         <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1463809.svg" alt="DOI">
     </a>
-
 </p>
 
 This package leverages the [FourierFlows.jl] framework to provide modules for solving problems in
@@ -47,17 +46,17 @@ Some animations created with GeophysicalFlows.jl are [online @ youtube].
 All modules provide solvers on two-dimensional domains. We currently provide
 
 * `TwoDNavierStokes`: the two-dimensional vorticity equation.
-* `BarotropicQG`: the barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography and Coriolis parameters of the form `f = f₀ + βy`.
-* `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
-* `MultilayerQG`: a multi-layer quasi-geostrophic model over topography and with the ability to impose a zonal flow `U_n(y)` in each layer.
+* `SingleLayerQG`: the barotropic or equivalent-barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography, Coriolis parameters of the form `f = f₀ + βy`, and finite Rossby radius of deformation.
+* `MultiLayerQG`: a multi-layer quasi-geostrophic model over topography and with the ability to impose a zonal flow `U_n(y)` in each layer.
 * `SurfaceQG`: a surface quasi-geostrophic model.
+* `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
 
 
 ## Cite
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2020). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.9.1  (Version v0.9.1). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
+> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.11.2  (Version v0.11.2). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl

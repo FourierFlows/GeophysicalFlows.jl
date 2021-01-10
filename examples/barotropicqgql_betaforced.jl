@@ -157,7 +157,6 @@ nothing # hide
 get_sol(prob) = sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im * g.l .* g.invKrsq .* sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
-nothing # hide
 
 
 # ## Visualizing the simulation
@@ -247,6 +246,8 @@ function plot_output(prob)
   
   return p
 end
+nothing # hide
+
 
 # ## Time-stepping the `Problem` forward
 
@@ -257,9 +258,8 @@ p = plot_output(prob)
 startwalltime = time()
 
 anim = @animate for j = 0:round(Int, nsteps / nsubs)
-
   if j % (1000 / nsubs) == 0
-    cfl = clock.dt * maximum([maximum(vars.v) / grid.dy, maximum(vars.u .+ vars.U) / grid.dx])
+    cfl = clock.dt * maximum([maximum(vars.u .+ vars.U) / grid.dx, maximum(vars.v) / grid.dy])
 
     log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, walltime: %.2f min",
       clock.step, clock.t, cfl, E.data[E.i], Z.data[Z.i],
@@ -269,7 +269,7 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
   end
 
   p[1][1][:z] = @. vars.zeta + vars.Zeta
-  p[1][:title] = "vorticity, μt="*@sprintf("%.2f", μ * clock.t)
+  p[1][:title] = "vorticity, μt=" * @sprintf("%.2f", μ * clock.t)
   p[4][1][:z] = @. vars.psi + vars.Psi
   p[2][1][:x] = mean(vars.Zeta, dims=1)'
   p[5][1][:x] = mean(vars.U, dims=1)'
@@ -280,7 +280,7 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
   BarotropicQGQL.updatevars!(prob)
 end
 
-gif(anim, "barotropicqgql_betaforced.gif", fps=18)
+mp4(anim, "barotropicqgql_betaforced.mp4", fps=18)
 
 
 # ## Save
