@@ -36,10 +36,6 @@ date: 24 December 2020
 bibliography: paper.bib
 ---
 
-# Summary
-
-GeophysicalFlows.jl is a julia package and it is very nice...
-
 <!-- 
 # Citations
 
@@ -54,11 +50,6 @@ For a quick reference, the following citation commands can be used:
 - `@author:2001`  ->  "Author et al. (2001)"
 - `[@author:2001]` -> "(Author et al., 2001)"
 - `[@author1:2001; @author2:2001]` -> "(Author1 et al., 2001; Author2 et al., 2002)"
--->
-
-# Mathematics
-
-Single dollars ($) are required for inline mathematics e.g. $f(x) = e^{\pi/x}$
 
 Double dollars make self-standing equations:
 
@@ -73,7 +64,6 @@ You can also use plain \LaTeX for equations
 \end{equation}
 and refer to \autoref{eq:fourier} from text.
 
-
 # Figures
 
 Figures can be included like this:
@@ -82,13 +72,36 @@ Figures can be included like this:
 
 and referenced from text using \autoref{fig:example}.
 
-Fenced code blocks are rendered with syntax highlighting:
+-->
+
+# Summary
+
+`GeophysicalFlows.jl` is Julia package that gathers together a collections of pseudospectral 
+solvers for geophysical fluid dynamics-related partial differetial equations on periodic 
+domains. All modules leverage the framework provided by the FourierFlows.jl Julia package
+and use Fourier-based pseudospectral numerical methods.
+
+`GeophysicalFlows.jl` utilizes Julia's functionality and abstraction to enable all modules to
+run seamlessly on both CPUs and GPUs. Selection of the architecture on which equations are
+solved is done by providing the argument `dev=CPU()` or `dev=GPU()` during constructing of 
+a particular problem.
+
+Installing GeophysicalFlows.jl in Julia is simply done via calling
 ```julia
 ]add GeophysicalFlows
-```	
+```
+in the REPL. Then a long list of documented examples that appears in the package's documentation
+can get the user going.
+
+The Python package `pyqg` has similar functionality as GeophysicalFlows.jl. The major difference
+of `pyqg` and `GeophysicalFlows.jl` is that `pyqg` cannot run on GPUs. Often also one can 
+find isolated codes in personal websites or in open-source public repositories that have same 
+functionality as some of GeophysicalFlows.jl's modules.
 
 # Acknowledgements
 
-We acknowledge fruitful discussions with Keaton Burns, Cesar Rocha, and William Young.
+We acknowledge discussions with Keaton Burns, Cesar Rocha, and William Young. We also would 
+like to take a moment to remember Sean R. Haney (February 1987-January 2021) who left us a 
+bit too early.
 
 # References
