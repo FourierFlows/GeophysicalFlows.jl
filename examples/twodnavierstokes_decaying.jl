@@ -131,7 +131,7 @@ p2 = plot(2, # this means "a plot with two series"
                ylims = (0, 1.1))
 
 l = @layout Plots.grid(1, 2)
-p = plot(p1, p2, layout = l, size = (900, 400))
+p = plot(p1, p2, layout = l, size = (800, 360))
 
 
 # ## Time-stepping the `Problem` forward
