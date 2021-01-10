@@ -505,11 +505,7 @@ and by sampling over various forcing realizations:
 
 All modules in GeophysicalFlows.jl use Stratonovich calculus. For example, the domain-averaged 
 energy injected per unit time by the forcing in the `TwoDNavierStokes` module is computed 
-using (9) via
-
-```@docs
-GeophysicalFlows.TwoDNavierStokes.energy_work
-```
+using (9) via the [`energy_work`](@ref GeophysicalFlows.TwoDNavierStokes.energy_work) function.
 
 ## A bit more elaborate SPDE
 
