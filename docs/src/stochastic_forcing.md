@@ -41,13 +41,21 @@ In a similar manner, a stochastic differential equation
 	\mathrm{d} x = f(x) \, \mathrm{d} t + g(x) \, \mathrm{d} W_t , \quad x(t_0) = 0 ,
 ```
 
-with ``\mathrm{d} W_t`` a white-noise process, can be written in an integral form as:
+with ``W_t`` a brownian motions or Wiener process.
+
+!!! tip "Wiener process"
+    A Wiener process is a random variable ``W_t`` that depends continuously on ``t \ge 0`` and satisfies the following properties:
+    1. Independence. For ``0 \le s \le t`` the increment ``W_t - W_s`` is independent of any prior values, i.e., independent of all ``W_\tau``, ``\tau \le s``.
+    2. Stationarity. The statistical distribution of the increment ``W_{t+s} − W_s`` does not depend on  ``s`` (and so is identical in distribution to ``W_t``).
+    3. Gaussianity. ``W_t`` is a Gaussian process with mean ``\langle W_t \rangle = 0`` and covariance ``\langle W_t W_s \rangle = \min(t, s)``.
+
+The stochastic differential equation above can be written in an integral form as:
 
 ```math
 	x(t) = \int_{t_0}^{t} f(x(s)) \, \mathrm{d} s + \int_{t_0}^{t} g(x(s)) \, \mathrm{d} W_s .
 ```
 
-Of course now, the last integral is a stochastic integral and there is not a single 
+Of course now, the last integral above is a stochastic integral and there is not a single 
 straight-forward way of computing it -- there are a lot of different ways we can 
 approximate it as a Riemannian sum and each of them leads to a different answer. 
 The two most popular ways for computing such stochastic integrals are:
@@ -120,9 +128,9 @@ The above is demonstrated by evaluating the simple stochastic integral:
 ```math
 \begin{aligned}
 {\color{Green} \text{Itô}}&: {\color{Green} \left \langle \int_{t_0}^{t} W_s \, \mathrm{d} W_s \right \rangle \approx \sum_{j} \left \langle W_j (W_{j+1} - W_j) \right \rangle} \\
-&\hspace{7.3em} {\color{Green} = \sum_j \left \langle W_j W_{j+1} \right \rangle - \left \langle W_j W_j \right \rangle \sim \sum_{j} t_j - t_j = 0} , \\
+& \hspace{7.3em} {\color{Green} = \sum_j \left \langle W_j W_{j+1} \right \rangle - \left \langle W_j W_j \right \rangle \sim \sum_{j} t_j - t_j = 0} , \\
 {\color{Magenta}\text{Stratonovich}}&: {\color{Magenta}\left \langle \int_{t_0}^{t} W_s \circ \mathrm{d} W_s \right \rangle \approx \sum_j \left \langle \frac1{2}(W_j + W_{j+1}) (W_{j+1} - W_j)\right \rangle} \\
-&\hspace{7.3em} {\color{Magenta} = \frac1{2} \sum_j \left \langle W_{j+1} W_{j+1} \right \rangle - \left \langle W_j W_j \right \rangle  \sim \frac1{2} \sum_j t_{j+1} - t_j = \frac{t}{2}} .
+& \hspace{7.3em} {\color{Magenta} = \frac1{2} \sum_j \left \langle W_{j+1} W_{j+1} \right \rangle - \left \langle W_j W_j \right \rangle  \sim \frac1{2} \sum_j t_{j+1} - t_j = \frac{t}{2}} .
 \end{aligned}
 ```
 
@@ -527,6 +535,6 @@ of (10):
 When multiplied with ``\xi(\bm{x}, t)`` the last term vanishes since its only non-zero 
 contribution comes from the point ``s = t``, which is of measure zero (in the integrated sense). 
 
-A demonstration of how the energy budgets can be computed for a case with stochastic forcing 
-can be found in an [example of the TwoDNavierStokes](../generated/twodnavierstokes_stochasticforcing_budgets/) 
+A demonstration of how the energy budgets can be computed when we have stochastic forcing is 
+illustrated in an [example of the TwoDNavierStokes](../generated/twodnavierstokes_stochasticforcing_budgets/) 
 module.
