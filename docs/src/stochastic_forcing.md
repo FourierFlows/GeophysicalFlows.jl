@@ -409,7 +409,7 @@ interpretations coincide.
 The forcing ``\xi`` obeys:
 
 ```math
-\langle \xi(\bm{x},t) \rangle = 0 \quad \text{and} \quad \langle \xi(\bm{x}, t) \xi(\bm{x}', t') \rangle= Q(\bm{x} - \bm{x}') \delta(t-t'),
+\langle \xi(\bm{x}, t) \rangle = 0 \quad \text{and} \quad \langle \xi(\bm{x}, t) \xi(\bm{x}', t') \rangle = Q(\bm{x} - \bm{x}') \delta(t - t') ,
 ```
 
 that is, the forcing is white in time but spatially correlated; its spatial correlation is 
@@ -421,7 +421,7 @@ that is stochastically forced while dissipated by linear drag ``\mu``. The energ
 fluid is:
 
 ```math
-E = \tfrac{1}{2} \overline{|\bm{\nabla}\psi|^2}^{x,y} = -\tfrac{1}{2} \overline{\psi \nabla^2\psi}^{x,y},
+E = \tfrac{1}{2} \overline{|\bm{\nabla} \psi|^2}^{x, y} = -\tfrac{1}{2} \overline{\psi \nabla^2 \psi}^{x, y} ,
 ```
 
 where the overbar denotes average over ``x`` and ``y`` and an integration-by-parts was carried
@@ -429,7 +429,7 @@ through in the last equality. To obtain the energy equation we multiply (6) with
 average over the whole domain. Thus, the work done by the forcing is given by:
 
 ```math
-P = - \, \overline{\psi \, \xi}^{x,y},
+P = - \, \overline{\psi \, \xi}^{x, y} ,
 ```
 
 but the above is a stochastic integral and it is meaningless without a rule for computing the stochastic integral.
@@ -455,7 +455,7 @@ But how much is the Itô drift term in this case? As in the previous section, th
 *precisely* the ensemble mean of the Stratonovich work, i.e.:
 
 ```math
-\textrm{Ito drift}= - \overline{\langle \underbrace{\psi(\bm{x}, t) \circ  \xi(\bm{x}, t)}_{\textrm{Stratonovich}} \rangle}^{x,y} .
+\textrm{Ito drift}= - \overline{\langle \underbrace{\psi(\bm{x}, t) \circ  \xi(\bm{x}, t)}_{\textrm{Stratonovich}} \rangle}^{x, y} .
 ```
 
 But again, the above can be computed using the "formal" solution of (6):
@@ -468,10 +468,10 @@ which implies
 
 ```math
 \begin{aligned}
-\text{drift} & = -\overline{e^{-\mu t} \underbrace{\left \langle \psi(\bm{x}, 0)  \xi(\bm{x}, t) \right \rangle}_{=0}}^{x,y} - \int_0^t e^{- \mu (t - s)} \overline{\nabla^{-2} \left \langle \xi(\bm{x}, s) \xi(\bm{x}, t) \right\rangle}^{x,y} \, \mathrm{d} s \\
-& = -\int_0^t e^{-\mu(t - s)} \overline{\underbrace{\left [ \nabla^{-2} Q (\bm{x}) \right ] \big|_{\bm{x}=0}}_{\text{independent of }x,y} \, \delta(t - s)}^{x,y} \, \mathrm{d} s \\
-& = -\frac1{2} \nabla^{-2} Q(\bm{x}) \big|_{\bm{x}=0} \\
-& = - \frac1{2} \left [ \nabla^{-2} \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \widehat{Q}(\bm{k}) \, e^{i \bm{k} \bm{\cdot}\bm{x}} \right ]_{\bm{x}=0} \\
+\text{drift} & = -\overline{e^{- \mu t} \underbrace{\left \langle \psi(\bm{x}, 0) \xi(\bm{x}, t) \right \rangle}_{=0}}^{x, y} - \int_0^t e^{- \mu (t - s)} \overline{\nabla^{-2} \left \langle \xi(\bm{x}, s) \xi(\bm{x}, t) \right\rangle}^{x, y} \, \mathrm{d} s \\
+& = - \int_0^t e^{-\mu(t - s)} \overline{\underbrace{\left [ \nabla^{-2} Q (\bm{x}) \right ] \big|_{\bm{x}=0}}_{\text{independent of }x, y} \, \delta(t - s)}^{x,y} \, \mathrm{d} s \\
+& = - \frac1{2} \nabla^{-2} Q(\bm{x}) \big|_{\bm{x}=0} \\
+& = - \frac1{2} \left [ \nabla^{-2} \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \widehat{Q}(\bm{k}) \, e^{i \bm{k} \bm{\cdot} \bm{x}} \right ]_{\bm{x}=0} \\
 & = \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \frac{\widehat{Q}(\bm{k})}{2 |\bm{k}|^2} .
 \end{aligned}
 ```
@@ -488,10 +488,10 @@ Using the above, the work for a single forcing realization at the ``j``-th times
 computed as:
 
 ```math
-{\color{Green} \text{Itô}} : {\color{Green} P_j = -\overline{\psi(\bm{x}, t_j) \xi(\bm{x}, t_{j+1})}^{x,y} + \varepsilon} , \tag{8}
+{\color{Green} \text{Itô}} : {\color{Green} P_j = -\overline{\psi(\bm{x}, t_j) \xi(\bm{x}, t_{j+1})}^{x, y} + \varepsilon} , \tag{8}
 ```
 ```math
-{\color{Magenta} \text{Stratonovich}} : {\color{Magenta} P_j = -\overline{\frac{\psi(\bm{x}, t_j) + \psi(\bm{x}, t_{j+1})}{2} \xi(\bm{x}, t_{j+1})}^{x,y}} . \tag{9}
+{\color{Magenta} \text{Stratonovich}} : {\color{Magenta} P_j = -\overline{\frac{\psi(\bm{x}, t_j) + \psi(\bm{x}, t_{j+1})}{2} \xi(\bm{x}, t_{j+1})}^{x, y}} . \tag{9}
 ```
 
 Remember, previously the work done by the stochastic forcing was:
