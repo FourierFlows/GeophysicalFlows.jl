@@ -141,4 +141,4 @@ anim = @animate for j = 0:Int(nsteps/nsubs)
   SingleLayerQG.updatevars!(prob_eqbqg)
 end
 
-gif(anim, "singlelayerqg_barotropic_equivalentbarotropic.gif", fps=18)
+mp4(anim, "singlelayerqg_barotropic_equivalentbarotropic.mp4", fps=18)

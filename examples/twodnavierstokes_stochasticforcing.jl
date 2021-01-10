@@ -107,7 +107,7 @@ heatmap(x, y, irfft(vars.Fh, grid.nx)',
 # ## Setting initial conditions
 
 # Our initial condition is a fluid at rest.
-TwoDNavierStokes.set_zeta!(prob, zeros(grid.nx, grid.ny))
+TwoDNavierStokes.set_ζ!(prob, zeros(grid.nx, grid.ny))
 
 
 # ## Diagnostics
@@ -125,7 +125,7 @@ nothing # hide
 # energy and enstrophy diagnostics. To plot energy and enstrophy on the same
 # axes we scale enstrophy with $k_f^2$.
 
-p1 = heatmap(x, y, vars.zeta',
+p1 = heatmap(x, y, vars.ζ',
          aspectratio = 1,
                    c = :balance,
                 clim = (-40, 40),
@@ -166,7 +166,7 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.zeta
+  p[1][1][:z] = vars.ζ
   p[1][:title] = "vorticity, μt = " * @sprintf("%.2f", μ * clock.t)
   push!(p[2][1], μ * E.t[E.i], E.data[E.i])
   push!(p[2][2], μ * Z.t[Z.i], Z.data[Z.i] / forcing_wavenumber^2)
@@ -175,4 +175,4 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
   TwoDNavierStokes.updatevars!(prob)  
 end
 
-gif(anim, "twodturb_forced.gif", fps=18)
+mp4(anim, "twodturb_forced.mp4", fps=18)

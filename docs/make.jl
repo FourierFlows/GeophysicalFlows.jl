@@ -80,7 +80,7 @@ sitename = "GeophysicalFlows.jl",
               "BarotropicQGQL" => Any[
                 "generated/barotropicqgql_betaforced.md",
                 ],
-              "MultilayerQG" => Any[
+              "MultiLayerQG" => Any[
                 "generated/multilayerqg_2layer.md"
                 ],
               "SurfaceQG" => Any[
@@ -94,15 +94,16 @@ sitename = "GeophysicalFlows.jl",
               "modules/multilayerqg.md",
               "modules/surfaceqg.md"
             ],
-            "Forcing" => "forcing.md",
+            "Stochastic Forcing" => "stochastic_forcing.md",
             "DocStrings" => Any[
             "man/types.md",
-            "man/functions.md"]
+            "man/functions.md"
+            ]
            ]
 )
 
 withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
-  deploydocs(        repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
+  deploydocs(       repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
                 versions = ["stable" => "v^", "v#.#", "dev" => "dev"],
             push_preview = false
             )
