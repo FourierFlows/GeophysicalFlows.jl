@@ -98,13 +98,15 @@ end
 abstract type ShallowWaterVars <: AbstractVars end
 
 struct Vars{Aphys, Atrans, S, F, P} <: ShallowWaterVars
+       qu :: Aphys
+       qv :: Aphys
         u :: Aphys
         v :: Aphys
-        η :: Aphys
-       uh :: Atrans
-       vh :: Atrans
-       ηh :: Atrans
-    stete :: S
+        h :: Aphys
+      quh :: Atrans
+      qvh :: Atrans
+       hh :: Atrans
+    state :: S
        Fh :: F
   prevsol :: P
 end
@@ -119,10 +121,10 @@ Returns the `vars` for unforced two-dimensional turbulence on device `dev` and w
 """
 function Vars(::Dev, grid::TwoDGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) u v η
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) uh vh ηh
+  @devzeros Dev T (grid.nx, grid.ny) qu qv u v h
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) quh qvh hh
   @devzeros Dev Complex{T} (grid.nkr, grid.nl, 3) state
-  return Vars(u, v, η, uh, vh, ηh, state, nothing, nothing)
+  return Vars(qu, qv, u, v, h, uh, vh, hh, state, nothing, nothing)
 end
 
 """
@@ -132,10 +134,10 @@ Returns the vars for forced two-dimensional turbulence on device `dev` and with 
 """
 function ForcedVars(dev::Dev, grid::TwoDGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) u v η
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) uh vh ηh Fh
+  @devzeros Dev T (grid.nx, grid.ny) qu qv u v h
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) quh qvh hh Fh
   @devzeros Dev Complex{T} (grid.nkr, grid.nl, 3) state
-  return Vars(u, v, η, uh, vh, ηh, state, Fh, nothing)
+  return Vars(qu, qv, u, v, h, uh, vh, hh, state, Fh, nothing)
 end
 
 """
@@ -145,10 +147,10 @@ Returns the vars for stochastically forced two-dimensional turbulence on device 
 """
 function StochasticForcedVars(dev::Dev, grid::TwoDGrid) where Dev
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) u v η
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) uh vh ηh Fh prevsol
+  @devzeros Dev T (grid.nx, grid.ny) qu qv u v h
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) quh qvh hh Fh prevsol
   @devzeros Dev Complex{T} (grid.nkr, grid.nl, 3) state
-  return Vars(u, v, η, uh, vh, ηh, state, Fh, prevsol)
+  return Vars(qu, qv, u, v, h, uh, vh, hh, state, Fh, prevsol)
 end
 
 
@@ -209,13 +211,16 @@ Update variables in `vars` with solution in `sol`.
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
   
-  @. vars.uh = sol[:, :, 1]
-  @. vars.vh = sol[:, :, 2]
-  @. vars.ηh = sol[:, :, 3]
+  @. vars.quh = sol[:, :, 1]
+  @. vars.qvh = sol[:, :, 2]
+  @. vars.hh  = sol[:, :, 3]
   
-  ldiv!(vars.u, grid.rfftplan, deepcopy(sol[:, :, 1])) # use deepcopy() because irfft destroys its input
-  ldiv!(vars.v, grid.rfftplan, deepcopy(sol[:, :, 2])) # use deepcopy() because irfft destroys its input
-  ldiv!(vars.η, grid.rfftplan, deepcopy(sol[:, :, 3])) # use deepcopy() because irfft destroys its input
+  ldiv!(vars.qu, grid.rfftplan, deepcopy(sol[:, :, 1])) # use deepcopy() because irfft destroys its input
+  ldiv!(vars.qv, grid.rfftplan, deepcopy(sol[:, :, 2])) # use deepcopy() because irfft destroys its input
+  ldiv!(vars.h, grid.rfftplan, deepcopy(sol[:, :, 3])) # use deepcopy() because irfft destroys its input
+
+  @. vars.u = vars.qu / vars.h
+  @. vars.v = vars.qv / vars.h
   
   return nothing
 end
