@@ -40,11 +40,11 @@ function Problem(dev::Device=CPU();
 
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
 
-  params = Params{T}(ν, nν, calcF)
+  params = Params(ν, nν, calcF)
 
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
-  equation = Equation(params, grid)
+  equation = Equation(dev, params, grid)
 
   return FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end
@@ -71,11 +71,11 @@ end
 # ---------
 
 """
-    Equation(params, grid)
+    Equation(dev, params, grid)
 
 Returns the equation for two-dimensional turbulence with `params` and `grid`.
 """
-function Equation(params::Params, grid::AbstractGrid)
+function Equation(dev, params::Params, grid::AbstractGrid{T}) where T
   D = @. - params.ν * grid.Krsq^params.nν
   CUDA.@allowscalar D[1, 1] = 0
   
@@ -109,8 +109,8 @@ struct Vars{Aphys, Atrans, S, F, P} <: ShallowWaterVars
   prevsol :: P
 end
 
-const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, Nothing}
-const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
+const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray, Nothing}
+const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
 
 """
     Vars(dev, grid)
@@ -122,7 +122,7 @@ function Vars(::Dev, grid::TwoDGrid) where Dev
   @devzeros Dev T (grid.nx, grid.ny) qu qv u v h
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) quh qvh hh
   @devzeros Dev Complex{T} (grid.nkr, grid.nl, 3) state
-  return Vars(qu, qv, u, v, h, uh, vh, hh, state, nothing, nothing)
+  return Vars(qu, qv, u, v, h, quh, qvh, hh, state, nothing, nothing)
 end
 
 """
@@ -135,7 +135,7 @@ function ForcedVars(dev::Dev, grid::TwoDGrid) where Dev
   @devzeros Dev T (grid.nx, grid.ny) qu qv u v h
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) quh qvh hh Fh
   @devzeros Dev Complex{T} (grid.nkr, grid.nl, 3) state
-  return Vars(qu, qv, u, v, h, uh, vh, hh, state, Fh, nothing)
+  return Vars(qu, qv, u, v, h, quh, qvh, hh, state, Fh, nothing)
 end
 
 """
@@ -148,7 +148,7 @@ function StochasticForcedVars(dev::Dev, grid::TwoDGrid) where Dev
   @devzeros Dev T (grid.nx, grid.ny) qu qv u v h
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) quh qvh hh Fh prevsol
   @devzeros Dev Complex{T} (grid.nkr, grid.nl, 3) state
-  return Vars(qu, qv, u, v, h, uh, vh, hh, state, Fh, prevsol)
+  return Vars(qu, qv, u, v, h, quh, qvh, hh, state, Fh, prevsol)
 end
 
 
