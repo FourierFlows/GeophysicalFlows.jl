@@ -237,7 +237,7 @@ function calcN!(N, sol, t, clock, vars, params, grid)
   h∂b∂xh = vars.hh
   mul!(h∂b∂xh, grid.rfftplan, h∂b∂x)
   
-  @. N[:, :, 1] += params.g * h∂b∂xh
+  @. N[:, :, 1] -= params.g * h∂b∂xh
 
   ldiv!(vars.h, grid.rfftplan, deepcopy(sol[:, :, 3]))
 
@@ -247,7 +247,7 @@ function calcN!(N, sol, t, clock, vars, params, grid)
   h∂b∂yh = vars.hh
   mul!(h∂b∂yh, grid.rfftplan, h∂b∂y)
   
-  @. N[:, :, 2] += params.g * h∂b∂yh
+  @. N[:, :, 2] -= params.g * h∂b∂yh
 
   addforcing!(N, sol, t, clock, vars, params, grid)
   
