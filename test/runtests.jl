@@ -34,6 +34,13 @@ for dev in devices
   
   println("testing on "*string(typeof(dev)))
   
+  @testset "ShallowWater" begin
+    include("test_shallowwater.jl")
+      
+    @test test_swe_problemtype(dev, Float32)
+    @test ShallowWater.nothingfunction() == nothing
+  end
+  
   @testset "Utils" begin
     include("test_utils.jl")
 
