@@ -2,7 +2,7 @@ module ShallowWater
 
 export
   Problem,
-  updatevars!,
+  updatevars!
 
 using
   CUDA,
@@ -11,6 +11,7 @@ using
 @reexport using FourierFlows
 
 using LinearAlgebra: mul!, ldiv!
+using FFTW: rfft, irfft
 using FourierFlows: parsevalsum
 
 nothingfunction(args...) = nothing
@@ -31,6 +32,10 @@ function Problem(dev::Device=CPU();
            f = 0.0,
   # Gravitational constant
            g = 9.81,
+  # Total mean rest fluid height
+           H = 1.0,
+  # Bottom bathymetry
+           b = nothing,
   # Drag and/or hyper-/hypo-viscosity
            ν = 0,
           nν = 1,
@@ -40,9 +45,12 @@ function Problem(dev::Device=CPU();
   stochastic = false,
            T = Float64)
 
+  # bottom bathymetry
+  b === nothing && (b = zeros(dev, T, (nx, ny)))
+
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
 
-  params = Params(f, g, ν, nν, calcF)
+  params = Params(dev, T(f), T(g), T(H), b, T(ν), nν, calcF, grid)
 
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
@@ -61,14 +69,25 @@ end
 
 Returns the params for two-dimensional shallow water.
 """
-struct Params{T} <: AbstractParams
+struct Params{T, A} <: AbstractParams
        f :: T         # Coriolis parameter
        g :: T         # Gravitational constant
        ν :: T         # Viscosity
       nν :: Int       # (Hyper)-viscous order
+    ∂b∂x :: A         # x-bottom bathymetry gradient, ∂b/∂x
+    ∂b∂y :: A         # y-bottom bathymetry gradient, ∂b/∂y
   calcF! :: Function  # Function that calculates the forcing `Fh`
 end
 
+function Params(dev, f, g, H, b, ν, nν, calcF, grid)
+  A = ArrayType(dev)
+  
+  bh = rfft(A(b))
+  ∂b∂x = irfft(im * grid.kr .* bh, grid.nx)
+  ∂b∂y = irfft(im * grid.l  .* bh, grid.nx)
+  
+  return Params(f, g, ν, nν, ∂b∂x, ∂b∂y, calcF)
+end
 
 # ---------
 # Equations
@@ -205,15 +224,15 @@ function calcN!(N, sol, t, clock, vars, params, grid)
   @. h² *= vars.h
   
   h²h = vars.hh
-  mul!(h²h, grid.rfftplan, ½h²)
+  mul!(h²h, grid.rfftplan, h²)
   
-  @. N[:, :, 1] -= im * params.g * grid.kr * h²h / 2
-  @. N[:, :, 2] -= im * params.g * grid.l  * h²h / 2
-  
+  @. N[:, :, 1] -= im * params.g * grid.kr * h²h / 2      # - g ∂(½h²)/∂x
+  @. N[:, :, 2] -= im * params.g * grid.l  * h²h / 2      # - g ∂(½h²)/∂y
+    
   ldiv!(vars.h, grid.rfftplan, deepcopy(sol[:, :, 3]))
   
   h∂b∂x = vars.h
-  @. h∂b∂x *= params.bx
+  @. h∂b∂x *= params.∂b∂x
   
   h∂b∂xh = vars.hh
   mul!(h∂b∂xh, grid.rfftplan, h∂b∂x)
@@ -223,7 +242,7 @@ function calcN!(N, sol, t, clock, vars, params, grid)
   ldiv!(vars.h, grid.rfftplan, deepcopy(sol[:, :, 3]))
 
   h∂b∂y = vars.h
-  @. h∂b∂y *= params.by
+  @. h∂b∂y *= params.∂b∂y
   
   h∂b∂yh = vars.hh
   mul!(h∂b∂yh, grid.rfftplan, h∂b∂y)
