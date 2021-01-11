@@ -162,7 +162,7 @@ end
 
 Calculates the advection term.
 """
-function calcN_advection!(N, sol, t, clock, vars, params, grid)
+function calcN!(N, sol, t, clock, vars, params, grid)
   # state = vars.state
   # state = (qu = view(sol, :, :, 1), qv = view(sol, :, :, 2), h = view(sol, :, :, 3))
   
@@ -176,7 +176,7 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   
   ldiv!(vars.qu, grid.rfftplan, vars.quh)
   ldiv!(vars.qv, grid.rfftplan, vars.qvh)
-  ldiv!(vars.h, grid.rfftplan, vars.hh)
+  ldiv!(vars.h, grid.rfftplan, deepcopy(vars.hh))
   
   qu²_overh = vars.qu
   @. qu²_overh *= vars.qu / vars.h
@@ -199,22 +199,37 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   qv²_overhh = vars.qvh
   mul!(qv²_overhh, grid.rfftplan, qv²_overh)
   
-  @. N[:, :, 2] = - im * grid.l * qv²_overhh
+  @. N[:, :, 2] -= im * grid.l * qv²_overhh
   
-  ½h² = vars.h
-  @. ½h² *= vars.h / 2
+  h² = vars.h
+  @. h² *= vars.h
   
-  ½h²h = vars.hh
-  mul!(½h²h, grid.rfftplan, ½h²)
+  h²h = vars.hh
+  mul!(h²h, grid.rfftplan, ½h²)
   
-  @. N[:, :, 1] = - im * params.g * grid.kr * ½h²h
-  @. N[:, :, 2] = - im * params.g * grid.l  * ½h²h
+  @. N[:, :, 1] -= im * params.g * grid.kr * h²h / 2
+  @. N[:, :, 2] -= im * params.g * grid.l  * h²h / 2
   
-  return nothing
-end
+  ldiv!(vars.h, grid.rfftplan, deepcopy(sol[:, :, 3]))
+  
+  h∂b∂x = vars.h
+  @. h∂b∂x *= params.bx
+  
+  h∂b∂xh = vars.hh
+  mul!(h∂b∂xh, grid.rfftplan, h∂b∂x)
+  
+  @. N[:, :, 1] += params.g * h∂b∂xh
 
-function calcN!(N, sol, t, clock, vars, params, grid)
-  calcN_advection!(N, sol, t, clock, vars, params, grid)
+  ldiv!(vars.h, grid.rfftplan, deepcopy(sol[:, :, 3]))
+
+  h∂b∂y = vars.h
+  @. h∂b∂y *= params.by
+  
+  h∂b∂yh = vars.hh
+  mul!(h∂b∂yh, grid.rfftplan, h∂b∂y)
+  
+  @. N[:, :, 2] += params.g * h∂b∂yh
+
   addforcing!(N, sol, t, clock, vars, params, grid)
   
   return nothing
