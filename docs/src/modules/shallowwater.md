@@ -37,8 +37,8 @@ Often we write shallow water dynamics in conservative form using variables ``q_u
 
 ```math
 \begin{aligned}
-\partial_t q_u + \partial_x \left ( \frac{q_u^2}{h} \right ) + \partial_y \left ( \frac{q_u q_v}{h} \right ) - f q_v & = - g \partial_x \left( \frac{h^2}{2} \right) + g h \partial_x b , \\
-\partial_t q_v + \partial_x \left ( \frac{q_u q_v}{h} \right ) + \partial_y \left ( \frac{q_v^2}{h} \right ) + f q_u & = - g \partial_y \left( \frac{h^2}{2} \right) + g h \partial_y b , \\
+\partial_t q_u + \partial_x \left ( \frac{q_u^2}{h} \right ) + \partial_y \left ( \frac{q_u q_v}{h} \right ) - f q_v & = - g \partial_x \left( \frac{h^2}{2} \right) - g h \partial_x b , \\
+\partial_t q_v + \partial_x \left ( \frac{q_u q_v}{h} \right ) + \partial_y \left ( \frac{q_v^2}{h} \right ) + f q_u & = - g \partial_y \left( \frac{h^2}{2} \right) - g h \partial_y b , \\
 \partial_t h + \partial_x q_u + \partial_y q_v & = 0 .
 \end{aligned}
 ```
