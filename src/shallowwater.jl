@@ -32,8 +32,6 @@ function Problem(dev::Device=CPU();
   # Drag and/or hyper-/hypo-viscosity
            ν = 0,
           nν = 1,
-           μ = 0,
-          nμ = 0,
   # Timestepper and equation options
      stepper = "RK4",
        calcF = nothingfunction,
@@ -42,7 +40,7 @@ function Problem(dev::Device=CPU();
 
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
 
-  params = Params{T}(ν, nν, μ, nμ, calcF)
+  params = Params{T}(ν, nν, calcF)
 
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
@@ -57,7 +55,7 @@ end
 # ----------
 
 """
-    Params(ν, nν, μ, nμ, calcF!)
+    Params(ν, nν, calcF!)
 
 Returns the params for two-dimensional turbulence.
 """
@@ -83,9 +81,9 @@ function Equation(params::Params, grid::AbstractGrid)
   
   L = zeros(dev, T, (grid.nkr, grid.nl, 3))
   
-  L[:, :, 1] .= D # for u equation
-  L[:, :, 2] .= D # for v equation
-  L[:, :, 3] .= D # for η equation
+  L[:, :, 1] .= D # for qu equation
+  L[:, :, 2] .= D # for qv equation
+  L[:, :, 3] .= D # for h equation
   
   return FourierFlows.Equation(L, calcN!, grid)
 end
@@ -165,7 +163,7 @@ Calculates the advection term.
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   state = vars.state
-  state = (hu = view(sol, :, :, 1), hv = view(sol, :, :, 2), h = view(sol, :, :, 3))
+  state = (qu = view(sol, :, :, 1), qv = view(sol, :, :, 2), h = view(sol, :, :, 3))
   
   @. N = 0 * sol
   
@@ -194,7 +192,9 @@ function addforcing!(N, sol, t, clock, vars::StochasticForcedVars, params, grid)
     @. vars.prevsol = sol # sol at previous time-step is needed to compute budgets for stochastic forcing
     params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
   end
+  
   @. N += vars.Fh
+  
   return nothing
 end
 
