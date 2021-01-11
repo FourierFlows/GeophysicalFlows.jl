@@ -4,8 +4,6 @@ export
   Problem,
   updatevars!,
 
-  energy
-
 using
   CUDA,
   Reexport
@@ -20,7 +18,7 @@ nothingfunction(args...) = nothing
 """
     Problem(; parameters...)
 
-Construct a 2D shallow water problem.
+Construct a two-dimensional shallow water problem.
 """
 function Problem(dev::Device=CPU();
   # Numerical parameters
@@ -29,6 +27,10 @@ function Problem(dev::Device=CPU();
           ny = nx,
           Ly = Lx,
           dt = 0.01,
+  # Coriolis parameter
+           f = 0.0,
+  # Gravitational constant
+           g = 9.81,
   # Drag and/or hyper-/hypo-viscosity
            ν = 0,
           nν = 1,
@@ -40,7 +42,7 @@ function Problem(dev::Device=CPU();
 
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
 
-  params = Params(ν, nν, calcF)
+  params = Params(f, g, ν, nν, calcF)
 
   vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
@@ -57,9 +59,11 @@ end
 """
     Params(ν, nν, calcF!)
 
-Returns the params for two-dimensional turbulence.
+Returns the params for two-dimensional shallow water.
 """
 struct Params{T} <: AbstractParams
+       f :: T         # Coriolis parameter
+       g :: T         # Gravitational constant
        ν :: T         # Viscosity
       nν :: Int       # (Hyper)-viscous order
   calcF! :: Function  # Function that calculates the forcing `Fh`
@@ -73,7 +77,7 @@ end
 """
     Equation(dev, params, grid)
 
-Returns the equation for two-dimensional turbulence with `params` and `grid`.
+Returns the equation for two-dimensional shallow water with `params` and `grid`.
 """
 function Equation(dev, params::Params, grid::AbstractGrid{T}) where T
   D = @. - params.ν * grid.Krsq^params.nν
@@ -115,10 +119,9 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     Vars(dev, grid)
 
-Returns the `vars` for unforced two-dimensional turbulence on device `dev` and with `grid`.
+Returns the `vars` for unforced two-dimensional shallow water on device `dev` and with `grid`.
 """
-function Vars(::Dev, grid::TwoDGrid) where Dev
-  T = eltype(grid)
+function Vars(::Dev, grid::TwoDGrid{T}) where {Dev, T}
   @devzeros Dev T (grid.nx, grid.ny) qu qv u v h
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) quh qvh hh
   @devzeros Dev Complex{T} (grid.nkr, grid.nl, 3) state
@@ -128,10 +131,9 @@ end
 """
     ForcedVars(dev, grid)
 
-Returns the vars for forced two-dimensional turbulence on device `dev` and with `grid`.
+Returns the vars for forced two-dimensional shallow water on device `dev` and with `grid`.
 """
-function ForcedVars(dev::Dev, grid::TwoDGrid) where Dev
-  T = eltype(grid)
+function ForcedVars(dev::Dev, grid::TwoDGrid{T}) where {Dev, T}
   @devzeros Dev T (grid.nx, grid.ny) qu qv u v h
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) quh qvh hh Fh
   @devzeros Dev Complex{T} (grid.nkr, grid.nl, 3) state
@@ -141,10 +143,9 @@ end
 """
     StochasticForcedVars(dev, grid)
 
-Returns the vars for stochastically forced two-dimensional turbulence on device `dev` and with `grid`.
+Returns the vars for stochastically forced two-dimensional shallow water on device `dev` and with `grid`.
 """
-function StochasticForcedVars(dev::Dev, grid::TwoDGrid) where Dev
-  T = eltype(grid)
+function StochasticForcedVars(dev::Dev, grid::TwoDGrid{T}) where {Dev, T}
   @devzeros Dev T (grid.nx, grid.ny) qu qv u v h
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) quh qvh hh Fh prevsol
   @devzeros Dev Complex{T} (grid.nkr, grid.nl, 3) state
@@ -162,10 +163,52 @@ end
 Calculates the advection term.
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
-  state = vars.state
-  state = (qu = view(sol, :, :, 1), qv = view(sol, :, :, 2), h = view(sol, :, :, 3))
+  # state = vars.state
+  # state = (qu = view(sol, :, :, 1), qv = view(sol, :, :, 2), h = view(sol, :, :, 3))
   
-  @. N = 0 * sol
+  vars.quh = sol[:, :, 1]
+  vars.qvh = sol[:, :, 2]
+  vars.hh = sol[:, :, 3]
+
+  @. N[:, :, 1] =   params.f * vars.qvh
+  @. N[:, :, 2] = - params.f * vars.quh
+  @. N[:, :, 3] = - im * grid.kr * vars.quh - im * grid.l * vars.qvh
+  
+  ldiv!(vars.qu, grid.rfftplan, vars.quh)
+  ldiv!(vars.qv, grid.rfftplan, vars.qvh)
+  ldiv!(vars.h, grid.rfftplan, vars.hh)
+  
+  qu²_overh = vars.qu
+  @. qu²_overh *= vars.qu / vars.h
+  
+  qu²_overhh = vars.quh
+  mul!(qu²_overhh, grid.rfftplan, qu²_overh)
+  
+  quqv_overh = vars.v
+  @. quqv_overh = vars.qu * vars.qv / vars.h
+  
+  quqv_overhh = vars.qvh
+  mul!(quqv_overhh, grid.rfftplan, quqv_overh)
+
+  @. N[:, :, 1] -= im * grid.kr * qu²_overhh + im * grid.l * quqv_overhh
+  @. N[:, :, 2] -= im * grid.kr * quqv_overhh
+  
+  qv²_overh = vars.qv
+  @. qv²_overh *= vars.qv / vars.h
+  
+  qv²_overhh = vars.qvh
+  mul!(qv²_overhh, grid.rfftplan, qv²_overh)
+  
+  @. N[:, :, 2] = - im * grid.l * qv²_overhh
+  
+  ½h² = vars.h
+  @. ½h² *= vars.h / 2
+  
+  ½h²h = vars.hh
+  mul!(½h²h, grid.rfftplan, ½h²)
+  
+  @. N[:, :, 1] = - im * params.g * grid.kr * ½h²h
+  @. N[:, :, 2] = - im * params.g * grid.l  * ½h²h
   
   return nothing
 end
