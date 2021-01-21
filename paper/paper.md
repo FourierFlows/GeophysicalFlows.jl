@@ -1,5 +1,5 @@
 ---
-title: 'GeophysicalFlows.jl: A Julia package for solving geophysical fluid dynamics problems on periodic domains, both on CPUs and GPUs'
+title: 'GeophysicalFlows.jl: A Julia package for solving geophysical fluid dynamics problems in periodic domains on CPUs and GPUs'
 tags:
   - julia
   - geophysical fluid dynamics
@@ -82,15 +82,15 @@ domains. All modules leverage the framework provided by the FourierFlows.jl Juli
 and use Fourier-based pseudospectral numerical methods.
 
 `GeophysicalFlows.jl` utilizes Julia's functionality and abstraction to enable all modules to
-run seamlessly on both CPUs and GPUs. Selection of the architecture on which equations are
+run on CPUs and GPUs. Selection of the architecture on which equations are
 solved is done by providing the argument `dev=CPU()` or `dev=GPU()` during constructing of 
 a particular problem.
 
 Installing GeophysicalFlows.jl in Julia is simply done via calling
 ```julia
-]add GeophysicalFlows
+] add GeophysicalFlows
 ```
-in the REPL. Then a long list of documented examples that appears in the package's documentation
+in the REPL. Then a list of documented examples that appears in the package's documentation
 can get the user going.
 
 The Python package `pyqg` has similar functionality as GeophysicalFlows.jl. The major difference
