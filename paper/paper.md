@@ -84,22 +84,22 @@ output.
 
 `GeophysicalFlows.jl` utilizes Julia's functionality and abstraction to enable all modules to
 run on CPUs and GPUs. Selection of the architecture on which equations are solved is done by 
-providing the argument `dev=CPU()` or `dev=GPU()` during constructing of a particular problem.
+providing the argument `CPU()` or `GPU()` during constructing of a particular problem.
 
 A list of documented examples that appears in the package's documentation can familiar the user
 and provide good stepping stones in building customized modules or examples. A community-based
 collection of diagnostics throughout the modules are used to compute quantities like energy,
-enstrophy, dissippations, etc.
+enstrophy, dissippation, etc.
 
 The Python package `pyqg` has similar functionality as GeophysicalFlows.jl. The major difference
 of `pyqg` and `GeophysicalFlows.jl` is that `pyqg` cannot run on GPUs. Often also one can find 
-isolated codes in personal websites or in open-source public repositories that have same 
-functionality as some of GeophysicalFlows.jl's modules.
+isolated codes/scripts in personal websites or in open-source public repositories that have 
+similar functionality as some of `GeophysicalFlows.jl`'s modules.
 
 # Acknowledgements
 
-We acknowledge discussions with Keaton Burns, Cesar Rocha, and William Young. We also would 
+We acknowledge discussions with Keaton Burns, Cesar Rocha, and William Young. We would also 
 like to take a moment to remember Sean R. Haney (February 1987-January 2021) who left us a 
 bit too early.
 
-# References
+<!-- # References -->
