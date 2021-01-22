@@ -78,24 +78,22 @@ and referenced from text using \autoref{fig:example}.
 
 `GeophysicalFlows.jl` is Julia package that gathers together a collections of pseudospectral 
 solvers for geophysical fluid dynamics-related partial differetial equations on periodic 
-domains. All modules leverage the framework provided by the FourierFlows.jl Julia package
-and use Fourier-based pseudospectral numerical methods.
+domains. All modules use Fourier-based pseudospectral numerical methods and leverage the 
+framework provided by the `FourierFlows.jl` Julia package for time-stepping, diagnostics, and 
+output.
 
 `GeophysicalFlows.jl` utilizes Julia's functionality and abstraction to enable all modules to
-run on CPUs and GPUs. Selection of the architecture on which equations are
-solved is done by providing the argument `dev=CPU()` or `dev=GPU()` during constructing of 
-a particular problem.
+run on CPUs and GPUs. Selection of the architecture on which equations are solved is done by 
+providing the argument `dev=CPU()` or `dev=GPU()` during constructing of a particular problem.
 
-Installing GeophysicalFlows.jl in Julia is simply done via calling
-```julia
-] add GeophysicalFlows
-```
-in the REPL. Then a list of documented examples that appears in the package's documentation
-can get the user going.
+A list of documented examples that appears in the package's documentation can familiar the user
+and provide good stepping stones in building customized modules or examples. A community-based
+collection of diagnostics throughout the modules are used to compute quantities like energy,
+enstrophy, dissippations, etc.
 
 The Python package `pyqg` has similar functionality as GeophysicalFlows.jl. The major difference
-of `pyqg` and `GeophysicalFlows.jl` is that `pyqg` cannot run on GPUs. Often also one can 
-find isolated codes in personal websites or in open-source public repositories that have same 
+of `pyqg` and `GeophysicalFlows.jl` is that `pyqg` cannot run on GPUs. Often also one can find 
+isolated codes in personal websites or in open-source public repositories that have same 
 functionality as some of GeophysicalFlows.jl's modules.
 
 # Acknowledgements
