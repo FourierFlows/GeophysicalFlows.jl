@@ -91,7 +91,8 @@ Figure 1: Snapshots from a nonlinearly equilibrated simulation of the Eady insta
 meridional ridge. Simulation used `MultiLayerQG` module of `GeophysicalFlows.jl`. The Eady 
 problem was approximated here using 5 layers stacked up in the vertical. Each layer was 
 simulated with 512×512 grid-points. Plots made with the `Plots.jl` Julia package 
-which utilizes the `cmocean` colormaps [@Thyng2016].
+which utilizes the `cmocean` colormaps [@Thyng2016]. Scripts to reproduce the simulation are
+online at repository `github.com/FourierFlows/...`.
 
 A list of documented examples that appears in the package's documentation can familiar the user
 and provide good stepping stones in building customized modules or examples. A community-based
