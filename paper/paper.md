@@ -1,9 +1,11 @@
 ---
-title: 'GeophysicalFlows.jl: A Julia package for solving geophysical fluid dynamics problems in periodic domains on CPUs and GPUs'
+title: 'GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs and GPUs'
 tags:
-  - julia
   - geophysical fluid dynamics
+  - computational fluid dynamics
   - Fourier methods
+  - pseudospectral
+  - Julia
   - gpu
 authors:
   - name: Navid C. Constantinou
@@ -32,7 +34,7 @@ affiliations:
    index: 4
  - name: Oregon State University
    index: 5
-date: 24 December 2020
+date: 25 January 2021
 bibliography: paper.bib
 ---
 
@@ -64,14 +66,6 @@ You can also use plain \LaTeX for equations
 \end{equation}
 and refer to \autoref{eq:fourier} from text.
 
-# Figures
-
-Figures can be included like this:
-
-![Caption for example figure.\label{fig:example}](figure.png)
-
-and referenced from text using \autoref{fig:example}.
-
 -->
 
 # Summary
@@ -84,20 +78,19 @@ output.
 
 `GeophysicalFlows.jl` utilizes Julia's functionality and abstraction to enable all modules to
 run on CPUs and GPUs. Selection of the architecture on which equations are solved is done by 
-providing the argument `CPU()` or `GPU()` during constructing of a particular problem.
-
-![Fig. 1](PV_eady_nlayers5.png)
-Figure 1: Snapshots from a nonlinearly equilibrated simulation of the Eady instability over a
-meridional ridge. Simulation used `MultiLayerQG` module of `GeophysicalFlows.jl`. The Eady 
-problem was approximated here using 5 layers stacked up in the vertical. Each layer was 
-simulated with 512×512 grid-points. Plots made with the `Plots.jl` Julia package 
-which utilizes the `cmocean` colormaps [@Thyng2016]. Scripts to reproduce the simulation are
-online at repository `github.com/FourierFlows/...`.
+providing the argument `CPU()` or `GPU()` during the construction of a particular problem.
 
 A list of documented examples that appears in the package's documentation can familiar the user
 and provide good stepping stones in building customized modules or examples. A community-based
 collection of diagnostics throughout the modules are used to compute quantities like energy,
 enstrophy, dissippation, etc.
+
+![Snapshots from a nonlinearly equilibrated simulation of the Eady instability over a
+meridional ridge. Simulation used `MultiLayerQG` module of `GeophysicalFlows.jl`. The Eady 
+problem was approximated here using 5 layers stacked up in the vertical. Each layer was 
+simulated with 512² grid-points. Plots were made with the `Plots.jl` Julia package, 
+which utilizes the `cmocean` colormap collection [@Thyng2016]. Scripts to reproduce the 
+simulation are found in the repository `github.com/FourierFlows/MultilayerQG-example`. \label{fig1}](PV_eady_nlayers5.png)
 
 The Python package `pyqg` [@pyqg] has similar functionality as GeophysicalFlows.jl. The major 
 difference of `pyqg` and `GeophysicalFlows.jl` is that `pyqg` cannot run on GPUs. Dedalus [@Burns2020] 
