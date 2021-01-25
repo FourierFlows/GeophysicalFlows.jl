@@ -90,7 +90,7 @@ providing the argument `CPU()` or `GPU()` during constructing of a particular pr
 Figure 1: Snapshots from a nonlinearly equilibrated simulation of the Eady instability over a
 meridional ridge. Simulation used `MultiLayerQG` module of `GeophysicalFlows.jl`. The Eady 
 problem was approximated here using 5 layers stacked up in the vertical. Each layer was 
-simulated with 512$\times $512 grid-points. Plots made with the `Plots.jl` Julia package 
+simulated × with 512 \times 512 grid-points. Plots made with the `Plots.jl` Julia package 
 which utilizes the `cmocean` colormaps [@Thyng2016].
 
 A list of documented examples that appears in the package's documentation can familiar the user
