@@ -1,5 +1,5 @@
 ---
-title: 'GeophysicalFlows.jl: Solvers for geophysical fluid dyna\-mics-problems in periodic domains on CPUs and GPUs'
+title: 'GeophysicalFlows.jl: Solvers for geophysical fluid dynamics-problems in periodic domains on CPUs and GPUs'
 tags:
   - geophysical fluid dynamics
   - computational fluid dynamics
