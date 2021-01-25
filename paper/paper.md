@@ -86,15 +86,25 @@ output.
 run on CPUs and GPUs. Selection of the architecture on which equations are solved is done by 
 providing the argument `CPU()` or `GPU()` during constructing of a particular problem.
 
+![Fig. 1](PV_eady_nlayers5.png)
+Figure 1: Snapshots from a nonlinearly equilibrated simulation of the Eady instability over a
+meridional ridge. Simulation used `MultiLayerQG` module of `GeophysicalFlows.jl`. The Eady 
+problem was approximated here using $5$ layers stacked up in the vertical. Each layer was 
+simulated with $512 \times 512$ grid-points. Plots made with the `Plots.jl` Julia package 
+which utilizes the `cmocean` colormaps [@Thyng2016].
+
 A list of documented examples that appears in the package's documentation can familiar the user
 and provide good stepping stones in building customized modules or examples. A community-based
 collection of diagnostics throughout the modules are used to compute quantities like energy,
 enstrophy, dissippation, etc.
 
-The Python package `pyqg` has similar functionality as GeophysicalFlows.jl. The major difference
-of `pyqg` and `GeophysicalFlows.jl` is that `pyqg` cannot run on GPUs. Often also one can find 
-isolated codes/scripts in personal websites or in open-source public repositories that have 
-similar functionality as some of `GeophysicalFlows.jl`'s modules.
+The Python package `pyqg` [@pyqg] has similar functionality as GeophysicalFlows.jl. The major 
+difference of `pyqg` and `GeophysicalFlows.jl` is that `pyqg` cannot run on GPUs. Dedalus [@Burns2020] 
+is Python software with an intuitive script-based interface that uses spectral methods to solve
+general partial differential equations, including the ones withing `GeophysicalFlows.jl`. Often 
+also one can find isolated codes/scripts in personal websites or in open-source public repositories 
+that have similar functionality as some of `GeophysicalFlows.jl`'s modules. 
+
 
 # Acknowledgements
 
@@ -102,4 +112,4 @@ We acknowledge discussions with Keaton Burns, Cesar Rocha, and William Young. We
 like to take a moment to remember Sean R. Haney (February 1987-January 2021) who left us a 
 bit too early.
 
-<!-- # References -->
+# References
