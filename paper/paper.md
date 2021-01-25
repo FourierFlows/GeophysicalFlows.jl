@@ -1,5 +1,5 @@
 ---
-title: 'GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs and GPUs'
+title: 'GeophysicalFlows.jl: Solvers for geophysical fluid dyna\-mics-problems in periodic domains on CPUs and GPUs'
 tags:
   - geophysical fluid dynamics
   - computational fluid dynamics
@@ -71,7 +71,7 @@ and refer to \autoref{eq:fourier} from text.
 # Summary
 
 `GeophysicalFlows.jl` is Julia package that gathers together a collections of pseudospectral 
-solvers for geophysical fluid dynamics-related partial differetial equations on periodic 
+solvers for geophysical fluid dynamics-related partial differential equations on periodic 
 domains. All modules use Fourier-based pseudospectral numerical methods and leverage the 
 framework provided by the `FourierFlows.jl` Julia package for time-stepping, diagnostics, and 
 output.
@@ -80,8 +80,8 @@ output.
 run on CPUs and GPUs. Selection of the architecture on which equations are solved is done by 
 providing the argument `CPU()` or `GPU()` during the construction of a particular problem.
 
-A list of documented examples that appears in the package's documentation can familiar the user
-and provide good stepping stones in building customized modules or examples. A community-based
+A list of documented examples that appears in the package's documentation can familiarize the 
+user and provide good stepping stones in building customized modules or examples. A community-based
 collection of diagnostics throughout the modules are used to compute quantities like energy,
 enstrophy, dissippation, etc.
 
@@ -98,7 +98,6 @@ is Python software with an intuitive script-based interface that uses spectral m
 general partial differential equations, including the ones withing `GeophysicalFlows.jl`. Often 
 also one can find isolated codes/scripts in personal websites or in open-source public repositories 
 that have similar functionality as some of `GeophysicalFlows.jl`'s modules. 
-
 
 # Acknowledgements
 
