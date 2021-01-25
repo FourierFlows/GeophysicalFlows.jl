@@ -7,17 +7,18 @@ This module solves two-dimensional incompressible Navier-Stokes equations using 
 vorticity-streamfunction formulation. The flow ``\boldsymbol{u} = (u, v)`` is obtained through 
 a streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. The only non-zero 
 component of vorticity is that normal to the plane of motion, 
-``\partial_x v - \partial_y u = \nabla^2 \psi``. The equation solved by the module is:
+``\partial_x v - \partial_y u = \nabla^2 \psi``. The module solves the two-dimensional 
+vorticity equation:
 
 ```math
 \partial_t \zeta + \mathsf{J}(\psi, \zeta) = \underbrace{-\left [ \mu (-\nabla^2)^{n_\mu}
-+ \nu (-\nabla^2)^{n_\nu} \right ] \zeta}_{\textrm{dissipation}} + F \ .
++ \nu (-\nabla^2)^{n_\nu} \right ] \zeta}_{\textrm{dissipation}} + F .
 ```
 
 where ``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b) - (\partial_y a)(\partial_x b)``. On
 the right hand side, ``F(x, y, t)`` is forcing. The ``ν`` and ``μ`` terms are both viscosities 
-and typically the former is chosen to act at small scales (``n_ν ≥ 1``) and the latter at 
-large scales (``n_ν ≤ 1``). Plain old viscocity corresponds to ``n_ν=1`` while ``n_μ=0`` 
+and typically the former is chosen to act at small scales (``n_ν ≥ 1``) while the latter at 
+large scales (``n_ν ≤ 0``). Plain old viscocity corresponds to ``n_ν=1`` while ``n_μ=0`` 
 corresponds to linear drag. Values of ``n_ν ≥ 2`` and ``n_μ ≤ -1`` are referred to as 
 hyper- and hypo-viscosities, respectively.
 
@@ -31,8 +32,8 @@ The equation is time-stepped forward in Fourier space:
 + \nu |𝐤|^{2n_\nu} \right ) \widehat{\zeta} + \widehat{f} \ .
 ```
 
-In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(a,b) =
-\partial_y [ (\partial_x a) b] -\partial_x[ (\partial_y a) b]``.
+In doing so, the Jacobian is computed in the conservative form: ``\mathsf{J}(a, b) =
+\partial_y [ (\partial_x a) b] - \partial_x[ (\partial_y a) b]``.
 
 The linear operator is constructed in `Equation`
 
