@@ -28,7 +28,7 @@ nothingfunction(args...) = nothing
 """
     Problem(dev::Device; parameters...)
 
-Construct a 2D Navier-Stokes problem.
+Construct a two-dimensional Navier-Stokes `problem`.
 """
 function Problem(dev::Device=CPU();
   # Numerical parameters
@@ -67,7 +67,7 @@ end
 """
     Params{T}(ν, nν, μ, nμ, calcF!)
 
-Returns the params for two-dimensional Navier-Stokes.
+Return the `params` for the two-dimensional Navier-Stokes.
 """
 struct Params{T} <: AbstractParams
     "small-scale (hyper)-viscosity coefficient"
@@ -76,7 +76,7 @@ struct Params{T} <: AbstractParams
       nν :: Int
     "large-scale (hypo)-viscosity coefficient"
        μ :: T
-    "(hypo)-viscosity order, `nν ≤ 0`"
+    "(hypo)-viscosity order, `nμ ≤ 0`"
       nμ :: Int
     "function that calculates the forcing F̂"
   calcF! :: Function  # function that calculates the forcing F̂
@@ -92,14 +92,15 @@ Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
 """
     Equation(params, grid)
 
-Returns the `equation` for two-dimensional Navier-Stokes with `params` and `grid`. The linear
+Return the `equation` for two-dimensional Navier-Stokes with `params` and `grid`. The linear
 opeartor ``L`` includes (hyper)-viscosity of order ``n_ν`` with coefficient ``ν`` and 
-hypo-viscocity of order ``n_μ`` with coefficient ``μ``. Plain old viscocity corresponds to 
-``n_ν=1`` while ``n_μ=0`` corresponds to linear drag.
+hypo-viscocity of order ``n_μ`` with coefficient ``μ``,
 
 ```math
 L = - ν |𝐤|^{2 n_ν} - μ |𝐤|^{2 n_μ} .
 ```
+
+Plain old viscocity corresponds to ``n_ν=1`` while ``n_μ=0`` corresponds to linear drag.
 
 The nonlinear term is computed via function `calcN!()`.
 """
@@ -120,7 +121,7 @@ abstract type TwoDNavierStokesVars <: AbstractVars end
 """
     Vars{Aphys, Atrans, F, P}(ζ, u, v, ζh, uh, vh, Fh, prevsol)
 
-Returns the vars for two-dimensional Navier-Stokes.
+Return the vars for two-dimensional Navier-Stokes.
 """
 struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
     "relative vorticity"
@@ -147,7 +148,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     Vars(dev, grid)
 
-Returns the `vars` for unforced two-dimensional Navier-Stokes problem on device `dev` and 
+Return the `vars` for unforced two-dimensional Navier-Stokes problem on device `dev` and 
 with `grid`.
 """
 function Vars(::Dev, grid::AbstractGrid) where Dev
@@ -160,7 +161,7 @@ end
 """
     ForcedVars(dev, grid)
 
-Returns the vars for forced two-dimensional Navier-Stokes on device `dev` and with `grid`.
+Return the vars for forced two-dimensional Navier-Stokes on device `dev` and with `grid`.
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
@@ -172,7 +173,7 @@ end
 """
     StochasticForcedVars(dev, grid)
 
-Returns the vars for stochastically forced two-dimensional Navier-Stokes on device `dev` and 
+Return the vars for stochastically forced two-dimensional Navier-Stokes on device `dev` and 
 with `grid`.
 """
 function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
@@ -190,8 +191,8 @@ end
 """
     calcN_advection!(N, sol, t, clock, vars, params, grid)
 
-Calculates the Fourier transform of the advection term, ``- 𝖩(ψ, ζ)`` in conservative 
-form, i.e., ``- ∂_y[(∂_x ψ)ζ] + ∂_x[(∂_y ψ)ζ]`` and stores it in `N`:
+Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, ζ)`` in conservative 
+form, i.e., ``- ∂_x[(∂_y ψ)ζ] - ∂_y[(∂_x ψ)ζ]`` and store it in `N`:
 
 ```math
 N(ζ̂) = - \\widehat{𝖩(ψ, ζ)} = - i k_x \\widehat{u ζ} - i k_y \\widehat{v ζ} .
@@ -224,16 +225,17 @@ end
 """
     calcN!(N, sol, t, clock, vars, params, grid)
 
-Calculates the nonlinear term, that is the advection term and the forcing,
+Calculate the nonlinear term, that is the advection term and the forcing,
 
 ```math
 N(ζ̂) = - \\widehat{𝖩(ψ, ζ)} + F̂ ,
 ```
 
-by calling `calcN_advection!` and `addforcing!`.
+by calling `calcN_advection!` and then `addforcing!`.
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   calcN_advection!(N, sol, t, clock, vars, params, grid)
+  
   addforcing!(N, sol, t, clock, vars, params, grid)
   
   return nothing
@@ -249,6 +251,7 @@ addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
 
 function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
   params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
+  
   @. N += vars.Fh
   
   return nothing
@@ -281,9 +284,9 @@ function updatevars!(prob)
   @. vars.uh =   im * grid.l  * grid.invKrsq * sol
   @. vars.vh = - im * grid.kr * grid.invKrsq * sol
   
-  ldiv!(vars.ζ, grid.rfftplan, deepcopy(vars.ζh))
-  ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh))
-  ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh))
+  ldiv!(vars.ζ, grid.rfftplan, deepcopy(vars.ζh)) # deepcopy() since inverse real-fft destroys its input
+  ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh)) # deepcopy() since inverse real-fft destroys its input
+  ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh)) # deepcopy() since inverse real-fft destroys its input
   
   return nothing
 end
@@ -295,19 +298,18 @@ Set the solution `sol` as the transform of `ζ` and then update variables in `va
 """
 function set_ζ!(prob, ζ)
   mul!(prob.sol, prob.grid.rfftplan, ζ)
-  CUDA.@allowscalar prob.sol[1, 1] = 0 # zero domain average
+  
+  CUDA.@allowscalar prob.sol[1, 1] = 0 # enforce zero domain average
   
   updatevars!(prob)
   
   return nothing
 end
 
-# = \\sum_{𝐤} \\frac1{2} |𝐤|^2 |ψ̂|^2 .
-
 """
     energy(prob)
 
-Returns the domain-averaged kinetic energy,
+Return the domain-averaged kinetic energy,
 ```math
 \\int \\frac1{2} (u² + v²) \\frac{𝖽x 𝖽y}{L_x L_y} = \\int \\frac1{2} |{\\bf ∇} ψ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ψ̂|² .
 ```
@@ -336,7 +338,7 @@ end
 """
     energy_dissipation(prob, ξ, νξ)
 
-Returns the domain-averaged energy dissipation rate done by the viscous term,
+Return the domain-averaged energy dissipation rate done by the viscous term,
 ```math
 - ξ (-1)^{n_ξ+1} \\int ψ ∇^{2n_ξ} ζ \\frac{𝖽x 𝖽y}{L_x L_y} = - ξ \\sum_{𝐤} |𝐤|^{2(n_ξ-1)} |ζ̂|² .
 ```
@@ -359,7 +361,7 @@ energy_dissipation_hypoviscosity(prob) = energy_dissipation(prob, prob.params.μ
 """
     enstrophy_dissipation(prob, ξ, νξ)
 
-Returns the domain-averaged enstrophy dissipation rate done by the viscous term,
+Return the domain-averaged enstrophy dissipation rate done by the viscous term,
 ```math
 ξ (-1)^{n_ξ+1} \\int ζ ∇^{2n_ξ} ζ \\frac{𝖽x 𝖽y}{L_x L_y} = - ξ \\sum_{𝐤} |𝐤|^{2n_ξ} |ζ̂|² ,
 where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`` and its order 
@@ -383,7 +385,7 @@ enstrophy_dissipation_hypoviscosity(prob) = enstrophy_dissipation(prob, prob.par
     energy_work(prob)
     energy_work(sol, vars, grid)
 
-Returns the domain-averaged rate of work of energy by the forcing ``F``,
+Return the domain-averaged rate of work of energy by the forcing ``F``,
 ```math
 - \\int ψ F \\frac{𝖽x 𝖽y}{L_x L_y} = - \\sum_{𝐤} ψ̂ F̂^* .
 ```
@@ -408,7 +410,7 @@ end
     enstrophy_work(prob)
     enstrophy_work(sol, vars, grid)
 
-Returns the domain-averaged rate of work of enstrophy by the forcing ``F``,
+Return the domain-averaged rate of work of enstrophy by the forcing ``F``,
 ```math
 \\int ζ F \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} ζ̂ F̂^* .
 ```
