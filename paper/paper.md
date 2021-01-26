@@ -70,20 +70,17 @@ and refer to \autoref{eq:fourier} from text.
 
 # Summary
 
-`GeophysicalFlows.jl` is Julia package that gathers together a collections of pseudospectral 
-solvers for geophysical fluid dynamics-related partial differential equations on periodic 
-domains. All modules use Fourier-based pseudospectral numerical methods and leverage the 
+`GeophysicalFlows.jl` is a Julia package that contains partial differential solvers for a collection of different large-scale geophysical fluid systems on periodic domains. All modules use Fourier-based pseudospectral numerical methods and leverage the 
 framework provided by the `FourierFlows.jl` Julia package for time-stepping, diagnostics, and 
 output.
 
 `GeophysicalFlows.jl` utilizes Julia's functionality and abstraction to enable all modules to
-run on CPUs and GPUs. Selection of the architecture on which equations are solved is done by 
+run on CPUs or GPUs, and to provide a high level of customizability within modules. This allows simulations to be tailored for specific research questions, via the choice of parameters, domain properties, and schemes for damping, forcing, advection etc.. The simulations can easily be carried out on different computing architectures, selection of the architecture on which equations are solved is done by 
 providing the argument `CPU()` or `GPU()` during the construction of a particular problem.
 
-A list of documented examples that appears in the package's documentation can familiarize the 
-user and provide good stepping stones in building customized modules or examples. A community-based
+Documented examples for each geophysical system (module) appear in the package's documentation, providing a stepping stone for new users and for the development of new or customized modules. Current modules include two-dimensional (2D) flows and a variety of quasi-geostrophic (QG) dynamical systems, which provide analogues to the large-scale dynamics of atmospheres and oceans. The QG systems currently in `GeophysicalFlows.jl` extend 2D dynamics to include the leading order effects of a third dimension through planetary rotation, bathymetry/topography, surface boundary conditions, stratification and quasi-2D layering. A community-based
 collection of diagnostics throughout the modules are used to compute quantities like energy,
-enstrophy, dissippation, etc.
+enstrophy, dissipation, etc.
 
 ![Snapshots from a nonlinearly equilibrated simulation of the Eady instability over a
 meridional ridge. Simulation used `MultiLayerQG` module of `GeophysicalFlows.jl`. The Eady 
@@ -92,12 +89,13 @@ simulated with 512² grid-points. Plots were made with the `Plots.jl` Julia pack
 which utilizes the `cmocean` colormap collection [@Thyng2016]. Scripts to reproduce the 
 simulation are found in the repository `github.com/FourierFlows/MultilayerQG-example`. \label{fig1}](PV_eady_nlayers5.png)
 
-The Python package `pyqg` [@pyqg] has similar functionality as GeophysicalFlows.jl. The major 
-difference of `pyqg` and `GeophysicalFlows.jl` is that `pyqg` cannot run on GPUs. Dedalus [@Burns2020] 
+The Python package `pyqg` [@pyqg] has similar functionality as GeophysicalFlows.jl. Beyond their base language, the major 
+differences between these packages are that `GeophysicalFlows.jl` can be run on GPUs or CPUs and leverages a separate package (`FourierFlows.jl`; which is continuously developed) to solve the differential equations and compute diagnostics, while `pyqg` can only be run on CPUs and uses a self-contained kernel. Dedalus [@Burns2020] 
 is Python software with an intuitive script-based interface that uses spectral methods to solve
-general partial differential equations, including the ones withing `GeophysicalFlows.jl`. Often 
-also one can find isolated codes/scripts in personal websites or in open-source public repositories 
+general partial differential equations, such as the ones within `GeophysicalFlows.jl`. Often one can also find isolated codes/scripts in personal websites or in open-source public repositories 
 that have similar functionality as some of `GeophysicalFlows.jl`'s modules. 
+
+**A paragraph about past/ongoing research projects or recent scholarly publications** `GeophysicalFlows.jl` can be used to investigate  a variety of scientific research questions thanks to its various modules and high customizability. Past research projects using `GeophysicalFlows.jl` includes... Currently `GeophysicalFlows.jl` is being used to develop new tools for diagnosing turbulent energy transfers in idealized geophysical flows [e.g. @Pearson2020]
 
 # Acknowledgements
 
