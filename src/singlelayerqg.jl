@@ -60,7 +60,7 @@ function Problem(dev::Device=CPU();
   x, y = gridpoints(grid)
 
   # topographic PV
-  eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
+  eta === nothing && (eta = zeros(dev, T, (nx, ny)))
 
   params = deformation_radius == Inf ? BarotropicQGParams(grid, T(β), eta, T(μ), T(ν), nν, calcF) : EquivalentBarotropicQGParams(grid, T(β), T(deformation_radius), eta, T(μ), T(ν), nν, calcF)
 
@@ -97,15 +97,13 @@ end
 const BarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, Nothing}
 const EquivalentBarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:AbstractFloat}
 
-get_topographicPV_grid_values(eta::Function, grid::AbstractGrid{T, A}) where {T, A} = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
-
 """
     EquivalentBarotropicQGParams(grid::TwoDGrid, β, deformation_radius, eta, μ, ν, nν::Int, calcF
 
 Constructor for EquivalentBarotropicQGParams (finite Rossby radius of deformation).
 """
 function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, β, deformation_radius, eta, μ, ν, nν::Int, calcF) where {T, A}
-  eta_grid = typeof(eta) <: AbstractArray ? eta : get_topographicPV_grid_values(eta, grid)
+  eta_grid = typeof(eta) <: AbstractArray ? eta : FourierFlows.on_grid(eta, grid)
   eta_gridh = rfft(eta_grid)
   return Params(β, deformation_radius, eta_grid, eta_gridh, μ, ν, nν, calcF)
 end
@@ -115,7 +113,7 @@ end
 
 Constructor for BarotropicQGParams (infinite Rossby radius of deformation).
 """
-BarotropicQGParams(grid::AbstractGrid{T, A}, β, eta, μ, ν, nν::Int, calcF) where {T, A} =
+BarotropicQGParams(grid::AbstractGrid, β, eta, μ, ν, nν::Int, calcF) =
     EquivalentBarotropicQGParams(grid, β, nothing, eta, μ, ν, nν, calcF)
     
 
