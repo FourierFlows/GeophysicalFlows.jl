@@ -95,7 +95,7 @@ is Python software with an intuitive script-based interface that uses spectral m
 general partial differential equations, such as the ones within `GeophysicalFlows.jl`. Often one can also find isolated codes/scripts in personal websites or in open-source public repositories 
 that have similar functionality as some of `GeophysicalFlows.jl`'s modules. 
 
-**A paragraph about past/ongoing research projects or recent scholarly publications** `GeophysicalFlows.jl` can be used to investigate  a variety of scientific research questions thanks to its various modules and high customizability. Past research projects using `GeophysicalFlows.jl` includes... Currently `GeophysicalFlows.jl` is being used to develop new tools for diagnosing turbulent energy transfers in idealized geophysical flows [e.g. @Pearson2020]
+**A paragraph about past/ongoing research projects or recent scholarly publications** `GeophysicalFlows.jl` can be used to investigate  a variety of scientific research questions thanks to its various modules and high customizability. Past research projects using `GeophysicalFlows.jl` includes... Currently `GeophysicalFlows.jl` is being used to develop new tools for diagnosing turbulent energy transfers in idealized geophysical flows [e.g. @Pearson2021]
 
 # Acknowledgements
 
