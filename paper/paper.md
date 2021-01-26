@@ -70,7 +70,7 @@ and refer to \autoref{eq:fourier} from text.
 
 # Summary
 
-`GeophysicalFlows.jl` is a Julia package that contains partial differential solvers for a collection of large-scale geophysical fluid systems on periodic domains. All modules use Fourier-based pseudospectral numerical methods and leverage the 
+`GeophysicalFlows.jl` is a Julia package that contains partial differential solvers for a collection of geophysical fluid systems on periodic domains. All modules use Fourier-based pseudospectral numerical methods and leverage the 
 framework provided by the `FourierFlows.jl` Julia package for time-stepping, diagnostics, and 
 output.
 
