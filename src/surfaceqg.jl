@@ -81,11 +81,19 @@ Params(ν, nν) = Params(ν, nν, nothingfunction)
 """
     Equation(params, grid)
 
-Returns the equation for Surface QG turbulence with `params` and `grid`.
+Return the equation for Surface QG turbulence with `params` and `grid`. The linear operator 
+``L`` includes (hyper)-viscosity of order ``n_ν`` with coefficient ``ν``,
+
+```math
+L = - ν |𝐤|^{2 n_ν} .
+```
+
+The nonlinear term is computed via function `calcN!()`.
 """
 function Equation(params::Params, grid::AbstractGrid)
   L = @. - params.ν * grid.Krsq^params.nν
   CUDA.@allowscalar L[1, 1] = 0
+  
   return FourierFlows.Equation(L, calcN!, grid)
 end
 
@@ -97,13 +105,21 @@ end
 abstract type SurfaceQGVars <: AbstractVars end
 
 struct Vars{Aphys, Atrans, F, P} <: SurfaceQGVars
+    "buoyancy"
         b :: Aphys
+    "x-component of velocity"
         u :: Aphys
+    "y-component of velocity"
         v :: Aphys
+    "Fourier transform of buoyancy"
        bh :: Atrans
+    "Fourier transform of x-component of velocity"
        uh :: Atrans
+    "Fourier transform of y-component of velocity"
        vh :: Atrans
+    "Fourier transform of forcing"
        Fh :: F
+    "`sol` at previous time-step"
   prevsol :: P
 end
 
@@ -113,38 +129,39 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     Vars(dev, grid)
 
-Returns the vars for unforced surface QG turbulence on device dev and with `grid`.
+Return the vars for unforced surface QG turbulence on device dev and with `grid`.
 """
 function Vars(::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh
+  
   return Vars(b, u, v, bh, uh, vh, nothing, nothing)
 end
 
 """
     ForcedVars(dev, grid)
 
-Returns the vars for forced surface QG turbulence on device `dev` and with
-`grid`.
+Return the vars for forced surface QG turbulence on device `dev` and with `grid`.
 """
 function ForcedVars(dev::Dev, grid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh Fh
+  
   return Vars(b, u, v, bh, uh, vh, Fh, nothing)
 end
 
 """
     StochasticForcedVars(dev, grid)
 
-Returns the `vars` for stochastically forced surface QG turbulence on device
-`dev` and with `grid`.
+Return the `vars` for stochastically forced surface QG turbulence on device `dev` and with `grid`.
 """
 function StochasticForcedVars(dev::Dev, grid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh Fh prevsol
+  
   return Vars(b, u, v, bh, uh, vh, Fh, prevsol)
 end
 
@@ -156,7 +173,12 @@ end
 """
     calcN_advection(N, sol, t, clock, vars, params, grid)
 
-Calculates the advection term.
+Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, b)`` in conservative 
+form, i.e., ``- ∂_x[(∂_y ψ)b] - ∂_y[(∂_x ψ)b]`` and store it in `N`:
+
+```math
+N = - \\widehat{𝖩(ψ, b)} = - i k_x \\widehat{u b} - i k_y \\widehat{v b} .
+```
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.bh = sol
@@ -177,12 +199,14 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   mul!(vbh, grid.rfftplan, vb) # \hat{v*b}
 
   @. N = - im * grid.kr * ubh - im * grid.l * vbh
+  
   return nothing
 end
 
 function calcN!(N, sol, t, clock, vars, params, grid)
   calcN_advection!(N, sol, t, clock, vars, params, grid)
   addforcing!(N, sol, t, clock, vars, params, grid)
+  
   return nothing
 end
 
@@ -191,6 +215,7 @@ addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
 function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
   params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
   @. N += vars.Fh
+  
   return nothing
 end
 
@@ -199,7 +224,9 @@ function addforcing!(N, sol, t, clock, vars::StochasticForcedVars, params, grid)
     @. vars.prevsol = sol # sol at previous time-step is needed to compute budgets for stochastic forcing
     params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
   end
+  
   @. N += vars.Fh
+  
   return nothing
 end
 
