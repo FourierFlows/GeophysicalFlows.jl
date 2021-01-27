@@ -322,11 +322,12 @@ end
 """
     buoyancy_variance(prob)
 
-Return the domain-averaged buoyancy variance,
+Return the buoyancy variance,
 ```math
-\\int b² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} |b̂|² \\ .
+\\int b² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} |b̂|² .
 ```
-In SQG, this is identical to the domain-averaged velocity variance (twice the kinetic energy).
+In SQG, this is identical to the velocity variance (i.e., twice the domain-averaged kinetic 
+energy).
 """
 @inline function buoyancy_variance(prob)
   sol, grid = prob.sol, prob.grid
