@@ -63,7 +63,7 @@ end
 """
     Params(ν, nν, calcF!)
 
-Returns the params for Surface QG turbulence.
+Return the `params` for Surface QG turbulence.
 """
 struct Params{T} <: AbstractParams
        ν :: T         # Buoyancy viscosity coefficient
@@ -81,11 +81,21 @@ Params(ν, nν) = Params(ν, nν, nothingfunction)
 """
     Equation(params, grid)
 
-Returns the equation for Surface QG turbulence with `params` and `grid`.
+Return the `equation` for surface QG with `params` and `grid`. The linear opeartor ``L`` 
+includes (hyper)-viscosity of order ``n_ν`` with coefficient ``ν``,
+
+```math
+L = - ν |𝐤|^{2 n_ν} .
+```
+
+Plain old viscocity corresponds to ``n_ν=1``.
+
+The nonlinear term is computed via function `calcN!()`.
 """
 function Equation(params::Params, grid::AbstractGrid)
   L = @. - params.ν * grid.Krsq^params.nν
   CUDA.@allowscalar L[1, 1] = 0
+  
   return FourierFlows.Equation(L, calcN!, grid)
 end
 
@@ -113,38 +123,40 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     Vars(dev, grid)
 
-Returns the vars for unforced surface QG turbulence on device dev and with `grid`.
+Return the `vars` for unforced surface QG turbulence on device `dev` and with `grid`.
 """
 function Vars(::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh
+  
   return Vars(b, u, v, bh, uh, vh, nothing, nothing)
 end
 
 """
     ForcedVars(dev, grid)
 
-Returns the vars for forced surface QG turbulence on device `dev` and with
-`grid`.
+Return the vars for forced surface QG turbulence on device `dev` and with `grid`.
 """
 function ForcedVars(dev::Dev, grid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh Fh
+  
   return Vars(b, u, v, bh, uh, vh, Fh, nothing)
 end
 
 """
     StochasticForcedVars(dev, grid)
 
-Returns the `vars` for stochastically forced surface QG turbulence on device
-`dev` and with `grid`.
+Return the `vars` for stochastically forced surface QG turbulence on device `dev` and with `grid`.
 """
 function StochasticForcedVars(dev::Dev, grid) where Dev
   T = eltype(grid)
+  
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh Fh prevsol
+  
   return Vars(b, u, v, bh, uh, vh, Fh, prevsol)
 end
 
@@ -156,7 +168,12 @@ end
 """
     calcN_advection(N, sol, t, clock, vars, params, grid)
 
-Calculates the advection term.
+Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, b)`` in conservative 
+form, i.e., ``- ∂_x[(∂_y ψ)b] - ∂_y[(∂_x ψ)b]`` and store it in `N`:
+
+```math
+N = - \\widehat{𝖩(ψ, b)} = - i k_x \\widehat{u b} - i k_y \\widehat{v b} .
+```
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.bh = sol
@@ -170,27 +187,47 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   ub, ubh = vars.u, vars.uh         # use vars.u, vars.uh as scratch variables
   vb, vbh = vars.v, vars.vh         # use vars.v, vars.vh as scratch variables
   
-  @. ub *= vars.b # u*b
-  @. vb *= vars.b # v*b
+  @. ub *= vars.b                   # u*b
+  @. vb *= vars.b                   # v*b
 
-  mul!(ubh, grid.rfftplan, ub) # \hat{u*b}
-  mul!(vbh, grid.rfftplan, vb) # \hat{v*b}
+  mul!(ubh, grid.rfftplan, ub)      # \hat{u*b}
+  mul!(vbh, grid.rfftplan, vb)      # \hat{v*b}
 
   @. N = - im * grid.kr * ubh - im * grid.l * vbh
+  
   return nothing
 end
 
+"""
+    calcN!(N, sol, t, clock, vars, params, grid)
+
+Calculate the nonlinear term, that is the advection term and the forcing,
+
+```math
+N = - \\widehat{𝖩(ψ, b)} + F̂ ,
+```
+
+by calling [`calcN_advection!`](@ref GeophysicalFlows.SurfaceQG.calcN_advection!) and then [`addforcing!`](@ref GeophysicalFlows.SurfaceQG.addforcing!)`.
+"""
 function calcN!(N, sol, t, clock, vars, params, grid)
   calcN_advection!(N, sol, t, clock, vars, params, grid)
   addforcing!(N, sol, t, clock, vars, params, grid)
+  
   return nothing
 end
 
+"""
+    addforcing!(N, sol, t, clock, vars, params, grid)
+
+When the problem includes forcing, calculate the forcing term ``F̂`` and add it to the 
+nonlinear term ``N``.
+"""
 addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
 
 function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
   params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
   @. N += vars.Fh
+  
   return nothing
 end
 
@@ -199,7 +236,9 @@ function addforcing!(N, sol, t, clock, vars::StochasticForcedVars, params, grid)
     @. vars.prevsol = sol # sol at previous time-step is needed to compute budgets for stochastic forcing
     params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
   end
+  
   @. N += vars.Fh
+  
   return nothing
 end
 
@@ -244,18 +283,20 @@ end
 """
     kinetic_energy(prob)
 
-Returns the domain-averaged surface kinetic energy. In SQG, this is
-identical to half the domain-averaged surface buoyancy variance.
+Return the domain-averaged surface kinetic energy. Since ``u² + v² = |{\\bf ∇} ψ|²``, we get
+```math
+\\int \\frac1{2} |{\\bf ∇} ψ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ψ̂|² .
+```
+In SQG, this is identical to half the domain-averaged surface buoyancy variance.
 """
 @inline function kinetic_energy(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
-  
-  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
-  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
-  
-  kinetic_energyh = vars.bh         # use vars.bh as scratch variable
 
-  @. kinetic_energyh = 0.5 * (abs2(vars.uh) + abs2(vars.vh)) # ½(|û|²+|v̂|²)
+  ψh = vars.uh                     # use vars.uh as scratch variable
+  kinetic_energyh = vars.bh        # use vars.bh as scratch variable
+  
+  @. ψh = sqrt(grid.invKrsq) * sol
+  @. kinetic_energyh = 1 / 2 * grid.Krsq * abs2(ψh)
   
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(kinetic_energyh, grid)
 end
@@ -263,8 +304,11 @@ end
 """
     buoyancy_variance(prob)
 
-Returns the domain-averaged buoyancy variance. In SQG flows this is identical to
-the domain-averaged velocity variance (twice the kinetic energy)
+Return the domain-averaged buoyancy variance,
+```math
+\\int b² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} |b̂|² \\ .
+```
+In SQG, this is identical to the domain-averaged velocity variance (twice the kinetic energy).
 """
 @inline function buoyancy_variance(prob)
   sol, grid = prob.sol, prob.grid
@@ -275,9 +319,12 @@ end
 """
     buoyancy_dissipation(prob)
 
-Returns the domain-averaged dissipation rate of surface buoyancy variance due
-to small scale diffusion/viscosity. nν must be >= 1.
-
+Return the domain-averaged dissipation rate of surface buoyancy variance due
+to small scale (hyper)-viscosity,
+```math
+2 ν (-1)^{n_ν} \\int b ∇^{2n_ν} b \\frac{𝖽x 𝖽y}{L_x L_y} = - 2 ν \\sum_{𝐤} |𝐤|^{2n_ν} |b̂|² ,
+```
+where ``ν`` the (hyper)-viscosity coefficient ``ν`` and ``nν`` the (hyper)-viscosity order.
 In SQG, this is identical to twice the rate of kinetic energy dissipation
 """
 @inline function buoyancy_dissipation(prob)
@@ -294,7 +341,10 @@ end
     buoyancy_work(prob)
     buoyancy_work(sol, vars, grid)
 
-Returns the domain-averaged rate of work of buoyancy variance by the forcing Fh.
+Return the domain-averaged rate of work of buoyancy variance by the forcing,
+```math
+\\int 2 b F \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} 2 b̂ F̂^* .
+```
 """
 @inline function buoyancy_work(sol, vars::ForcedVars, grid)
   buoyancy_workh = vars.uh         # use vars.uh as scratch variable
