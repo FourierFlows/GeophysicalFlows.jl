@@ -10,10 +10,12 @@ Order = [:type]
 
 ## Private types in module `TwoDNavierStokes`:
 
-```@autodocs
-Modules = [GeophysicalFlows.TwoDNavierStokes]
-Public = false
-Order = [:type]
+```@docs
+GeophysicalFlows.TwoDNavierStokes.Params
+GeophysicalFlows.TwoDNavierStokes.Vars
+GeophysicalFlows.TwoDNavierStokes.DecayingVars
+GeophysicalFlows.TwoDNavierStokes.ForcedVars
+GeophysicalFlows.TwoDNavierStokes.StochasticForcedVars
 ```
 
 ## Private types in module `SingleLayerQG`:

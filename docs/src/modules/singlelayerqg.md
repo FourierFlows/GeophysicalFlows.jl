@@ -27,9 +27,52 @@ The dynamical variable is ``q``.  Thus, the equation solved by the module is:
 \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] q}_{\textrm{dissipation}} + F \ .
 ```
 
-where ``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x b)``. On 
-the right hand side, ``F(x, y, t)`` is forcing, ``\mu`` is linear drag, and ``\nu`` is 
-hyperviscosity of order ``n_\nu``. Plain old viscosity corresponds to ``n_\nu = 1``.
+where ``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x b)`` is the 
+two-dimensional Jacobian. On the right hand side, ``F(x, y, t)`` is forcing, ``\mu`` is 
+linear drag, and ``\nu`` is hyperviscosity of order ``n_\nu``. Plain old viscosity corresponds 
+to ``n_\nu = 1``.
+
+
+### Implementation
+
+The equation is time-stepped forward in Fourier space:
+
+```math
+\partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q + \eta)} + \beta \frac{i k_x}{|𝐤|^2 + 1/\ell^2} \widehat{q} - \left(\mu + \nu |𝐤|^{2n_\nu} \right) \widehat{q} + \widehat{F} \ .
+```
+
+The state variable `sol` is the Fourier transform of the sum of relative vorticity and vortex stretching (when the latter is applicable), [`qh`](@ref GeophysicalFlows.SingleLayerQG.qh).
+
+The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) =
+\partial_y [ (\partial_x f) g] - \partial_x[ (\partial_y f) g]``.
+
+The linear operator is constructed in `Equation`
+
+```@docs
+GeophysicalFlows.SingleLayerQG.Equation
+```
+
+The nonlinear terms is computed via
+
+```@docs
+GeophysicalFlows.SingleLayerQG.calcN!
+```
+
+
+### Helper functions
+
+Some helper functions included in the module are:
+
+```@docs
+GeophysicalFlows.SingleLayerQG.updatevars!
+```
+
+```@docs
+GeophysicalFlows.SingleLayerQG.set_q!
+```
+
+
+### Diagnostics
 
 The kinetic energy of the fluid is computed via:
 
@@ -47,26 +90,6 @@ The total energy is:
 
 ```@docs
 GeophysicalFlows.SingleLayerQG.energy
-```
-
-### Implementation
-
-The equation is time-stepped forward in Fourier space:
-
-```math
-\partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q + \eta)} + \beta \frac{i k_x}{|𝐤|^2 + 1/\ell^2} \widehat{q} - \left(\mu + \nu |𝐤|^{2n_\nu} \right) \widehat{q} + \widehat{F} \ .
-```
-
-In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) =
-\partial_y [ (\partial_x f) g] -\partial_x[ (\partial_y f) g]``.
-
-Thus:
-
-```math
-\begin{aligned}
-L & = \beta \frac{i k_x}{|𝐤|^2 + 1/\ell^2} - \mu - \nu |𝐤|^{2n_\nu} \ , \\
-N(\widehat{q}) & = - i k_x \mathrm{FFT}[u (q + \eta)] - i k_y \mathrm{FFT}[v (q + \eta)] + \widehat{F}  \ .
-\end{aligned}
 ```
 
 

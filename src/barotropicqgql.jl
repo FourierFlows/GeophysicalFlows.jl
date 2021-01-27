@@ -112,7 +112,7 @@ end
 """
     Equation(params, grid)
 
-Returns the equation for two-dimensional barotropic QG QL problem with parameters `params` and on `grid`.
+Return the equation for two-dimensional barotropic QG QL problem with parameters `params` and on `grid`.
 """
 function Equation(params::Params, grid::AbstractGrid)
   L = @. -params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq
@@ -158,7 +158,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     Vars(dev, grid)
 
-Returns the vars for unforced two-dimensional barotropic QG problem with `grid`.
+Return the vars for unforced two-dimensional barotropic QG problem with `grid`.
 """
 function Vars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
@@ -170,7 +170,7 @@ end
 """
     ForcedVars(dev, grid)
 
-Returns the `vars` for forced two-dimensional barotropic QG QL problem on device `dev` and `grid`.
+Return the `vars` for forced two-dimensional barotropic QG QL problem on device `dev` and `grid`.
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
@@ -182,7 +182,7 @@ end
 """
     StochasticForcedVars(dev, grid)
 
-Returns the `vars` for stochastically forced two-dimensional barotropic QG QL problem on 
+Return the `vars` for stochastically forced two-dimensional barotropic QG QL problem on 
 device `dev` and `grid`.
 """
 function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
@@ -321,7 +321,7 @@ set_zeta!(prob, zeta) = set_zeta!(prob.sol, prob.vars, prob.params, prob.grid, z
     energy(sol, grid)
     energy(prob)
 
-Returns the domain-averaged kinetic energy of `sol`.
+Return the domain-averaged kinetic energy of `sol`.
 """
 @inline energy(sol, grid::AbstractGrid) =
   0.5 * (parsevalsum2(grid.kr .* grid.invKrsq .* sol, grid)
@@ -333,7 +333,7 @@ energy(prob) = energy(prob.sol, prob.grid)
     enstrophy(sol, grid, vars)
     enstrophy(prob)
 
-Returns the domain-averaged enstrophy of `sol`.
+Return the domain-averaged enstrophy of `sol`.
 """
 function enstrophy(sol, grid::AbstractGrid, vars::AbstractVars)
   @. vars.uh = sol
@@ -347,7 +347,7 @@ enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
     dissipation(prob)
     dissipation(sol, v, p, g)
 
-Returns the domain-averaged dissipation rate. `nν` must be >= 1.
+Return the domain-averaged dissipation rate. `nν` must be >= 1.
 """
 @inline function dissipation(sol, vars, params, grid)
   @. vars.uh = grid.Krsq^(params.nν - 1) * abs2(sol)
@@ -361,7 +361,7 @@ end
     work(prob)
     work(sol, vars, params, grid)
 
-Returns the domain-averaged rate of work of energy by the forcing, `params.Fh`.
+Return the domain-averaged rate of work of energy by the forcing, `params.Fh`.
 """
 @inline function work(sol, vars::ForcedVars, grid)
   @. vars.uh = grid.invKrsq * sol * conj(vars.Fh)
@@ -379,7 +379,7 @@ end
     drag(prob)
     drag(sol, vars, params, grid)
 
-Returns the extraction of domain-averaged energy by drag `μ`.
+Return the extraction of domain-averaged energy by drag `μ`.
 """
 @inline function drag(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid

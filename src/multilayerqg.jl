@@ -21,7 +21,6 @@ using
 
 @reexport using FourierFlows
 
-using LinearAlgebra: mul!, ldiv!
 using FFTW: rfft, irfft
 using FourierFlows: parsevalsum, parsevalsum2, superzeros, plan_flows_rfft
 
@@ -61,13 +60,13 @@ function Problem(nlayers::Int,                        # number of fluid layers
 
    # topographic PV
    eta === nothing && (eta = zeros(dev, T, (nx, ny)))
-           
+   
    grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
    params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq, dev=dev)   
    vars = calcFq == nothingfunction ? Vars(dev, grid, params) : (stochastic ? StochasticForcedVars(dev, grid, params) : ForcedVars(dev, grid, params))
-   eqn = linear ? LinearEquation(dev, params, grid) : Equation(dev, params, grid)
+   equation = linear ? LinearEquation(dev, params, grid) : Equation(dev, params, grid)
 
-  FourierFlows.Problem(eqn, stepper, dt, grid, vars, params, dev)
+  FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end
 
 abstract type BarotropicParams <: AbstractParams end
@@ -211,10 +210,10 @@ numberoflayers(::SingleLayerParams) = 1
 
 """
     hyperviscosity(dev, params, grid)
-Returns the linear operator `L` that corresponds to (hyper)-viscosity of order ``n_ν`` with 
+Return the linear operator `L` that corresponds to (hyper)-viscosity of order ``n_ν`` with 
 coefficient ``ν`` for ``n`` fluid layers.
 ```math
-L_j = - ν |𝐤|^{2 n_ν}, j = 1, ...,n .
+L_j = - ν |𝐤|^{2 n_ν}, \\ j = 1, ...,n .
 ```
 """
 function hyperviscosity(dev, params, grid)
@@ -228,23 +227,25 @@ end
 
 """
     LinearEquation(dev, params, grid)
-Returns the `equation` for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
+Return the `equation` for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
 The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via 
 `hyperviscosity(dev, params, grid)`. The nonlinear term is computed via function `calcNlinear!()`.
 """
 function LinearEquation(dev, params, grid)
   L = hyperviscosity(dev, params, grid)
+  
   return FourierFlows.Equation(L, calcNlinear!, grid)
 end
  
 """
     Equation(dev, params, grid)
-Returns the `equation` for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
+Return the `equation` for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
 The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via 
 `hyperviscosity(dev, params, grid)`. The nonlinear term is computed via function `calcN!()`.
 """
 function Equation(dev, params, grid)
   L = hyperviscosity(dev, params, grid)
+  
   return FourierFlows.Equation(L, calcN!, grid)
 end
 
@@ -272,7 +273,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     Vars(dev, grid, params)
 
-Returns the vars for unforced multi-layer QG problem with `grid` and `params`.
+Return the vars for unforced multi-layer QG problem with `grid` and `params`.
 """
 function Vars(dev::Dev, grid, params) where Dev
   T = eltype(grid)
@@ -287,7 +288,7 @@ end
 """
     ForcedVars(dev, grid, params)
 
-Returns the vars for forced multi-layer QG problem with `grid` and `params`.
+Return the vars for forced multi-layer QG problem with `grid` and `params`.
 """
 function ForcedVars(dev::Dev, grid, params) where Dev
   T = eltype(grid)
@@ -302,7 +303,7 @@ end
 """
     StochasticForcedVars(dev, rid, params)
 
-Returns the vars for forced multi-layer QG problem with `grid` and `params`.
+Return the vars for forced multi-layer QG problem with `grid` and `params`.
 """
 function StochasticForcedVars(dev::Dev, grid, params) where Dev
   T = eltype(grid)
@@ -321,35 +322,45 @@ function streamfunctionfrompv!(ψh, qh, params, grid)
   for j=1:grid.nl, i=1:grid.nkr
     CUDA.@allowscalar @views ψh[i, j, :] .= params.S⁻¹[i, j] * qh[i, j, :]
   end
+  
+  return nothing
 end
 
 function pvfromstreamfunction!(qh, ψh, params, grid)
   for j=1:grid.nl, i=1:grid.nkr
     CUDA.@allowscalar @views qh[i, j, :] .= params.S[i, j] * ψh[i, j, :]    
   end
+  
+  return nothing
 end
 
 function streamfunctionfrompv!(ψh, qh, params::SingleLayerParams, grid)
   @. ψh = -grid.invKrsq * qh
+  
+  return nothing
 end
 
 function pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
   @. qh = -grid.Krsq * ψh
+  
+  return nothing
 end
 
 """
     calcS!(S, Fp, Fm, nlayers, grid)
 
 Constructs the array ``𝕊``, which consists of `nlayer` x `nlayer` static arrays ``𝕊_𝐤`` that 
-relate the ``q̂_j``'s and ``ψ̂_j``'s at every wavenumber: ``q̂_𝐤 = 𝕊_𝐤 ψ̂_𝐤``.
+relate the ``q̂_j``'s and ``ψ̂_j``'s for every wavenumber: ``q̂_𝐤 = 𝕊_𝐤 ψ̂_𝐤``.
 """
 function calcS!(S, Fp, Fm, nlayers, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
+  
   for n=1:grid.nl, m=1:grid.nkr
     CUDA.@allowscalar k² = grid.Krsq[m, n]
     Skl = SMatrix{nlayers, nlayers}(- k² * I + F)
     S[m, n] = Skl
   end
+  
   return nothing
 end
 
@@ -357,17 +368,20 @@ end
     calcS⁻¹!(S, Fp, Fm, nlayers, grid)
 
 Constructs the array ``𝕊⁻¹``, which consists of `nlayer` x `nlayer` static arrays ``(𝕊_𝐤)⁻¹`` 
-that relate the ``q̂_j``'s and ``ψ̂_j``'s at every wavenumber: ``ψ̂_𝐤 = (𝕊_𝐤)⁻¹ q̂_𝐤``.
+that relate the ``q̂_j``'s and ``ψ̂_j``'s for every wavenumber: ``ψ̂_𝐤 = (𝕊_𝐤)⁻¹ q̂_𝐤``.
 """
 function calcS⁻¹!(S⁻¹, Fp, Fm, nlayers, grid)
-  T = eltype(grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
+  
   for n=1:grid.nl, m=1:grid.nkr
     CUDA.@allowscalar k² = grid.Krsq[m, n] == 0 ? 1 : grid.Krsq[m, n]
     Skl = - k² * I + F
     S⁻¹[m, n] = SMatrix{nlayers, nlayers}(I / Skl)
   end
+  
+  T = eltype(grid)
   S⁻¹[1, 1] = SMatrix{nlayers, nlayers}(zeros(T, (nlayers, nlayers)))
+  
   return nothing
 end
 
@@ -378,18 +392,19 @@ end
 
 """
     calcN!(N, sol, t, clock, vars, params, grid)
-Compute the nonlinear term, that is the advection term and the forcing,
+Compute the nonlinear term, that is the advection term, the bottom drag, and the forcing:
 ```math
-N(q̂_j) = - \\widehat{𝖩(ψ_j, q_j)} - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
- + \\widehat{(∂_y ψ_j)(∂_x Q_j)} - \\widehat{(∂_x ψ_j)(∂_y Q_j)} + δ_{j, n} μ |𝐤|^2 ψ̂_n + F̂_j ,
+N_j = - \\widehat{𝖩(ψ_j, q_j)} - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
+ + \\widehat{(∂_y ψ_j)(∂_x Q_j)} - \\widehat{(∂_x ψ_j)(∂_y Q_j)} + δ_{j, n} μ |𝐤|^2 ψ̂_n + F̂_j .
 ```
-by calling `calcN_advection!` and `addforcing!`.
+To do so, `calcN_advection!` and `addforcing!` are called.
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   nlayers = numberoflayers(params)
   calcN_advection!(N, sol, vars, params, grid)
   @views @. N[:, :, nlayers] += params.μ * grid.Krsq * vars.ψh[:, :, nlayers]   # bottom linear drag
   addforcing!(N, sol, t, clock, vars, params, grid)
+  
   return nothing
 end
 
@@ -398,6 +413,7 @@ function calcNlinear!(N, sol, t, clock, vars, params, grid)
   calcN_linearadvection!(N, sol, vars, params, grid)
   @views @. N[:, :, nlayers] += params.μ * grid.Krsq * vars.ψh[:, :, nlayers]   # bottom linear drag
   addforcing!(N, sol, t, clock, vars, params, grid)
+  
   return nothing
 end
 
@@ -495,10 +511,11 @@ function calcN_linearadvection!(N, sol, vars, params, grid)
   return nothing
 end
 
+
 """
     addforcing!(N, sol, t, clock, vars, params, grid)
-When the problem includes forcing, calculate the forcing term ``F̂_j`` and add it to the 
-nonlinear term ``N``.
+When the problem includes forcing, calculate the forcing term ``F̂`` for each layer and add 
+it to the nonlinear term ``N``.
 """
 addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
 
@@ -541,7 +558,7 @@ updatevars!(prob) = updatevars!(prob.vars, prob.params, prob.grid, prob.sol)
     set_q!(sol, params, vars, grid, q)
     set_q!(prob)
 
-Set the solution `prob.sol` as the transform of `q` and updates variables.
+Set the solution `prob.sol` as the transform of `q` and update variables.
 """
 function set_q!(sol, params, vars, grid, q)
   A = typeof(vars.q)
@@ -570,10 +587,10 @@ set_q!(prob, q) = set_q!(prob.sol, prob.params, prob.vars, prob.grid, q)
     set_ψ!(prob)
 
 Set the solution `prob.sol` to the transform `qh` that corresponds to streamfunction `ψ` 
-and updates variables.
+and update variables.
 """
 function set_ψ!(sol, params, vars, grid, ψ)
-  A = typeof(vars.ψ)
+  A = typeof(vars.q)
   fwdtransform!(vars.ψh, A(ψ), params)
   pvfromstreamfunction!(vars.qh, vars.ψh, params, grid)
   invtransform!(vars.q, vars.qh, params)
@@ -600,7 +617,7 @@ set_ψ!(prob, ψ) = set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)
     energies(vars, params, grid, sol)
     energies(prob)
 
-Returns the kinetic energy of each fluid layer KE``_1, ...,`` KE``_{n}``, and the
+Return the kinetic energy of each fluid layer KE``_1, ...,`` KE``_{n}``, and the
 potential energy of each fluid interface PE``_{3/2}, ...,`` PE``_{n-1/2}``, where ``n``
 is the number of layers in the fluid. (When ``n=1``, only the kinetic energy is returned.)
 
@@ -651,7 +668,7 @@ energies(prob) = energies(prob.vars, prob.params, prob.grid, prob.sol)
     fluxes(vars, params, grid, sol)
     fluxes(prob)
 
-Returns the lateral eddy fluxes within each fluid layer, lateralfluxes``_1,...,``lateralfluxes``_n``
+Return the lateral eddy fluxes within each fluid layer, lateralfluxes``_1,...,``lateralfluxes``_n``
 and also the vertical eddy fluxes at each fluid interface, 
 verticalfluxes``_{3/2},...,``verticalfluxes``_{n-1/2}``, where ``n`` is the total number of layers in the fluid.
 (When ``n=1``, only the lateral fluxes are returned.)

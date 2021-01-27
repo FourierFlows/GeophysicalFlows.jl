@@ -1,10 +1,16 @@
+"""
+Main module for `GeophysicalFlows.jl` -- a collection of solvers for geophysical fluid dynamics
+problems in periodic domains on CPUs and GPUs. All modules use Fourier-based pseudospectral 
+methods and leverage the functionality of `FourierFlows.jl` ecosystem.
+"""
 module GeophysicalFlows
 
 using
   CUDA,
   FourierFlows,
   Statistics,
-  SpecialFunctions
+  SpecialFunctions,
+  DocStringExtensions
 
 using FFTW: irfft
 
