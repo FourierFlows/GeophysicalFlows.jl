@@ -102,10 +102,10 @@ The total energy is:
 GeophysicalFlows.SingleLayerQG.energy
 ```
 
-Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.SurfaceQG.energy_dissipation), 
-[`energy_drag`](@ref GeophysicalFlows.SurfaceQG.energy_drag), [`energy_work`](@ref GeophysicalFlows.SurfaceQG.energy_work), 
-[`enstrophy_dissipation`](@ref GeophysicalFlows.SurfaceQG.enstrophy_dissipation), and
-[`enstrophy_drag`](@ref GeophysicalFlows.SurfaceQG.enstrophy_drag), [`enstrophy_work`](@ref GeophysicalFlows.SurfaceQG.enstrophy_work).
+Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.SingleLayerQG.energy_dissipation), 
+[`energy_drag`](@ref GeophysicalFlows.SingleLayerQG.energy_drag), [`energy_work`](@ref GeophysicalFlows.SingleLayerQG.energy_work), 
+[`enstrophy_dissipation`](@ref GeophysicalFlows.SingleLayerQG.enstrophy_dissipation), and
+[`enstrophy_drag`](@ref GeophysicalFlows.SingleLayerQG.enstrophy_drag), [`enstrophy_work`](@ref GeophysicalFlows.SingleLayerQG.enstrophy_work).
 
 
 ## Examples

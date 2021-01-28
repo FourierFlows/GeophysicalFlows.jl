@@ -1,10 +1,3 @@
-"""
-A module for simulating two-dimensional incompressible fluid with the Navier-Stokes equations. 
-The module uses the vorticity-streamfunction formulation.
-
-# Exports
-$(EXPORTS)
-"""
 module TwoDNavierStokes
 
 export
