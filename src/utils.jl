@@ -43,7 +43,7 @@ function peakedisotropicspectrum(grid::TwoDGrid{T, A}, kpeak::Real, E₀::Real; 
     ψh = ψh .* A(mask)
     energy_initial = sum(grid.Krsq .* abs2.(ψh)) / (grid.nx * grid.ny)^2
     ψh *= sqrt(E₀ / energy_initial)
-    q = irfft(-grid.Krsq .* ψh, grid.nx)
+    q = A(irfft(-grid.Krsq .* ψh, grid.nx))
   end
   
   return q
