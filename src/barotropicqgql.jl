@@ -98,10 +98,9 @@ end
 Constructor for `params` that accepts a generating function for the topographic PV, `eta`.
 """
 function Params(grid::AbstractGrid{T, A}, β, eta::Function, μ, ν, nν, calcF) where {T, A}
-  x, y = gridpoints(grid)
-  eta_on_grid = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
+  eta_on_grid = FourierFlows.on_grid(eta, grid)
   etah_on_grid = rfft(eta_on_grid)
-  Params(β, eta_on_grid, etah_on_grid, μ, ν, nν, calcF)
+  Params(β, A(eta_on_grid), A(etah_on_grid), μ, ν, nν, calcF)
 end
 
 
