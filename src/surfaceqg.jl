@@ -25,9 +25,9 @@ using FourierFlows: parsevalsum
 nothingfunction(args...) = nothing
 
 """
-    Problem(; parameters...)
+    Problem(dev::Device; parameters...)
 
-Construct a Surface QG problem.
+Construct a Surface QG problem on device `dev`.
 """
 function Problem(dev::Device=CPU();
   # Numerical parameters

@@ -40,6 +40,7 @@ GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation
 
 ```@docs
 GeophysicalFlows.SingleLayerQG.Problem
+GeophysicalFlows.SingleLayerQG.streamfunctionfrompv!
 GeophysicalFlows.SingleLayerQG.energy_dissipation
 GeophysicalFlows.SingleLayerQG.energy_work
 GeophysicalFlows.SingleLayerQG.energy_drag

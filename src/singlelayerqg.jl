@@ -30,11 +30,10 @@ using FourierFlows: parsevalsum, parsevalsum2
 nothingfunction(args...) = nothing
 
 """
-    Problem(; parameters...)
+    Problem(dev::Device; parameters...)
 
-Construct a SingleLayerQG problem.
+Construct a SingleLayerQG problem on device `dev`.
 """
-
 function Problem(dev::Device=CPU();
   # Numerical parameters
                   nx = 256,
@@ -335,7 +334,7 @@ end
 """
     streamfunctionfrompv!(ψh, qh, params, grid)
 
-Invert the Fourier transform of PV to obtain the Fourier transform of the streamfunction `ψh`.
+Invert the Fourier transform of PV `qh` to obtain the Fourier transform of the streamfunction `ψh`.
 """
 function streamfunctionfrompv!(ψh, qh, params::BarotropicQGParams, grid)
   @. ψh =  - grid.invKrsq * qh

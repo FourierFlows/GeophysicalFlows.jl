@@ -28,7 +28,7 @@ abstract type BarotropicQGQLVars <: AbstractVars end
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev=CPU(); parameters...)
+    Problem(dev::Device; parameters...)
 
 Construct a BarotropicQGQL turbulence problem on device `dev`.
 """

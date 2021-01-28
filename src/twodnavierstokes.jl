@@ -36,7 +36,7 @@ nothingfunction(args...) = nothing
 """
     Problem(dev::Device; parameters...)
 
-Construct a two-dimensional Navier-Stokes `problem`.
+Construct a two-dimensional Navier-Stokes `problem` on device `dev`.
 """
 function Problem(dev::Device=CPU();
   # Numerical parameters
