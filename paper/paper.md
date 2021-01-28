@@ -120,8 +120,8 @@ used (i) to test new theories for diagnosing turbulent energy transfers in geoph
 
 # Acknowledgements
 
-We acknowledge discussions with Keaton Burns, Cesar Rocha, and William Young. We would also 
-like to take a moment to remember Sean R. Haney (February 1987-January 2021) who left us a 
-bit too early.
+We acknowledge discussions with Keaton Burns, Cesar Rocha, and William Young. B.C.P. was supported 
+by the National Science Foundation under Grant No.~2023721. We would also like to take a moment 
+to remember Sean R. Haney (February 1987-January 2021) who left us a bit too early.
 
 # References
