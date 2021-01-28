@@ -27,6 +27,7 @@ Geophysical Fluid Dynamics on periodic domains using Fourier-based pseudospectra
 ## Installation
 
 To install, do
+
 ```julia
 ] add GeophysicalFlows
 ```
@@ -40,8 +41,6 @@ Some animations created with GeophysicalFlows.jl are [online @ youtube].
 
 ## Modules
 
-All modules provide solvers on two-dimensional domains. We currently provide
-
 * `TwoDNavierStokes`: the two-dimensional vorticity equation.
 * `SingleLayerQG`: the barotropic or equivalent-barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography, Coriolis parameters of the form `f = f₀ + βy`, and finite Rossby radius of deformation.
 * `MultiLayerQG`: a multi-layer quasi-geostrophic model over topography and with the ability to impose a zonal flow `U_n(y)` in each layer.
@@ -53,7 +52,7 @@ All modules provide solvers on two-dimensional domains. We currently provide
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.11.2  (Version v0.11.2). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
+> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.11.3  (Version v0.11.3). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
