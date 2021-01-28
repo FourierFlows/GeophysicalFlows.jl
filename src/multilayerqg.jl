@@ -17,7 +17,8 @@ using
   CUDA,
   LinearAlgebra,
   StaticArrays,
-  Reexport
+  Reexport,
+  DocStringExtensions
 
 @reexport using FourierFlows
 
@@ -71,44 +72,86 @@ end
 
 abstract type BarotropicParams <: AbstractParams end
 
+"""
+    Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft}(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, calcFq!, g′, Qx, Qy, S, S⁻¹, rfftplan)
+
+A struct containing the parameters for the SingleLayerQG problem. Included are:
+
+$(TYPEDFIELDS)
+"""
 struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
   # prescribed params
+    "number of fluid layers"
    nlayers :: Int        # Number of fluid layers
-         g :: T          # Gravitational constant
-        f₀ :: T          # Constant planetary vorticity
-         β :: T          # Planetary vorticity y-gradient
-         ρ :: Aphys3D    # Array with density of each fluid layer
-         H :: Aphys3D    # Array with rest height of each fluid layer
-         U :: Aphys3D    # Array with imposed constant zonal flow U(y) in each fluid layer
-       eta :: Aphys2D    # Array containing topographic PV
-         μ :: T          # Linear bottom drag
-         ν :: T          # Viscosity coefficient
-        nν :: Int        # Hyperviscous order (nν=1 is plain old viscosity)
-   calcFq! :: Function   # Function that calculates the forcing on QGPV q
+    "gravitational constant"
+         g :: T
+    "constant planetary vorticity"
+        f₀ :: T       
+    "planetary vorticity y-gradient"
+         β :: T       
+    "array with density of each fluid layer"
+         ρ :: Aphys3D 
+    "array with rest height of each fluid layer"
+         H :: Aphys3D 
+    "array with imposed constant zonal flow U(y) in each fluid layer"
+         U :: Aphys3D 
+    "array containing topographic PV"
+       eta :: Aphys2D 
+    "linear bottom drag coefficient"
+         μ :: T       
+    "small-scale (hyper)-viscosity coefficient"
+         ν :: T       
+    "(hyper)-viscosity order, `nν```≥ 1``"
+        nν :: Int     
+    "function that calculates the Fourier transform of the forcing, ``F̂``"
+   calcFq! :: Function
 
   # derived params
-        g′ :: Aphys1D    # Array with the reduced gravity constants for each fluid interface
-        Qx :: Aphys3D    # Array containing x-gradient of PV due to eta in each fluid layer
-        Qy :: Aphys3D    # Array containing y-gradient of PV due to β, U, and eta in each fluid layer
-         S :: Atrans4D   # Array containing coeffients for getting PV from  streamfunction
-       S⁻¹ :: Atrans4D   # Array containing coeffients for inverting PV to streamfunction
-  rfftplan :: Trfft      # rfft plan for FFTs
+    "array with the reduced gravity constants for each fluid interface"
+        g′ :: Aphys1D
+    "array containing x-gradient of PV due to eta in each fluid layer"
+        Qx :: Aphys3D
+    "array containing y-gradient of PV due to β, U, and eta in each fluid layer"
+        Qy :: Aphys3D
+    "array containing coeffients for getting PV from streamfunction"
+         S :: Atrans4D
+    "array containing coeffients for inverting PV to streamfunction"
+       S⁻¹ :: Atrans4D
+    "rfft plan for FFTs"
+  rfftplan :: Trfft
 end
 
+"""
+    SingleLayerParams{T, Aphys3D, Aphys2D, Trfft}(β, U, eta, μ, ν, nν, calcFq!, Qx, Qy, rfftplan)
+
+A struct containing the parameters for the SingleLayerQG problem. Included are:
+
+$(TYPEDFIELDS)
+"""
 struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: BarotropicParams
   # prescribed params
-         β :: T          # Planetary vorticity y-gradient
-         U :: Aphys3D    # Imposed constant zonal flow U(y)
-       eta :: Aphys2D    # Array containing topographic PV
-         μ :: T          # Linear bottom drag
-         ν :: T          # Viscosity coefficient
-        nν :: Int        # Hyperviscous order (nν=1 is plain old viscosity)
-   calcFq! :: Function   # Function that calculates the forcing on QGPV q
+    "planetary vorticity y-gradient"
+         β :: T       
+    "array with imposed constant zonal flow U(y)"
+         U :: Aphys3D 
+    "array containing topographic PV"
+       eta :: Aphys2D 
+    "linear drag coefficient"
+         μ :: T       
+    "small-scale (hyper)-viscosity coefficient"
+         ν :: T       
+    "(hyper)-viscosity order, `nν```≥ 1``"
+        nν :: Int     
+    "function that calculates the Fourier transform of the forcing, ``F̂``"
+   calcFq! :: Function
 
   # derived params
-        Qx :: Aphys3D    # Array containing x-gradient of PV due to eta
-        Qy :: Aphys3D    # Array containing meridional PV gradient due to β, U, and eta
-  rfftplan :: Trfft      # rfft plan for FFTs
+    "array containing x-gradient of PV due to eta"
+        Qx :: Aphys3D
+    "array containing y-gradient of PV due to β, U, and eta"
+        Qy :: Aphys3D
+    "rfft plan for FFTs"
+  rfftplan :: Trfft
 end
 
 function convert_U_to_U3D(dev, nlayers, grid, U::AbstractArray{TU, 1}) where TU
@@ -258,16 +301,33 @@ end
 # Vars
 # ----
 
+"""
+    Vars{Aphys, Atrans, F, P}(q, ψ, u, v, qh, , ψh, uh, vh, Fh, prevsol)
+
+The variables for MultiLayer QG:
+
+$(FIELDS)
+"""
 struct Vars{Aphys, Atrans, F, P} <: AbstractVars
+    "relative vorticity + vortex stretching"
         q :: Aphys
+    "streamfunction"
         ψ :: Aphys
+    "x-component of velocity"
         u :: Aphys
+    "y-component of velocity"
         v :: Aphys
+    "Fourier transform of relative vorticity + vortex stretching"
        qh :: Atrans
+    "Fourier transform of streamfunction"
        ψh :: Atrans
+    "Fourier transform of x-component of velocity"
        uh :: Atrans
+    "Fourier transform of y-component of velocity"
        vh :: Atrans
+    "Fourier transform of forcing"
       Fqh :: F
+    "`sol` at previous time-step"
   prevsol :: P
 end
 

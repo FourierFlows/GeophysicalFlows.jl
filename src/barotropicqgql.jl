@@ -14,7 +14,8 @@ export
 using
   FFTW,
   CUDA,
-  Reexport
+  Reexport,
+  DocStringExtensions
 
 @reexport using FourierFlows
 

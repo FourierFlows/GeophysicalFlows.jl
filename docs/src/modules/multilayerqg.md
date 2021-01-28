@@ -133,7 +133,16 @@ The nonlinear terms is computed via
 GeophysicalFlows.MultiLayerQG.calcN!
 ```
  
- 
+### Parameters and Variables
+
+All required parameters are included inside [`Params`](@ref GeophysicalFlows.MultiLayerQG.Params)
+and all module variables are included inside [`Vars`](@ref GeophysicalFlows.MultiLayerQG.Vars).
+
+For decaying case (no forcing, ``F=0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.MultiLayerQG.DecayingVars). 
+For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.MultiLayerQG.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.MultiLayerQG.StochasticForcedVars).
+
+
+
 ## Examples
 
  - `examples/multilayerqg_2layer.jl`: A script that simulates the growth and equilibration of baroclinic eddy turbulence in the Phillips 2-layer model.
