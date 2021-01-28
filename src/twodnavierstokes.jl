@@ -374,8 +374,18 @@ where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_dissipationh, grid)
 end
 
+"""
+    energy_dissipation_hyperviscosity(prob, ξ, νξ)
+
+Return the domain-averaged energy dissipation rate done by the ``ν`` (hyper)-viscosity.
+"""
 energy_dissipation_hyperviscosity(prob) = energy_dissipation(prob, prob.params.ν, prob.params.nν)
 
+"""
+    energy_dissipation_hypoviscosity(prob, ξ, νξ)
+
+Return the domain-averaged energy dissipation rate done by the ``μ`` (hypo)-viscosity.
+"""
 energy_dissipation_hypoviscosity(prob) = energy_dissipation(prob, prob.params.μ, prob.params.nμ)
 
 """
@@ -399,8 +409,18 @@ where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_dissipationh, grid)
 end
 
+"""
+    enstrophy_dissipation_hyperviscosity(prob, ξ, νξ)
+
+Return the domain-averaged enstrophy dissipation rate done by the ``ν`` (hyper)-viscosity.
+"""
 enstrophy_dissipation_hyperviscosity(prob) = enstrophy_dissipation(prob, prob.params.ν, prob.params.nν)
 
+"""
+    enstrophy_dissipation_hypoviscosity(prob, ξ, νξ)
+
+Return the domain-averaged enstrophy dissipation rate done by the ``μ`` (hypo)-viscosity.
+"""
 enstrophy_dissipation_hypoviscosity(prob) = enstrophy_dissipation(prob, prob.params.μ, prob.params.nμ)
 
 """

@@ -48,6 +48,7 @@ denoted with ``q \equiv \zeta + \eta``.
 
 *Quasi-linear* dynamics **neglect the term eddy-eddy nonlinearity (EENL) term** above.
 
+
 ### Implementation
 
 The equation is time-stepped forward in Fourier space:
@@ -93,6 +94,24 @@ For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref 
 GeophysicalFlows.BarotropicQGQL.updatevars!
 GeophysicalFlows.BarotropicQGQL.set_zeta!
 ```
+
+
+### Diagnostics
+
+The kinetic energy of the fluid is obtained via:
+
+```@docs
+GeophysicalFlows.BarotropicQGQL.energy
+```
+
+while the enstrophy via:
+
+```@docs
+GeophysicalFlows.BarotropicQGQL.enstrophy
+```
+
+Other diagnostic include: [`dissipation`](@ref GeophysicalFlows.BarotropicQGQL.dissipation), 
+[`drag`](@ref GeophysicalFlows.BarotropicQGQL.drag), and [`work`](@ref GeophysicalFlows.BarotropicQGQL.work).
 
 
 ## Examples
