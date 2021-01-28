@@ -16,10 +16,11 @@ The SQG model evolves the surface buoyancy,
 \partial_t b_s + \mathsf{J}(\psi, b_s) = \underbrace{-\nu(-1)^{n_\nu} \nabla^{2n_\nu} b_s}_{\textrm{buoyancy diffusion}} + \underbrace{F}_{\textrm{forcing}} .
 ```
 
-The evolution of buoyancy is only solved for the surface layer, but ``b_s`` is a function of 
-the vertical gradient of ``\psi``. In the SQG system, the potential vorticity in the interior 
-of the flow is identically zero. That is, relative vorticity is identical and opposite to the 
-vertical stretching of buoyancy layers,
+Above, ``\mathsf{J}(\psi, b) = (\partial_x \psi)(\partial_y b) - (\partial_y \psi)(\partial_x b)`` 
+is the two-dimensional Jacobian. The evolution of buoyancy is only solved for the surface 
+layer, but ``b_s`` is a function of the vertical gradient of ``\psi``. In the SQG system, the 
+potential vorticity in the interior of the flow is identically zero. That is, relative vorticity 
+is equal and opposite to the vertical stretching of the buoyancy layers,
 
 ```math
 \underbrace{\left(\partial_x^2 + \partial_y^2 \right) \psi}_{\textrm{relative vorticity}} + \underbrace{\partial_z^2 \psi}_{\textrm{stretching term}} = 0 ,
@@ -30,7 +31,7 @@ with the boundary conditions ``b_s = - \partial_z \psi|_{z=0}`` and ``\psi \righ
 These equations describe a system where the streamfunction (and hence the dynamics) at all depths is prescribed entirely by the surface buoyancy. By taking the Fourier transform in the horizontal (``x`` and ``y``), the streamfunction-buoyancy relation is:
 
 ```math
-\widehat{\psi}(k_x, k_y, z, t) = - \frac{\widehat{b_s}}{|𝐤|} \, e^{|𝐤|z}, 
+\widehat{\psi}(k_x, k_y, z, t) = - \frac{\widehat{b_s}}{|𝐤|} \, e^{|𝐤|z} , 
 ```
 
 where ``|𝐤| = \sqrt{k_x^2 + k_y^2}`` is the total horizontal wavenumber.
@@ -43,7 +44,10 @@ The buoyancy equation is time-stepped forward in Fourier space:
 \partial_t \widehat{b_s} = - \widehat{\mathsf{J}(\psi, b_s)} - \nu |𝐤|^{2 n_\nu} \widehat{b_s} + \widehat{F} .
 ```
 
-In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) =
+The surface buoyancy is [`b`](@ref GeophysicalFlows.SingleLayerQG.Vars.b). The state variable 
+`sol` is the Fourier transform of the surface buoyancy, [`bh`](@ref GeophysicalFlows.SurfaceQG.Vars).
+
+The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) =
 \partial_y [ (\partial_x f) g] -\partial_x[ (\partial_y f) g]``.
 
 The linear operator is constructed in `Equation`

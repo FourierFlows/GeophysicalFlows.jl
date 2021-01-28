@@ -118,7 +118,7 @@ In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g)
 \partial_y [ (\partial_x f) g] - \partial_x[ (\partial_y f) g]``.
 
 The state variable `sol` consists of the Fourier transforms of ``q_j`` at each layer, i.e., 
-[`qh`](@ref GeophysicalFlows.MultiLayerQG.Vars.qh).
+[`qh`](@ref GeophysicalFlows.MultiLayerQG.Vars).
 
 The linear operator is constructed in `Equation`
 
@@ -127,7 +127,7 @@ GeophysicalFlows.MultiLayerQG.Equation
 GeophysicalFlows.MultiLayerQG.hyperviscosity
 ```
 
-The nonlinear terms is computed via
+The nonlinear terms are computed via
 
 ```@docs
 GeophysicalFlows.MultiLayerQG.calcN!

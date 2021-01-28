@@ -56,19 +56,22 @@ The equation is time-stepped forward in Fourier space:
 \partial_t \widehat{\zeta} = - \widehat{\mathsf{J}(\psi, q)}^{\textrm{QL}} + \beta \frac{i k_x}{|𝐤|^2} \widehat{\zeta} - \left ( \mu + \nu |𝐤|^{2n_\nu} \right ) \widehat{\zeta} + \widehat{F} .
 ```
 
-The state variable `sol` is the Fourier transform of vorticity, [`ζh`](@ref GeophysicalFlows.BarotropicQGQL.Vars.ζh).
+The state variable `sol` is the Fourier transform of vorticity, [`ζh`](@ref GeophysicalFlows.BarotropicQGQL.Vars).
 
-The Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) = \partial_y [ (\partial_x f) g] 
-- \partial_x[ (\partial_y f) g]``. The superscript QL on the Jacobian term above denotes that 
+The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) = \partial_y [ (\partial_x f) g] 
+- \partial_x [ (\partial_y f) g]``. The superscript QL on the Jacobian term above denotes that 
 triad interactions that correspond to the EENL term are removed.
 
-Thus:
+The linear operator is constructed in `Equation`
 
-```math
-\begin{aligned}
-L & = \beta \frac{i k_x}{|𝐤|^2} - \mu - \nu |𝐤|^{2n_\nu} ,\\
-N & = - i k_x \mathrm{FFT}(u q)^{\textrm{QL}} - i k_y \mathrm{FFT}(v q)^{\textrm{QL}} + \widehat{F}.
-\end{aligned}
+```@docs
+GeophysicalFlows.BarotropicQGQL.Equation
+```
+
+and the nonlinear terms are computed via
+
+```@docs
+GeophysicalFlows.BarotropicQGQL.calcN!
 ```
 
 

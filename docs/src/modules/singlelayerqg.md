@@ -41,7 +41,8 @@ The equation is time-stepped forward in Fourier space:
 \partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q + \eta)} + \beta \frac{i k_x}{|𝐤|^2 + 1/\ell^2} \widehat{q} - \left(\mu + \nu |𝐤|^{2n_\nu} \right) \widehat{q} + \widehat{F} .
 ```
 
-The state variable `sol` is the Fourier transform of the sum of relative vorticity and vortex stretching (when the latter is applicable), [`qh`](@ref GeophysicalFlows.SingleLayerQG.qh).
+The state variable `sol` is the Fourier transform of the sum of relative vorticity and vortex 
+stretching (when the latter is applicable), [`qh`](@ref GeophysicalFlows.SingleLayerQG.Vars).
 
 The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) =
 \partial_y [ (\partial_x f) g] - \partial_x[ (\partial_y f) g]``.
@@ -52,7 +53,7 @@ The linear operator is constructed in `Equation`
 GeophysicalFlows.SingleLayerQG.Equation
 ```
 
-The nonlinear terms is computed via
+The nonlinear terms are computed via
 
 ```@docs
 GeophysicalFlows.SingleLayerQG.calcN!

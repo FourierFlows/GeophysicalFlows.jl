@@ -27,7 +27,7 @@ nothingfunction(args...) = nothing
 """
     Problem(; parameters...)
 
-Construct a Surface QG turbulence problem.
+Construct a Surface QG problem.
 """
 function Problem(dev::Device=CPU();
   # Numerical parameters
@@ -64,14 +64,17 @@ end
 """
     Params{T}(ν, nν, calcF!)
 
-A struct containing the parameters for Surface QG turbulence. Included are:
+A struct containing the parameters for Surface QG dynamics. Included are:
 
 $(TYPEDFIELDS)
 """
 struct Params{T} <: AbstractParams
-       ν :: T         # Buoyancy viscosity coefficient
-      nν :: Int       # Buoyancy hyperviscous order
-  calcF! :: Function  # Calculates the Fourier transform of the buoyancy forcing `Fh`
+    "buoyancy (hyper)-viscosity coefficient"
+       ν :: T
+    "buoyancy (hyper)-viscosity order"
+      nν :: Int
+    "function that calculates the Fourier transform of the forcing, ``F̂``"
+  calcF! :: Function
 end
 
 Params(ν, nν) = Params(ν, nν, nothingfunction)
@@ -84,7 +87,7 @@ Params(ν, nν) = Params(ν, nν, nothingfunction)
 """
     Equation(params, grid)
 
-Return the `equation` for surface QG turbulence with `params` and `grid`. The linear 
+Return the `equation` for surface QG dynamics with `params` and `grid`. The linear 
 opeartor ``L`` includes (hyper)-viscosity of order ``n_ν`` with coefficient ``ν``,
 
 ```math
@@ -112,7 +115,7 @@ abstract type SurfaceQGVars <: AbstractVars end
 """
     Vars{Aphys, Atrans, F, P}(b, u, v, bh, uh, vh, Fh, prevsol)
 
-The variables for surface QG turbulence:
+The variables for surface QG problem:
 
 $(FIELDS)
 """
@@ -142,7 +145,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     DecayingVars(dev, grid)
 
-Return the `vars` for unforced surface QG turbulence on device `dev` and with `grid`.
+Return the `vars` for unforced surface QG dynamics on device `dev` and with `grid`.
 """
 function DecayingVars(::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
@@ -155,7 +158,7 @@ end
 """
     ForcedVars(dev, grid)
 
-Return the vars for forced surface QG turbulence on device `dev` and with `grid`.
+Return the vars for forced surface QG dynamics on device `dev` and with `grid`.
 """
 function ForcedVars(dev::Dev, grid) where Dev
   T = eltype(grid)
@@ -168,7 +171,7 @@ end
 """
     StochasticForcedVars(dev, grid)
 
-Return the `vars` for stochastically forced surface QG turbulence on device `dev` and with `grid`.
+Return the `vars` for stochastically forced surface QG dynamics on device `dev` and with `grid`.
 """
 function StochasticForcedVars(dev::Dev, grid) where Dev
   T = eltype(grid)

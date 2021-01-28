@@ -239,6 +239,11 @@ end
 # Solvers
 # -------
 
+"""
+    calcN_advection!(N, sol, t, clock, vars, params, grid)
+
+Calculate the Fourier transform of the advection term for quasi-linear barotropic QG dynamics.
+"""
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.zetah = sol
   CUDA.@allowscalar @. vars.zetah[1, :] = 0
@@ -280,6 +285,17 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   return nothing
 end
 
+"""
+    calcN!(N, sol, t, clock, vars, params, grid)
+
+Calculate the nonlinear term, that is the advection term and the forcing,
+
+```math
+N = - \\widehat{𝖩(ψ, q+η)} + F̂ ,
+```
+
+by calling `calcN_advection!` and then `addforcing!`.
+"""
 function calcN!(N, sol, t, clock, vars, params, grid)
   calcN_advection!(N, sol, t, clock, vars, params, grid)
   addforcing!(N, sol, t, clock, vars, params, grid)
@@ -287,6 +303,12 @@ function calcN!(N, sol, t, clock, vars, params, grid)
   return nothing
 end
 
+"""
+    addforcing!(N, sol, t, clock, vars, params, grid)
+
+When the problem includes forcing, calculate the forcing term ``F̂`` and add it to the 
+nonlinear term ``N``.
+"""
 addforcing!(N, sol, t, cl, vars::Vars, params, grid) = nothing
 
 function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
