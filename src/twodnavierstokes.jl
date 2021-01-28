@@ -112,7 +112,7 @@ L = - ν |𝐤|^{2 n_ν} - μ |𝐤|^{2 n_μ} .
 
 Plain old viscocity corresponds to ``n_ν=1`` while ``n_μ=0`` corresponds to linear drag.
 
-The nonlinear term is computed via function [`calcN!`](@ref).
+The nonlinear term is computed via the function `calcN!`.
 """
 function Equation(params::Params, grid::AbstractGrid)
   L = @. - params.ν * grid.Krsq^params.nν - params.μ * grid.Krsq^params.nμ
@@ -154,6 +154,7 @@ struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
   prevsol :: P
 end
 
+const DecayingVars = Vars{<:AbstractArray, <:AbstractArray, Nothing, Nothing}
 const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, Nothing}
 const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
 
@@ -209,8 +210,8 @@ end
 """
     calcN_advection!(N, sol, t, clock, vars, params, grid)
 
-Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, ζ)`` in conservative 
-form, i.e., ``- ∂_x[(∂_y ψ)ζ] - ∂_y[(∂_x ψ)ζ]`` and store it in `N`:
+Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, ζ)`` in conservative form, 
+i.e., ``- ∂_x[(∂_y ψ)ζ] - ∂_y[(∂_x ψ)ζ]`` and store it in `N`:
 
 ```math
 N = - \\widehat{𝖩(ψ, ζ)} = - i k_x \\widehat{u ζ} - i k_y \\widehat{v ζ} .
@@ -249,7 +250,7 @@ Calculate the nonlinear term, that is the advection term and the forcing,
 N = - \\widehat{𝖩(ψ, ζ)} + F̂ ,
 ```
 
-by calling [`calcN_advection!`](@ref) and then [`addforcing!`](@ref).
+by calling `calcN_advection!` and then `addforcing!`.
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   calcN_advection!(N, sol, t, clock, vars, params, grid)
@@ -265,7 +266,8 @@ end
 When the problem includes forcing, calculate the forcing term ``F̂`` and add it to the 
 nonlinear term ``N``.
 """
-addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
+addforcing!(N, sol, t, clock, vars::DecayingVars, params, grid) = nothing
+
 function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
   params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
   

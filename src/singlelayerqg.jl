@@ -145,8 +145,9 @@ Return the `equation` for a barotropic QG problem with `params` and `grid`. Line
 and the ``β`` term:
 
 ```math
-L = -μ - ν |𝐤|^{2 n_ν} + i β k_x / |𝐤|² .
+L = - μ - ν |𝐤|^{2 n_ν} + i β k_x / |𝐤|² .
 ```
+Nonlinear term is computed via `calcN!` function.
 """
 function Equation(params::BarotropicQGParams, grid::AbstractGrid)
   L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq
@@ -165,6 +166,7 @@ coefficient ``ν`` and the ``β`` term:
 ```math
 L = -μ - ν |𝐤|^{2 n_ν} + i β k_x / (|𝐤|² + 1/ℓ²) .
 ```
+Nonlinear term is computed via `calcN!` function.
 """
 function Equation(params::EquivalentBarotropicQGParams, grid::AbstractGrid)
   L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr / (grid.Krsq + 1 / params.deformation_radius^2)
@@ -216,7 +218,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     DecayingVars(dev, grid)
 
-Return the `vars` for unforced two-dimensional single-layer QG problem on device `dev` and with `grid`
+Return the `vars` for unforced single-layer QG problem on device `dev` and with `grid`
 """
 function DecayingVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
@@ -302,7 +304,7 @@ Calculate the nonlinear term, that is the advection term and the forcing,
 N = - \\widehat{𝖩(ψ, q+η)} + F̂ ,
 ```
 
-by calling [`calcN_advection!`](@ref) and then [`addforcing!`](@ref).
+by calling `calcN_advection!` and then `addforcing!`.
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   calcN_advection!(N, sol, t, clock, vars, params, grid)

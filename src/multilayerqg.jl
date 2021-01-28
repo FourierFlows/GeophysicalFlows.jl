@@ -63,7 +63,7 @@ function Problem(nlayers::Int,                        # number of fluid layers
    
    grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
    params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq, dev=dev)   
-   vars = calcFq == nothingfunction ? Vars(dev, grid, params) : (stochastic ? StochasticForcedVars(dev, grid, params) : ForcedVars(dev, grid, params))
+   vars = calcFq == nothingfunction ? DecayingVars(dev, grid, params) : (stochastic ? StochasticForcedVars(dev, grid, params) : ForcedVars(dev, grid, params))
    equation = linear ? LinearEquation(dev, params, grid) : Equation(dev, params, grid)
 
   FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
@@ -229,7 +229,9 @@ end
     LinearEquation(dev, params, grid)
 Return the `equation` for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
 The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via 
-`hyperviscosity(dev, params, grid)`. The nonlinear term is computed via function `calcNlinear!()`.
+`hyperviscosity(dev, params, grid)`.
+
+The nonlinear term is computed via function `calcNlinear!`.
 """
 function LinearEquation(dev, params, grid)
   L = hyperviscosity(dev, params, grid)
@@ -241,7 +243,9 @@ end
     Equation(dev, params, grid)
 Return the `equation` for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
 The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via 
-`hyperviscosity(dev, params, grid)`. The nonlinear term is computed via function `calcN!()`.
+`hyperviscosity(dev, params, grid)`.
+
+The nonlinear term is computed via function `calcN!`.
 """
 function Equation(dev, params, grid)
   L = hyperviscosity(dev, params, grid)
@@ -267,15 +271,16 @@ struct Vars{Aphys, Atrans, F, P} <: AbstractVars
   prevsol :: P
 end
 
+const DecayingVars = Vars{<:AbstractArray, <:AbstractArray, Nothing, Nothing}
 const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, Nothing}
 const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
 
 """
-    Vars(dev, grid, params)
+    DecayingVars(dev, grid, params)
 
 Return the vars for unforced multi-layer QG problem with `grid` and `params`.
 """
-function Vars(dev::Dev, grid, params) where Dev
+function DecayingVars(dev::Dev, grid, params) where Dev
   T = eltype(grid)
   nlayers = numberoflayers(params)
   

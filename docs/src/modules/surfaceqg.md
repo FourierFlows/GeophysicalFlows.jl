@@ -59,6 +59,15 @@ GeophysicalFlows.SurfaceQG.calcN!
 ```
 
 
+### Parameters and Variables
+
+All required parameters are included inside [`Params`](@ref GeophysicalFlows.SurfaceQG.Params)
+and all module variables are included inside [`Vars`](@ref GeophysicalFlows.SurfaceQG.Vars).
+
+For decaying case (no forcing, ``F=0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.SurfaceQG.DecayingVars). 
+For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.SurfaceQG.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.SurfaceQG.StochasticForcedVars).
+
+
 ### Helper functions
 
 ```@docs

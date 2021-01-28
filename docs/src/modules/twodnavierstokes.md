@@ -36,7 +36,7 @@ The equation is time-stepped forward in Fourier space:
 The state variable `sol` is the Fourier transform of vorticity, [`ζh`](@ref GeophysicalFlows.TwoDNavierStokes.Vars.ζh).
 
 The Jacobian is computed in the conservative form: ``\mathsf{J}(a, b) = 
-\partial_y [ (\partial_x a) b] - \partial_x[ (\partial_y a) b]``.
+\partial_y [(\partial_x a) b] - \partial_x[(\partial_y a) b]``.
 
 The linear operator is constructed in `Equation`
 

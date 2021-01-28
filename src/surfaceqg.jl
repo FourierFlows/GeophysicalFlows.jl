@@ -49,7 +49,7 @@ function Problem(dev::Device=CPU();
 
   params = Params{T}(ν, nν, calcF)
 
-  vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
+  vars = calcF == nothingfunction ? DecayingVars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
   equation = Equation(params, grid)
 
@@ -135,15 +135,16 @@ struct Vars{Aphys, Atrans, F, P} <: SurfaceQGVars
   prevsol :: P
 end
 
+const DecayingVars = Vars{<:AbstractArray, <:AbstractArray, Nothing, Nothing}
 const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, Nothing}
 const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
 
 """
-    Vars(dev, grid)
+    DecayingVars(dev, grid)
 
 Return the `vars` for unforced surface QG turbulence on device `dev` and with `grid`.
 """
-function Vars(::Dev, grid::AbstractGrid) where Dev
+function DecayingVars(::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh
@@ -225,7 +226,7 @@ Calculate the nonlinear term, that is the advection term and the forcing,
 N = - \\widehat{𝖩(ψ, b)} + F̂ ,
 ```
 
-by calling [`calcN_advection!`](@ref GeophysicalFlows.SurfaceQG.calcN_advection!) and then [`addforcing!`](@ref GeophysicalFlows.SurfaceQG.addforcing!)`.
+by calling `calcN_advection!` and then `addforcing!`.
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   calcN_advection!(N, sol, t, clock, vars, params, grid)

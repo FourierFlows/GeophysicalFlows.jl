@@ -62,10 +62,7 @@ function Problem(dev::Device=CPU();
            Params(grid, β, eta, μ, ν, nν, calcF) :
            Params(β, eta, rfft(eta), μ, ν, nν, calcF)
 
-  vars = calcF == nothingfunction ?
-         Vars(dev, grid) : stochastic ?
-                           StochasticForcedVars(dev, grid) :
-                           ForcedVars(dev, grid)
+  vars = calcF == nothingfunction ? DecayingVars(dev, grid) : stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid)
 
   equation = BarotropicQGQL.Equation(params, grid)
   
@@ -101,7 +98,8 @@ function Params(grid::AbstractGrid{T, A}, β, eta::Function, μ, ν, nν, calcF)
   x, y = gridpoints(grid)
   eta_on_grid = A([eta(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
   etah_on_grid = rfft(eta_on_grid)
-  Params(β, eta_on_grid, etah_on_grid, μ, ν, nν, calcF)
+  
+  return Params(β, eta_on_grid, etah_on_grid, μ, ν, nν, calcF)
 end
 
 
@@ -112,12 +110,19 @@ end
 """
     Equation(params, grid)
 
-Return the equation for two-dimensional barotropic QG QL problem with parameters `params` and on `grid`.
+Return the equation for two-dimensional barotropic QG QL problem with parameters `params` and 
+on `grid`. Linear operator ``L`` includes bottom drag ``μ``, (hyper)-viscosity of order ``n_ν``
+with coefficient ``ν`` and the ``β`` term:
+```math
+L = - μ - ν |𝐤|^{2 n_ν} + i β k_x / |𝐤|² .
+```
+Nonlinear term is computed via `calcN!` function.
 """
 function Equation(params::Params, grid::AbstractGrid)
-  L = @. -params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq
+  L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq
   CUDA.@allowscalar L[1, 1] = 0
-  FourierFlows.Equation(L, calcN!, grid)
+  
+  return FourierFlows.Equation(L, calcN!, grid)
 end
 
 
@@ -152,19 +157,21 @@ mutable struct Vars{Aphys, Atrans, F, P} <: BarotropicQGQLVars
   prevsol :: P     
 end
 
+const DecayingVars = Vars{<:AbstractArray, <:AbstractArray, Nothing, Nothing}
 const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, Nothing}
 const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
 
 """
-    Vars(dev, grid)
+    DecayingVars(dev, grid)
 
 Return the vars for unforced two-dimensional barotropic QG problem with `grid`.
 """
-function Vars(dev::Dev, grid::AbstractGrid) where Dev
+function DecayingVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) u v U uzeta vzeta zeta Zeta psi Psi
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) N NZ uh vh Uh zetah Zetah psih Psih
-  Vars(u, v, U, uzeta, vzeta, zeta, Zeta, psi, Psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih, Psih, nothing, nothing)
+  
+  return Vars(u, v, U, uzeta, vzeta, zeta, Zeta, psi, Psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih, Psih, nothing, nothing)
 end
 
 """
@@ -176,7 +183,8 @@ function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) u v U uzeta vzeta zeta Zeta psi Psi
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) N NZ uh vh Uh zetah Zetah psih Psih Fh
-  Vars(u, v, U, uzeta, vzeta, zeta, Zeta, psi, Psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih, Psih, Fh, nothing)
+  
+  return Vars(u, v, U, uzeta, vzeta, zeta, Zeta, psi, Psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih, Psih, Fh, nothing)
 end
 
 """
@@ -189,7 +197,8 @@ function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) u v U uzeta vzeta zeta Zeta psi Psi
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) N NZ uh vh Uh zetah Zetah psih Psih Fh prevsol
-  Vars(u, v, U, uzeta, vzeta, zeta, Zeta, psi, Psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih, Psih, Fh, prevsol)
+  
+  return Vars(u, v, U, uzeta, vzeta, zeta, Zeta, psi, Psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih, Psih, Fh, prevsol)
 end
 
 
@@ -241,6 +250,7 @@ end
 function calcN!(N, sol, t, clock, vars, params, grid)
   calcN_advection!(N, sol, t, clock, vars, params, grid)
   addforcing!(N, sol, t, clock, vars, params, grid)
+  
   return nothing
 end
 
@@ -338,6 +348,7 @@ Return the domain-averaged enstrophy of `sol`.
 function enstrophy(sol, grid::AbstractGrid, vars::AbstractVars)
   @. vars.uh = sol
   CUDA.@allowscalar vars.uh[1, 1] = 0
+  
   return 0.5 * parsevalsum2(vars.uh, grid) / (grid.Lx * grid.Ly)
 end
 enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
@@ -352,6 +363,7 @@ Return the domain-averaged dissipation rate. `nν` must be >= 1.
 @inline function dissipation(sol, vars, params, grid)
   @. vars.uh = grid.Krsq^(params.nν - 1) * abs2(sol)
   CUDA.@allowscalar vars.uh[1, 1] = 0
+  
   return params.ν / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
@@ -365,11 +377,13 @@ Return the domain-averaged rate of work of energy by the forcing, `params.Fh`.
 """
 @inline function work(sol, vars::ForcedVars, grid)
   @. vars.uh = grid.invKrsq * sol * conj(vars.Fh)
+  
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
 @inline function work(sol, vars::StochasticForcedVars, grid)
   @. vars.uh = grid.invKrsq * (vars.prevsol + sol) / 2 * conj(vars.Fh)
+  
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 
@@ -385,6 +399,7 @@ Return the extraction of domain-averaged energy by drag `μ`.
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   @. vars.uh = grid.invKrsq * abs2(sol)
   CUDA.@allowscalar vars.uh[1, 1] = 0
+  
   return params.μ / (grid.Lx * grid.Ly) * parsevalsum(vars.uh, grid)
 end
 

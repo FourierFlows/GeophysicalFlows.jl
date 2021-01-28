@@ -21,6 +21,7 @@ end
 
 """
     peakedisotropicspectrum(g, kpeak, E₀; mask=mask, allones=false)
+
 Generate a random two-dimensional relative vorticity field ``q(x, y)`` with Fourier spectrum 
 peaked around a central non-dimensional wavenumber `kpeak` and normalized so that its total 
 kinetic energy is `E₀`.
