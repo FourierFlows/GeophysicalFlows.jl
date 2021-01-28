@@ -75,24 +75,34 @@ end
 # ----------
 
 """
-    Params
+    Params{T, Aphys, Atrans}(β, eta, etah, μ, ν, nν, calcF!)
 
-A struct that contains all parameter values for a two-dimensional barotropic QG QL problem.
+A struct containing the parameters for a barotropic QL QG problem. Included are:
+
+$(TYPEDFIELDS)
 """
 struct Params{T, Aphys, Atrans} <: AbstractParams
-       β :: T          # Planetary vorticity y-gradient
-     eta :: Aphys      # Topographic PV
-    etah :: Atrans     # FFT of Topographic PV
-       μ :: T          # Linear drag
-       ν :: T          # Viscosity coefficient
-      nν :: Int        # Hyperviscous order (nν=1 is plain old viscosity)
-  calcF! :: Function   # Function that calculates the forcing on QGPV q
+    "planetary vorticity y-gradient"
+       β :: T
+    "topographic potential vorticity"
+     eta :: Aphys
+    "Fourier transform of topographic potential vorticity"
+    etah :: Atrans
+    "linear drag coefficient"
+       μ :: T
+    "small-scale (hyper)-viscosity coefficient"
+       ν :: T
+    "(hyper)-viscosity order, `nν```≥ 1``"
+      nν :: Int
+    "function that calculates the Fourier transform of the forcing, ``F̂``"
+  calcF! :: Function
 end
 
 """
     Params(grid, β, eta::Function, μ, ν, nν, calcF)
 
-Constructor for `params` that accepts a generating function for the topographic PV, `eta`.
+Return the `params` for barotropic QL QG problem on `grid` and with topographic PV prescribed
+as function, `eta(x, y)`.
 """
 function Params(grid::AbstractGrid{T, A}, β, eta::Function, μ, ν, nν, calcF) where {T, A}
   eta_on_grid = FourierFlows.on_grid(eta, grid)
@@ -130,30 +140,53 @@ end
 # ----
 
 """
-    Vars
-A struct that contains all variables for a two-dimensional barotropic QG QL problem.
+    Vars{Aphys, Atrans, F, P}(u, v, U, uzeta, vzeta, zeta, Zeta, psi, Psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih, Psih, Fh, prevsol)
+
+The variables for barotropic QL QG:
+
+$(FIELDS)
 """
 mutable struct Vars{Aphys, Atrans, F, P} <: BarotropicQGQLVars
+    "x-component of small-scale velocity"
         u :: Aphys
+    "y-component of small-scale velocity"
         v :: Aphys
+    "x-component of large-scale velocity"
         U :: Aphys
+    "small-scale u′ζ′"
     uzeta :: Aphys
+    "small-scale v′ζ′"
     vzeta :: Aphys
+    "small-scale relative vorticity"
      zeta :: Aphys
+    "large-scale relative vorticity"
      Zeta :: Aphys
+    "small-scale relative vorticity"
       psi :: Aphys
+    "large-scale relative vorticity"
       Psi :: Aphys
+    "small-scale nonlinear term"
        Nz :: Atrans
+    "large-scale nonlinear term"
        NZ :: Atrans
+    "Fourier transform of x-component of small-scale velocity"
        uh :: Atrans
+    "Fourier transform of y-component of small-scale velocity"
        vh :: Atrans
+    "Fourier transform of x-component of large-scale velocity"
        Uh :: Atrans
+    "Fourier transform of small-scale relative vorticity"
     zetah :: Atrans
+    "Fourier transform of large-scale relative vorticity"
     Zetah :: Atrans
+    "Fourier transform of small-scale relative vorticity"
      psih :: Atrans
+    "Fourier transform of large-scale relative vorticity"
      Psih :: Atrans
+    "Fourier transform of forcing"
        Fh :: F
-  prevsol :: P     
+    "`sol` at previous time-step"
+  prevsol :: P
 end
 
 const DecayingVars = Vars{<:AbstractArray, <:AbstractArray, Nothing, Nothing}
