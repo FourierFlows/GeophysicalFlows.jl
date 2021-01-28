@@ -62,6 +62,9 @@ while the nonlinear terms via
 GeophysicalFlows.SurfaceQG.calcN!
 ```
 
+which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.SurfaceQG.calcN_advection!) 
+and [`addforcing!`](@ref GeophysicalFlows.SurfaceQG.addforcing!).
+
 
 ### Parameters and Variables
 
@@ -76,9 +79,6 @@ For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref 
 
 ```@docs
 GeophysicalFlows.SurfaceQG.updatevars!
-```
-
-```@docs
 GeophysicalFlows.SurfaceQG.set_b!
 ```
 
@@ -90,10 +90,8 @@ GeophysicalFlows.SurfaceQG.kinetic_energy
 GeophysicalFlows.SurfaceQG.buoyancy_variance
 ```
 
-```@docs
-GeophysicalFlows.SurfaceQG.buoyancy_dissipation
-GeophysicalFlows.SurfaceQG.buoyancy_work
-```
+Other diagnostic include: [`buoyancy_dissipation`](@ref GeophysicalFlows.SurfaceQG.buoyancy_dissipation) and
+[`buoyancy_work`](@ref GeophysicalFlows.SurfaceQG.buoyancy_work).
 
 
 ## Examples

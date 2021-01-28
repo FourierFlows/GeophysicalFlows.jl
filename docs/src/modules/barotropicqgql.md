@@ -74,14 +74,25 @@ and the nonlinear terms are computed via
 GeophysicalFlows.BarotropicQGQL.calcN!
 ```
 
+which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.BarotropicQGQL.calcN_advection!) 
+and [`addforcing!`](@ref GeophysicalFlows.BarotropicQGQL.addforcing!).
+
 
 ### Parameters and Variables
 
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.BarotropicQGQL.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.BarotropicQGQL.Vars).
 
-For decaying case (no forcing, ``F=0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.BarotropicQGQL.DecayingVars). 
+For decaying case (no forcing, ``F = 0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.BarotropicQGQL.DecayingVars). 
 For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.BarotropicQGQL.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.BarotropicQGQL.StochasticForcedVars).
+
+
+### Helper functions
+
+```@docs
+GeophysicalFlows.BarotropicQGQL.updatevars!
+GeophysicalFlows.BarotropicQGQL.set_zeta!
+```
 
 
 ## Examples

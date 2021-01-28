@@ -380,9 +380,26 @@ function StochasticForcedVars(dev::Dev, grid, params) where Dev
   return Vars(q, ψ, u, v, qh, ψh, uh, vh, Fqh, prevsol)
 end
 
+"""
+    fwdtransform!(varh, var, params)
+
+Compute the Fourier transform of `var` and store it in `varh`.
+"""
 fwdtransform!(varh, var, params::AbstractParams) = mul!(varh, params.rfftplan, var)
+
+"""
+    invtransform!(var, varh, params)
+
+Compute the inverse Fourier transform of `varh` and store it in `var`.
+"""
 invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, varh)
 
+"""
+    streamfunctionfrompv!(ψh, qh, params, grid)
+
+Inverts the PV to obtain the Fourier transform of the streamfunction `ψh` in each layer from
+`qh` using `ψh = params.S⁻¹ qh`.
+"""
 function streamfunctionfrompv!(ψh, qh, params, grid)
   for j=1:grid.nl, i=1:grid.nkr
     CUDA.@allowscalar @views ψh[i, j, :] .= params.S⁻¹[i, j] * qh[i, j, :]
@@ -391,6 +408,12 @@ function streamfunctionfrompv!(ψh, qh, params, grid)
   return nothing
 end
 
+"""
+    pvfromstreamfunction!(qh, ψh, params, grid)
+
+Obtains the Fourier transform of the PV from the streamfunction `ψh` in each layer using 
+`qh = params.S * ψh`.
+"""
 function pvfromstreamfunction!(qh, ψh, params, grid)
   for j=1:grid.nl, i=1:grid.nkr
     CUDA.@allowscalar @views qh[i, j, :] .= params.S[i, j] * ψh[i, j, :]    
@@ -457,15 +480,16 @@ end
 
 """
     calcN!(N, sol, t, clock, vars, params, grid)
+    
 Compute the nonlinear term, that is the advection term, the bottom drag, and the forcing:
 ```math
 N_j = - \\widehat{𝖩(ψ_j, q_j)} - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
  + \\widehat{(∂_y ψ_j)(∂_x Q_j)} - \\widehat{(∂_x ψ_j)(∂_y Q_j)} + δ_{j, n} μ |𝐤|^2 ψ̂_n + F̂_j .
 ```
-To do so, `calcN_advection!` and `addforcing!` are called.
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   nlayers = numberoflayers(params)
+  
   calcN_advection!(N, sol, vars, params, grid)
   @views @. N[:, :, nlayers] += params.μ * grid.Krsq * vars.ψh[:, :, nlayers]   # bottom linear drag
   addforcing!(N, sol, t, clock, vars, params, grid)
@@ -473,8 +497,18 @@ function calcN!(N, sol, t, clock, vars, params, grid)
   return nothing
 end
 
+"""
+    calcNlinear!(N, sol, t, clock, vars, params, grid)
+    
+Compute the nonlinear term of the linearized equations:
+```math
+N_j = - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j} + \\widehat{(∂_y ψ_j)(∂_x Q_j)} 
+- \\widehat{(∂_x ψ_j)(∂_y Q_j)} + δ_{j, n} μ |𝐤|^2 ψ̂_n + F̂_j .
+```
+"""
 function calcNlinear!(N, sol, t, clock, vars, params, grid)
   nlayers = numberoflayers(params)
+  
   calcN_linearadvection!(N, sol, vars, params, grid)
   @views @. N[:, :, nlayers] += params.μ * grid.Krsq * vars.ψh[:, :, nlayers]   # bottom linear drag
   addforcing!(N, sol, t, clock, vars, params, grid)
@@ -487,7 +521,7 @@ end
 
 Compute the advection term and stores it in `N`:
 ```math
-N(q̂_j) = - \\widehat{𝖩(ψ_j, q_j)} - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
+N_j = - \\widehat{𝖩(ψ_j, q_j)} - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
  + \\widehat{(∂_y ψ_j)(∂_x Q_j)} - \\widehat{(∂_x ψ_j)(∂_y Q_j)} .
 ```
 """
@@ -535,10 +569,9 @@ end
 
 Compute the advection term of the linearized equations and stores it in `N`:
 ```math
-N(q̂_j) = - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
+N_j = - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
  + \\widehat{(∂_y ψ_j)(∂_x Q_j)} - \\widehat{(∂_x ψ_j)(∂_y Q_j)} .
 ```
-
 """
 function calcN_linearadvection!(N, sol, vars, params, grid)
   @. vars.qh = sol
@@ -579,6 +612,7 @@ end
 
 """
     addforcing!(N, sol, t, clock, vars, params, grid)
+    
 When the problem includes forcing, calculate the forcing term ``F̂`` for each layer and add 
 it to the nonlinear term ``N``.
 """
@@ -621,7 +655,7 @@ updatevars!(prob) = updatevars!(prob.vars, prob.params, prob.grid, prob.sol)
 
 """
     set_q!(sol, params, vars, grid, q)
-    set_q!(prob)
+    set_q!(prob, q)
 
 Set the solution `prob.sol` as the transform of `q` and update variables.
 """
@@ -649,7 +683,7 @@ set_q!(prob, q) = set_q!(prob.sol, prob.params, prob.vars, prob.grid, q)
 
 """
     set_ψ!(params, vars, grid, sol, ψ)
-    set_ψ!(prob)
+    set_ψ!(prob, ψ)
 
 Set the solution `prob.sol` to the transform `qh` that corresponds to streamfunction `ψ` 
 and update variables.

@@ -247,10 +247,8 @@ end
 Calculate the nonlinear term, that is the advection term and the forcing,
 
 ```math
-N = - \\widehat{𝖩(ψ, ζ)} + F̂ ,
+N = - \\widehat{𝖩(ψ, ζ)} + F̂ .
 ```
-
-by calling `calcN_advection!` and then `addforcing!`.
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   calcN_advection!(N, sol, t, clock, vars, params, grid)

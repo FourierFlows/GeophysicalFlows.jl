@@ -50,6 +50,10 @@ The nonlinear terms are computed via
 GeophysicalFlows.TwoDNavierStokes.calcN!
 ```
 
+which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.TwoDNavierStokes.calcN_advection!) 
+and [`addforcing!`](@ref GeophysicalFlows.TwoDNavierStokes.addforcing!).
+
+
 ### Parameters and Variables
 
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.TwoDNavierStokes.Params)
@@ -65,9 +69,6 @@ Some helper functions included in the module are:
 
 ```@docs
 GeophysicalFlows.TwoDNavierStokes.updatevars!
-```
-
-```@docs
 GeophysicalFlows.TwoDNavierStokes.set_ζ!
 ```
 
@@ -81,15 +82,10 @@ GeophysicalFlows.TwoDNavierStokes.energy
 GeophysicalFlows.TwoDNavierStokes.enstrophy
 ```
 
-```@docs
-GeophysicalFlows.TwoDNavierStokes.energy_dissipation
-GeophysicalFlows.TwoDNavierStokes.energy_work
-```
-
-```@docs
-GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation
-GeophysicalFlows.TwoDNavierStokes.enstrophy_work
-```
+Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.TwoDNavierStokes.energy_dissipation), 
+[`energy_work`](@ref GeophysicalFlows.TwoDNavierStokes.energy_work), 
+[`enstrophy_dissipation`](@ref GeophysicalFlows.SurfaceQG.enstrophy_dissipation), and
+[`enstrophy_work`](@ref GeophysicalFlows.TwoDNavierStokes.enstrophy_work).
 
 
 ## Examples

@@ -64,39 +64,6 @@ with
 ```
 
 
-### Parameters and Variables
-
-All required parameters are included inside [`Params`](@ref GeophysicalFlows.MultiLayerQG.Params)
-and all module variables are included inside [`Vars`](@ref GeophysicalFlows.MultiLayerQG.Vars).
-
-For decaying case (no forcing, ``F=0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.MultiLayerQG.DecayingVars). 
-For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.MultiLayerQG.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.MultiLayerQG.StochasticForcedVars).
-
-
-### Helper functions
-
-```@docs
-GeophysicalFlows.MultiLayerQG.set_q!
-GeophysicalFlows.MultiLayerQG.set_ψ!
-GeophysicalFlows.MultiLayerQG.updatevars!
-```
-
-### Diagnostics
-
-The eddy kinetic energy in each layer and the eddy potential energy that corresponds to each 
-fluid interface is computed via `energies()`:
-
-```@docs
-GeophysicalFlows.MultiLayerQG.energies
-```
-
-The lateral eddy fluxes in each layer and the vertical fluxes across fluid interfaces are
-computed via `fluxes()`:
-
-```@docs
-GeophysicalFlows.MultiLayerQG.fluxes
-```
-
 ### Implementation
 
 Matrices ``\mathbb{S}_{𝐤}`` as well as ``\mathbb{S}^{-1}_{𝐤}`` are included in `params` as 
@@ -132,7 +99,11 @@ The nonlinear terms are computed via
 ```@docs
 GeophysicalFlows.MultiLayerQG.calcN!
 ```
- 
+
+which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.MultiLayerQG.calcN_advection!) 
+and [`addforcing!`](@ref GeophysicalFlows.MultiLayerQG.addforcing!).
+
+
 ### Parameters and Variables
 
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.MultiLayerQG.Params)
@@ -141,6 +112,30 @@ and all module variables are included inside [`Vars`](@ref GeophysicalFlows.Mult
 For decaying case (no forcing, ``F=0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.MultiLayerQG.DecayingVars). 
 For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.MultiLayerQG.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.MultiLayerQG.StochasticForcedVars).
 
+
+### Helper functions
+
+```@docs
+GeophysicalFlows.MultiLayerQG.set_q!
+GeophysicalFlows.MultiLayerQG.set_ψ!
+GeophysicalFlows.MultiLayerQG.updatevars!
+```
+
+### Diagnostics
+
+The eddy kinetic energy in each layer and the eddy potential energy that corresponds to each 
+fluid interface is computed via `energies()`:
+
+```@docs
+GeophysicalFlows.MultiLayerQG.energies
+```
+
+The lateral eddy fluxes in each layer and the vertical fluxes across fluid interfaces are
+computed via `fluxes()`:
+
+```@docs
+GeophysicalFlows.MultiLayerQG.fluxes
+```
 
 
 ## Examples

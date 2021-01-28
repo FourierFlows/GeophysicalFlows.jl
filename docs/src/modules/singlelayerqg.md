@@ -59,6 +59,9 @@ The nonlinear terms are computed via
 GeophysicalFlows.SingleLayerQG.calcN!
 ```
 
+which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.SingleLayerQG.calcN_advection!) 
+and [`addforcing!`](@ref GeophysicalFlows.SingleLayerQG.addforcing!).
+
 
 ### Parameters and Variables
 
@@ -75,9 +78,6 @@ Some helper functions included in the module are:
 
 ```@docs
 GeophysicalFlows.SingleLayerQG.updatevars!
-```
-
-```@docs
 GeophysicalFlows.SingleLayerQG.set_q!
 ```
 
@@ -101,6 +101,11 @@ The total energy is:
 ```@docs
 GeophysicalFlows.SingleLayerQG.energy
 ```
+
+Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.SurfaceQG.energy_dissipation), 
+[`energy_drag`](@ref GeophysicalFlows.SurfaceQG.energy_drag), [`energy_work`](@ref GeophysicalFlows.SurfaceQG.energy_work), 
+[`enstrophy_dissipation`](@ref GeophysicalFlows.SurfaceQG.enstrophy_dissipation), and
+[`enstrophy_drag`](@ref GeophysicalFlows.SurfaceQG.enstrophy_drag), [`enstrophy_work`](@ref GeophysicalFlows.SurfaceQG.enstrophy_work).
 
 
 ## Examples
