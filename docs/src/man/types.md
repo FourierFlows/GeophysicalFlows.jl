@@ -1,49 +1,54 @@
 # Private types
 
-## Private types in module `GeophysicalFlows`:
-
-```@autodocs
-Modules = [GeophysicalFlows]
-Public = false
-Order = [:type]
-```
-
 ## Private types in module `TwoDNavierStokes`:
 
-```@autodocs
-Modules = [GeophysicalFlows.TwoDNavierStokes]
-Public = false
-Order = [:type]
+```@docs
+GeophysicalFlows.TwoDNavierStokes.Params
+GeophysicalFlows.TwoDNavierStokes.Vars
+GeophysicalFlows.TwoDNavierStokes.DecayingVars
+GeophysicalFlows.TwoDNavierStokes.ForcedVars
+GeophysicalFlows.TwoDNavierStokes.StochasticForcedVars
 ```
 
 ## Private types in module `SingleLayerQG`:
 
-```@autodocs
-Modules = [GeophysicalFlows.SingleLayerQG]
-Public = false
-Order = [:type]
+```@docs
+GeophysicalFlows.SingleLayerQG.Params
+GeophysicalFlows.SingleLayerQG.BarotropicQGParams
+GeophysicalFlows.SingleLayerQG.EquivalentBarotropicQGParams
+GeophysicalFlows.SingleLayerQG.Vars
+GeophysicalFlows.SingleLayerQG.DecayingVars
+GeophysicalFlows.SingleLayerQG.ForcedVars
+GeophysicalFlows.SingleLayerQG.StochasticForcedVars
 ```
 
 ## Private types in module `BarotropicQGQL`:
 
-```@autodocs
-Modules = [GeophysicalFlows.BarotropicQGQL]
-Public = false
-Order = [:type]
+```@docs
+GeophysicalFlows.BarotropicQGQL.Params
+GeophysicalFlows.BarotropicQGQL.Vars
+GeophysicalFlows.BarotropicQGQL.DecayingVars
+GeophysicalFlows.BarotropicQGQL.ForcedVars
+GeophysicalFlows.BarotropicQGQL.StochasticForcedVars
 ```
 
 ## Private types in module `MultiLayerQG`:
 
-```@autodocs
-Modules = [GeophysicalFlows.MultiLayerQG]
-Public = false
-Order = [:type]
+```@docs
+GeophysicalFlows.MultiLayerQG.Params
+GeophysicalFlows.MultiLayerQG.SingleLayerParams
+GeophysicalFlows.MultiLayerQG.Vars
+GeophysicalFlows.MultiLayerQG.DecayingVars
+GeophysicalFlows.MultiLayerQG.ForcedVars
+GeophysicalFlows.MultiLayerQG.StochasticForcedVars
 ```
 
 ## Private types in module `SurfaceQG`:
 
-```@autodocs
-Modules = [GeophysicalFlows.SurfaceQG]
-Public = false
-Order = [:type]
+```@docs
+GeophysicalFlows.SurfaceQG.Params
+GeophysicalFlows.SurfaceQG.Vars
+GeophysicalFlows.SurfaceQG.DecayingVars
+GeophysicalFlows.SurfaceQG.ForcedVars
+GeophysicalFlows.SurfaceQG.StochasticForcedVars
 ```

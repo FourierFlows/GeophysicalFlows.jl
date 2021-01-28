@@ -1,19 +1,19 @@
 # Functions
 
 
-## Functions exported from `GeophysicalFlows`:
-
-```@autodocs
-Modules = [GeophysicalFlows]
-Private = false
-Order = [:function]
-```
-
 ## Functions exported from `TwoDNavierStokes`:
 
 ```@autodocs
 Modules = [GeophysicalFlows.TwoDNavierStokes]
 Private = false
+Order = [:function]
+```
+
+## Private functions from `TwoDNavierStokes`:
+
+```@autodocs
+Modules = [GeophysicalFlows.TwoDNavierStokes]
+Public = false
 Order = [:function]
 ```
 

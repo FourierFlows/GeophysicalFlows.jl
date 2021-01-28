@@ -14,7 +14,8 @@ export
 
   using
     CUDA,
-    Reexport
+    Reexport,
+    DocStringExtensions
 
 @reexport using FourierFlows
 
@@ -26,7 +27,7 @@ nothingfunction(args...) = nothing
 """
     Problem(; parameters...)
 
-Construct a Surface QG turbulence problem.
+Construct a Surface QG problem.
 """
 function Problem(dev::Device=CPU();
   # Numerical parameters
@@ -48,7 +49,7 @@ function Problem(dev::Device=CPU();
 
   params = Params{T}(ν, nν, calcF)
 
-  vars = calcF == nothingfunction ? Vars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
+  vars = calcF == nothingfunction ? DecayingVars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
   equation = Equation(params, grid)
 
@@ -61,14 +62,19 @@ end
 # ----------
 
 """
-    Params(ν, nν, calcF!)
+    Params{T}(ν, nν, calcF!)
 
-Return the `params` for Surface QG turbulence.
+A struct containing the parameters for Surface QG dynamics. Included are:
+
+$(TYPEDFIELDS)
 """
 struct Params{T} <: AbstractParams
-       ν :: T         # Buoyancy viscosity coefficient
-      nν :: Int       # Buoyancy hyperviscous order
-  calcF! :: Function  # Calculates the Fourier transform of the buoyancy forcing `Fh`
+    "buoyancy (hyper)-viscosity coefficient"
+       ν :: T
+    "buoyancy (hyper)-viscosity order"
+      nν :: Int
+    "function that calculates the Fourier transform of the forcing, ``F̂``"
+  calcF! :: Function
 end
 
 Params(ν, nν) = Params(ν, nν, nothingfunction)
@@ -81,8 +87,8 @@ Params(ν, nν) = Params(ν, nν, nothingfunction)
 """
     Equation(params, grid)
 
-Return the `equation` for surface QG with `params` and `grid`. The linear opeartor ``L`` 
-includes (hyper)-viscosity of order ``n_ν`` with coefficient ``ν``,
+Return the `equation` for surface QG dynamics with `params` and `grid`. The linear 
+opeartor ``L`` includes (hyper)-viscosity of order ``n_ν`` with coefficient ``ν``,
 
 ```math
 L = - ν |𝐤|^{2 n_ν} .
@@ -106,26 +112,42 @@ end
 
 abstract type SurfaceQGVars <: AbstractVars end
 
+"""
+    Vars{Aphys, Atrans, F, P}(b, u, v, bh, uh, vh, Fh, prevsol)
+
+The variables for surface QG problem:
+
+$(FIELDS)
+"""
 struct Vars{Aphys, Atrans, F, P} <: SurfaceQGVars
+    "buoyancy"
         b :: Aphys
+    "x-component of velocity"
         u :: Aphys
+    "y-component of velocity"
         v :: Aphys
+    "Fourier transform of buoyancy"
        bh :: Atrans
+    "Fourier transform of x-component of velocity"
        uh :: Atrans
+    "Fourier transform of y-component of velocity"
        vh :: Atrans
+    "Fourier transform of forcing"
        Fh :: F
+    "`sol` at previous time-step"
   prevsol :: P
 end
 
+const DecayingVars = Vars{<:AbstractArray, <:AbstractArray, Nothing, Nothing}
 const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, Nothing}
 const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
 
 """
-    Vars(dev, grid)
+    DecayingVars(dev, grid)
 
-Return the `vars` for unforced surface QG turbulence on device `dev` and with `grid`.
+Return the `vars` for unforced surface QG dynamics on device `dev` and with `grid`.
 """
-function Vars(::Dev, grid::AbstractGrid) where Dev
+function DecayingVars(::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh
@@ -136,7 +158,7 @@ end
 """
     ForcedVars(dev, grid)
 
-Return the vars for forced surface QG turbulence on device `dev` and with `grid`.
+Return the vars for forced surface QG dynamics on device `dev` and with `grid`.
 """
 function ForcedVars(dev::Dev, grid) where Dev
   T = eltype(grid)
@@ -149,7 +171,7 @@ end
 """
     StochasticForcedVars(dev, grid)
 
-Return the `vars` for stochastically forced surface QG turbulence on device `dev` and with `grid`.
+Return the `vars` for stochastically forced surface QG dynamics on device `dev` and with `grid`.
 """
 function StochasticForcedVars(dev::Dev, grid) where Dev
   T = eltype(grid)
@@ -204,10 +226,8 @@ end
 Calculate the nonlinear term, that is the advection term and the forcing,
 
 ```math
-N = - \\widehat{𝖩(ψ, b)} + F̂ ,
+N = - \\widehat{𝖩(ψ, b)} + F̂ .
 ```
-
-by calling [`calcN_advection!`](@ref GeophysicalFlows.SurfaceQG.calcN_advection!) and then [`addforcing!`](@ref GeophysicalFlows.SurfaceQG.addforcing!)`.
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   calcN_advection!(N, sol, t, clock, vars, params, grid)
@@ -269,7 +289,7 @@ end
 """
     set_b!(prob, b)
 
-Set the solution `sol` as the transform of b and update all variables.
+Set the solution `sol` as the transform of `b` and update all variables.
 """
 function set_b!(prob, b)
   mul!(prob.sol, prob.grid.rfftplan, b)
@@ -304,11 +324,12 @@ end
 """
     buoyancy_variance(prob)
 
-Return the domain-averaged buoyancy variance,
+Return the buoyancy variance,
 ```math
-\\int b² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} |b̂|² \\ .
+\\int b² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} |b̂|² .
 ```
-In SQG, this is identical to the domain-averaged velocity variance (twice the kinetic energy).
+In SQG, this is identical to the velocity variance (i.e., twice the domain-averaged kinetic 
+energy).
 """
 @inline function buoyancy_variance(prob)
   sol, grid = prob.sol, prob.grid

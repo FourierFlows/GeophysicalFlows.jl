@@ -321,7 +321,7 @@ savefig("assets/energy_comparison.svg"); nothing # hide
 ![energy_comparison](assets/energy_comparison.svg)
 
 Now we can further compute the "energy" budgets, i.e., the work done by the noise versus the
-energy loss by the ``\mu`` term, using Itô and Stratonovich formalisms. Figures below show 
+energy loss by the ``μ`` term, using Itô and Stratonovich formalisms. Figures below show 
 the ensemble mean energy budgets (using 1000 ensemble members) as computed using Itô and
 Stratonovich calculus. For the energy budget to close we have to be consistent: if we time-step 
 the  energy equation based on Stratonovich calculus then we must compute the work also according 

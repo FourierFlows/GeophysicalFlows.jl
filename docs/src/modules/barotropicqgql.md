@@ -27,13 +27,13 @@ can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here, the
 
 The dynamical variable is the component of the vorticity of the flow normal to the plane of 
 motion, ``\zeta \equiv \partial_x v - \partial_y u = \nabla^2 \psi``. Also, we denote the 
-topographic PV with ``\eta \equiv f_0 h/H``. After we apply the eddy-mean flow decomposition 
+topographic PV with ``\eta \equiv f_0 h / H``. After we apply the eddy-mean flow decomposition 
 above, the QGPV dynamics are:
 
 ```math
 \begin{aligned}
 \partial_t \overline{\zeta} & + \mathsf{J}(\overline{\psi}, \underbrace{\overline{\zeta} + \overline{\eta}}_{\equiv \overline{q}}) + \overline{\mathsf{J}(\psi', \underbrace{\zeta' + \eta'}_{\equiv q'})} = \underbrace{- \left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
-\right] \overline{\zeta} }_{\textrm{dissipation}} ,\\
+\right] \overline{\zeta} }_{\textrm{dissipation}} , \\
 \partial_t \zeta' &+ \mathsf{J}(\psi', \overline{q}) + \mathsf{J}(\overline{\psi}, q') + \underbrace{\mathsf{J}(\psi', q') - \overline{\mathsf{J}(\psi', q')}}_{\textrm{EENL}} + 
 \beta \partial_x \psi' = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
 \right] \zeta'}_{\textrm{dissipation}} + F .
@@ -56,18 +56,42 @@ The equation is time-stepped forward in Fourier space:
 \partial_t \widehat{\zeta} = - \widehat{\mathsf{J}(\psi, q)}^{\textrm{QL}} + \beta \frac{i k_x}{|𝐤|^2} \widehat{\zeta} - \left ( \mu + \nu |𝐤|^{2n_\nu} \right ) \widehat{\zeta} + \widehat{F} .
 ```
 
-In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) =
-\partial_y [ (\partial_x f) g] -\partial_x[ (\partial_y f) g]``. The superscript QL on the 
-Jacobian term above denotes that triad interactions that correspond to the EENL term are 
-removed.
+The state variable `sol` is the Fourier transform of vorticity, [`ζh`](@ref GeophysicalFlows.BarotropicQGQL.Vars).
 
-Thus:
+The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) = \partial_y [ (\partial_x f) g] 
+- \partial_x [ (\partial_y f) g]``. The superscript QL on the Jacobian term above denotes that 
+triad interactions that correspond to the EENL term are removed.
 
-```math
-\begin{aligned}
-L & = \beta \frac{i k_x}{|𝐤|^2} - \mu - \nu |𝐤|^{2n_\nu} ,\\
-N(\widehat{\zeta}) & = - i k_x \mathrm{FFT}(u q)^{\textrm{QL}} - i k_y \mathrm{FFT}(v q)^{\textrm{QL}} + \widehat{F}.
-\end{aligned}
+The linear operator is constructed in `Equation`
+
+```@docs
+GeophysicalFlows.BarotropicQGQL.Equation
+```
+
+and the nonlinear terms are computed via
+
+```@docs
+GeophysicalFlows.BarotropicQGQL.calcN!
+```
+
+which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.BarotropicQGQL.calcN_advection!) 
+and [`addforcing!`](@ref GeophysicalFlows.BarotropicQGQL.addforcing!).
+
+
+### Parameters and Variables
+
+All required parameters are included inside [`Params`](@ref GeophysicalFlows.BarotropicQGQL.Params)
+and all module variables are included inside [`Vars`](@ref GeophysicalFlows.BarotropicQGQL.Vars).
+
+For decaying case (no forcing, ``F = 0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.BarotropicQGQL.DecayingVars). 
+For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.BarotropicQGQL.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.BarotropicQGQL.StochasticForcedVars).
+
+
+### Helper functions
+
+```@docs
+GeophysicalFlows.BarotropicQGQL.updatevars!
+GeophysicalFlows.BarotropicQGQL.set_zeta!
 ```
 
 

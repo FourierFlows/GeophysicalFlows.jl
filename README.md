@@ -29,6 +29,7 @@ Geophysical Fluid Dynamics on periodic domains using Fourier-based pseudospectra
 To install, do
 ```julia
 ] add GeophysicalFlows
+] instantiate
 ```
 
 ## Examples
