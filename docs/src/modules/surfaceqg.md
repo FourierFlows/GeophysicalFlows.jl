@@ -44,7 +44,7 @@ The buoyancy equation is time-stepped forward in Fourier space:
 \partial_t \widehat{b_s} = - \widehat{\mathsf{J}(\psi, b_s)} - \nu |𝐤|^{2 n_\nu} \widehat{b_s} + \widehat{F} .
 ```
 
-The surface buoyancy is [`b`](@ref GeophysicalFlows.SingleLayerQG.Vars.b). The state variable 
+The surface buoyancy is [`b`](@ref GeophysicalFlows.SingleLayerQG.Vars). The state variable 
 `sol` is the Fourier transform of the surface buoyancy, [`bh`](@ref GeophysicalFlows.SurfaceQG.Vars).
 
 The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) =
@@ -68,7 +68,7 @@ GeophysicalFlows.SurfaceQG.calcN!
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.SurfaceQG.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.SurfaceQG.Vars).
 
-For decaying case (no forcing, ``F=0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.SurfaceQG.DecayingVars). 
+For decaying case (no forcing, ``F = 0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.SurfaceQG.DecayingVars). 
 For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.SurfaceQG.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.SurfaceQG.StochasticForcedVars).
 
 
