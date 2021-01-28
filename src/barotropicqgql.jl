@@ -28,7 +28,7 @@ abstract type BarotropicQGQLVars <: AbstractVars end
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev=CPU(); parameters...)
+    Problem(dev::Device; parameters...)
 
 Construct a BarotropicQGQL turbulence problem on device `dev`.
 """
@@ -409,9 +409,9 @@ enstrophy(prob) = enstrophy(prob.sol, prob.grid, prob.vars)
 
 """
     dissipation(prob)
-    dissipation(sol, v, p, g)
+    dissipation(sol, vars, params, grid)
 
-Return the domain-averaged dissipation rate. `nν` must be >= 1.
+Return the domain-averaged energy dissipation rate. `nν` must be >= 1.
 """
 @inline function dissipation(sol, vars, params, grid)
   @. vars.uh = grid.Krsq^(params.nν - 1) * abs2(sol)

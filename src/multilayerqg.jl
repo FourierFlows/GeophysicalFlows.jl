@@ -28,9 +28,9 @@ using FourierFlows: parsevalsum, parsevalsum2, superzeros, plan_flows_rfft
 nothingfunction(args...) = nothing
 
 """
-    Problem(; parameters...)
+    Problem(nlayers, dev::Device; parameters...)
 
-Construct a multi-layer QG problem.
+Construct a multi-layer QG problem on device `dev`.
 """
 function Problem(nlayers::Int,                        # number of fluid layers
                      dev = CPU();
