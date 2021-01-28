@@ -77,11 +77,6 @@ end
 # Parameters
 # ----------
 
-"""
-    Params(g::TwoDGrid, β, eta, μ, ν, nν, calcF)
-
-Return the params for an unforced two-dimensional barotropic QG problem.
-"""
 abstract type SingleLayerQGParams <: AbstractParams end
 
 """
