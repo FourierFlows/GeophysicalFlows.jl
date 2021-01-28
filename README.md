@@ -27,9 +27,9 @@ Geophysical Fluid Dynamics on periodic domains using Fourier-based pseudospectra
 ## Installation
 
 To install, do
+
 ```julia
 ] add GeophysicalFlows
-] instantiate
 ```
 
 ## Examples
@@ -52,7 +52,7 @@ Some animations created with GeophysicalFlows.jl are [online @ youtube].
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.11.2  (Version v0.11.2). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
+> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.11.3  (Version v0.11.3). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
