@@ -59,7 +59,7 @@ providing a stepping stone for new users and for the development of new or custo
 Current modules include two-dimensional (2D) flow and a variety of quasi-geostrophic (QG) dynamical 
 systems, which provide analogues to the large-scale dynamics of atmospheres and oceans. The QG 
 systems currently in `GeophysicalFlows.jl` extend 2D dynamics to include the leading order effects 
-of a third dimension through planetary rotation, bathymetry/topography, surface boundary conditions, 
+of a third dimension through planetary rotation, topography, surface boundary conditions, 
 stratification and quasi-2D layering. A community-based collection of diagnostics throughout 
 the modules are used to compute quantities like energy, enstrophy, dissipation, etc.
 
@@ -71,25 +71,25 @@ which utilizes the `cmocean` colormap collection [@Thyng2016]. Scripts to reprod
 simulation are found in the repository `github.com/FourierFlows/MultilayerQG-example`. 
 \label{fig1}](PV_eady_nlayers5.png)
 
-`GeophysicalFlows.jl` is a unique Julia package and has similar functionality to the Python 
-`pyqg` [@pyqg]. Beyond their base language, the major differences between these packages are
-that `GeophysicalFlows.jl` can be run on GPUs or CPUs and leverages a separate package 
-(`FourierFlows.jl`; which is continuously developed) to solve differential equations and compute 
-diagnostics, while `pyqg` can only be run on CPUs and uses a self-contained kernel. Dedalus 
-[@Burns2020] is Python software with an intuitive script-based interface that uses spectral 
+`GeophysicalFlows.jl` is a unique Julia package and shares similarities in functionality to 
+the Python's `pyqg` [@pyqg]. Beyond their base language, the major differences between these 
+packages are that `GeophysicalFlows.jl` can be run on GPUs or CPUs and leverages a separate 
+package (`FourierFlows.jl`; which is continuously developed) to solve differential equations 
+and compute diagnostics, while `pyqg` can only be run on CPUs and uses a self-contained kernel. 
+Dedalus [@Burns2020] is Python software with an intuitive script-based interface that uses spectral 
 methods to solve general partial differential equations, such as the ones within `GeophysicalFlows.jl`. 
 There are also some other isolated codes/scripts in personal websites and in open-source public 
 repositories that have similar functionality as some `GeophysicalFlows.jl` modules. 
 
 `GeophysicalFlows.jl` can be used to investigate a variety of scientific research questions 
 thanks to its various modules and high customizability, and its ease-of-use makes it an ideal 
-teaching tool for fluids courses. `GeophysicalFlows.jl` has been used in developing Lagrangian 
-vortices identification algorithms [@Karrasch2020]. Currently, `GeophysicalFlows.jl` is being 
-used, e.g., (i) to test new theories for diagnosing turbulent energy transfers in geophysical 
-flows [e.g. @Pearson2021], (ii) to compare different observational sampling techniques in these 
-flows, (iii) to study the bifurcation properties Kologorov flows [@KolmogorovFlow], (iv) to 
-study the genesis and persistence of the polygons of vortices present at Jovian high latitudes 
-(Siegelman, Young and Ingersoll; in prep)."
+teaching tool for fluids courses [see, e.g., @GeophysicalFlows-Examples, @CLExWinterSchool2020]. 
+`GeophysicalFlows.jl` has been used in developing Lagrangian vortices identification algorithms 
+[@Karrasch2020]. Currently, `GeophysicalFlows.jl` is being used, e.g., (i) to test new theories 
+for diagnosing turbulent energy transfers in geophysical flows [e.g. @Pearson2021], (ii) to compare 
+different observational sampling techniques in these flows, (iii) to study the bifurcation properties 
+Kologorov flows [@KolmogorovFlow], (iv) to study the genesis and persistence of the polygons 
+of vortices present at Jovian high latitudes (Siegelman, Young and Ingersoll; in prep)."
 
 
 # Acknowledgements
