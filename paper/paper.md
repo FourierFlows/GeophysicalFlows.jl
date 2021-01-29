@@ -89,7 +89,7 @@ teaching tool for fluids courses [@GeophysicalFlows-Examples; @CLExWinterSchool2
 [@Karrasch2020]. Currently, `GeophysicalFlows.jl` is being used, e.g., (i) to test new theories 
 for diagnosing turbulent energy transfers in geophysical flows [e.g. @Pearson2021], (ii) to compare 
 different observational sampling techniques in these flows, (iii) to study the bifurcation properties 
-Kologorov flows [@KolmogorovFlow], (iv) to study the genesis and persistence of the polygons 
+Kolmogorov flows [@KolmogorovFlow], (iv) to study the genesis and persistence of the polygons 
 of vortices present at Jovian high latitudes (Siegelman, Young, and Ingersoll; in prep)."
 
 
