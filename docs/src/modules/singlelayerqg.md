@@ -9,8 +9,8 @@ can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the 
 
 ```math
 	\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{\partial_x v
-	- \partial_y u}_{\text{relative vorticity}} - \!\!
-	\underbrace{\frac{1}{\ell^2} \psi}_{\text{vortex stretching}} \!\! + 
+	- \partial_y u}_{\text{relative vorticity}}
+	\underbrace{ - \frac{1}{\ell^2} \psi}_{\text{vortex stretching}} + 
 	\underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}} ,
 ```
 
