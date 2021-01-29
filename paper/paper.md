@@ -34,39 +34,10 @@ affiliations:
    index: 4
  - name: Oregon State University
    index: 5
-date: 25 January 2021
+date: 30 January 2021
 bibliography: paper.bib
 ---
 
-<!-- 
-# Citations
-
-Citations to entries in paper.bib should be in
-[rMarkdown](http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html)
-format.
-
-If you want to cite a software repository URL (e.g. something on GitHub without a preferred
-citation) then you can do it with the example BibTeX entry below for @fidgit.
-
-For a quick reference, the following citation commands can be used:
-- `@author:2001`  ->  "Author et al. (2001)"
-- `[@author:2001]` -> "(Author et al., 2001)"
-- `[@author1:2001; @author2:2001]` -> "(Author1 et al., 2001; Author2 et al., 2002)"
-
-Double dollars make self-standing equations:
-
-$$\Theta(x) = \left\{\begin{array}{l}
-0\textrm{ if } x < 0\cr
-1\textrm{ else}
-\end{array}\right.$$
-
-You can also use plain \LaTeX for equations
-\begin{equation}\label{eq:fourier}
-\hat f(\omega) = \int_{-\infty}^{\infty} f(x) e^{i\omega x} dx
-\end{equation}
-and refer to \autoref{eq:fourier} from text.
-
--->
 
 # Summary
 
@@ -101,9 +72,9 @@ simulation are found in the repository `github.com/FourierFlows/MultilayerQG-exa
 
 `GeophysicalFlows.jl` is a unique Julia package and has similar functionality to the Python 
 `pyqg` [@pyqg]. Beyond their base language, the major differences between these packages are
-that `GeophysicalFlows.jl` can be run on GPUs or CPUs and leverages a separate package (`FourierFlows.jl`; 
-which is continuously developed) to solve differential equations and compute diagnostics, 
-while `pyqg` can only be run on CPUs and uses a self-contained kernel. Dedalus [@Burns2020] 
+that `GeophysicalFlows.jl` can be run on GPUs or CPUs and leverages a separate package 
+(`FourierFlows.jl`; which is continuously developed) to solve differential equations and compute 
+diagnostics, while `pyqg` can only be run on CPUs and uses a self-contained kernel. Dedalus [@Burns2020] 
 is Python software with an intuitive script-based interface that uses spectral methods to solve
 general partial differential equations, such as the ones within `GeophysicalFlows.jl`. There 
 are also some other isolated codes/scripts on personal websites and in open-source public 
@@ -113,9 +84,11 @@ repositories that have similar functionality as some `GeophysicalFlows.jl` modul
 thanks to its various modules and high customizability, and its ease-of-use makes it an ideal 
 teaching tool for fluids courses. `GeophysicalFlows.jl` has been used in developing Lagrangian 
 vortices identification algorithms [@Karrasch2020]. Currently, `GeophysicalFlows.jl` is being 
-used (i) to test new theories for diagnosing turbulent energy transfers in geophysical flows 
-[e.g. @Pearson2021], (ii) to compare different observational sampling techniques in these  flows, 
-(iii) to study the bifurcation properties Kologorov flows [@KolmogorovFlow], (and others? Lia, André?)...
+used, e.g., (i) to test new theories for diagnosing turbulent energy transfers in geophysical 
+flows [e.g. @Pearson2021], (ii) to compare different observational sampling techniques in these 
+flows, (iii) to study the bifurcation properties Kologorov flows [@KolmogorovFlow], (iv) to 
+study the genesis and persistence of the polygons of vortices present at Jovian high latitudes 
+(Siegelman, Young and Ingersoll; in prep)."
 
 
 # Acknowledgements
