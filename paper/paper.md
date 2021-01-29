@@ -1,5 +1,5 @@
 ---
-title: 'GeophysicalFlows.jl: geophysical fluid dynamics-problems solvers in periodic domains on CPUs and GPUs'
+title: 'GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs and GPUs'
 tags:
   - geophysical fluid dynamics
   - computational fluid dynamics
@@ -42,16 +42,17 @@ bibliography: paper.bib
 # Summary
 
 `GeophysicalFlows.jl` is a Julia package that contains partial differential solvers for a collection 
-of geophysical fluid systems on periodic domains. All modules use Fourier-based pseudospectral 
-numerical methods and leverage the framework provided by the `FourierFlows.jl` [@FourierFlows] Julia package 
-for time-stepping, diagnostics, and output.
+of geophysical fluid systems in periodic domains. All modules use Fourier-based pseudospectral 
+numerical methods and leverage the framework provided by the `FourierFlows.jl` [@FourierFlows] 
+Julia package for time-stepping, diagnostics, and saving output.
 
 `GeophysicalFlows.jl` utilizes Julia's functionality and abstraction to enable all modules to
 run on CPUs or GPUs, and to provide a high level of customizability within modules. This allows 
 simulations to be tailored for specific research questions, via the choice of parameters, domain 
 properties, and schemes for damping, forcing, time-stepping etc. Simulations can easily be carried 
-out on different computing architectures, selection of the architecture on which equations are solved 
-is done by providing the argument `CPU()` or `GPU()` during the construction of a particular problem.
+out on different computing architectures, selection of the architecture on which equations are 
+solved is done by providing the argument `CPU()` or `GPU()` during the construction of a particular 
+problem.
 
 Documented examples for each geophysical system (module) appear in the package's documentation, 
 providing a stepping stone for new users and for the development of new or customized modules. 
@@ -74,10 +75,10 @@ simulation are found in the repository `github.com/FourierFlows/MultilayerQG-exa
 `pyqg` [@pyqg]. Beyond their base language, the major differences between these packages are
 that `GeophysicalFlows.jl` can be run on GPUs or CPUs and leverages a separate package 
 (`FourierFlows.jl`; which is continuously developed) to solve differential equations and compute 
-diagnostics, while `pyqg` can only be run on CPUs and uses a self-contained kernel. Dedalus [@Burns2020] 
-is Python software with an intuitive script-based interface that uses spectral methods to solve
-general partial differential equations, such as the ones within `GeophysicalFlows.jl`. There 
-are also some other isolated codes/scripts on personal websites and in open-source public 
+diagnostics, while `pyqg` can only be run on CPUs and uses a self-contained kernel. Dedalus 
+[@Burns2020] is Python software with an intuitive script-based interface that uses spectral 
+methods to solve general partial differential equations, such as the ones within `GeophysicalFlows.jl`. 
+There are also some other isolated codes/scripts in personal websites and in open-source public 
 repositories that have similar functionality as some `GeophysicalFlows.jl` modules. 
 
 `GeophysicalFlows.jl` can be used to investigate a variety of scientific research questions 
