@@ -103,9 +103,11 @@ GeophysicalFlows.MultiLayerQG.calcN!
 which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.MultiLayerQG.calcN_advection!) 
 and [`addforcing!`](@ref GeophysicalFlows.MultiLayerQG.addforcing!).
 
-!!! tip
-    The `MultiLayerQG` module includes also a linearized version of the dynamics; see 
-    [`LinearEquation`](@ref GeophysicalFlows.MultiLayerQG.LinearEquation, [`calcNlinear!`](@ref GeophysicalFlows.MultiLayerQG.calcNlinear!), and [`calcN_linearadvection!`](@ref GeophysicalFlows.MultiLayerQG.calcN_linearadvection!).
+!!! tip "Linearized MultiLayerQG dynamics "
+    The `MultiLayerQG` module includes also a linearized version of the dynamics about a base
+    flow ``U_j(y)``, ``j = 1, \dots, n``; see [`LinearEquation`](@ref GeophysicalFlows.MultiLayerQG.LinearEquation), 
+    [`calcNlinear!`](@ref GeophysicalFlows.MultiLayerQG.calcNlinear!), and 
+    [`calcN_linearadvection!`](@ref GeophysicalFlows.MultiLayerQG.calcN_linearadvection!).
 
 
 ### Parameters and Variables
