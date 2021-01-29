@@ -56,19 +56,20 @@ problem.
 
 Documented examples for each geophysical system (module) appear in the package's documentation, 
 providing a stepping stone for new users and for the development of new or customized modules. 
-Current modules include two-dimensional (2D) flow and a variety of quasi-geostrophic (QG) dynamical 
+Current modules include two-dimensional flow and a variety of quasi-geostrophic (QG) dynamical 
 systems, which provide analogues to the large-scale dynamics of atmospheres and oceans. The QG 
-systems currently in `GeophysicalFlows.jl` extend 2D dynamics to include the leading order effects 
-of a third dimension through planetary rotation, topography, surface boundary conditions, 
-stratification and quasi-2D layering. A community-based collection of diagnostics throughout 
-the modules are used to compute quantities like energy, enstrophy, dissipation, etc.
+systems currently in `GeophysicalFlows.jl` extend two-dimensional dynamics to include the leading
+order effects of a third dimension through planetary rotation, topography, surface boundary 
+conditions, stratification and quasi-two-dimensional layering. A community-based collection 
+of diagnostics throughout the modules are used to compute quantities like energy, enstrophy, 
+dissipation, etc.
 
 ![Snapshots from a nonlinearly equilibrated simulation of the Eady instability over a
 meridional ridge. Simulation used `MultiLayerQG` module of `GeophysicalFlows.jl`. The Eady 
 problem was approximated here using 5 layers stacked up in the vertical. Each layer was 
 simulated with 512² grid-points. Plots were made with the `Plots.jl` Julia package, 
-which utilizes the `cmocean` colormap collection [@Thyng2016]. Scripts to reproduce the 
-simulation are found in the repository `github.com/FourierFlows/MultilayerQG-example`. 
+which utilizes the `cmocean` colormaps collection [@Thyng2016]. Scripts to reproduce the 
+simulation reside in the repository `github.com/FourierFlows/MultilayerQG-example`. 
 \label{fig1}](PV_eady_nlayers5.png)
 
 `GeophysicalFlows.jl` is a unique Julia package and shares similarities in functionality to 
