@@ -84,7 +84,7 @@ GeophysicalFlows.TwoDNavierStokes.enstrophy
 
 Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.TwoDNavierStokes.energy_dissipation), 
 [`energy_work`](@ref GeophysicalFlows.TwoDNavierStokes.energy_work), 
-[`enstrophy_dissipation`](@ref GeophysicalFlows.SurfaceQG.enstrophy_dissipation), and
+[`enstrophy_dissipation`](@ref GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation), and
 [`enstrophy_work`](@ref GeophysicalFlows.TwoDNavierStokes.enstrophy_work).
 
 
