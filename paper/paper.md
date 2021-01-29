@@ -83,7 +83,7 @@ repositories that have similar functionality as some `GeophysicalFlows.jl` modul
 
 `GeophysicalFlows.jl` can be used to investigate a variety of scientific research questions 
 thanks to its various modules and high customizability, and its ease-of-use makes it an ideal 
-teaching tool for fluids courses [see, e.g., @GeophysicalFlows-Examples, @CLExWinterSchool2020]. 
+teaching tool for fluids courses [@GeophysicalFlows-Examples; @CLExWinterSchool2020]. 
 `GeophysicalFlows.jl` has been used in developing Lagrangian vortices identification algorithms 
 [@Karrasch2020]. Currently, `GeophysicalFlows.jl` is being used, e.g., (i) to test new theories 
 for diagnosing turbulent energy transfers in geophysical flows [e.g. @Pearson2021], (ii) to compare 
