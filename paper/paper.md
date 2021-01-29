@@ -1,5 +1,5 @@
 ---
-title: 'GeophysicalFlows.jl: Solvers for geophysical fluid dynamics-problems in periodic domains on CPUs and GPUs'
+title: 'GeophysicalFlows.jl: geophysical fluid dynamics-problems solvers in periodic domains on CPUs and GPUs'
 tags:
   - geophysical fluid dynamics
   - computational fluid dynamics
@@ -103,11 +103,11 @@ simulation are found in the repository `github.com/FourierFlows/MultilayerQG-exa
 `pyqg` [@pyqg]. Beyond their base language, the major differences between these packages are
 that `GeophysicalFlows.jl` can be run on GPUs or CPUs and leverages a separate package (`FourierFlows.jl`; 
 which is continuously developed) to solve differential equations and compute diagnostics, 
-while `pyqg` can only be run on CPUs and uses a self-contained kernel. Another software with
-similar functionality as `GeophysicalFlows.jl` is Dedalus [@Burns2020], a Python software 
-with an intuitive script-based interface that uses spectral methods to solve general partial 
-differential equations. There exist also some isolated codes/scripts on personal websites 
-and in open-source public repositories that have similar functionality as some `GeophysicalFlows.jl` modules. 
+while `pyqg` can only be run on CPUs and uses a self-contained kernel. Dedalus [@Burns2020] 
+is Python software with an intuitive script-based interface that uses spectral methods to solve
+general partial differential equations, such as the ones within `GeophysicalFlows.jl`. There 
+are also some other isolated codes/scripts on personal websites and in open-source public 
+repositories that have similar functionality as some `GeophysicalFlows.jl` modules. 
 
 `GeophysicalFlows.jl` can be used to investigate a variety of scientific research questions 
 thanks to its various modules and high customizability, and its ease-of-use makes it an ideal 
@@ -120,8 +120,8 @@ used (i) to test new theories for diagnosing turbulent energy transfers in geoph
 
 # Acknowledgements
 
-We acknowledge discussions with Keaton Burns, Cesar Rocha, and William Young. B.C.P. was supported 
-by the National Science Foundation under Grant No. 2023721. We would also like to take a moment 
-to remember Sean R. Haney (February 1987-January 2021) who left us a bit too early.
+We acknowledge discussions with Keaton Burns, Cesar Rocha, and William Young. We would also 
+like to take a moment to remember Sean R. Haney (February 1987-January 2021) who left us a 
+bit too early.
 
 # References
