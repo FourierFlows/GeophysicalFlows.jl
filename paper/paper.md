@@ -95,8 +95,9 @@ of vortices present at Jovian high latitudes (Siegelman, Young, and Ingersoll; i
 
 # Acknowledgements
 
-We acknowledge discussions with Keaton Burns, Cesar Rocha, and William Young. We would also 
-like to take a moment to remember Sean R. Haney (February 1987-January 2021) who left us a 
-bit too early.
+We acknowledge discussions with Keaton Burns, Valentin Churavy, Cesar Rocha, and William Young. 
+We would also like to take a moment to remember Sean R. Haney (February 1987-January 2021) who 
+left us a bit too early.
+
 
 # References
