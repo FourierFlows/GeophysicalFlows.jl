@@ -41,10 +41,10 @@ bibliography: paper.bib
 
 # Summary
 
-`GeophysicalFlows.jl` is a Julia package that contains partial differential solvers for a collection 
-of geophysical fluid systems in periodic domains. All modules use Fourier-based pseudospectral 
-numerical methods and leverage the framework provided by the `FourierFlows.jl` [@FourierFlows] 
-Julia package for time-stepping, diagnostics, and saving output.
+`GeophysicalFlows.jl` is a Julia package that contains partial differential equations solvers for 
+a collection of geophysical fluid systems in periodic domains. All modules use Fourier-based 
+pseudospectral numerical methods and leverage the framework provided by the `FourierFlows.jl` 
+[@FourierFlows] Julia package for time-stepping, diagnostics, and saving output.
 
 `GeophysicalFlows.jl` utilizes Julia's functionality and abstraction to enable all modules to
 run on CPUs or GPUs, and to provide a high level of customizability within modules. This allows 
