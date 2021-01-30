@@ -270,11 +270,12 @@ using Statistics: mean
 using Random: randn, seed!
 seed!(1234) # for reproducing the same plots
 
-             μ = 0.2
-             σ = 0.2    # noise strength
-            dt = 0.01   # timestep
-        nsteps = 2001   # total timesteps
-n_realizations = 1000   # how many forcing realizations
+                μ = 0.2
+                σ = 0.2    # noise strength
+               dt = 0.01   # timestep
+           nsteps = 2001   # total timesteps
+   n_realizations = 1000   # how many forcing realizations
+some_realizations = 20     # used for plotting to illustrate convergence
 
 t = 0:dt:(nsteps-1)*dt 	# time
 
@@ -336,14 +337,14 @@ dEdt_theory = @. σ/2  * exp(-2μ * t)
 dEdt_ito = mean(E_ito[2:nsteps, :] .- E_ito[1:nsteps-1, :], dims=2) / dt
 
 # compute the work and dissipation
-work_ito = mean(sqrt(σ) * ΔW[1:nsteps-1, :] / dt .* x[1:nsteps-1, :] .+ σ/2, dims=2) 
+work_ito = mean(sqrt(σ) * ΔW[1:nsteps-1, :] / dt .* x[1:nsteps-1, :] .+ σ/2, dims=2)
 diss_ito = 2*μ * (mean(E_ito[1:nsteps-1, :], dims=2))
 
 # Ensemble mean energy budgets from the Itô integration
 
-plot_E = plot(μ * t, [E_theory mean(E_ito, dims=2)],
+plot_E = plot(μ * t, [E_theory mean(E_ito[:, 1:some_realizations], dims=2) mean(E_ito, dims=2)],
                 linewidth = [3 2],
-	                  label = ["theoretical ⟨E⟩" "⟨E⟩ from $n_realizations ensemble member(s)"],
+	                  label = ["theoretical ⟨E⟩" "⟨E⟩ from $some_realizations ensemble members" "⟨E⟩ from $n_realizations ensemble members"],
 	                 xlabel = "μ t",
 	                 ylabel = "E",
 	                 legend = :bottomright,
@@ -356,7 +357,7 @@ plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_ito work_ito.-diss_ito dEdt_theory
                    legend = :topright,
                    xlabel = "μ t")
 
-plot(plot_E, plot_Ebudget, layout=(2, 1))
+plot(plot_E, plot_Ebudget, layout=grid(2, 1, heights=[0.65 ,0.35]), size=(800, 700))
 
 savefig("assets/energy_budgets_Ito.svg"); nothing # hide
 ```
@@ -372,9 +373,9 @@ dEdt_str = mean(E_str[2:nsteps, :] .- E_str[1:nsteps-1, :], dims=2) / dt
 work_str = mean(sqrt(σ) * ΔW[1:nsteps-1, :] / dt .* (x[1:nsteps-1, :] .+ x[2:nsteps, :])/2, dims=2)
 diss_str = 2*μ * (mean(E_str[1:nsteps-1, :], dims=2))
 
-plot_E = plot(μ * t, [E_theory mean(E_str, dims=2)],
+plot_E = plot(μ * t, [E_theory mean(E_str[:, 1:some_realizations], dims=2) mean(E_str, dims=2)],
                 linewidth = [3 2],
-                    label = ["theoretical ⟨E⟩" "⟨E⟩ from $n_realizations ensemble member(s)"],
+                    label = ["theoretical ⟨E⟩" "⟨E⟩ from $some_realizations ensemble members" "⟨E⟩ from $n_realizations ensemble members"],
                    xlabel = "μ t",
                    ylabel = "E",
                    legend = :bottomright,
@@ -387,7 +388,7 @@ plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_str[1:nsteps-1] work_str[1:nsteps-
                    legend = :bottomleft,
                    xlabel = "μ t")
 
-plot(plot_E, plot_Ebudget, layout=(2, 1))
+plot(plot_E, plot_Ebudget, layout=grid(2, 1, heights=[0.65 ,0.35]), size=(800, 700))
 
 savefig("assets/energy_budgets_Stratonovich.svg"); nothing # hide
 ```
