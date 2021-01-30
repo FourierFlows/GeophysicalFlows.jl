@@ -357,7 +357,7 @@ plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_ito work_ito.-diss_ito dEdt_theory
                    legend = :topright,
                    xlabel = "μ t")
 
-plot(plot_E, plot_Ebudget, layout=grid(2, 1, heights=[0.65 ,0.35]), size=(800, 700))
+plot(plot_E, plot_Ebudget, layout=grid(2, 1, heights=[0.65 ,0.35]), size=(600, 525))
 
 savefig("assets/energy_budgets_Ito.svg"); nothing # hide
 ```
@@ -388,7 +388,7 @@ plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_str[1:nsteps-1] work_str[1:nsteps-
                    legend = :bottomleft,
                    xlabel = "μ t")
 
-plot(plot_E, plot_Ebudget, layout=grid(2, 1, heights=[0.65 ,0.35]), size=(800, 700))
+plot(plot_E, plot_Ebudget, layout=grid(2, 1, heights=[0.65 ,0.35]), size=(600, 525))
 
 savefig("assets/energy_budgets_Stratonovich.svg"); nothing # hide
 ```
