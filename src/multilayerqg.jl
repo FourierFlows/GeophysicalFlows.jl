@@ -772,7 +772,7 @@ and also the vertical eddy fluxes at each fluid interface,
 verticalfluxes``_{3/2},...,``verticalfluxes``_{n-1/2}``, where ``n`` is the total number of layers in the fluid.
 (When ``n=1``, only the lateral fluxes are returned.)
 
-The lateral eddy fluxes whithin the ``j``-th fluid layer are
+The lateral eddy fluxes within the ``j``-th fluid layer are
 ```math
 \\textrm{lateralfluxes}_j = \\frac{H_j}{H} \\int U_j v_j ∂_y u_j 
 \\frac{𝖽x 𝖽y}{L_x L_y} , \\  j = 1, ..., n ,
