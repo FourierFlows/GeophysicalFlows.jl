@@ -19,6 +19,9 @@
     <a href="https://doi.org/10.5281/zenodo.1463809">
         <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1463809.svg" alt="DOI">
     </a>
+    <a href="https://joss.theoj.org/papers/a8cdf26beae8bcecc751ab4ded53b308">
+        <img src="https://joss.theoj.org/papers/a8cdf26beae8bcecc751ab4ded53b308/status.svg">
+    </a>
 </p>
 
 This package leverages the [FourierFlows.jl] framework to provide modules for solving problems in
