@@ -23,25 +23,29 @@ numerically implemented then read on; otherwise you can skip this section of the
 
 ## Stochastic Differential Equations (SDEs)
 
-A differential equation in the form:
+A differential equation:
 
 ```math
 	\frac{\mathrm{d} x}{\mathrm{d} t} = f(x) , \quad x(t_0) = 0,
 ```
 
-can also be written in an integral form:
+can also be equivalently written in an integral form:
 
 ```math
 	x(t) = \int_{t_0}^t f(x(s)) \, \mathrm{d} s.
 ```
 
-In a similar manner, a stochastic differential equation
+In a similar manner, a stochastic differential equation (SDE),
 
 ```math
 	\mathrm{d} x = f(x) \, \mathrm{d} t + g(x) \, \mathrm{d} W_t , \quad x(t_0) = 0 ,
 ```
 
-with ``W_t`` a brownian motion or Wiener process.
+with ``W_t`` a Brownian motion or Wiener process, can be written in an integral form as:
+
+```math
+	x(t) = \int_{t_0}^{t} f(x(s)) \, \mathrm{d} s + \int_{t_0}^{t} g(x(s)) \, \mathrm{d} W_s .
+```
 
 !!! tip "Wiener process"
     A Wiener process is a random variable ``W_t`` that depends continuously on ``t \ge 0`` and satisfies the following properties:
@@ -49,16 +53,14 @@ with ``W_t`` a brownian motion or Wiener process.
     2. Stationarity. The statistical distribution of the increment ``W_{t+s} − W_s`` does not depend on  ``s`` (and so is identical in distribution to ``W_t``).
     3. Gaussianity. ``W_t`` is a Gaussian process with mean ``\langle W_t \rangle = 0`` and covariance ``\langle W_t W_s \rangle = \min(t, s)``.
 
-The stochastic differential equation above can be written in an integral form as:
+!!! tip Notation, e.g., ``x_t``
+    It's common to use notation ``x_t`` to denote explicit ``t``-dependence of variable ``x``. Not to be confused with the other common usage of subscripts for denoting partial differentiation.
 
-```math
-	x(t) = \int_{t_0}^{t} f(x(s)) \, \mathrm{d} s + \int_{t_0}^{t} g(x(s)) \, \mathrm{d} W_s .
-```
-
-Of course now, the last integral above is a stochastic integral and there is not a single 
-straight-forward way of computing it -- there are a lot of different ways we can 
-approximate it as a Riemannian sum and each of them leads to a different answer. 
-The two most popular ways for computing such stochastic integrals are:
+The last integral in the integral representation of a SDE expression above is a stochastic integral 
+(it involves a stochastic differential, `` \mathrm{d} W_t``). There is not a single straight-forward 
+way for computing the value of a stochastic integral. The various ways we can approximate the 
+value of a stochastic integral as a Riemannian sum each lead to a different answer. The two most 
+popular ways for computing such stochastic integrals are:
 
 ```math
 \begin{aligned}
@@ -69,18 +71,17 @@ The two most popular ways for computing such stochastic integrals are:
 
 The difference in the two calculi above lies in the point at which we choose to evaluate ``g(x)``:
 we take the start of the time-interval for ${\color{Green} \text{Itô, } t_j}$, while we use
-the mid-point for ${\color{Magenta}\text{Stratonovich, } (t_j+t_{j+1})/2}$. In the case the 
+the mid-point for ${\color{Magenta}\text{Stratonovich, } \tfrac{1}{2}(t_j+t_{j+1})}$. In the case the 
 stochastic noise is additive, i.e., its prefactor ``g`` does not depend on the state ``x_t``,
 then the two interpretations coincide. When the noise does depend on the state of the system, 
-i.e., ``g=g(x_t)``, then the two interpretations above give thoroughly different results. This
+i.e., ``g=g(x(t))``, then the two interpretations above give thoroughly different results. This
 happens because the white noise process is not continuous and, therefore, the two interpretations
 of the stochastic integrals above do not converge to the same result.
 
 To overcome this apparent inconsistency, the two choices above come together with different 
 chain rules, i.e., chain rules that are not necessarily the same as those in plain old calculus.
-Let us see how different choices for computing the stochastic integrals bring about the need f
-or different chain rules. Let's see how the two different interpretations for the stochastic 
-integral impose the necessity for different chain rules.
+Let us see how different choices for computing the stochastic integrals bring about the need 
+for different chain rules.
 
 An SDE can be written also in differential form. Because we cannot formally form the derivative
 ``\mathrm{d} W / \mathrm{d} t``, since ``W`` is nowhere differentiable, we write an SDE in 
@@ -93,8 +94,8 @@ differential form as:
 \end{aligned}
 ```
 
-The circle in ``g(x_t) \circ \mathrm{d} W_t`` is used to differentiate between Itô or 
-Stratonovich calculus.
+The circle in the term ``{\color{Magenta}g(x_t) \circ \mathrm{d} W_t}`` is used to differentiate 
+between Itô and Stratonovich calculus.
 
 Let's now assume we perform a variable change ``y = G(x)``. It turns out that according to 
 which interpretation of the stochastic integral one chooses to use, then the following chain 
@@ -107,7 +108,7 @@ rule must be used:
 \end{aligned}
 ```
 
-The above are the so called *stochastic chain rules*. All derivatives of ``G`` are evaluated 
+The above are the so-called *stochastic chain rules*. All derivatives of ``G`` are evaluated 
 at ``x_t``. For Stratonovich calculus, the chain rule resembles the usual chain rule one learns
 in calculus; for Itô there exists an additional term, often referred to as the "drift-term": 
 ``{\color{Green}\tfrac{1}{2} g^2 \, \mathrm{d}^2G / \mathrm{d} x^2}``.
@@ -142,7 +143,7 @@ a series of colored noise processes with the de-correlation time tending to zero
 Stratonovich calculus more popular in the physics community. A nice discussion on the differences 
 and similarities between the two calculi is given by [van Kampen](https://doi.org/10.1007/BF01007642).
 
-## A simple Stochastic Differential Equation (SDE): the Ornstein--Uhlenbeck process
+## A simple Stochastic Differential Equation: the Ornstein--Uhlenbeck process
 
 One of the simplest SDEs is the Ornstein--Uhlenbeck process, a variation of which is:
 
