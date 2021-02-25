@@ -52,7 +52,7 @@ nothing # hide
 # Let's define some shortcuts.
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 x, y = grid.x, grid.y
-nothing # hide
+#md nothing # hide
 
 
 # ## Setting initial conditions
