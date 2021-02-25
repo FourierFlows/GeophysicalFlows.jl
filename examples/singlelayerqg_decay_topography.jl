@@ -108,8 +108,8 @@ p1 = heatmap(x, y, vars.q',
 p2 = contourf(x, y, vars.ψ',
         aspectratio = 1,
              c = :viridis,
-        levels = range(-0.35, stop=0.35, length=10), 
-          clim = (-0.35, 0.35),
+        levels = range(-0.25, stop=0.25, length=11), 
+          clim = (-0.25, 0.25),
          xlims = (-grid.Lx/2, grid.Lx/2),
          ylims = (-grid.Ly/2, grid.Ly/2),
         xticks = -3:3,
@@ -119,8 +119,8 @@ p2 = contourf(x, y, vars.ψ',
          title = "initial streamfunction ψ",
     framestyle = :box)
 
-l = @layout Plots.grid(1, 2)
-p = plot(p1, p2, layout=l, size=(900, 400))
+layout = @layout Plots.grid(1, 2)
+p = plot(p1, p2, layout=layout, size = (800, 360))
 
 
 # ## Diagnostics
@@ -180,13 +180,13 @@ function plot_output(prob)
   contour!(pq, x, y, η',
           levels=-2:0.5:-0.5,
           lw=2, c=:black, ls=:dash, alpha=0.7)
-    
+  
   pψ = contourf(x, y, ψ',
        aspectratio = 1,
             legend = false,
                  c = :viridis,
-            levels = range(-0.7, stop=0.7, length=10), 
-              clim = (-0.7, 0.7),
+            levels = range(-0.75, stop=0.75, length=31),
+              clim = (-0.75, 0.75),
              xlims = (-grid.Lx/2, grid.Lx/2),
              ylims = (-grid.Ly/2, grid.Ly/2),
             xticks = -3:3,
@@ -197,7 +197,7 @@ function plot_output(prob)
         framestyle = :box)
 
   l = @layout Plots.grid(1, 2)
-  p = plot(pq, pψ, layout = l, size = (900, 400))
+  p = plot(pq, pψ, layout = l, size = (800, 360))
   
   return p
 end

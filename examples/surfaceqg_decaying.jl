@@ -52,7 +52,7 @@ nothing # hide
 # Let's define some shortcuts.
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 x, y = grid.x, grid.y
-nothing # hide
+#md nothing # hide
 
 
 # ## Setting initial conditions
@@ -121,11 +121,9 @@ nothing # hide
 # kinetic energy and buoyancy variance.
 
 function plot_output(prob)
-  bₛ = prob.vars.b
-  uₛ = prob.vars.u
-  vₛ = prob.vars.v
+  b = prob.vars.b
 
-  pbₛ = heatmap(x, y, bₛ',
+  pb = heatmap(x, y, b',
        aspectratio = 1,
                  c = :deep,
               clim = (0, 1),
@@ -158,7 +156,7 @@ function plot_output(prob)
             xlabel = "t")
 
   layout = @layout [a{0.5w} Plots.grid(2, 1)]
-  p = plot(pbₛ, pKE, pb², layout=layout, size = (900, 500))
+  p = plot(pb, pKE, pb², layout=layout, size = (900, 500))
 
   return p
 end
