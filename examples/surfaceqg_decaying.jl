@@ -123,7 +123,7 @@ nothing # hide
 function plot_output(prob)
   b = prob.vars.b
 
-  pbₛ = heatmap(x, y, b',
+  pb = heatmap(x, y, b',
        aspectratio = 1,
                  c = :deep,
               clim = (0, 1),
