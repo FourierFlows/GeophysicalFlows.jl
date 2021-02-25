@@ -121,11 +121,9 @@ nothing # hide
 # kinetic energy and buoyancy variance.
 
 function plot_output(prob)
-  bₛ = prob.vars.b
-  uₛ = prob.vars.u
-  vₛ = prob.vars.v
+  b = prob.vars.b
 
-  pbₛ = heatmap(x, y, bₛ',
+  pbₛ = heatmap(x, y, b',
        aspectratio = 1,
                  c = :deep,
               clim = (0, 1),
