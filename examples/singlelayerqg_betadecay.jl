@@ -100,8 +100,8 @@ p2 = contourf(x, y, vars.ψ',
          title = "initial streamfunction ψ",
     framestyle = :box)
 
-l = @layout Plots.grid(1, 2)
-p = plot(p1, p2, layout=l, size = (900, 800))
+layout = @layout Plots.grid(1, 2)
+p = plot(p1, p2, layout = layout, size = (800, 360))
 
 
 # ## Diagnostics
@@ -193,8 +193,8 @@ function plot_output(prob)
             ylabel = "y")
   plot!(pum, 0*y, y, linestyle=:dash, linecolor=:black)
 
-  l = @layout Plots.grid(2, 2)
-  p = plot(pq, pqm, pψ, pum, layout = l, size = (900, 800))
+  layout = @layout Plots.grid(2, 2)
+  p = plot(pq, pqm, pψ, pum, layout = layout, size = (800, 720))
   
   return p
 end
