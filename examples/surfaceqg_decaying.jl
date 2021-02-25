@@ -156,7 +156,7 @@ function plot_output(prob)
             xlabel = "t")
 
   layout = @layout [a{0.5w} Plots.grid(2, 1)]
-  p = plot(pbₛ, pKE, pb², layout=layout, size = (900, 500))
+  p = plot(pb, pKE, pb², layout=layout, size = (900, 500))
 
   return p
 end
