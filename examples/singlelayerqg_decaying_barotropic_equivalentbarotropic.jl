@@ -47,7 +47,8 @@ nothing # hide
 
 # ## Setting initial conditions
 
-# We choose an initial condition with most energy around total wavenumber ``k_0``.
+# For initial condition we construct a relative vorticity with energy most energy around total 
+# wavenumber ``k_0``.
 seed!(1234)
 k₀, E₀ = 6, 0.5
 ∇²ψ₀ = peakedisotropicspectrum(prob_bqg.grid, k₀, E₀, mask=prob_bqg.timestepper.filter)
@@ -59,7 +60,7 @@ nothing # hide
 # relative vorticity we computed above. This works in the purely barotropic problem, `prob_bqg`
 # since in that case the QGPV is simply the relative vorticity.
 ∇²ψ₀h = rfft(∇²ψ₀)
-ψ₀h = zeros(size(∇²ψ₀h))
+ψ₀h = @. 0 * ∇²ψ₀h
 SingleLayerQG.streamfunctionfrompv!(ψ₀h, ∇²ψ₀h, prob_bqg.params, prob_bqg.grid)
 nothing # hide
 
