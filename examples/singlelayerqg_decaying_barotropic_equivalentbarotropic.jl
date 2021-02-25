@@ -54,16 +54,18 @@ k₀, E₀ = 6, 0.5
 nothing # hide
 
 # `SingleLayerQG` allows us to set up the initial ``q`` for each problem via `set_q!()` function.
-# To initialize both `prob_bqg` and `prob_eqbqg` with the same flow, we first find the streamfunction
-# the corresponds to the relative vorticity we computed above,
+# To initialize both `prob_bqg` and `prob_eqbqg` with the same flow, we first use function 
+# `SingleLayerQG.streamfunctionfrompv!` to get the streamfunction that corresponds to the 
+# relative vorticity we computed above. This works in the purely barotropic problem, `prob_bqg`
+# since in that case the QGPV is simply the relative vorticity.
 ∇²ψ₀h = rfft(∇²ψ₀)
 ψ₀h = zeros(size(∇²ψ₀h))
 SingleLayerQG.streamfunctionfrompv!(ψ₀h, ∇²ψ₀h, prob_bqg.params, prob_bqg.grid)
 nothing # hide
 
 # and then use the streamfunction to compute the corresponding ``q_0`` for each problem,
-q₀_bqg   = irfft(- prob_bqg.grid.Krsq .* ψ₀h, prob_bqg.grid.nx)
-q₀_eqbqg = irfft(- (prob_eqbqg.grid.Krsq .+ 1/prob_eqbqg.params.deformation_radius^2) .* ψ₀h, prob_bqg.grid.nx)
+q₀_bqg   = irfft(-prob_bqg.grid.Krsq .* ψ₀h, prob_bqg.grid.nx)
+q₀_eqbqg = irfft(-(prob_eqbqg.grid.Krsq .+ 1/prob_eqbqg.params.deformation_radius^2) .* ψ₀h, prob_bqg.grid.nx)
 nothing # hide
 
 # Now we can initialize our problems with the same flow.
