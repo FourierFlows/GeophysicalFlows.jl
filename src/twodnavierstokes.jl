@@ -356,7 +356,7 @@ Return the domain-averaged energy dissipation rate done by the viscous term,
 - ξ (-1)^{n_ξ+1} \\int ψ ∇^{2n_ξ} ζ \\frac{𝖽x 𝖽y}{L_x L_y} = - ξ \\sum_{𝐤} |𝐤|^{2(n_ξ-1)} |ζ̂|² ,
 ```
 where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`` and its order 
-``nν``, or the hypo-viscocity coefficient ``μ`` and its order ``nμ``.
+``n_ν``, or the hypo-viscocity coefficient ``μ`` and its order ``n_μ``.
 """
 @inline function energy_dissipation(prob, ξ, nξ)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
@@ -391,7 +391,7 @@ Return the domain-averaged enstrophy dissipation rate done by the viscous term,
 ```
 
 where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`` and its order 
-``nν``, or the hypo-viscocity coefficient ``μ`` and its order ``nμ``.
+``n_ν``, or the hypo-viscocity coefficient ``μ`` and its order ``n_μ``.
 """
 @inline function enstrophy_dissipation(prob, ξ, nξ)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
