@@ -35,6 +35,13 @@ To install, do
 ] add GeophysicalFlows
 ```
 
+The most recent version of GeophysicalFlows.jl requires Julia v1.5 or later.
+
+GeophysicalFlows.jl v0.8.5 is the last version compatible with Julia v1.4.
+
+The latest version of GeophysicalFlows.jl compatible with Julia's current long-term-release v1.0.5 is v0.5.1.
+
+
 ## Examples
 
 See `examples/` for example scripts. These examples are best viewed by browsing them within the package's [documentation]. 
