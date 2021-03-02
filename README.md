@@ -1,9 +1,6 @@
 # GeophysicalFlows.jl
 
 <p align="left">
-    <a href="https://buildkite.com/julialang/geophysicalflows-dot-jl">
-        <img alt="Buildkite CPU+GPU build status" src="https://img.shields.io/buildkite/4d921fc17b95341ea5477fb62df0e6d9364b61b154e050a123/master?logo=buildkite&label=Buildkite%20CPU%2BGPU">
-    </a>
     <a href="https://ci.appveyor.com/project/navidcy/geophysicalflows-jl">
         <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/geophysicalflows-jl/master?label=Window&logo=appveyor&logoColor=white&style=flat-square">
     </a>
