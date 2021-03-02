@@ -114,7 +114,9 @@ for dev in devices
     @test test_sqg_noforcing(dev)
     @test SurfaceQG.nothingfunction() == nothing
   end
-  
+end
+
+for dev in (CPU(),)
   @testset "MultilayerQG" begin
     include("test_multilayerqg.jl")
     
