@@ -1,26 +1,26 @@
 # GeophysicalFlows.jl
 
 <p align="left">
-    <a href="https://travis-ci.com/FourierFlows/GeophysicalFlows.jl">
-        <img alt="Build Status for CPU" src="https://img.shields.io/travis/com/FourierFlows/GeophysicalFlows.jl/master?label=CPU&logo=travis&logoColor=white&style=flat-square">
-    </a>
-    <a href="https://gitlab.com/JuliaGPU/GeophysicalFlows-jl/commits/master">
-      <img alt="Build Status for GPU" src="https://img.shields.io/gitlab/pipeline/JuliaGPU/GeophysicalFlows-jl/master?label=GPU&logo=gitlab&logoColor=white&style=flat-square">
+    <a href="https://buildkite.com/julialang/geophysicalflows-dot-jl">
+        <img alt="Buildkite CPU+GPU build status" src="https://img.shields.io/buildkite/4d921fc17b95341ea5477fb62df0e6d9364b61b154e050a123/master?logo=buildkite&label=Buildkite%20CPU%2BGPU">
     </a>
     <a href="https://ci.appveyor.com/project/navidcy/geophysicalflows-jl">
         <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/geophysicalflows-jl/master?label=Window&logo=appveyor&logoColor=white&style=flat-square">
     </a>
-    <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/">
-        <img src="https://img.shields.io/badge/documentation-stable%20release-blue">
+    <a href="https://FourierFlows.github.io/GeophysicalFlowsDocumentation/stable">
+        <img alt="stable docs" src="https://img.shields.io/badge/documentation-stable%20release-blue">
     </a>
-    <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/">
-        <img src="https://img.shields.io/badge/documentation-in%20development-orange">
+    <a href="https://FourierFlows.github.io/GeophysicalFlowsDocumentation/dev">
+        <img alt="latest docs" src="https://img.shields.io/badge/documentation-in%20development-orange">
     </a>
     <a href="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl">
         <img src="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl/branch/master/graph/badge.svg" />
     </a>
     <a href="https://doi.org/10.5281/zenodo.1463809">
         <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1463809.svg" alt="DOI">
+    </a>
+    <a href="https://joss.theoj.org/papers/a8cdf26beae8bcecc751ab4ded53b308">
+        <img src="https://joss.theoj.org/papers/a8cdf26beae8bcecc751ab4ded53b308/status.svg">
     </a>
 </p>
 
@@ -30,9 +30,17 @@ Geophysical Fluid Dynamics on periodic domains using Fourier-based pseudospectra
 ## Installation
 
 To install, do
+
 ```julia
 ] add GeophysicalFlows
 ```
+
+The most recent version of GeophysicalFlows.jl requires Julia v1.5 or later.
+
+GeophysicalFlows.jl v0.8.5 is the last version compatible with Julia v1.4.
+
+The latest version of GeophysicalFlows.jl compatible with Julia's current long-term-release v1.0.5 is v0.5.1.
+
 
 ## Examples
 
@@ -42,8 +50,6 @@ Some animations created with GeophysicalFlows.jl are [online @ youtube].
 
 
 ## Modules
-
-All modules provide solvers on two-dimensional domains. We currently provide
 
 * `TwoDNavierStokes`: the two-dimensional vorticity equation.
 * `SingleLayerQG`: the barotropic or equivalent-barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography, Coriolis parameters of the form `f = f₀ + βy`, and finite Rossby radius of deformation.
@@ -56,7 +62,7 @@ All modules provide solvers on two-dimensional domains. We currently provide
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.11.2  (Version v0.11.2). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
+> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.11.4  (Version v0.11.4). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl

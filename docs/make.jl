@@ -32,7 +32,6 @@ examples = [
 ]
 
 for example in examples
-  example_filepath = joinpath(EXAMPLES_DIR, example)
   withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
     example_filepath = joinpath(EXAMPLES_DIR, example)
     Literate.markdown(example_filepath, OUTPUT_DIR, documenter=true)
@@ -96,9 +95,9 @@ sitename = "GeophysicalFlows.jl",
               "modules/shallowwater.md"
             ],
             "Stochastic Forcing" => "stochastic_forcing.md",
-            "DocStrings" => Any[
-            "man/types.md",
-            "man/functions.md"
+            "Library" => Any[
+            "lib/types.md",
+            "lib/functions.md"
             ]
            ]
 )

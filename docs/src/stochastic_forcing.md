@@ -23,34 +23,44 @@ numerically implemented then read on; otherwise you can skip this section of the
 
 ## Stochastic Differential Equations (SDEs)
 
-A differential equation in the form:
+A differential equation:
 
 ```math
 	\frac{\mathrm{d} x}{\mathrm{d} t} = f(x) , \quad x(t_0) = 0,
 ```
 
-can also be written in an integral form:
+can also be equivalently written in an integral form:
 
 ```math
 	x(t) = \int_{t_0}^t f(x(s)) \, \mathrm{d} s.
 ```
 
-In a similar manner, a stochastic differential equation
+In a similar manner, a stochastic differential equation (SDE),
 
 ```math
 	\mathrm{d} x = f(x) \, \mathrm{d} t + g(x) \, \mathrm{d} W_t , \quad x(t_0) = 0 ,
 ```
 
-with ``\mathrm{d} W_t`` a white-noise process, can be written in an integral form as:
+with ``W_t`` a Brownian motion or Wiener process, can be written in an integral form as:
 
 ```math
 	x(t) = \int_{t_0}^{t} f(x(s)) \, \mathrm{d} s + \int_{t_0}^{t} g(x(s)) \, \mathrm{d} W_s .
 ```
 
-Of course now, the last integral is a stochastic integral and there is not a single 
-straight-forward way of computing it -- there are a lot of different ways we can 
-approximate it as a Riemannian sum and each of them leads to a different answer. 
-The two most popular ways for computing such stochastic integrals are:
+!!! tip "Wiener process"
+    A Wiener process is a random variable ``W_t`` that depends continuously on ``t \ge 0`` and satisfies the following properties:
+    1. Independence. For ``0 \le s \le t`` the increment ``W_t - W_s`` is independent of any prior values, i.e., independent of all ``W_\tau``, ``\tau \le s``.
+    2. Stationarity. The statistical distribution of the increment ``W_{t+s} − W_s`` does not depend on  ``s`` (and so is identical in distribution to ``W_t``).
+    3. Gaussianity. ``W_t`` is a Gaussian process with mean ``\langle W_t \rangle = 0`` and covariance ``\langle W_t W_s \rangle = \min(t, s)``.
+
+!!! tip Notation, e.g., ``x_t``
+    It's common to use notation ``x_t`` to denote explicit ``t``-dependence of variable ``x``. Not to be confused with the other common usage of subscripts for denoting partial differentiation.
+
+The last integral in the integral representation of a SDE expression above is a stochastic integral 
+(it involves a stochastic differential, `` \mathrm{d} W_t``). There is not a single straight-forward 
+way for computing the value of a stochastic integral. The various ways we can approximate the 
+value of a stochastic integral as a Riemannian sum each lead to a different answer. The two most 
+popular ways for computing such stochastic integrals are:
 
 ```math
 \begin{aligned}
@@ -61,18 +71,17 @@ The two most popular ways for computing such stochastic integrals are:
 
 The difference in the two calculi above lies in the point at which we choose to evaluate ``g(x)``:
 we take the start of the time-interval for ${\color{Green} \text{Itô, } t_j}$, while we use
-the mid-point for ${\color{Magenta}\text{Stratonovich, } (t_j+t_{j+1})/2}$. In the case the 
+the mid-point for ${\color{Magenta}\text{Stratonovich, } \tfrac{1}{2}(t_j+t_{j+1})}$. In the case the 
 stochastic noise is additive, i.e., its prefactor ``g`` does not depend on the state ``x_t``,
 then the two interpretations coincide. When the noise does depend on the state of the system, 
-i.e., ``g=g(x_t)``, then the two interpretations above give thoroughly different results. This
+i.e., ``g=g(x(t))``, then the two interpretations above give thoroughly different results. This
 happens because the white noise process is not continuous and, therefore, the two interpretations
 of the stochastic integrals above do not converge to the same result.
 
 To overcome this apparent inconsistency, the two choices above come together with different 
 chain rules, i.e., chain rules that are not necessarily the same as those in plain old calculus.
-Let us see how different choices for computing the stochastic integrals bring about the need f
-or different chain rules. Let's see how the two different interpretations for the stochastic 
-integral impose the necessity for different chain rules.
+Let us see how different choices for computing the stochastic integrals bring about the need 
+for different chain rules.
 
 An SDE can be written also in differential form. Because we cannot formally form the derivative
 ``\mathrm{d} W / \mathrm{d} t``, since ``W`` is nowhere differentiable, we write an SDE in 
@@ -85,8 +94,8 @@ differential form as:
 \end{aligned}
 ```
 
-The circle in ``g(x_t) \circ \mathrm{d} W_t`` is used to differentiate between Itô or 
-Stratonovich calculus.
+The circle in the term ``{\color{Magenta}g(x_t) \circ \mathrm{d} W_t}`` is used to differentiate 
+between Itô and Stratonovich calculus.
 
 Let's now assume we perform a variable change ``y = G(x)``. It turns out that according to 
 which interpretation of the stochastic integral one chooses to use, then the following chain 
@@ -99,7 +108,7 @@ rule must be used:
 \end{aligned}
 ```
 
-The above are the so called *stochastic chain rules*. All derivatives of ``G`` are evaluated 
+The above are the so-called *stochastic chain rules*. All derivatives of ``G`` are evaluated 
 at ``x_t``. For Stratonovich calculus, the chain rule resembles the usual chain rule one learns
 in calculus; for Itô there exists an additional term, often referred to as the "drift-term": 
 ``{\color{Green}\tfrac{1}{2} g^2 \, \mathrm{d}^2G / \mathrm{d} x^2}``.
@@ -120,9 +129,9 @@ The above is demonstrated by evaluating the simple stochastic integral:
 ```math
 \begin{aligned}
 {\color{Green} \text{Itô}}&: {\color{Green} \left \langle \int_{t_0}^{t} W_s \, \mathrm{d} W_s \right \rangle \approx \sum_{j} \left \langle W_j (W_{j+1} - W_j) \right \rangle} \\
-&\hspace{7.3em} {\color{Green} = \sum_j \left \langle W_j W_{j+1} \right \rangle - \left \langle W_j W_j \right \rangle \sim \sum_{j} t_j - t_j = 0} , \\
+& \hspace{7.3em} {\color{Green} = \sum_j \left \langle W_j W_{j+1} \right \rangle - \left \langle W_j W_j \right \rangle \sim \sum_{j} t_j - t_j = 0} , \\
 {\color{Magenta}\text{Stratonovich}}&: {\color{Magenta}\left \langle \int_{t_0}^{t} W_s \circ \mathrm{d} W_s \right \rangle \approx \sum_j \left \langle \frac1{2}(W_j + W_{j+1}) (W_{j+1} - W_j)\right \rangle} \\
-&\hspace{7.3em} {\color{Magenta} = \frac1{2} \sum_j \left \langle W_{j+1} W_{j+1} \right \rangle - \left \langle W_j W_j \right \rangle  \sim \frac1{2} \sum_j t_{j+1} - t_j = \frac{t}{2}} .
+& \hspace{7.3em} {\color{Magenta} = \frac1{2} \sum_j \left \langle W_{j+1} W_{j+1} \right \rangle - \left \langle W_j W_j \right \rangle  \sim \frac1{2} \sum_j t_{j+1} - t_j = \frac{t}{2}} .
 \end{aligned}
 ```
 
@@ -134,7 +143,7 @@ a series of colored noise processes with the de-correlation time tending to zero
 Stratonovich calculus more popular in the physics community. A nice discussion on the differences 
 and similarities between the two calculi is given by [van Kampen](https://doi.org/10.1007/BF01007642).
 
-## A simple Stochastic Differential Equation (SDE): the Ornstein--Uhlenbeck process
+## A simple Stochastic Differential Equation: the Ornstein--Uhlenbeck process
 
 One of the simplest SDEs is the Ornstein--Uhlenbeck process, a variation of which is:
 
@@ -262,11 +271,12 @@ using Statistics: mean
 using Random: randn, seed!
 seed!(1234) # for reproducing the same plots
 
-             μ = 0.2    # drag
-             σ = 0.2    # noise strength
-            dt = 0.01   # timestep
-        nsteps = 2001   # total timesteps
-n_realizations = 1000   # how many forcing realizations
+                μ = 0.2
+                σ = 0.2    # noise strength
+               dt = 0.01   # timestep
+           nsteps = 2001   # total timesteps
+   n_realizations = 1000   # how many forcing realizations
+some_realizations = 20     # used for plotting to illustrate convergence
 
 t = 0:dt:(nsteps-1)*dt 	# time
 
@@ -278,29 +288,29 @@ E_ito = zeros(size(ΔW))
 E_str = zeros(size(ΔW))
 E_numerical = zeros(size(ΔW))
 
-for j = 2:nsteps # time step the equation
+for j = 2:nsteps # time step the equations
 	
-	# time-step dxₜ = -μ xₜ + √σ dWₜ
-  @. x[j, :] = x[j-1, :] + -μ * x[j-1, :] * dt + sqrt(σ) * ΔW[j-1, :]
+  # time-step dx = - μ x dt + √σ dW
+  @. x[j, :] = x[j-1, :] - μ * x[j-1, :] * dt + sqrt(σ) * ΔW[j-1, :]
 
-	# time-step dEₜ = (-2μ Eₜ + ½σ) dt + √σ xₜ dWₜ
+  # time-step dE = (- 2μ E + ½σ) dt + √σ x dW
   @. E_ito[j, :] = E_ito[j-1, :] + (-2μ * E_ito[j-1, :]
 	                   + σ/2) * dt + sqrt(σ) * x[j-1, :] * ΔW[j-1, :]
 
-  # time-step dEₜ = -2μ Eₜ dt + √σ xₜ ∘ dWₜ
-	xbar = @. x[j-1, :] - μ * x[j-1, :] * dt + sqrt(σ) * ΔW[j-1, :]
-	Ebar = @. E_str[j-1, :] + (-2μ * E_str[j-1, :]) * dt + sqrt(σ) * x[j-1, :] * ΔW[j-1, :]
+  # time-step dE = - 2μ E dt + √σ x ∘ dW
+  xbar = @. x[j-1, :] - μ * x[j-1, :] * dt + sqrt(σ) * ΔW[j-1, :]
+  Ebar = @. E_str[j-1, :] + (-2μ * E_str[j-1, :]) * dt + sqrt(σ) * x[j-1, :] * ΔW[j-1, :]
   @. E_str[j, :] = E_str[j-1, :] + (-2μ * (E_str[j-1, :]
 		+ Ebar) / 2) * dt + sqrt(σ) * (x[j-1, :] + xbar) / 2 * ΔW[j-1, :]
 end
 
-# direct computation of E from xₜ
+# direct computation of E from x
 @. E_numerical = 0.5 * x^2
 
 # compare the three E(t) solutions
 plot(μ * t, [E_numerical[:, 1] E_ito[:, 1] E_str[:, 1]],
           linewidth = [3 2 1],
-              label = ["½ xₜ²" "Eₜ (Ito)" "Eₜ (Stratonovich) "],
+              label = ["½ xₜ²" "Eₜ (Ito)" "Eₜ (Stratonovich)"],
           linestyle = [:solid :dash :dashdot],
              xlabel = "μ t",
              ylabel = "E",
@@ -313,7 +323,7 @@ savefig("assets/energy_comparison.svg"); nothing # hide
 ![energy_comparison](assets/energy_comparison.svg)
 
 Now we can further compute the "energy" budgets, i.e., the work done by the noise versus the
-energy loss by the ``\mu`` term, using Itô and Stratonovich formalisms. Figures below show 
+energy loss by the ``μ`` term, using Itô and Stratonovich formalisms. Figures below show 
 the ensemble mean energy budgets (using 1000 ensemble members) as computed using Itô and
 Stratonovich calculus. For the energy budget to close we have to be consistent: if we time-step 
 the  energy equation based on Stratonovich calculus then we must compute the work also according 
@@ -328,14 +338,14 @@ dEdt_theory = @. σ/2  * exp(-2μ * t)
 dEdt_ito = mean(E_ito[2:nsteps, :] .- E_ito[1:nsteps-1, :], dims=2) / dt
 
 # compute the work and dissipation
-work_ito = mean(sqrt(σ) * ΔW[1:nsteps-1, :] / dt .* x[1:nsteps-1, :] .+ σ/2, dims=2) 
+work_ito = mean(sqrt(σ) * ΔW[1:nsteps-1, :] / dt .* x[1:nsteps-1, :] .+ σ/2, dims=2)
 diss_ito = 2*μ * (mean(E_ito[1:nsteps-1, :], dims=2))
 
 # Ensemble mean energy budgets from the Itô integration
 
-plot_E = plot(μ * t, [E_theory mean(E_ito, dims=2)],
+plot_E = plot(μ * t, [E_theory mean(E_ito[:, 1:some_realizations], dims=2) mean(E_ito, dims=2)],
                 linewidth = [3 2],
-	                  label = ["theoretical ⟨E⟩" "⟨E⟩ from $n_realizations ensemble member(s)"],
+	                  label = ["theoretical ⟨E⟩" "⟨E⟩ from $some_realizations ensemble members" "⟨E⟩ from $n_realizations ensemble members"],
 	                 xlabel = "μ t",
 	                 ylabel = "E",
 	                 legend = :bottomright,
@@ -348,7 +358,7 @@ plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_ito work_ito.-diss_ito dEdt_theory
                    legend = :topright,
                    xlabel = "μ t")
 
-plot(plot_E, plot_Ebudget, layout=(2, 1))
+plot(plot_E, plot_Ebudget, layout=grid(2, 1, heights=[0.65 ,0.35]), size=(600, 525))
 
 savefig("assets/energy_budgets_Ito.svg"); nothing # hide
 ```
@@ -364,9 +374,9 @@ dEdt_str = mean(E_str[2:nsteps, :] .- E_str[1:nsteps-1, :], dims=2) / dt
 work_str = mean(sqrt(σ) * ΔW[1:nsteps-1, :] / dt .* (x[1:nsteps-1, :] .+ x[2:nsteps, :])/2, dims=2)
 diss_str = 2*μ * (mean(E_str[1:nsteps-1, :], dims=2))
 
-plot_E = plot(μ * t, [E_theory mean(E_str, dims=2)],
+plot_E = plot(μ * t, [E_theory mean(E_str[:, 1:some_realizations], dims=2) mean(E_str, dims=2)],
                 linewidth = [3 2],
-                    label = ["theoretical ⟨E⟩" "⟨E⟩ from $n_realizations ensemble member(s)"],
+                    label = ["theoretical ⟨E⟩" "⟨E⟩ from $some_realizations ensemble members" "⟨E⟩ from $n_realizations ensemble members"],
                    xlabel = "μ t",
                    ylabel = "E",
                    legend = :bottomright,
@@ -379,7 +389,7 @@ plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_str[1:nsteps-1] work_str[1:nsteps-
                    legend = :bottomleft,
                    xlabel = "μ t")
 
-plot(plot_E, plot_Ebudget, layout=(2, 1))
+plot(plot_E, plot_Ebudget, layout=grid(2, 1, heights=[0.65 ,0.35]), size=(600, 525))
 
 savefig("assets/energy_budgets_Stratonovich.svg"); nothing # hide
 ```
@@ -409,7 +419,7 @@ interpretations coincide.
 The forcing ``\xi`` obeys:
 
 ```math
-\langle \xi(\bm{x},t) \rangle = 0 \quad \text{and} \quad \langle \xi(\bm{x}, t) \xi(\bm{x}', t') \rangle= Q(\bm{x} - \bm{x}') \delta(t-t'),
+\langle \xi(\bm{x}, t) \rangle = 0 \quad \text{and} \quad \langle \xi(\bm{x}, t) \xi(\bm{x}', t') \rangle = Q(\bm{x} - \bm{x}') \delta(t - t') ,
 ```
 
 that is, the forcing is white in time but spatially correlated; its spatial correlation is 
@@ -421,7 +431,7 @@ that is stochastically forced while dissipated by linear drag ``\mu``. The energ
 fluid is:
 
 ```math
-E = \tfrac{1}{2} \overline{|\bm{\nabla}\psi|^2}^{x,y} = -\tfrac{1}{2} \overline{\psi \nabla^2\psi}^{x,y},
+E = \tfrac{1}{2} \overline{|\bm{\nabla} \psi|^2}^{x, y} = -\tfrac{1}{2} \overline{\psi \nabla^2 \psi}^{x, y} ,
 ```
 
 where the overbar denotes average over ``x`` and ``y`` and an integration-by-parts was carried
@@ -429,7 +439,7 @@ through in the last equality. To obtain the energy equation we multiply (6) with
 average over the whole domain. Thus, the work done by the forcing is given by:
 
 ```math
-P = - \, \overline{\psi \, \xi}^{x,y},
+P = - \, \overline{\psi \, \xi}^{x, y} ,
 ```
 
 but the above is a stochastic integral and it is meaningless without a rule for computing the stochastic integral.
@@ -455,7 +465,7 @@ But how much is the Itô drift term in this case? As in the previous section, th
 *precisely* the ensemble mean of the Stratonovich work, i.e.:
 
 ```math
-\textrm{Ito drift}= - \overline{\langle \underbrace{\psi(\bm{x}, t) \circ  \xi(\bm{x}, t)}_{\textrm{Stratonovich}} \rangle}^{x,y} .
+\textrm{Ito drift}= - \overline{\langle \underbrace{\psi(\bm{x}, t) \circ  \xi(\bm{x}, t)}_{\textrm{Stratonovich}} \rangle}^{x, y} .
 ```
 
 But again, the above can be computed using the "formal" solution of (6):
@@ -468,10 +478,10 @@ which implies
 
 ```math
 \begin{aligned}
-\text{drift} & = -\overline{e^{-\mu t} \underbrace{\left \langle \psi(\bm{x}, 0)  \xi(\bm{x}, t) \right \rangle}_{=0}}^{x,y} - \int_0^t e^{- \mu (t - s)} \overline{\nabla^{-2} \left \langle \xi(\bm{x}, s) \xi(\bm{x}, t) \right\rangle}^{x,y} \, \mathrm{d} s \\
-& = -\int_0^t e^{-\mu(t - s)} \overline{\underbrace{\left [ \nabla^{-2} Q (\bm{x}) \right ] \big|_{\bm{x}=0}}_{\text{independent of }x,y} \, \delta(t - s)}^{x,y} \, \mathrm{d} s \\
-& = -\frac1{2} \nabla^{-2} Q(\bm{x}) \big|_{\bm{x}=0} \\
-& = - \frac1{2} \left [ \nabla^{-2} \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \widehat{Q}(\bm{k}) \, e^{i \bm{k} \bm{\cdot}\bm{x}} \right ]_{\bm{x}=0} \\
+\text{drift} & = -\overline{e^{- \mu t} \underbrace{\left \langle \psi(\bm{x}, 0) \xi(\bm{x}, t) \right \rangle}_{=0}}^{x, y} - \int_0^t e^{- \mu (t - s)} \overline{\nabla^{-2} \left \langle \xi(\bm{x}, s) \xi(\bm{x}, t) \right\rangle}^{x, y} \, \mathrm{d} s \\
+& = - \int_0^t e^{-\mu(t - s)} \overline{\underbrace{\left [ \nabla^{-2} Q (\bm{x}) \right ] \big|_{\bm{x}=0}}_{\text{independent of }x, y} \, \delta(t - s)}^{x,y} \, \mathrm{d} s \\
+& = - \frac1{2} \nabla^{-2} Q(\bm{x}) \big|_{\bm{x}=0} \\
+& = - \frac1{2} \left [ \nabla^{-2} \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \widehat{Q}(\bm{k}) \, e^{i \bm{k} \bm{\cdot} \bm{x}} \right ]_{\bm{x}=0} \\
 & = \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \frac{\widehat{Q}(\bm{k})}{2 |\bm{k}|^2} .
 \end{aligned}
 ```
@@ -488,10 +498,10 @@ Using the above, the work for a single forcing realization at the ``j``-th times
 computed as:
 
 ```math
-{\color{Green} \text{Itô}} : {\color{Green} P_j = -\overline{\psi(\bm{x}, t_j) \xi(\bm{x}, t_{j+1})}^{x,y} + \varepsilon} , \tag{8}
+{\color{Green} \text{Itô}} : {\color{Green} P_j = -\overline{\psi(\bm{x}, t_j) \xi(\bm{x}, t_{j+1})}^{x, y} + \varepsilon} , \tag{8}
 ```
 ```math
-{\color{Magenta} \text{Stratonovich}} : {\color{Magenta} P_j = -\overline{\frac{\psi(\bm{x}, t_j) + \psi(\bm{x}, t_{j+1})}{2} \xi(\bm{x}, t_{j+1})}^{x,y}} . \tag{9}
+{\color{Magenta} \text{Stratonovich}} : {\color{Magenta} P_j = -\overline{\frac{\psi(\bm{x}, t_j) + \psi(\bm{x}, t_{j+1})}{2} \xi(\bm{x}, t_{j+1})}^{x, y}} . \tag{9}
 ```
 
 Remember, previously the work done by the stochastic forcing was:
@@ -505,11 +515,7 @@ and by sampling over various forcing realizations:
 
 All modules in GeophysicalFlows.jl use Stratonovich calculus. For example, the domain-averaged 
 energy injected per unit time by the forcing in the `TwoDNavierStokes` module is computed 
-using (9) via
-
-```@docs
-GeophysicalFlows.TwoDNavierStokes.energy_work
-```
+using (9) via the [`energy_work`](@ref GeophysicalFlows.TwoDNavierStokes.energy_work) function.
 
 ## A bit more elaborate SPDE
 
@@ -525,12 +531,12 @@ stochastic forcing, remains the same. We can easily verify this from the "formal
 of (10):
 
 ```math
-\psi(\bm{x}, t) = e^{- \mu t} \psi(\bm{x}, 0) + \int_0^t e^{- \mu (t - s)} \nabla^{-2} \xi(\bm{x}, s) \, \mathrm{d} s - \int_0^t \nabla^{-2} \mathsf{J} \left ( \psi(\bm{x}, s), \nabla^2 \psi(\bm{x}, s) \right ) \mathrm{d} s ,
+\psi(\bm{x}, t) = e^{- \mu t} \psi(\bm{x}, 0) + \int_0^t e^{- \mu (t - s)} \nabla^{-2} \xi(\bm{x}, s) \, \mathrm{d} s - \int_0^t \nabla^{-2} \mathsf{J} \left ( \psi(\bm{x}, s), \nabla^2 \psi(\bm{x}, s) \right ) \mathrm{d} s .
 ```
 
 When multiplied with ``\xi(\bm{x}, t)`` the last term vanishes since its only non-zero 
 contribution comes from the point ``s = t``, which is of measure zero (in the integrated sense). 
 
-A demonstration of how the energy budgets can be computed for a case with stochastic forcing 
-can be found in an [example of the TwoDNavierStokes](../generated/twodnavierstokes_stochasticforcing_budgets/) 
+A demonstration of how the energy budgets can be computed when we have stochastic forcing is 
+illustrated in an [example of the TwoDNavierStokes](../generated/twodnavierstokes_stochasticforcing_budgets/) 
 module.
