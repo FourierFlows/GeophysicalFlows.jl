@@ -94,6 +94,7 @@ sitename = "GeophysicalFlows.jl",
               "modules/surfaceqg.md"
             ],
             "Stochastic Forcing" => "stochastic_forcing.md",
+            "Contributor's guide" => "contributing.md",
             "Library" => Any[
             "lib/types.md",
             "lib/functions.md"
