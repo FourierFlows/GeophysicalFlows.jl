@@ -73,7 +73,7 @@ or by requesting something you think is missing.
 * Navigate to that folder in the terminal or in Anaconda Prompt if you're on Windows.
 * Connect your repository to the upstream (main project).
   ```
-  git remote add oceananigans https://github.com/FourierFlows/GeophysicalFlows.jl.git
+  git remote add geophysicalflows https://github.com/FourierFlows/GeophysicalFlows.jl.git
   ```
 * Create the development environment by opening Julia via `julia --project` then
   typing in `] instantiate`. This will install all the dependencies in the Project.toml
