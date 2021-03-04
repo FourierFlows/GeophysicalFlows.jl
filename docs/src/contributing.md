@@ -15,8 +15,8 @@ New contributors should make sure to read that guide.
   your particular favorite setup. If you run into any problems or find it difficult
   to use, modify, or understand, please [open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues)!
 
-* Write up an example or tutorial on how to do something useful with Oceananigans, like how 
-  to set up a new physical configuration.
+* Write up an example or tutorial on how to do something useful with one of the current modules
+  in GeophysicalFlows.jl, like how to set up a new physical configuration.
 
 * Improve documentation, docstrings, or comments if you found something is hard to use.
 
@@ -46,10 +46,10 @@ is anything you need to know beforehand.
 
 ## Reporting a bug
 
-The easiest way to get involved is to report issues you encounter when using
-Oceananigans or by requesting something you think is missing.
+The easiest way to get involved is to report issues you encounter when using GeophysicalFlows.jl 
+or by requesting something you think is missing.
 
-* Head over to the [issues](https://github.com/CLiMA/Oceananigans.jl/issues) page.
+* Head over to the [issues](https://github.com/FourierFlows/GeophysicalFlows.jl/issues) page.
 * Search to see if your issue already exists or has even been solved previously.
 * If you indeed have a new issue or request, click the "New Issue" button.
 * Please be as specific as possible. Include the version of the code you were using, as
@@ -65,7 +65,7 @@ Oceananigans or by requesting something you think is missing.
 * Login to your GitHub account and make a fork of the
   [GeophysicalFlows.jl repository](https://github.com/FourierFlows/GeophysicalFlows.jl) by
   clicking the "Fork" button.
-* Clone your fork of the Oceananigans repository (in terminal on Mac/Linux or git shell/
+* Clone your fork of the GeophysicalFlows.jl repository (in terminal on Mac/Linux or git shell/
   GUI on Windows) in the location you'd like to keep it.
   ```
   git clone https://github.com/your-user-name/GeophysicalFlows.jl.git

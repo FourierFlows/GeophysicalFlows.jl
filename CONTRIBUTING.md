@@ -15,26 +15,22 @@ practices. New contributors should make sure to read that guide.
 
 ## What can I do?
 
-* Tackle an existing issue. We keep a list of [good first issues](https://github.com/climate-machine/Oceananigans.jl/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  that are self-contained and suitable for a newcomer to try and work on.
+* Tackle an existing [issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues).
 
-* Try to run Oceananigans and play around with it to simulate your favorite
-  fluids and ocean physics. If you run into any bugs/problems or find it difficult
-  to use or understand, please open an issue!
+* Try to run your favorite GeophysicalFlows.jl module and play around with it to simulate 
+  your particular favorite setup. If you run into any problems or find it difficult
+  to use, modify, or understand, please [open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues)!
 
-* Write up an example or tutorial on how to do something useful with
-  Oceananigans, like how to set up a new physical configuration.
+* Write up an example or tutorial on how to do something useful with one of the current modules
+  in GeophysicalFlows.jl, like how to set up a new physical configuration.
 
-* Improve documentation or comments if you found something hard to use.
+* Improve documentation, docstrings, or comments if you found something is hard to use.
 
-* Implement a new feature if you need it to use Oceananigans.
+* Implement a new feature (e.g., a new diagnostic into a module).
 
-If you're interested in working on something, let us know by commenting on
-existing issues or by opening a new issue. This is to make sure no one else
-is working on the same issue and so we can help and guide you in case there
-is anything you need to know beforehand.
+* Implement a new module from scratch to solve your favorite partial differential equation with
+  periodic boundary conditions.
 
-We also hang out on the #oceananigans channel on Julia Slack, which is a great
-place to discuss anything Oceananigans-related, especially contributions! To
-join the Julia Slack, go to [https://julialang.org/slack/](https://julialang.org/slack/).
-
+If you're interested in working on something, let us know by commenting on existing issues or 
+by opening a new issue if. This is to make sure no one else is working on the same issue and 
+so we can help and guide you in case there is anything you need to know beforehand.
