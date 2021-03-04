@@ -107,6 +107,10 @@ others use your functionality properly. Didn't write new functions? That's fine,
 that the documentation for the code you touched is still in great shape. It is not uncommon 
 to find some strange wording or clarification that you can take care of while you are here.
 
+We encourage using [unicode](https://docs.julialang.org/en/v1/manual/unicode-input/) characters 
+when writing docstrings, e.g., use `α` instead of `\alpha`. This makes rendering as similar 
+as possible between REPL's `help?>` mode in in the Documentation.
+
 You can preview how the Documentation will look like after merging by building the documentation 
 locally. From the main directory of your local repository call
 
