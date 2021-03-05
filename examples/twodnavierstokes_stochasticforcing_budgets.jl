@@ -21,7 +21,7 @@ import GeophysicalFlows.TwoDNavierStokes: enstrophy, enstrophy_dissipation_hyper
 
 # ## Choosing a device: CPU or GPU
 
-dev = CPU()    # Device (CPU/GPU)
+dev = GPU()    # Device (CPU/GPU)
 nothing # hide
 
 

@@ -19,7 +19,7 @@ import GeophysicalFlows.BarotropicQGQL: energy, enstrophy
 
 # ## Choosing a device: CPU or GPU
 
-dev = CPU()     # Device (CPU/GPU)
+dev = GPU()     # Device (CPU/GPU)
 nothing # hide
 
 
