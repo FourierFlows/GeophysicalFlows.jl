@@ -1,7 +1,6 @@
 # # Forced-dissipative barotropic QG beta-plane turbulence
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/singlelayerqg_betaforced.ipynb). 
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betaforced.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betaforced.ipynb).
 #
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane. The dynamics include linear drag and stochastic excitation.
@@ -94,10 +93,12 @@ x, y = grid.x, grid.y
 nothing # hide
 
 
-# First let's see how a forcing realization looks like.
+# First let's see how a forcing realization looks like. Note that when plotting, we decorate 
+# the variable to be plotted with `Array()` to make sure it is brought back on the CPU when 
+# `vars` live on the GPU.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, irfft(vars.Fh, grid.nx)',
+heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
      aspectratio = 1,
                c = :balance,
             clim = (-8, 8),
@@ -158,7 +159,7 @@ function plot_output(prob)
   q̄ = mean(q, dims=1)'
   ū = mean(prob.vars.u, dims=1)'
   
-  pq = heatmap(x, y, q',
+  pq = heatmap(x, y, Arrat(q'),
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -172,7 +173,7 @@ function plot_output(prob)
              title = "vorticity ∂v/∂x-∂u/∂y",
         framestyle = :box)
 
-  pψ = contourf(x, y, ψ',
+  pψ = contourf(x, y, Array(ψ'),
             levels = -0.32:0.04:0.32,
        aspectratio = 1,
          linewidth = 1,
@@ -188,7 +189,7 @@ function plot_output(prob)
              title = "streamfunction ψ",
         framestyle = :box)
 
-  pqm = plot(q̄, y,
+  pqm = plot(Array(q̄), y,
             legend = false,
          linewidth = 2,
              alpha = 0.7,
@@ -198,7 +199,7 @@ function plot_output(prob)
             ylabel = "y")
   plot!(pqm, 0*y, y, linestyle=:dash, linecolor=:black)
 
-  pum = plot(ū, y,
+  pum = plot(Array(ū), y,
             legend = false,
          linewidth = 2,
              alpha = 0.7,
@@ -253,11 +254,11 @@ anim = @animate for j = 0:Int(nsteps / nsubs)
     println(log)
   end  
   
-  p[1][1][:z] = vars.q
+  p[1][1][:z] = Array(vars.q)
   p[1][:title] = "vorticity, μt="*@sprintf("%.2f", μ * clock.t)
-  p[4][1][:z] = vars.ψ
-  p[2][1][:x] = mean(vars.q, dims=1)'
-  p[5][1][:x] = mean(vars.u, dims=1)'
+  p[4][1][:z] = Array(vars.ψ)
+  p[2][1][:x] = Array(mean(vars.q, dims=1)')
+  p[5][1][:x] = Array(mean(vars.u, dims=1)')
   push!(p[3][1], μ * E.t[E.i], E.data[E.i])
   push!(p[6][1], μ * Z.t[Z.i], Z.data[Z.i])
   

@@ -1,7 +1,6 @@
 # # 2D forced-dissipative turbulence
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb).
 #
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
@@ -88,9 +87,12 @@ nothing # hide
 # First let's see how a forcing realization looks like. Function `calcF!()` computes 
 # the forcing in Fourier space and saves it into variable `vars.Fh`, so we first need to
 # go back to physical space.
+
+# Note that when plotting, we decorate the variable to be plotted with `Array()` to make sure 
+# it is brought back on the CPU when the variable lives on the GPU.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, irfft(vars.Fh, grid.nx)',
+heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
      aspectratio = 1,
                c = :balance,
             clim = (-200, 200),
@@ -123,9 +125,9 @@ nothing # hide
 
 # We initialize a plot with the vorticity field and the time-series of
 # energy and enstrophy diagnostics. To plot energy and enstrophy on the same
-# axes we scale enstrophy with $k_f^2$.
+# axes we scale enstrophy with ``k_f^2``.
 
-p1 = heatmap(x, y, vars.ζ',
+p1 = heatmap(x, y, Array( vars.ζ'),
          aspectratio = 1,
                    c = :balance,
                 clim = (-40, 40),
@@ -166,7 +168,7 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.ζ
+  p[1][1][:z] = Array(vars.ζ)
   p[1][:title] = "vorticity, μt = " * @sprintf("%.2f", μ * clock.t)
   push!(p[2][1], μ * E.t[E.i], E.data[E.i])
   push!(p[2][2], μ * Z.t[Z.i], Z.data[Z.i] / forcing_wavenumber^2)

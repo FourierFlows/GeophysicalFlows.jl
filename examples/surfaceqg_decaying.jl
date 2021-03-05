@@ -19,7 +19,7 @@ import GeophysicalFlows.SurfaceQG: kinetic_energy, buoyancy_variance, buoyancy_d
 
 # ## Choosing a device: CPU or GPU
 
-dev = CPU()    # Device (CPU/GPU)
+dev = GPU()    # Device (CPU/GPU)
 nothing # hide
 
 
@@ -65,8 +65,7 @@ SurfaceQG.set_b!(prob, b₀)
 nothing # hide
 
 # Let's plot the initial condition. Note that when plotting, we decorate the variable to be 
-# plotted with `Array()` to make sure the variable is brought back on the CPU when `vars` live 
-# on the GPU.
+# plotted with `Array()` to make sure it is brought back on the CPU when `vars` live on the GPU.
 heatmap(x, y, Array(vars.b'),
      aspectratio = 1,
                c = :deep,

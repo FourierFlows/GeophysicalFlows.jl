@@ -1,7 +1,6 @@
 # # 2D forced-dissipative turbulence budgets
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing_budgets.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing_budgets.ipynb).
+#md # This example can viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing_budgets.ipynb).
 #
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
@@ -91,10 +90,13 @@ nothing # hide
 
 # First let's see how a forcing realization looks like. Function `calcF!()` computes 
 # the forcing in Fourier space and saves it into variable `vars.Fh`, so we first need to
-# go back to physical space.
+# go back to physical space. 
+#
+# Note that when plotting, we decorate the variable to be plotted with `Array()` to make sure 
+# it is brought back on the CPU when the variable lives on the GPU.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, irfft(vars.Fh, grid.nx)',
+heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
      aspectratio = 1,
                c = :balance,
             clim = (-200, 200),
@@ -157,7 +159,7 @@ function computetendencies_and_makeplot(prob, diags)
 
   εᶻ = parsevalsum(forcing_spectrum / 2, grid) / (grid.Lx * grid.Ly)
 
-  pζ = heatmap(x, y, vars.ζ',
+  pζ = heatmap(x, y, Array(vars.ζ'),
             aspectratio = 1,
             legend = false,
                  c = :viridis,

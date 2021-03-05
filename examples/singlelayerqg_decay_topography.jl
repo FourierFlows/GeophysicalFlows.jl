@@ -1,7 +1,6 @@
 # # Decaying barotropic QG turbulence over topography
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/singlelayerqg_decay_topography.ipynb). 
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decay_topography.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decay_topography.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence over topography.
 
@@ -55,8 +54,10 @@ sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, p
 x, y = grid.x, grid.y
 nothing # hide
 
-# and let's plot the topographic PV:
-contourf(grid.x, grid.y, params.eta',
+# and let's plot the topographic PV. Note that when plotting, we decorate the variable to be 
+# plotted with `Array()` to make sure it is brought back on the CPU when the variable lives 
+# on the GPU.
+contourf(grid.x, grid.y, Array(params.eta'),
           aspectratio = 1,
             linewidth = 0,
                levels = 10,
@@ -92,7 +93,7 @@ nothing # hide
 
 # Let's plot the initial vorticity field:
 
-p1 = heatmap(x, y, vars.q',
+p1 = heatmap(x, y, Array(vars.q'),
          aspectratio = 1,
               c = :balance,
            clim = (-8, 8),
@@ -105,7 +106,7 @@ p1 = heatmap(x, y, vars.q',
           title = "initial vorticity ∂v/∂x-∂u/∂y",
      framestyle = :box)
 
-p2 = contourf(x, y, vars.ψ',
+p2 = contourf(x, y, Array(vars.ψ'),
         aspectratio = 1,
              c = :viridis,
         levels = range(-0.25, stop=0.25, length=11), 
@@ -159,7 +160,7 @@ function plot_output(prob)
   ψ = prob.vars.ψ
   η = prob.params.eta
 
-  pq = heatmap(x, y, q',
+  pq = heatmap(x, y, Array(q'),
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -173,7 +174,7 @@ function plot_output(prob)
              title = "vorticity ∂v/∂x-∂u/∂y",
         framestyle = :box)
   
-  contour!(pq, x, y, η',
+  contour!(pq, x, y, Array(η'),
           levels=0.5:0.5:3,
           lw=2, c=:black, ls=:solid, alpha=0.7)
   
@@ -181,7 +182,7 @@ function plot_output(prob)
           levels=-2:0.5:-0.5,
           lw=2, c=:black, ls=:dash, alpha=0.7)
   
-  pψ = contourf(x, y, ψ',
+  pψ = contourf(x, y, Array(ψ'),
        aspectratio = 1,
             legend = false,
                  c = :viridis,
@@ -223,9 +224,9 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.q
+  p[1][1][:z] = Array(vars.q)
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
-  p[2][1][:z] = vars.ψ
+  p[2][1][:z] = Array(vars.ψ)
 
   stepforward!(prob, diags, nsubs)
   SingleLayerQG.updatevars!(prob)

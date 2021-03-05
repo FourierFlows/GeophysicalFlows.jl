@@ -1,7 +1,6 @@
 # # Phillips model of Baroclinic Instability
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
 #
 # A simulation of the growth of barolinic instability in the Phillips 2-layer model
 # when we impose a vertical mean flow shear as a difference ``\Delta U`` in the
@@ -113,8 +112,9 @@ nothing # hide
 
 # ## Visualizing the simulation
 
-# We define a function that plots the potential vorticity field and the evolution 
-# of energy and enstrophy.
+# We define a function that plots the potential vorticity field and the evolution of energy 
+# and enstrophy. Note that when plotting, we decorate the variable to be plotted with `Array()` 
+# to make sure it is brought back on the CPU when `vars` live on the GPU.
 
 symlims(data) = maximum(abs.(extrema(data))) |> q -> (-q, q)
 
@@ -125,7 +125,7 @@ function plot_output(prob)
   p = plot(layout=l, size = (1000, 600))
   
   for m in 1:nlayers
-    heatmap!(p[(m-1) * 3 + 1], x, y, vars.q[:, :, m]',
+    heatmap!(p[(m-1) * 3 + 1], x, y, Array(vars.q[:, :, m]'),
          aspectratio = 1,
               legend = false,
                    c = :balance,
@@ -139,7 +139,7 @@ function plot_output(prob)
                title = "q_"*string(m),
           framestyle = :box)
 
-    contourf!(p[(m-1) * 3 + 2], x, y, vars.ψ[:, :, m]',
+    contourf!(p[(m-1) * 3 + 2], x, y, Array(vars.ψ[:, :, m]'),
               levels = 8,
          aspectratio = 1,
               legend = false,
@@ -200,8 +200,8 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
   end
   
   for m in 1:nlayers
-    p[(m-1) * 3 + 1][1][:z] = @. vars.q[:, :, m]
-    p[(m-1) * 3 + 2][1][:z] = @. vars.ψ[:, :, m]
+    p[(m-1) * 3 + 1][1][:z] = Array(vars.q[:, :, m])
+    p[(m-1) * 3 + 2][1][:z] = Array(vars.ψ[:, :, m])
   end
   
   push!(p[3][1], μ * E.t[E.i], E.data[E.i][1][1])

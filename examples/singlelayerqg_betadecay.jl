@@ -1,7 +1,6 @@
 # # Decaying barotropic QG beta-plane turbulence
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/singlelayerqg_betadecay.ipynb). 
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betadecay.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betadecay.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence on a beta plane.
 
@@ -71,9 +70,11 @@ qi = irfft(qih, grid.nx)
 SingleLayerQG.set_q!(prob, qi)
 nothing # hide
 
-# Let's plot the initial vorticity field:
+# Let's plot the initial vorticity and streamfunction. Note that when plotting, we decorate 
+# the variable to be plotted with `Array()` to make sure it is brought back on the CPU when 
+# `vars` live on the GPU.
 
-p1 = heatmap(x, y, vars.q',
+p1 = heatmap(x, y, Array(vars.q'),
          aspectratio = 1,
               c = :balance,
            clim = (-12, 12),
@@ -86,7 +87,7 @@ p1 = heatmap(x, y, vars.q',
           title = "initial vorticity ∂v/∂x-∂u/∂y",
      framestyle = :box)
 
-p2 = contourf(x, y, vars.ψ',
+p2 = contourf(x, y, Array(vars.ψ'),
         aspectratio = 1,
              c = :viridis,
         levels = range(-0.65, stop=0.65, length=10), 
@@ -139,10 +140,10 @@ nothing # hide
 # their corresponding zonal mean structure.
 
 function plot_output(prob)
-  q = prob.vars.q
-  ψ = prob.vars.ψ
-  q̄ = mean(q, dims=1)'
-  ū = mean(prob.vars.u, dims=1)'
+  q = Array(prob.vars.q)
+  ψ = Array(prob.vars.ψ)
+  q̄ = Array(mean(q, dims=1)')
+  ū = Array(mean(prob.vars.u, dims=1)')
 
   pq = heatmap(x, y, q',
        aspectratio = 1,
@@ -220,11 +221,11 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.q
+  p[1][1][:z] = Array(vars.q)
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
-  p[3][1][:z] = vars.ψ
-  p[2][1][:x] = mean(vars.q, dims=1)'
-  p[4][1][:x] = mean(vars.u, dims=1)'
+  p[3][1][:z] = Array(vars.ψ)
+  p[2][1][:x] = Array(mean(vars.q, dims=1)')
+  p[4][1][:x] = Array(mean(vars.u, dims=1)')
 
   stepforward!(prob, diags, nsubs)
   SingleLayerQG.updatevars!(prob)
