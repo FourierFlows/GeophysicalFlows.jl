@@ -5,8 +5,6 @@ Thank you for considering contributing to GeophysicalFlows.jl!
 Please feel free to ask us questions and chat with us at any time if you're
 unsure about anything.
 
-[issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues) or starting a [discussion](https://github.com/FourierFlows/GeophysicalFlows.jl/discussions).
-
 Best way to get in touch is to either just open a GitHub [issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues) 
 (don't be shy!) or starting a [discussion](https://github.com/FourierFlows/GeophysicalFlows.jl/discussions).
 
