@@ -64,8 +64,10 @@ b₀ = @. exp(-(X^2 + 4*Y^2))
 SurfaceQG.set_b!(prob, b₀)
 nothing # hide
 
-# Let's plot the initial condition.
-heatmap(x, y, prob.vars.b',
+# Let's plot the initial condition. Note that when plotting, we decorate the variable to be 
+# plotted with `Array()` to make sure the variable is brought back on the CPU when `vars` live 
+# on the GPU.
+heatmap(x, y, Array(vars.b'),
      aspectratio = 1,
                c = :deep,
             clim = (0, 1),
@@ -117,13 +119,13 @@ nothing # hide
 
 # ## Visualizing the simulation
 
-# We define a function that plots the buoyancy field and the time evolution of
-# kinetic energy and buoyancy variance.
+# We define a function that plots the buoyancy field and the time evolution of kinetic energy 
+# and buoyancy variance.
 
 function plot_output(prob)
   b = prob.vars.b
 
-  pb = heatmap(x, y, b',
+  pb = heatmap(x, y, Array(b'),
        aspectratio = 1,
                  c = :deep,
               clim = (0, 1),
@@ -184,7 +186,7 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
     println(log2)
   end
 
-  p[1][1][:z] = vars.b
+  p[1][1][:z] = Array(vars.b)
   p[1][:title] = "buoyancy, t=" * @sprintf("%.2f", clock.t)
   push!(p[2][1], KE.t[KE.i], KE.data[KE.i])
   push!(p[3][1], B.t[B.i], B.data[B.i])
@@ -197,7 +199,7 @@ mp4(anim, "sqg_ellipticalvortex.mp4", fps=14)
 
 # Let's see how all flow fields look like at the end of the simulation.
 
-pu = heatmap(x, y, vars.u',
+pu = heatmap(x, y, Array(vars.u'),
      aspectratio = 1,
                c = :balance,
             clim = (-maximum(abs.(vars.u)), maximum(abs.(vars.u))),
@@ -210,7 +212,7 @@ pu = heatmap(x, y, vars.u',
            title = "uₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")",
       framestyle = :box)
 
-pv = heatmap(x, y, vars.v',
+pv = heatmap(x, y, Array(vars.v'),
      aspectratio = 1,
                c = :balance,
             clim = (-maximum(abs.(vars.v)), maximum(abs.(vars.v))),
@@ -223,7 +225,7 @@ pv = heatmap(x, y, vars.v',
            title = "vₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")",
       framestyle = :box)
 
-pb = heatmap(x, y, vars.b',
+pb = heatmap(x, y, Array(vars.b'),
      aspectratio = 1,
                c = :deep,
             clim = (0, 1),
