@@ -1,8 +1,8 @@
 # GeophysicalFlows.jl
 
 <!-- description -->
-<p align="center">
-  <strong>💨🌏🌊 Geophysical fluid dynamics pseudospectral solvers with Julia and [FourierFlows.jl](http://github.com/FourierFlows/FourierFlows.jl). https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable</strong>
+<p>
+  <strong>💨🌏🌊 Geophysical fluid dynamics pseudospectral solvers with Julia and <a href="http://github.com/FourierFlows/FourierFlows.jl">FourierFlows.jl</a>. https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable</strong>
 </p>
 
 <!-- Badges -->
