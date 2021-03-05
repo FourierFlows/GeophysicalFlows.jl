@@ -109,7 +109,7 @@ to find some strange wording or clarification that you can take care of while yo
 
 We encourage using [unicode](https://docs.julialang.org/en/v1/manual/unicode-input/) characters 
 when writing docstrings, e.g., use `α` instead of `\alpha`. This makes rendering as similar 
-as possible between REPL's `help?>` mode in in the Documentation.
+as possible between REPL's `help?>` mode and in the Documentation.
 
 You can preview how the Documentation will look like after merging by building the documentation 
 locally. From the main directory of your local repository call
