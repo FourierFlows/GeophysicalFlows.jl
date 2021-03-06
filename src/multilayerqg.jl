@@ -59,6 +59,12 @@ function Problem(nlayers::Int,                        # number of fluid layers
                   linear = false,
                        T = Float64)
 
+   if dev == GPU()
+     @warn """MultiLayerQG module not well optimized on the GPU yet.
+     See https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112
+     For now, we suggest running MultiLayerQG on CPUs only."""
+   end
+   
    # topographic PV
    eta === nothing && (eta = zeros(dev, T, (nx, ny)))
    
