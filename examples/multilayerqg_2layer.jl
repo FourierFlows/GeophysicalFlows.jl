@@ -63,11 +63,11 @@ nothing # hide
 # condidtion using the `timestepper`'s high-wavenumber `filter`.
 
 seed!(1234) # reset of the random number generator for reproducibility
-q_i  = 4e-3randn((grid.nx, grid.ny, nlayers))
-qh_i = prob.timestepper.filter .* rfft(q_i, (1, 2)) # only apply rfft in dims=1, 2
-q_i  = irfft(qh_i, grid.nx, (1, 2)) # only apply irfft in dims=1, 2
+q₀  = 4e-3 * ArrayType(dev)(randn((grid.nx, grid.ny, nlayers)))
+q₀h = prob.timestepper.filter .* rfft(q₀, (1, 2)) # only apply rfft in dims=1, 2
+q₀  = irfft(q₀h, grid.nx, (1, 2)) # only apply irfft in dims=1, 2
 
-MultiLayerQG.set_q!(prob, q_i)
+MultiLayerQG.set_q!(prob, q₀)
 nothing # hide
 
 

@@ -57,17 +57,17 @@ nothing # hide
 E₀ = 0.1 # energy of initial condition
 
 K = @. sqrt(grid.Krsq)                          # a 2D array with the total wavenumber
-k = [grid.kr[i] for i=1:grid.nkr, j=1:grid.nl]  # a 2D array with the zonal wavenumber
+k = CUDA.@allowscalar ArrayType(dev)([grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])   # a 2D array with the zonal wavenumber
 
 Random.seed!(1234)
-qih = randn(Complex{eltype(grid)}, size(sol))
-@. qih = ifelse(K < 2  * 2π/L, 0, qih)
-@. qih = ifelse(K > 10 * 2π/L, 0, qih)
-@. qih = ifelse(k == 0 * 2π/L, 0, qih)            # no power at zonal wavenumber k=0 component
-qih *= sqrt(E₀ / energy(qih, vars, params, grid)) # normalize qi to have energy E₀
-qi = irfft(qih, grid.nx)
+q₀h = ArrayType(dev)(randn(Complex{eltype(grid)}, size(sol)))
+@. q₀h = ifelse(K < 2  * 2π/L, 0, q₀h)
+@. q₀h = ifelse(K > 10 * 2π/L, 0, q₀h)
+@. q₀h = ifelse(k == 0 * 2π/L, 0, q₀h)            # no power at zonal wavenumber k=0 component
+q₀h *= sqrt(E₀ / energy(q₀h, vars, params, grid)) # normalize q₀ to have energy E₀
+q₀ = irfft(q₀h, grid.nx)
 
-SingleLayerQG.set_q!(prob, qi)
+SingleLayerQG.set_q!(prob, ArrayType(dev)(q₀))
 nothing # hide
 
 # Let's plot the initial vorticity and streamfunction. Note that when plotting, we decorate 

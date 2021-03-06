@@ -131,9 +131,9 @@ anim = @animate for j = 0:Int(nsteps/nsubs)
     println(log_eqbqg)
   end  
 
-  p[1][1][:z] = relativevorticity(prob_bqg)
+  p[1][1][:z] = Array(relativevorticity(prob_bqg))
   p[1][:title] = "barotropic\n ∇²ψ, t=" * @sprintf("%.2f", prob_bqg.clock.t)
-  p[2][1][:z] = relativevorticity(prob_eqbqg)
+  p[2][1][:z] = Array(relativevorticity(prob_eqbqg))
   p[2][:title] = "equivalent barotropic; deformation radius: " * @sprintf("%.2f", prob_eqbqg.params.deformation_radius) * "\n ∇²ψ, t=" * @sprintf("%.2f", prob_eqbqg.clock.t)
   
   stepforward!(prob_bqg, nsubs)

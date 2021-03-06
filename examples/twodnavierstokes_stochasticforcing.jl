@@ -6,7 +6,7 @@
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
 # the form of linear drag and hyperviscosity. 
 
-using FourierFlows, Printf, Plots
+using FourierFlows, Printf, Plot
 
 using FourierFlows: parsevalsum
 using Random: seed!
@@ -61,9 +61,10 @@ nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
 function calcF!(Fh, sol, t, clock, vars, params, grid)
-  ξ = ArrayType(dev)(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
+  ξ = exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt)
   ξ[1, 1] = 0
-  @. Fh = ξ * sqrt(forcing_spectrum)
+  
+  Fh .= ArrayType(dev)(ξ) .* sqrt.(forcing_spectrum)
   
   return nothing
 end
@@ -109,7 +110,7 @@ heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
 # ## Setting initial conditions
 
 # Our initial condition is a fluid at rest.
-TwoDNavierStokes.set_ζ!(prob, zeros(grid.nx, grid.ny))
+TwoDNavierStokes.set_ζ!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
 
 
 # ## Diagnostics

@@ -53,10 +53,10 @@ forcing_wavenumber = 14.0    # the central forcing wavenumber for a spectrum tha
 forcing_bandwidth  = 1.5     # the width of the forcing spectrum 
 ε = 0.001                    # energy input rate by the forcing
 
-grid = TwoDGrid(n, L)
+grid = TwoDGrid(dev, n, L)
 
-K = @. sqrt(grid.Krsq)                          # a 2D array with the total wavenumber
-k = [grid.kr[i] for i=1:grid.nkr, j=1:grid.nl]  # a 2D array with the zonal wavenumber
+K = @. sqrt(grid.Krsq)                                            # a 2D array with the total wavenumber
+k = CUDA.@allowscalar ArrayType(dev)([grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])   # a 2D array with the zonal wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
 @. forcing_spectrum = ifelse(K < 2  * 2π/L, 0, forcing_spectrum)      # no power at low wavenumbers
@@ -70,10 +70,10 @@ nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
 function calcF!(Fh, sol, t, clock, vars, params, grid)
-  ξ = ArrayType(dev)(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
-  @. Fh = ξ * sqrt.(forcing_spectrum)
-  @. Fh = ifelse(abs(grid.Krsq) == 0, 0, Fh)
-
+  ξ = exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt)
+  
+  Fh .= ArrayType(dev)(ξ) .* sqrt.(forcing_spectrum)
+  
   return nothing
 end
 nothing # hide
@@ -116,7 +116,7 @@ heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
-BarotropicQGQL.set_zeta!(prob, zeros(grid.nx, grid.ny))
+BarotropicQGQL.set_zeta!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
 nothing # hide
 
 # ## Diagnostics
@@ -174,7 +174,7 @@ function plot_output(prob)
   ζ̄ₘ = mean(ζ̄, dims=1)'
   ūₘ = mean(prob.vars.U, dims=1)'
 
-  pζ = heatmap(x, y, ζ',
+  pζ = heatmap(x, y, Array(ζ'),
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -188,7 +188,7 @@ function plot_output(prob)
              title = "vorticity ζ=∂v/∂x-∂u/∂y",
         framestyle = :box)
 
-  pψ = contourf(x, y, ψ',
+  pψ = contourf(x, y, Array(ψ'),
             levels = -0.32:0.04:0.32,
        aspectratio = 1,
          linewidth = 1,
@@ -204,7 +204,7 @@ function plot_output(prob)
              title = "streamfunction ψ",
         framestyle = :box)
 
-  pζm = plot(ζ̄ₘ, y,
+  pζm = plot(Array(ζ̄ₘ), y,
             legend = false,
          linewidth = 2,
              alpha = 0.7,
@@ -214,7 +214,7 @@ function plot_output(prob)
             ylabel = "y")
   plot!(pζm, 0*y, y, linestyle=:dash, linecolor=:black)
 
-  pum = plot(ūₘ, y,
+  pum = plot(Array(ūₘ), y,
             legend = false,
          linewidth = 2,
              alpha = 0.7,
@@ -269,11 +269,11 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
     println(log)
   end
 
-  p[1][1][:z] = @. vars.zeta + vars.Zeta
+  p[1][1][:z] = Array(@. vars.zeta + vars.Zeta)
   p[1][:title] = "vorticity, μt=" * @sprintf("%.2f", μ * clock.t)
-  p[4][1][:z] = @. vars.psi + vars.Psi
-  p[2][1][:x] = mean(vars.Zeta, dims=1)'
-  p[5][1][:x] = mean(vars.U, dims=1)'
+  p[4][1][:z] = Array(@. vars.psi + vars.Psi)
+  p[2][1][:x] = Array(mean(vars.Zeta, dims=1)')
+  p[5][1][:x] = Array(mean(vars.U, dims=1)')
   push!(p[3][1], μ * E.t[E.i], E.data[E.i])
   push!(p[6][1], μ * Z.t[Z.i], Z.data[Z.i])
   

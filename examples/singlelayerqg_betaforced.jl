@@ -5,7 +5,7 @@
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane. The dynamics include linear drag and stochastic excitation.
 
-using FourierFlows, Plots, Statistics, Printf, Random
+using FourierFlows, Plots, Statistics, Printf, Random, CUDA
 
 using FourierFlows: parsevalsum
 using FFTW: irfft
@@ -52,10 +52,10 @@ forcing_wavenumber = 14.0 * 2π/L  # the central forcing wavenumber for a spectr
 forcing_bandwidth  = 1.5  * 2π/L  # the width of the forcing spectrum 
 ε = 0.001                         # energy input rate by the forcing
 
-grid = TwoDGrid(n, L)
+grid = TwoDGrid(dev, n, L)
 
-K  = @. sqrt(grid.Krsq)                          # a 2D array with the total wavenumber
-k = [grid.kr[i] for i=1:grid.nkr, j=1:grid.nl]   # a 2D array with the zonal wavenumber
+K = @. sqrt(grid.Krsq)                                            # a 2D array with the total wavenumber
+k = CUDA.@allowscalar ArrayType(dev)([grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])   # a 2D array with the zonal wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
 @. forcing_spectrum = ifelse(K < 2  * 2π/L, 0, forcing_spectrum)      # no power at low wavenumbers
@@ -69,10 +69,10 @@ nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep
 function calcF!(Fh, sol, t, clock, vars, params, grid)
-  ξ = ArrayType(dev)(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
-  @. Fh = ξ * sqrt.(forcing_spectrum)
-  @. Fh = ifelse(abs(grid.Krsq) == 0, 0, Fh)
-
+  ξ = exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt)
+  
+  Fh .= ArrayType(dev)(ξ) .* sqrt.(forcing_spectrum)
+  
   return nothing
 end
 nothing # hide
@@ -115,7 +115,7 @@ heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
-SingleLayerQG.set_q!(prob, zeros(grid.nx, grid.ny))
+SingleLayerQG.set_q!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
 
 
 # ## Diagnostics
@@ -159,7 +159,7 @@ function plot_output(prob)
   q̄ = mean(q, dims=1)'
   ū = mean(prob.vars.u, dims=1)'
   
-  pq = heatmap(x, y, Arrat(q'),
+  pq = heatmap(x, y, Array(q'),
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -254,7 +254,7 @@ anim = @animate for j = 0:Int(nsteps / nsubs)
     println(log)
   end  
   
-  p[1][1][:z] = Array(vars.q)
+  p[1a][1][:z] = Array(vars.q)
   p[1][:title] = "vorticity, μt="*@sprintf("%.2f", μ * clock.t)
   p[4][1][:z] = Array(vars.ψ)
   p[2][1][:x] = Array(mean(vars.q, dims=1)')
