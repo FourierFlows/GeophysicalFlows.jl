@@ -21,7 +21,7 @@ import GeophysicalFlows.TwoDNavierStokes: enstrophy, enstrophy_dissipation_hyper
 
 # ## Choosing a device: CPU or GPU
 
-dev = GPU()     # Devvice (CPU/GPU)
+dev = GPU()     # Device (CPU/GPU)
 nothing # hide
 
 
@@ -57,7 +57,7 @@ K = @. sqrt(grid.Krsq)             # a 2D array with the total wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
-@. forcing_spectrum *= ε/ε0               # normalize forcing to inject energy at rate ε
+@. forcing_spectrum *= ε/ε0        # normalize forcing to inject energy at rate ε
 
 seed!(1234)
 nothing # hide

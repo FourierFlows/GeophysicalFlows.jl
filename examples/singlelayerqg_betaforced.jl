@@ -5,7 +5,7 @@
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane. The dynamics include linear drag and stochastic excitation.
 
-using FourierFlows, Plots, Statistics, Printf, Random, CUDA
+using FourierFlows, Plots, Statistics, Printf, Random
 
 using FourierFlows: parsevalsum
 using FFTW: irfft
@@ -18,7 +18,7 @@ import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 # ## Choosing a device: CPU or GPU
 
-dev = GPU()     # Devvice (CPU/GPU)
+dev = GPU()     # Device (CPU/GPU)
 nothing # hide
 
 
@@ -59,7 +59,7 @@ K = @. sqrt(grid.Krsq)            # a 2D array with the total wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
-@. forcing_spectrum *= ε/ε0               # normalize forcing to inject energy at rate ε
+@. forcing_spectrum *= ε/ε0       # normalize forcing to inject energy at rate ε
 
 seed!(1234) # reset of the random number generator for reproducibility
 nothing # hide
@@ -251,7 +251,7 @@ anim = @animate for j = 0:Int(nsteps / nsubs)
     println(log)
   end  
   
-  p[1a][1][:z] = Array(vars.q)
+  p[1][1][:z] = Array(vars.q)
   p[1][:title] = "vorticity, μt="*@sprintf("%.2f", μ * clock.t)
   p[4][1][:z] = Array(vars.ψ)
   p[2][1][:x] = Array(mean(vars.q, dims=1)')

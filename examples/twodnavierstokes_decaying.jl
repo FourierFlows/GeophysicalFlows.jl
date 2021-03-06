@@ -16,7 +16,7 @@ import GeophysicalFlows: peakedisotropicspectrum
 
 # ## Choosing a device: CPU or GPU
 
-dev = GPU()     # Devvice (CPU/GPU)
+dev = GPU()     # Device (CPU/GPU)
 nothing # hide
 
 
@@ -48,8 +48,7 @@ nothing # hide
 
 # ## Setting initial conditions
 
-# Our initial condition closely tries to reproduce the initial condition used
-# in the paper by McWilliams (_JFM_, 1984)
+# Our initial condition tries to reproduce the initial condition used by McWilliams (_JFM_, 1984).
 seed!(1234)
 k₀, E₀ = 6, 0.5
 ζ₀ = peakedisotropicspectrum(grid, k₀, E₀, mask=prob.timestepper.filter)

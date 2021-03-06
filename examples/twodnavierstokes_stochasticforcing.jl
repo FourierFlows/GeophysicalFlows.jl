@@ -18,7 +18,7 @@ import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy
 
 # ## Choosing a device: CPU or GPU
 
-dev = CPU()     # Device (CPU/GPU)
+dev = GPU()     # Device (CPU/GPU)
 nothing # hide
 
 
@@ -40,7 +40,7 @@ nothing # hide
 # We force the vorticity equation with stochastic excitation that is delta-correlated
 # in time and while spatially homogeneously and isotropically correlated. The forcing
 # has a spectrum with power in a ring in wavenumber space of radius ``k_f`` (`forcing_wavenumber`) and width 
-# ``\delta k_f`` (`forcing_bandwidth`), and it injects energy per unit area and perr unit time 
+# ``\delta k_f`` (`forcing_bandwidth`), and it injects energy per unit area and per unit time 
 # equal to ``\varepsilon``. That is, the forcing covariance spectrum is proportional to 
 # ``\exp{(-(|\bm{k}| - k_f)^2 / (2 \delta k_f^2))}``.
 
@@ -54,7 +54,7 @@ K = @. sqrt(grid.Krsq)             # a 2D array with the total wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
-@. forcing_spectrum *= ε/ε0               # normalize forcing to inject energy at rate ε
+@. forcing_spectrum *= ε/ε0        # normalize forcing to inject energy at rate ε
 
 seed!(1234)
 nothing # hide

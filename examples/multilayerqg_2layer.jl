@@ -16,7 +16,7 @@ import GeophysicalFlows.MultiLayerQG: energies
 
 # ## Choosing a device: CPU or GPU
 
-dev = GPU()     # Devvice (CPU/GPU)
+dev = GPU()     # Device (CPU/GPU)
 nothing # hide
 
 
