@@ -15,7 +15,7 @@ import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 # ## Choosing a device: CPU or GPU
 
-dev = GPU()     # Device (CPU/GPU)
+dev = GPU()     # Devvice (CPU/GPU)
 nothing # hide
 
 
@@ -82,7 +82,7 @@ E₀ = 0.04 # energy of initial condition
 K = @. sqrt(grid.Krsq)                             # a 2D array with the total wavenumber
 
 Random.seed!(1234)
-qih = randn(Complex{eltype(grid)}, size(sol))
+qih = ArrayType(dev)(randn(Complex{eltype(grid)}, size(sol)))
 @. qih = ifelse(K < 6  * 2π/L, 0, qih)
 @. qih = ifelse(K > 12 * 2π/L, 0, qih)
 qih *= sqrt(E₀ / energy(qih, vars, params, grid))  # normalize qi to have energy E₀

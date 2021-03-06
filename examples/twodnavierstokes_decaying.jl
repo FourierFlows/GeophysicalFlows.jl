@@ -16,7 +16,7 @@ import GeophysicalFlows: peakedisotropicspectrum
 
 # ## Choosing a device: CPU or GPU
 
-dev = GPU()     # Device (CPU/GPU)
+dev = GPU()     # Devvice (CPU/GPU)
 nothing # hide
 
 
@@ -27,7 +27,7 @@ nothing # hide
 n, L  = 128, 2π             # grid resolution and domain length
 nothing # hide
 
-## Then we pick the time-stepper parameters
+# Then we pick the time-stepper parameters
     dt = 1e-2  # timestep
 nsteps = 4000  # total number of steps
  nsubs = 20    # number of steps between each plot
@@ -163,8 +163,10 @@ end
 mp4(anim, "twodturb.mp4", fps=18)
 
 
-# Last we save the output.
-saveoutput(out)
+# Last we can save the output by calling
+# ```julia
+# saveoutput(out)`
+# ```
 
 
 # ## Radial energy spectrum

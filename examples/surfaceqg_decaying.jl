@@ -19,7 +19,7 @@ import GeophysicalFlows.SurfaceQG: kinetic_energy, buoyancy_variance, buoyancy_d
 
 # ## Choosing a device: CPU or GPU
 
-dev = GPU()    # Device (CPU/GPU)
+dev = GPU()     # Devvice (CPU/GPU)
 nothing # hide
 
 
@@ -241,4 +241,9 @@ layout = @layout [a{0.5h}; b{0.5w} c{0.5w}]
 
 plot_final = plot(pb, pu, pv, layout=layout, size = (800, 800))
 
-# Last we can save the output by calling `saveoutput(out)`.
+# ## Save
+
+# Last we can save the output by calling
+# ```julia
+# saveoutput(out)`
+# ```

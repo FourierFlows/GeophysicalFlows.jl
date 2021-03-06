@@ -16,7 +16,7 @@ import GeophysicalFlows.MultiLayerQG: energies
 
 # ## Choosing a device: CPU or GPU
 
-dev = GPU()     # Device (CPU/GPU)
+dev = GPU()     # Devvice (CPU/GPU)
 nothing # hide
 
 
@@ -216,7 +216,8 @@ mp4(anim, "multilayerqg_2layer.mp4", fps=18)
 
 
 # ## Save
-
-# Finally save the last snapshot.
-savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), clock.step)
-savefig(savename)
+# Finally, we can save, e.g., the last snapshot via
+# ```julia
+# savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), clock.step)
+# savefig(savename)
+# ```

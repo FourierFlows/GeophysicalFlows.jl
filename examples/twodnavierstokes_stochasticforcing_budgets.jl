@@ -21,7 +21,7 @@ import GeophysicalFlows.TwoDNavierStokes: enstrophy, enstrophy_dissipation_hyper
 
 # ## Choosing a device: CPU or GPU
 
-dev = GPU()    # Device (CPU/GPU)
+dev = GPU()     # Devvice (CPU/GPU)
 nothing # hide
 
 
@@ -40,11 +40,12 @@ nothing # hide
 
 # ## Forcing
 
-# We force the vorticity equation with stochastic excitation that is delta-correlated
-# in time and while spatially homogeneously and isotropically correlated. The forcing
-# has a spectrum with power in a ring in wavenumber space of radius ``k_f`` and
-# width ``\delta k_f``, and it injects energy per unit area and per unit time equal
-# to ``\varepsilon``.
+# We force the vorticity equation with stochastic excitation that is delta-correlated in time 
+# and while spatially homogeneously and isotropically correlated. The forcing has a spectrum 
+# with power in a ring in wavenumber space of radius ``k_f`` (`forcing_wavenumber`) and width 
+# ``\delta k_f`` (`forcing_bandwidth`), and it injects energy per unit area and per unit time 
+# equal to ``\varepsilon``. That is, the forcing covariance spectrum is proportional to 
+# ``\exp{(-(|\bm{k}| - k_f)^2 / (2 \delta k_f^2))}``.
 
 forcing_wavenumber = 14.0 * 2π/L   # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
 forcing_bandwidth  = 1.5  * 2π/L   # the width of the forcing spectrum
@@ -52,13 +53,11 @@ forcing_bandwidth  = 1.5  * 2π/L   # the width of the forcing spectrum
 
 grid = TwoDGrid(dev, n, L)
 
-K = @. sqrt(grid.Krsq)
+K = @. sqrt(grid.Krsq)             # a 2D array with the total wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
-@. forcing_spectrum = ifelse(K < 2  * 2π/L, 0, forcing_spectrum)      # no power at low wavenumbers
-@. forcing_spectrum = ifelse(K > 20 * 2π/L, 0, forcing_spectrum)      # no power at high wavenumbers
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
-@. forcing_spectrum *= ε/ε0             # normalize forcing to inject energy at rate ε
+@. forcing_spectrum *= ε/ε0               # normalize forcing to inject energy at rate ε
 
 seed!(1234)
 nothing # hide

@@ -14,13 +14,13 @@ import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 # ## Choosing a device: CPU or GPU
 
-dev = GPU()     # Device (CPU/GPU)
+dev = GPU()     # Devvice (CPU/GPU)
 nothing # hide
 
 
 # ## Numerical parameters and time-stepping parameters
 
-      n = 128            # 2D resolution = n²
+      n = 128            # 2D resolution: n² grid points
 stepper = "FilteredRK4"  # timestepper
      dt = 0.05           # timestep
  nsteps = 1500           # total number of time-steps
@@ -52,22 +52,20 @@ nothing # hide
 # ## Setting initial conditions
 
 # Our initial condition consist of a flow that has power only at wavenumbers with
-# ``8 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 10`` and initial energy ``E_0``:
+# ``4 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 10`` and initial energy ``E_0``:
 
 E₀ = 0.1 # energy of initial condition
 
 K = @. sqrt(grid.Krsq)                          # a 2D array with the total wavenumber
-k = CUDA.@allowscalar ArrayType(dev)([grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])   # a 2D array with the zonal wavenumber
 
 Random.seed!(1234)
 q₀h = ArrayType(dev)(randn(Complex{eltype(grid)}, size(sol)))
-@. q₀h = ifelse(K < 2  * 2π/L, 0, q₀h)
+@. q₀h = ifelse(K < 4  * 2π/L, 0, q₀h)
 @. q₀h = ifelse(K > 10 * 2π/L, 0, q₀h)
-@. q₀h = ifelse(k == 0 * 2π/L, 0, q₀h)            # no power at zonal wavenumber k=0 component
 q₀h *= sqrt(E₀ / energy(q₀h, vars, params, grid)) # normalize q₀ to have energy E₀
 q₀ = irfft(q₀h, grid.nx)
 
-SingleLayerQG.set_q!(prob, ArrayType(dev)(q₀))
+SingleLayerQG.set_q!(prob, q₀)
 nothing # hide
 
 # Let's plot the initial vorticity and streamfunction. Note that when plotting, we decorate 
@@ -236,6 +234,8 @@ mp4(anim, "barotropicqg_betadecay.mp4", fps=8)
 
 # ## Save
 
-# Finally save the last snapshot.
-savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), clock.step)
-savefig(savename)
+# Finally, we can save, e.g., the last snapshot via
+# ```julia
+# savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), clock.step)
+# savefig(savename)
+# ```
