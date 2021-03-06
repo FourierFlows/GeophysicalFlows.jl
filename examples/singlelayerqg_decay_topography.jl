@@ -178,7 +178,7 @@ function plot_output(prob)
           levels=0.5:0.5:3,
           lw=2, c=:black, ls=:solid, alpha=0.7)
   
-  contour!(pq, x, y, η',
+  contour!(pq, x, y, Array(η'),
           levels=-2:0.5:-0.5,
           lw=2, c=:black, ls=:dash, alpha=0.7)
   
