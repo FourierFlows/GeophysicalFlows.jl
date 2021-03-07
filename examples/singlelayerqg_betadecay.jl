@@ -14,7 +14,7 @@ import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 # ## Choosing a device: CPU or GPU
 
-dev = GPU()     # Device (CPU/GPU)
+dev = CPU()     # Device (CPU/GPU)
 nothing # hide
 
 
@@ -22,9 +22,9 @@ nothing # hide
 
       n = 128            # 2D resolution: n² grid points
 stepper = "FilteredRK4"  # timestepper
-     dt = 0.05           # timestep
- nsteps = 1500           # total number of time-steps
- nsubs  = 10             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
+     dt = 0.04           # timestep
+ nsteps = 2000           # total number of time-steps
+ nsubs  = 20             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
@@ -40,7 +40,7 @@ nothing # hide
 # a viscosity coefficient `ν` leads to the module's default value: `ν=0`. In this
 # example numerical instability due to accumulation of enstrophy at high wavenumbers
 # is taken care with the `FilteredTimestepper` we picked. 
-prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper)
+prob = SingleLayerQG.Problem(dev; nx=n, ny=n+2, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper)
 nothing # hide
 
 # and define some shortcuts
@@ -52,16 +52,17 @@ nothing # hide
 # ## Setting initial conditions
 
 # Our initial condition consist of a flow that has power only at wavenumbers with
-# ``4 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 10`` and initial energy ``E_0``:
+# ``6 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 10`` and initial energy ``E_0``:
 
-E₀ = 0.1 # energy of initial condition
+E₀ = 0.08 # energy of initial condition
 
 K = @. sqrt(grid.Krsq)                          # a 2D array with the total wavenumber
 
 Random.seed!(1234)
 q₀h = ArrayType(dev)(randn(Complex{eltype(grid)}, size(sol)))
-@. q₀h = ifelse(K < 4  * 2π/L, 0, q₀h)
+@. q₀h = ifelse(K < 6  * 2π/L, 0, q₀h)
 @. q₀h = ifelse(K > 10 * 2π/L, 0, q₀h)
+@. q₀h[1, :] = 0    # remove any power from zonal wavenumber k=0
 q₀h *= sqrt(E₀ / energy(q₀h, vars, params, grid)) # normalize q₀ to have energy E₀
 q₀ = irfft(q₀h, grid.nx)
 
@@ -88,8 +89,8 @@ p1 = heatmap(x, y, Array(vars.q'),
 p2 = contourf(x, y, Array(vars.ψ'),
         aspectratio = 1,
              c = :viridis,
-        levels = range(-0.65, stop=0.65, length=10), 
-          clim = (-0.65, 0.65),
+        levels = range(-0.7, stop=0.7, length=20), 
+          clim = (-0.35, 0.35),
          xlims = (-grid.Lx/2, grid.Lx/2),
          ylims = (-grid.Ly/2, grid.Ly/2),
         xticks = -3:3,
@@ -161,8 +162,8 @@ function plot_output(prob)
        aspectratio = 1,
             legend = false,
                  c = :viridis,
-            levels = range(-0.65, stop=0.65, length=10), 
-              clim = (-0.65, 0.65),
+            levels = range(-0.7, stop=0.7, length=20), 
+              clim = (-0.35, 0.35),
              xlims = (-grid.Lx/2, grid.Lx/2),
              ylims = (-grid.Ly/2, grid.Ly/2),
             xticks = -3:3,
@@ -210,7 +211,7 @@ p = plot_output(prob)
 
 anim = @animate for j = 0:round(Int, nsteps/nsubs)
 
-  if j % (500 / nsubs) == 0
+  if j % round(Int, nsteps/nsubs / 4) == 0
     cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
 
     log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, walltime: %.2f min",
