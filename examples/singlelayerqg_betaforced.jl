@@ -18,7 +18,7 @@ import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 # ## Choosing a device: CPU or GPU
 
-dev = GPU()     # Device (CPU/GPU)
+dev = CPU()     # Device (CPU/GPU)
 nothing # hide
 
 
