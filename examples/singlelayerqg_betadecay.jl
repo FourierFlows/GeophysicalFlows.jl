@@ -1,7 +1,6 @@
 # # Decaying barotropic QG beta-plane turbulence
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/singlelayerqg_betadecay.ipynb). 
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betadecay.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betadecay.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence on a beta plane.
 
@@ -21,11 +20,11 @@ nothing # hide
 
 # ## Numerical parameters and time-stepping parameters
 
-      n = 128            # 2D resolution = n²
+      n = 128            # 2D resolution: n² grid points
 stepper = "FilteredRK4"  # timestepper
-     dt = 0.05           # timestep
- nsteps = 1500           # total number of time-steps
- nsubs  = 10             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
+     dt = 0.04           # timestep
+ nsteps = 2000           # total number of time-steps
+ nsubs  = 20             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
@@ -41,7 +40,7 @@ nothing # hide
 # a viscosity coefficient `ν` leads to the module's default value: `ν=0`. In this
 # example numerical instability due to accumulation of enstrophy at high wavenumbers
 # is taken care with the `FilteredTimestepper` we picked. 
-prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper)
+prob = SingleLayerQG.Problem(dev; nx=n, ny=n+2, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper)
 nothing # hide
 
 # and define some shortcuts
@@ -53,27 +52,30 @@ nothing # hide
 # ## Setting initial conditions
 
 # Our initial condition consist of a flow that has power only at wavenumbers with
-# ``8 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 10`` and initial energy ``E_0``:
+# ``6 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 10`` and initial energy ``E_0``.
+# `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
+# `dev = CPU()` and `CuArray` for `dev = GPU()`.
 
-E₀ = 0.1 # energy of initial condition
+E₀ = 0.08 # energy of initial condition
 
 K = @. sqrt(grid.Krsq)                          # a 2D array with the total wavenumber
-k = [grid.kr[i] for i=1:grid.nkr, j=1:grid.nl]  # a 2D array with the zonal wavenumber
 
 Random.seed!(1234)
-qih = randn(Complex{eltype(grid)}, size(sol))
-@. qih = ifelse(K < 2  * 2π/L, 0, qih)
-@. qih = ifelse(K > 10 * 2π/L, 0, qih)
-@. qih = ifelse(k == 0 * 2π/L, 0, qih)            # no power at zonal wavenumber k=0 component
-qih *= sqrt(E₀ / energy(qih, vars, params, grid)) # normalize qi to have energy E₀
-qi = irfft(qih, grid.nx)
+q₀h = ArrayType(dev)(randn(Complex{eltype(grid)}, size(sol)))
+@. q₀h = ifelse(K < 6  * 2π/L, 0, q₀h)
+@. q₀h = ifelse(K > 10 * 2π/L, 0, q₀h)
+@. q₀h[1, :] = 0    # remove any power from zonal wavenumber k=0
+q₀h *= sqrt(E₀ / energy(q₀h, vars, params, grid)) # normalize q₀ to have energy E₀
+q₀ = irfft(q₀h, grid.nx)
 
-SingleLayerQG.set_q!(prob, qi)
+SingleLayerQG.set_q!(prob, q₀)
 nothing # hide
 
-# Let's plot the initial vorticity field:
+# Let's plot the initial vorticity and streamfunction. Note that when plotting, we decorate 
+# the variable to be plotted with `Array()` to make sure it is brought back on the CPU when 
+# `vars` live on the GPU.
 
-p1 = heatmap(x, y, vars.q',
+p1 = heatmap(x, y, Array(vars.q'),
          aspectratio = 1,
               c = :balance,
            clim = (-12, 12),
@@ -86,11 +88,11 @@ p1 = heatmap(x, y, vars.q',
           title = "initial vorticity ∂v/∂x-∂u/∂y",
      framestyle = :box)
 
-p2 = contourf(x, y, vars.ψ',
+p2 = contourf(x, y, Array(vars.ψ'),
         aspectratio = 1,
              c = :viridis,
-        levels = range(-0.65, stop=0.65, length=10), 
-          clim = (-0.65, 0.65),
+        levels = range(-0.7, stop=0.7, length=20), 
+          clim = (-0.35, 0.35),
          xlims = (-grid.Lx/2, grid.Lx/2),
          ylims = (-grid.Ly/2, grid.Ly/2),
         xticks = -3:3,
@@ -139,10 +141,10 @@ nothing # hide
 # their corresponding zonal mean structure.
 
 function plot_output(prob)
-  q = prob.vars.q
-  ψ = prob.vars.ψ
-  q̄ = mean(q, dims=1)'
-  ū = mean(prob.vars.u, dims=1)'
+  q = Array(prob.vars.q)
+  ψ = Array(prob.vars.ψ)
+  q̄ = Array(mean(q, dims=1)')
+  ū = Array(mean(prob.vars.u, dims=1)')
 
   pq = heatmap(x, y, q',
        aspectratio = 1,
@@ -162,8 +164,8 @@ function plot_output(prob)
        aspectratio = 1,
             legend = false,
                  c = :viridis,
-            levels = range(-0.65, stop=0.65, length=10), 
-              clim = (-0.65, 0.65),
+            levels = range(-0.7, stop=0.7, length=20), 
+              clim = (-0.35, 0.35),
              xlims = (-grid.Lx/2, grid.Lx/2),
              ylims = (-grid.Ly/2, grid.Ly/2),
             xticks = -3:3,
@@ -211,7 +213,7 @@ p = plot_output(prob)
 
 anim = @animate for j = 0:round(Int, nsteps/nsubs)
 
-  if j % (500 / nsubs) == 0
+  if j % round(Int, nsteps/nsubs / 4) == 0
     cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
 
     log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, walltime: %.2f min",
@@ -220,11 +222,11 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.q
+  p[1][1][:z] = Array(vars.q)
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
-  p[3][1][:z] = vars.ψ
-  p[2][1][:x] = mean(vars.q, dims=1)'
-  p[4][1][:x] = mean(vars.u, dims=1)'
+  p[3][1][:z] = Array(vars.ψ)
+  p[2][1][:x] = Array(mean(vars.q, dims=1)')
+  p[4][1][:x] = Array(mean(vars.u, dims=1)')
 
   stepforward!(prob, diags, nsubs)
   SingleLayerQG.updatevars!(prob)
@@ -235,6 +237,8 @@ mp4(anim, "barotropicqg_betadecay.mp4", fps=8)
 
 # ## Save
 
-# Finally save the last snapshot.
-savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), clock.step)
-savefig(savename)
+# Finally, we can save, e.g., the last snapshot via
+# ```julia
+# savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), clock.step)
+# savefig(savename)
+# ```

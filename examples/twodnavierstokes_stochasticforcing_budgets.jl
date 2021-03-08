@@ -1,7 +1,6 @@
 # # 2D forced-dissipative turbulence budgets
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing_budgets.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing_budgets.ipynb).
+#md # This example can viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing_budgets.ipynb).
 #
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
@@ -22,7 +21,7 @@ import GeophysicalFlows.TwoDNavierStokes: enstrophy, enstrophy_dissipation_hyper
 
 # ## Choosing a device: CPU or GPU
 
-dev = CPU()    # Device (CPU/GPU)
+dev = CPU()     # Device (CPU/GPU)
 nothing # hide
 
 
@@ -41,11 +40,12 @@ nothing # hide
 
 # ## Forcing
 
-# We force the vorticity equation with stochastic excitation that is delta-correlated
-# in time and while spatially homogeneously and isotropically correlated. The forcing
-# has a spectrum with power in a ring in wavenumber space of radius ``k_f`` and
-# width ``\delta k_f``, and it injects energy per unit area and per unit time equal
-# to ``\varepsilon``.
+# We force the vorticity equation with stochastic excitation that is delta-correlated in time 
+# and while spatially homogeneously and isotropically correlated. The forcing has a spectrum 
+# with power in a ring in wavenumber space of radius ``k_f`` (`forcing_wavenumber`) and width 
+# ``\delta k_f`` (`forcing_bandwidth`), and it injects energy per unit area and per unit time 
+# equal to ``\varepsilon``. That is, the forcing covariance spectrum is proportional to 
+# ``\exp{(-(|\bm{k}| - k_f)^2 / (2 \delta k_f^2))}``.
 
 forcing_wavenumber = 14.0 * 2π/L   # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
 forcing_bandwidth  = 1.5  * 2π/L   # the width of the forcing spectrum
@@ -53,22 +53,23 @@ forcing_bandwidth  = 1.5  * 2π/L   # the width of the forcing spectrum
 
 grid = TwoDGrid(dev, n, L)
 
-K = @. sqrt(grid.Krsq)
+K = @. sqrt(grid.Krsq)             # a 2D array with the total wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
-@. forcing_spectrum = ifelse(K < 2  * 2π/L, 0, forcing_spectrum)      # no power at low wavenumbers
-@. forcing_spectrum = ifelse(K > 20 * 2π/L, 0, forcing_spectrum)      # no power at high wavenumbers
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
-@. forcing_spectrum *= ε/ε0             # normalize forcing to inject energy at rate ε
+@. forcing_spectrum *= ε/ε0        # normalize forcing to inject energy at rate ε
 
 seed!(1234)
 nothing # hide
 
-# Next we construct function `calcF!` that computes a forcing realization every timestep
+# Next we construct function `calcF!` that computes a forcing realization every timestep.
+# `ArrayType()` function returns the type of array depending on the device, i.e., `Array` for
+# `dev = CPU()` and `CuArray` for `dev = GPU()`.
 function calcF!(Fh, sol, t, clock, vars, params, grid)
-  ξ = ArrayType(dev)(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
+  ξ = exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt)
   ξ[1, 1] = 0
-  @. Fh = ξ * sqrt(forcing_spectrum)
+  
+  Fh .= ArrayType(dev)(ξ) .* sqrt.(forcing_spectrum)
   
   return nothing
 end
@@ -91,10 +92,13 @@ nothing # hide
 
 # First let's see how a forcing realization looks like. Function `calcF!()` computes 
 # the forcing in Fourier space and saves it into variable `vars.Fh`, so we first need to
-# go back to physical space.
+# go back to physical space. 
+#
+# Note that when plotting, we decorate the variable to be plotted with `Array()` to make sure 
+# it is brought back on the CPU when the variable lives on the GPU.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, irfft(vars.Fh, grid.nx)',
+heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
      aspectratio = 1,
                c = :balance,
             clim = (-200, 200),
@@ -111,7 +115,7 @@ heatmap(x, y, irfft(vars.Fh, grid.nx)',
 # ## Setting initial conditions
 
 # Our initial condition is a fluid at rest.
-TwoDNavierStokes.set_ζ!(prob, zeros(grid.nx, grid.ny))
+TwoDNavierStokes.set_ζ!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
 
 
 # ## Diagnostics
@@ -157,7 +161,7 @@ function computetendencies_and_makeplot(prob, diags)
 
   εᶻ = parsevalsum(forcing_spectrum / 2, grid) / (grid.Lx * grid.Ly)
 
-  pζ = heatmap(x, y, vars.ζ',
+  pζ = heatmap(x, y, Array(vars.ζ'),
             aspectratio = 1,
             legend = false,
                  c = :viridis,
