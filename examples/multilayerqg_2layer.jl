@@ -61,6 +61,8 @@ nothing # hide
 
 # Our initial condition is some small amplitude random noise. We smooth our initial
 # condidtion using the `timestepper`'s high-wavenumber `filter`.
+# `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
+# `dev = CPU()` and `CuArray` for `dev = GPU()`.
 
 seed!(1234) # reset of the random number generator for reproducibility
 q₀  = 4e-3 * ArrayType(dev)(randn((grid.nx, grid.ny, nlayers)))

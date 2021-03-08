@@ -75,7 +75,9 @@ contourf(grid.x, grid.y, Array(params.eta'),
 # ## Setting initial conditions
 
 # Our initial condition consist of a flow that has power only at wavenumbers with
-# ``6 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 12`` and initial energy ``E_0``:
+# ``6 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 12`` and initial energy ``E_0``.
+# `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
+# `dev = CPU()` and `CuArray` for `dev = GPU()`.
 
 E₀ = 0.04 # energy of initial condition
 

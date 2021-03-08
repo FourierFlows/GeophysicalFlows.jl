@@ -64,7 +64,9 @@ forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2
 seed!(1234) # reset of the random number generator for reproducibility
 nothing # hide
 
-# Next we construct function `calcF!` that computes a forcing realization every timestep
+# Next we construct function `calcF!` that computes a forcing realization every timestep.
+# `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
+# `dev = CPU()` and `CuArray` for `dev = GPU()`.
 function calcF!(Fh, sol, t, clock, vars, params, grid)
   ξ = exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt)
   
