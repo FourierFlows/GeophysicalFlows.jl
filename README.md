@@ -11,7 +11,7 @@
         <img alt="Buildkite CPU+GPU build status" src="https://img.shields.io/buildkite/4d921fc17b95341ea5477fb62df0e6d9364b61b154e050a123/master?logo=buildkite&label=Buildkite%20CPU%2BGPU">
     </a>
     <a href="https://ci.appveyor.com/project/navidcy/geophysicalflows-jl">
-        <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/geophysicalflows-jl/master?label=Window&logo=appveyor&logoColor=white&style=flat-square">
+        <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/geophysicalflows-jl/master?label=Window&logo=appveyor&logoColor=white">
     </a>
     <a href="https://FourierFlows.github.io/GeophysicalFlowsDocumentation/stable">
         <img alt="stable docs" src="https://img.shields.io/badge/documentation-stable%20release-blue">
@@ -48,7 +48,7 @@ The most recent version of GeophysicalFlows.jl requires Julia v1.5 or later.
 
 GeophysicalFlows.jl v0.8.5 is the last version compatible with Julia v1.4.
 
-The latest version of GeophysicalFlows.jl compatible with Julia v1.0.5 (the current long-term-release) is v0.5.1.
+The latest version that is compatible with Julia v1.0.5 (the current long-term-release) is GeophysicalFlows.jl v0.5.1.
 
 
 ## Examples
