@@ -1,7 +1,6 @@
 # # Decaying barotropic QG turbulence over topography
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/singlelayerqg_decay_topography.ipynb). 
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decay_topography.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decay_topography.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence over topography.
 
@@ -55,8 +54,10 @@ sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, p
 x, y = grid.x, grid.y
 nothing # hide
 
-# and let's plot the topographic PV:
-contourf(grid.x, grid.y, params.eta',
+# and let's plot the topographic PV. Note that when plotting, we decorate the variable to be 
+# plotted with `Array()` to make sure it is brought back on the CPU when the variable lives 
+# on the GPU.
+contourf(grid.x, grid.y, Array(params.eta'),
           aspectratio = 1,
             linewidth = 0,
                levels = 10,
@@ -74,14 +75,16 @@ contourf(grid.x, grid.y, params.eta',
 # ## Setting initial conditions
 
 # Our initial condition consist of a flow that has power only at wavenumbers with
-# ``6 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 12`` and initial energy ``E_0``:
+# ``6 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 12`` and initial energy ``E_0``.
+# `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
+# `dev = CPU()` and `CuArray` for `dev = GPU()`.
 
 E₀ = 0.04 # energy of initial condition
 
 K = @. sqrt(grid.Krsq)                             # a 2D array with the total wavenumber
 
 Random.seed!(1234)
-qih = randn(Complex{eltype(grid)}, size(sol))
+qih = ArrayType(dev)(randn(Complex{eltype(grid)}, size(sol)))
 @. qih = ifelse(K < 6  * 2π/L, 0, qih)
 @. qih = ifelse(K > 12 * 2π/L, 0, qih)
 qih *= sqrt(E₀ / energy(qih, vars, params, grid))  # normalize qi to have energy E₀
@@ -92,7 +95,7 @@ nothing # hide
 
 # Let's plot the initial vorticity field:
 
-p1 = heatmap(x, y, vars.q',
+p1 = heatmap(x, y, Array(vars.q'),
          aspectratio = 1,
               c = :balance,
            clim = (-8, 8),
@@ -105,11 +108,11 @@ p1 = heatmap(x, y, vars.q',
           title = "initial vorticity ∂v/∂x-∂u/∂y",
      framestyle = :box)
 
-p2 = contourf(x, y, vars.ψ',
+p2 = contourf(x, y, Array(vars.ψ'),
         aspectratio = 1,
              c = :viridis,
-        levels = range(-0.35, stop=0.35, length=10), 
-          clim = (-0.35, 0.35),
+        levels = range(-0.25, stop=0.25, length=11), 
+          clim = (-0.25, 0.25),
          xlims = (-grid.Lx/2, grid.Lx/2),
          ylims = (-grid.Ly/2, grid.Ly/2),
         xticks = -3:3,
@@ -119,8 +122,8 @@ p2 = contourf(x, y, vars.ψ',
          title = "initial streamfunction ψ",
     framestyle = :box)
 
-l = @layout Plots.grid(1, 2)
-p = plot(p1, p2, layout=l, size=(900, 400))
+layout = @layout Plots.grid(1, 2)
+p = plot(p1, p2, layout=layout, size = (800, 360))
 
 
 # ## Diagnostics
@@ -159,7 +162,7 @@ function plot_output(prob)
   ψ = prob.vars.ψ
   η = prob.params.eta
 
-  pq = heatmap(x, y, q',
+  pq = heatmap(x, y, Array(q'),
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -173,20 +176,20 @@ function plot_output(prob)
              title = "vorticity ∂v/∂x-∂u/∂y",
         framestyle = :box)
   
-  contour!(pq, x, y, η',
+  contour!(pq, x, y, Array(η'),
           levels=0.5:0.5:3,
           lw=2, c=:black, ls=:solid, alpha=0.7)
   
-  contour!(pq, x, y, η',
+  contour!(pq, x, y, Array(η'),
           levels=-2:0.5:-0.5,
           lw=2, c=:black, ls=:dash, alpha=0.7)
-    
-  pψ = contourf(x, y, ψ',
+  
+  pψ = contourf(x, y, Array(ψ'),
        aspectratio = 1,
             legend = false,
                  c = :viridis,
-            levels = range(-0.7, stop=0.7, length=10), 
-              clim = (-0.7, 0.7),
+            levels = range(-0.75, stop=0.75, length=31),
+              clim = (-0.75, 0.75),
              xlims = (-grid.Lx/2, grid.Lx/2),
              ylims = (-grid.Ly/2, grid.Ly/2),
             xticks = -3:3,
@@ -197,7 +200,7 @@ function plot_output(prob)
         framestyle = :box)
 
   l = @layout Plots.grid(1, 2)
-  p = plot(pq, pψ, layout = l, size = (900, 400))
+  p = plot(pq, pψ, layout = l, size = (800, 360))
   
   return p
 end
@@ -223,9 +226,9 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.q
+  p[1][1][:z] = Array(vars.q)
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
-  p[2][1][:z] = vars.ψ
+  p[2][1][:z] = Array(vars.ψ)
 
   stepforward!(prob, diags, nsubs)
   SingleLayerQG.updatevars!(prob)

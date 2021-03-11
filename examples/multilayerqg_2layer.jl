@@ -1,7 +1,6 @@
 # # Phillips model of Baroclinic Instability
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
 #
 # A simulation of the growth of barolinic instability in the Phillips 2-layer model
 # when we impose a vertical mean flow shear as a difference ``\Delta U`` in the
@@ -62,13 +61,15 @@ nothing # hide
 
 # Our initial condition is some small amplitude random noise. We smooth our initial
 # condidtion using the `timestepper`'s high-wavenumber `filter`.
+# `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
+# `dev = CPU()` and `CuArray` for `dev = GPU()`.
 
 seed!(1234) # reset of the random number generator for reproducibility
-q_i  = 4e-3randn((grid.nx, grid.ny, nlayers))
-qh_i = prob.timestepper.filter .* rfft(q_i, (1, 2)) # only apply rfft in dims=1, 2
-q_i  = irfft(qh_i, grid.nx, (1, 2)) # only apply irfft in dims=1, 2
+q₀  = 4e-3 * ArrayType(dev)(randn((grid.nx, grid.ny, nlayers)))
+q₀h = prob.timestepper.filter .* rfft(q₀, (1, 2)) # only apply rfft in dims=1, 2
+q₀  = irfft(q₀h, grid.nx, (1, 2)) # only apply irfft in dims=1, 2
 
-MultiLayerQG.set_q!(prob, q_i)
+MultiLayerQG.set_q!(prob, q₀)
 nothing # hide
 
 
@@ -113,8 +114,9 @@ nothing # hide
 
 # ## Visualizing the simulation
 
-# We define a function that plots the potential vorticity field and the evolution 
-# of energy and enstrophy.
+# We define a function that plots the potential vorticity field and the evolution of energy 
+# and enstrophy. Note that when plotting, we decorate the variable to be plotted with `Array()` 
+# to make sure it is brought back on the CPU when `vars` live on the GPU.
 
 symlims(data) = maximum(abs.(extrema(data))) |> q -> (-q, q)
 
@@ -125,7 +127,7 @@ function plot_output(prob)
   p = plot(layout=l, size = (1000, 600))
   
   for m in 1:nlayers
-    heatmap!(p[(m-1) * 3 + 1], x, y, vars.q[:, :, m]',
+    heatmap!(p[(m-1) * 3 + 1], x, y, Array(vars.q[:, :, m]'),
          aspectratio = 1,
               legend = false,
                    c = :balance,
@@ -139,7 +141,7 @@ function plot_output(prob)
                title = "q_"*string(m),
           framestyle = :box)
 
-    contourf!(p[(m-1) * 3 + 2], x, y, vars.ψ[:, :, m]',
+    contourf!(p[(m-1) * 3 + 2], x, y, Array(vars.ψ[:, :, m]'),
               levels = 8,
          aspectratio = 1,
               legend = false,
@@ -200,8 +202,8 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
   end
   
   for m in 1:nlayers
-    p[(m-1) * 3 + 1][1][:z] = @. vars.q[:, :, m]
-    p[(m-1) * 3 + 2][1][:z] = @. vars.ψ[:, :, m]
+    p[(m-1) * 3 + 1][1][:z] = Array(vars.q[:, :, m])
+    p[(m-1) * 3 + 2][1][:z] = Array(vars.ψ[:, :, m])
   end
   
   push!(p[3][1], μ * E.t[E.i], E.data[E.i][1][1])
@@ -216,7 +218,8 @@ mp4(anim, "multilayerqg_2layer.mp4", fps=18)
 
 
 # ## Save
-
-# Finally save the last snapshot.
-savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), clock.step)
-savefig(savename)
+# Finally, we can save, e.g., the last snapshot via
+# ```julia
+# savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), clock.step)
+# savefig(savename)
+# ```

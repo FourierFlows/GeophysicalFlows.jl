@@ -1,7 +1,6 @@
 # # Quasi-Linear forced-dissipative barotropic QG beta-plane turbulence
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/barotropicqgql_betaforced.ipynb). 
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqgql_betaforced.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqgql_betaforced.ipynb).
 #
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane under the *quasi-linear approximation*. The dynamics include 
@@ -44,37 +43,36 @@ nothing # hide
 
 # ## Forcing
 
-# We force the vorticity equation with stochastic excitation that is delta-correlated
-# in time and while spatially homogeneously and isotropically correlated. The forcing
-# has a spectrum with power in a ring in wavenumber space of radius ``k_f`` and 
-# width ``\delta k_f``, and it injects energy per unit area and per unit time equal 
-# to ``\varepsilon``.
+# We force the vorticity equation with stochastic excitation that is delta-correlated in time 
+# and while spatially homogeneously and isotropically correlated. The forcing has a spectrum 
+# with power in a ring in wavenumber space of radius ``k_f`` (`forcing_wavenumber`) and width 
+# ``\delta k_f`` (`forcing_bandwidth`), and it injects energy per unit area and per unit time 
+# equal to ``\varepsilon``. That is, the forcing covariance spectrum is proportional to 
+# ``\exp{(-(|\bm{k}| - k_f)^2 / (2 \delta k_f^2))}``.
 
-forcing_wavenumber = 14.0    # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
-forcing_bandwidth  = 1.5     # the width of the forcing spectrum 
-ε = 0.001                    # energy input rate by the forcing
+forcing_wavenumber = 14.0 * 2π/L  # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
+forcing_bandwidth  = 1.5  * 2π/L  # the width of the forcing spectrum 
+ε = 0.001                         # energy input rate by the forcing
 
-grid = TwoDGrid(n, L)
+grid = TwoDGrid(dev, n, L)
 
-K = @. sqrt(grid.Krsq)                          # a 2D array with the total wavenumber
-k = [grid.kr[i] for i=1:grid.nkr, j=1:grid.nl]  # a 2D array with the zonal wavenumber
+K = @. sqrt(grid.Krsq)            # a 2D array with the total wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
-@. forcing_spectrum = ifelse(K < 2  * 2π/L, 0, forcing_spectrum)      # no power at low wavenumbers
-@. forcing_spectrum = ifelse(K > 20 * 2π/L, 0, forcing_spectrum)      # no power at high wavenumbers
-@. forcing_spectrum = ifelse(k < 2π/L, 0, forcing_spectrum)    # make sure forcing does not have power at k=0
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
-@. forcing_spectrum *= ε/ε0               # normalize forcing to inject energy at rate ε
+@. forcing_spectrum *= ε/ε0       # normalize forcing to inject energy at rate ε
 
 seed!(1234) # reset of the random number generator for reproducibility
 nothing # hide
 
-# Next we construct function `calcF!` that computes a forcing realization every timestep
+# Next we construct function `calcF!` that computes a forcing realization every timestep.
+# `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
+# `dev = CPU()` and `CuArray` for `dev = GPU()`.
 function calcF!(Fh, sol, t, clock, vars, params, grid)
-  ξ = ArrayType(dev)(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
-  @. Fh = ξ * sqrt.(forcing_spectrum)
-  @. Fh = ifelse(abs(grid.Krsq) == 0, 0, Fh)
-
+  ξ = exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt)
+  
+  Fh .= ArrayType(dev)(ξ) .* sqrt.(forcing_spectrum)
+  
   return nothing
 end
 nothing # hide
@@ -95,10 +93,12 @@ x, y = grid.x, grid.y
 nothing # hide
 
 
-# First let's see how a forcing realization looks like.
+# First let's see how a forcing realization looks like. Note that when plotting, we decorate 
+# the variable to be plotted with `Array()` to make sure it is brought back on the CPU when 
+# `vars` live on the GPU.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, irfft(vars.Fh, grid.nx)',
+heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
      aspectratio = 1,
                c = :balance,
             clim = (-8, 8),
@@ -115,7 +115,7 @@ heatmap(x, y, irfft(vars.Fh, grid.nx)',
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
-BarotropicQGQL.set_zeta!(prob, zeros(grid.nx, grid.ny))
+BarotropicQGQL.set_zeta!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
 nothing # hide
 
 # ## Diagnostics
@@ -173,7 +173,7 @@ function plot_output(prob)
   ζ̄ₘ = mean(ζ̄, dims=1)'
   ūₘ = mean(prob.vars.U, dims=1)'
 
-  pζ = heatmap(x, y, ζ',
+  pζ = heatmap(x, y, Array(ζ'),
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -187,7 +187,7 @@ function plot_output(prob)
              title = "vorticity ζ=∂v/∂x-∂u/∂y",
         framestyle = :box)
 
-  pψ = contourf(x, y, ψ',
+  pψ = contourf(x, y, Array(ψ'),
             levels = -0.32:0.04:0.32,
        aspectratio = 1,
          linewidth = 1,
@@ -203,7 +203,7 @@ function plot_output(prob)
              title = "streamfunction ψ",
         framestyle = :box)
 
-  pζm = plot(ζ̄ₘ, y,
+  pζm = plot(Array(ζ̄ₘ), y,
             legend = false,
          linewidth = 2,
              alpha = 0.7,
@@ -213,7 +213,7 @@ function plot_output(prob)
             ylabel = "y")
   plot!(pζm, 0*y, y, linestyle=:dash, linecolor=:black)
 
-  pum = plot(ūₘ, y,
+  pum = plot(Array(ūₘ), y,
             legend = false,
          linewidth = 2,
              alpha = 0.7,
@@ -268,11 +268,11 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
     println(log)
   end
 
-  p[1][1][:z] = @. vars.zeta + vars.Zeta
+  p[1][1][:z] = Array(@. vars.zeta + vars.Zeta)
   p[1][:title] = "vorticity, μt=" * @sprintf("%.2f", μ * clock.t)
-  p[4][1][:z] = @. vars.psi + vars.Psi
-  p[2][1][:x] = mean(vars.Zeta, dims=1)'
-  p[5][1][:x] = mean(vars.U, dims=1)'
+  p[4][1][:z] = Array(@. vars.psi + vars.Psi)
+  p[2][1][:x] = Array(mean(vars.Zeta, dims=1)')
+  p[5][1][:x] = Array(mean(vars.U, dims=1)')
   push!(p[3][1], μ * E.t[E.i], E.data[E.i])
   push!(p[6][1], μ * Z.t[Z.i], Z.data[Z.i])
   
@@ -285,6 +285,8 @@ mp4(anim, "barotropicqgql_betaforced.mp4", fps=18)
 
 # ## Save
 
-# Finally save the last snapshot.
-savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), clock.step)
-savefig(savename)
+# Finally, we can save, e.g., the last snapshot via
+# ```julia
+# savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), clock.step)
+# savefig(savename)
+# ```
