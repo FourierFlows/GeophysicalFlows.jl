@@ -123,4 +123,4 @@ and then open `docs/build/index.html` in your favorite browser.
 
 ## Credits
 
-This contributor's guide is heavily based on the excellent [MetPy contributor's guide](https://github.com/Unidata/MetPy/blob/master/CONTRIBUTING.md) and on the "cover" made by [Oceananigans.jl](https://clima.github.io/OceananigansDocumentation/stable/contributing/).
+This contributor's guide is heavily based on the excellent [MetPy contributor's guide](https://github.com/Unidata/MetPy/blob/master/CONTRIBUTING.md) and on its "cover" made by [Oceananigans.jl](https://clima.github.io/OceananigansDocumentation/stable/contributing/).

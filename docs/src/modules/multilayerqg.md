@@ -2,7 +2,7 @@
 
 ### Basic Equations
 
-This module solves the layered quasi-geostrophic equations on a beta-plane of variable fluid 
+This module solves the layered quasi-geostrophic equations on a beta plane of variable fluid 
 depth ``H - h(x, y)``. The flow in each layer is obtained through a streamfunction ``\psi_j`` as 
 ``(u_j, v_j) = (-\partial_y \psi_j, \partial_x \psi_j)``, ``j = 1, \dots, n``, where ``n`` 
 is the number of fluid layers.

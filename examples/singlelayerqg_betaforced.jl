@@ -265,7 +265,7 @@ anim = @animate for j = 0:Int(nsteps / nsubs)
   SingleLayerQG.updatevars!(prob)
 end
 
-mp4(anim, "barotropicqg_betaforced.mp4", fps=18)
+mp4(anim, "singlelayerqg_betaforced.mp4", fps=18)
 
 
 # ## Save
