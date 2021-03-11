@@ -1,11 +1,11 @@
-# TwoDNavierStokes Module
+# TwoDNavierStokes
 
 
 ### Basic Equations
 
 This module solves two-dimensional incompressible Navier-Stokes equations using the 
-vorticity-streamfunction formulation. The flow ``\boldsymbol{u} = (u, v)`` is obtained through 
-a streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. The only non-zero 
+vorticity-streamfunction formulation. The flow ``\bm{u} = (u, v)`` is obtained through a 
+streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. The only non-zero 
 component of vorticity is that normal to the plane of motion, 
 ``\partial_x v - \partial_y u = \nabla^2 \psi``. The module solves the two-dimensional 
 vorticity equation:
@@ -90,10 +90,16 @@ Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.TwoDNavie
 
 ## Examples
 
-- `examples/twodnavierstokes_decaying.jl`: A script that simulates decaying two-dimensional turbulence reproducing the results by
+- [`examples/twodnavierstokes_decaying.jl`](../generated/twodnavierstokes_decaying/): A script 
+  that simulates decaying two-dimensional turbulence reproducing the results by
 
-  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43.
+  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. 
+  *J. Fluid Mech.*, **146**, 21-43.
 
-- `examples/twodnavierstokes_stochasticforcing.jl`: A script that simulates forced-dissipative two-dimensional turbulence with isotropic temporally delta-correlated stochastic forcing.
+- [`examples/twodnavierstokes_stochasticforcing.jl`](../generated/twodnavierstokes_stochasticforcing/): 
+  A script that simulates forced-dissipative two-dimensional turbulence with isotropic temporally 
+  delta-correlated stochastic forcing.
 
-- `examples/twodnavierstokes_stochasticforcing_budgets.jl`: A script that simulates forced-dissipative two-dimensional turbulence demonstrating how we can compute the energy and enstrophy budgets.
+- [`examples/twodnavierstokes_stochasticforcing_budgets.jl`](../generated/twodnavierstokes_stochasticforcing_budgets/): 
+  A script that simulates forced-dissipative two-dimensional turbulence demonstrating how we 
+  can compute the energy and enstrophy budgets.

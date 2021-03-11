@@ -1,4 +1,4 @@
-# BarotropicQGQL Module
+# BarotropicQGQL
 
 ### Basic Equations
 
@@ -116,4 +116,8 @@ Other diagnostic include: [`dissipation`](@ref GeophysicalFlows.BarotropicQGQL.d
 
 ## Examples
 
-- `examples/barotropicqgql_betaforced.jl`: A script that simulates forced-dissipative quasi-linear quasi-geostrophic flow on a beta-plane demonstrating zonation. The forcing is temporally delta-correlated and its spatial structure is isotropic with power in a narrow annulus of total radius ``k_f`` in wavenumber space. This example demonstrates that the anisotropic inverse energy cascade is not required for zonation.
+- [`examples/barotropicqgql_betaforced.jl`](../generated/barotropicqgql_betaforced/): A script 
+  that simulates forced-dissipative quasi-linear quasi-geostrophic flow on a beta-plane demonstrating 
+	zonation. The forcing is temporally delta-correlated and its spatial structure is isotropic 
+	with power in a narrow annulus of total radius ``k_f`` in wavenumber space. This example 
+	demonstrates that the anisotropic inverse energy cascade is not required for zonation.
