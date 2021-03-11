@@ -3,7 +3,7 @@
 ### Basic Equations
 
 This module solves the barotropic or equivalent barotropic quasi-geostrophic vorticity equation 
-on a beta-plane of variable fluid depth ``H - h(x, y)``. The flow is obtained through a 
+on a beta plane of variable fluid depth ``H - h(x, y)``. The flow is obtained through a 
 streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. All flow fields 
 can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
 
@@ -110,7 +110,7 @@ Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.SingleLay
 
 ## Examples
 
-- [`examples/singlelayerqg_betadecay.jl`](../generated/singlelayerqg_betadecay/): A script that simulates decaying quasi-geostrophic flow on a beta-plane demonstrating zonation.
+- [`examples/singlelayerqg_betadecay.jl`](../generated/singlelayerqg_betadecay/): A script that simulates decaying quasi-geostrophic flow on a beta plane demonstrating zonation.
 
 - [`examples/singlelayerqg_betaforced.jl`](../generated/singlelayerqg_betaforced/): A script that simulates forced-dissipative quasi-geostrophic flow on a beta plane demonstrating zonation. The forcing is temporally delta-correlated with isotropic spatial structure with power in a narrow annulus in wavenumber space with total wavenumber ``k_f``.
 
