@@ -50,7 +50,7 @@ pseudospectral numerical methods and leverage the framework provided by the `Fou
 run on CPUs or GPUs, and to provide a high level of customizability within modules. This allows 
 simulations to be tailored for specific research questions, via the choice of parameters, domain 
 properties, and schemes for damping, forcing, time-stepping etc. Simulations can easily be carried 
-out on different computing architectures, selection of the architecture on which equations are 
+out on different computing architectures. Selection of the architecture on which equations are 
 solved is done by providing the argument `CPU()` or `GPU()` during the construction of a particular 
 problem.
 
@@ -73,11 +73,11 @@ simulation reside in the repository `github.com/FourierFlows/MultilayerQG-exampl
 \label{fig1}](PV_eady_nlayers5.png)
 
 `GeophysicalFlows.jl` is a unique Julia package and shares similarities in functionality to 
-the Python's `pyqg` [@pyqg]. Beyond their base language, the major differences between these 
+the Python package `pyqg` [@pyqg]. Beyond their base language, the major differences between these 
 packages are that `GeophysicalFlows.jl` can be run on GPUs or CPUs and leverages a separate 
 package (`FourierFlows.jl`; which is continuously developed) to solve differential equations 
 and compute diagnostics, while `pyqg` can only be run on CPUs and uses a self-contained kernel. 
-Dedalus [@Burns2020] is Python software with an intuitive script-based interface that uses spectral 
+Dedalus [@Burns2020] is Python package with an intuitive script-based interface that uses spectral 
 methods to solve general partial differential equations, such as the ones within `GeophysicalFlows.jl`. 
 There are also some other isolated codes/scripts in personal websites and in open-source public 
 repositories that have similar functionality as some `GeophysicalFlows.jl` modules. 
