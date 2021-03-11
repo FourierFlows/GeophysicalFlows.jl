@@ -108,11 +108,11 @@ that the documentation for the code you touched is still in great shape. It is n
 to find some strange wording or clarification that you can take care of while you are here.
 
 We encourage using [unicode](https://docs.julialang.org/en/v1/manual/unicode-input/) characters 
-when writing docstrings, e.g., use `α` instead of `\alpha`. This makes rendering as similar 
-as possible between REPL's `help?>` mode and in the Documentation.
+when writing docstrings, e.g., use `α` instead of `\alpha`. This makes the rendering of the 
+docstrings in the Documentation and in the Julia REPL's `help?>` mode as similar as possible.
 
 You can preview how the Documentation will look like after merging by building the documentation 
-locally. From the main directory of your local repository call
+locally. To do that, from the main directory of your local repository call
 
 ```
 julia --project=docs/ -e 'using Pkg; Pkg.instantiate(); Pkg.develop(PackageSpec(path=pwd()))'
