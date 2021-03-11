@@ -90,16 +90,10 @@ Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.TwoDNavie
 
 ## Examples
 
-- [`examples/twodnavierstokes_decaying.jl`](../generated/twodnavierstokes_decaying/): A script 
-  that simulates decaying two-dimensional turbulence reproducing the results by
+- [`examples/twodnavierstokes_decaying.jl`](../generated/twodnavierstokes_decaying/): A script that simulates decaying two-dimensional turbulence reproducing the results by
 
-  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. 
-  *J. Fluid Mech.*, **146**, 21-43.
+  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43.
 
-- [`examples/twodnavierstokes_stochasticforcing.jl`](../generated/twodnavierstokes_stochasticforcing/): 
-  A script that simulates forced-dissipative two-dimensional turbulence with isotropic temporally 
-  delta-correlated stochastic forcing.
+- [`examples/twodnavierstokes_stochasticforcing.jl`](../generated/twodnavierstokes_stochasticforcing/): A script that simulates forced-dissipative two-dimensional turbulence with isotropic temporally delta-correlated stochastic forcing.
 
-- [`examples/twodnavierstokes_stochasticforcing_budgets.jl`](../generated/twodnavierstokes_stochasticforcing_budgets/): 
-  A script that simulates forced-dissipative two-dimensional turbulence demonstrating how we 
-  can compute the energy and enstrophy budgets.
+- [`examples/twodnavierstokes_stochasticforcing_budgets.jl`](../generated/twodnavierstokes_stochasticforcing_budgets/): A script that simulates forced-dissipative two-dimensional turbulence demonstrating how we can compute the energy and enstrophy budgets.
