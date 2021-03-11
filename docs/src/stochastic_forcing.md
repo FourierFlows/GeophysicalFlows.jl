@@ -64,14 +64,14 @@ popular ways for computing such stochastic integrals are:
 
 ```math
 \begin{aligned}
-{\color{Green} \text{Itô}}&: {\color{Green}\int_{t_0}^{t} g(x(s)) \, \mathrm{d} W_s \approx \sum_{j} g \left ( x(t_j) \right )(W_{j+1} - W_j)} , \\
-{\color{Magenta} \text{Stratonovich}}&: {\color{Magenta} \int_{t_0}^{t} g(x(s)) \, \mathrm{d} W_s \approx \sum_{j} g \left (x \left (\tfrac{1}{2}(t_j + t_{j+1}) \right ) \right)(W_{j+1} - W_j)} .
+{\color{Green} \text{Itô}} &: {\color{Green}\int_{t_0}^{t} g(x(s)) \, \mathrm{d} W_s \approx \sum_{j} g \left ( x(t_j) \right )(W_{j+1} - W_j)} , \\
+{\color{Magenta} \text{Stratonovich}} &: {\color{Magenta} \int_{t_0}^{t} g(x(s)) \, \mathrm{d} W_s \approx \sum_{j} g \left (x \left (\tfrac{1}{2}(t_j + t_{j+1}) \right ) \right)(W_{j+1} - W_j)} .
 \end{aligned}
 ```
 
 The difference in the two calculi above lies in the point at which we choose to evaluate ``g(x)``:
-we take the start of the time-interval for ${\color{Green} \text{Itô, } t_j}$, while we use
-the mid-point for ${\color{Magenta}\text{Stratonovich, } \tfrac{1}{2}(t_j+t_{j+1})}$. In the case the 
+we take the start of the time-interval for ``{\color{Green} \text{Itô, } t_j}``, while we use
+the mid-point for ``{\color{Magenta}\text{Stratonovich, } \tfrac{1}{2}(t_j+t_{j+1})}``. In the case the 
 stochastic noise is additive, i.e., its prefactor ``g`` does not depend on the state ``x_t``,
 then the two interpretations coincide. When the noise does depend on the state of the system, 
 i.e., ``g=g(x(t))``, then the two interpretations above give thoroughly different results. This
@@ -89,8 +89,8 @@ differential form as:
 
 ```math
 \begin{aligned}
-{\color{Green}\text{Itô}}&: {\color{Green}\mathrm{d} x_t = f(x_t) \mathrm{d} t + g(x_t) \mathrm{d} W_t} , \\
-{\color{Magenta}\text{Stratonovich}}&: {\color{Magenta}\mathrm{d} x_t = f(x_t) \mathrm{d} t + g(x_t) \circ \mathrm{d} W_t} .
+{\color{Green}\text{Itô}} &: {\color{Green}\mathrm{d} x_t = f(x_t) \mathrm{d} t + g(x_t) \mathrm{d} W_t} , \\
+{\color{Magenta}\text{Stratonovich}} &: {\color{Magenta}\mathrm{d} x_t = f(x_t) \mathrm{d} t + g(x_t) \circ \mathrm{d} W_t} .
 \end{aligned}
 ```
 
@@ -103,8 +103,8 @@ rule must be used:
 
 ```math
 \begin{aligned}
-{\color{Green}\text{Itô}}&: {\color{Green}\mathrm{d} y_t = \frac{\mathrm{d} G}{\mathrm{d} x} \mathrm{d} x_t + \frac{1}{2} g(x_t)^2 \frac{\mathrm{d}^2 G}{\mathrm{d} x^2} \mathrm{d} t = \left[ \frac{\mathrm{d} G}{\mathrm{d} x} f(x_t) + \frac{1}{2} g(x_t)^2 \frac{\mathrm{d}^2 G}{\mathrm{d} x^2} \right] \mathrm{d} t + \frac{\mathrm{d} G}{\mathrm{d} x} g(x_t) \mathrm{d} W_t} , \\
-{\color{Magenta}\text{Stratonovich}}&: {\color{Magenta}\mathrm{d} y_t  = \frac{\mathrm{d} G}{\mathrm{d} x} \mathrm{d} x_t = \frac{\mathrm{d} G}{\mathrm{d} x} f(x_t) \mathrm{d} t + \frac{\mathrm{d} G}{\mathrm{d} x} g(x_t) \circ \mathrm{d} W_t} .
+{\color{Green}\text{Itô}} &: {\color{Green}\mathrm{d} y_t = \frac{\mathrm{d} G}{\mathrm{d} x} \mathrm{d} x_t + \frac{1}{2} g(x_t)^2 \frac{\mathrm{d}^2 G}{\mathrm{d} x^2} \mathrm{d} t = \left[ \frac{\mathrm{d} G}{\mathrm{d} x} f(x_t) + \frac{1}{2} g(x_t)^2 \frac{\mathrm{d}^2 G}{\mathrm{d} x^2} \right] \mathrm{d} t + \frac{\mathrm{d} G}{\mathrm{d} x} g(x_t) \mathrm{d} W_t} , \\
+{\color{Magenta}\text{Stratonovich}} &: {\color{Magenta}\mathrm{d} y_t  = \frac{\mathrm{d} G}{\mathrm{d} x} \mathrm{d} x_t = \frac{\mathrm{d} G}{\mathrm{d} x} f(x_t) \mathrm{d} t + \frac{\mathrm{d} G}{\mathrm{d} x} g(x_t) \circ \mathrm{d} W_t} .
 \end{aligned}
 ```
 
@@ -128,9 +128,9 @@ The above is demonstrated by evaluating the simple stochastic integral:
 
 ```math
 \begin{aligned}
-{\color{Green} \text{Itô}}&: {\color{Green} \left \langle \int_{t_0}^{t} W_s \, \mathrm{d} W_s \right \rangle \approx \sum_{j} \left \langle W_j (W_{j+1} - W_j) \right \rangle} \\
+{\color{Green} \text{Itô}} &: {\color{Green} \left \langle \int_{t_0}^{t} W_s \, \mathrm{d} W_s \right \rangle \approx \sum_{j} \left \langle W_j (W_{j+1} - W_j) \right \rangle} \\
 & \hspace{7.3em} {\color{Green} = \sum_j \left \langle W_j W_{j+1} \right \rangle - \left \langle W_j W_j \right \rangle \sim \sum_{j} t_j - t_j = 0} , \\
-{\color{Magenta}\text{Stratonovich}}&: {\color{Magenta}\left \langle \int_{t_0}^{t} W_s \circ \mathrm{d} W_s \right \rangle \approx \sum_j \left \langle \frac1{2}(W_j + W_{j+1}) (W_{j+1} - W_j)\right \rangle} \\
+{\color{Magenta}\text{Stratonovich}} &: {\color{Magenta}\left \langle \int_{t_0}^{t} W_s \circ \mathrm{d} W_s \right \rangle \approx \sum_j \left \langle \frac1{2}(W_j + W_{j+1}) (W_{j+1} - W_j)\right \rangle} \\
 & \hspace{7.3em} {\color{Magenta} = \frac1{2} \sum_j \left \langle W_{j+1} W_{j+1} \right \rangle - \left \langle W_j W_j \right \rangle  \sim \frac1{2} \sum_j t_{j+1} - t_j = \frac{t}{2}} .
 \end{aligned}
 ```
