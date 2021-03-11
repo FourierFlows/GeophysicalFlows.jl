@@ -44,7 +44,7 @@ The buoyancy equation is time-stepped forward in Fourier space:
 \partial_t \widehat{b_s} = - \widehat{\mathsf{J}(\psi, b_s)} - \nu |𝐤|^{2 n_\nu} \widehat{b_s} + \widehat{F} .
 ```
 
-The surface buoyancy is [`b`](@ref GeophysicalFlows.SingleLayerQG.Vars). The state variable 
+The surface buoyancy is [`b`](@ref GeophysicalFlows.SurfaceQG.Vars). The state variable 
 `sol` is the Fourier transform of the surface buoyancy, [`bh`](@ref GeophysicalFlows.SurfaceQG.Vars).
 
 The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) =
