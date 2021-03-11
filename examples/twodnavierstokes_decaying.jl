@@ -59,7 +59,7 @@ nothing # hide
 # to be plotted with `Array()` to make sure it is brought back on the CPU when `vars` live on 
 # the GPU.
 heatmap(x, y, Array(vars.ζ'),
-         aspectratio = 1,
+    aspectratio = 1,
               c = :balance,
            clim = (-40, 40),
           xlims = (-L/2, L/2),
