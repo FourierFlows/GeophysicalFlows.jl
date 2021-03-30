@@ -49,7 +49,9 @@ pseudospectral numerical methods and leverage the framework provided by the `Fou
 
 # Statement of need
 
-Conceptual models in simple domain configurations often provide stepping stones for better understanding in geophysical and astrophysical settings: atmospheric, oceanic, climate, and planetary atmospheres. These conceptual models are used in research but also invalueable for grasping concepts in teaching.  Moreover, the explosion of machine-learning applications in atmospheric and oceanic scieces advocates for the need of being able to solve partial differential equations on GPUs. Often people code up their own versions of solvers for the same partial differential equation. 
+Conceptual models in simple domains often provide stepping stones for better understanding in geophysical and astrophysical settings: atmospheric, oceanic, climate, and planetary atmospheres. These conceptual models are used in research but also are of great value for helping students in class to grasp on new concepts and phenomena. Oftentimes people end up coding their own versions of solvers for the same partial differential equation.
+
+On top of the above-mentioned needs, the recent explosion of machine-learning applications in atmospheric and oceanic sciences advocates for the need that solvers for partial differential equations can be run on GPUs. 
 
 `GeophysicalFlows.jl` provides a collection of modules for solving sets of partial differential equations often used as conceptual models. These modules are continuously tested (unit tests and tests for the physics involved) and are well-documented. `GeophysicalFlows.jl` utilizes Julia's functionality and abstraction to enable all modules to run on CPUs or GPUs, and to provide a high level of customizability within modules. The abstractions allow simulations to be tailored for specific research questions, via the choice of parameters, domain properties, and schemes for damping, forcing, time-stepping etc. Simulations can easily be carried out on different computing architectures. Selection of the architecture on which equations are solved is done by providing the argument `CPU()` or `GPU()` during the construction of a particular problem.
  
@@ -80,9 +82,11 @@ packages are that `GeophysicalFlows.jl` can be run on GPUs or CPUs and leverages
 package (`FourierFlows.jl`; which is continuously developed) to solve differential equations 
 and compute diagnostics, while `pyqg` can only be run on CPUs and uses a self-contained kernel. 
 Dedalus [@Burns2020] is Python package with an intuitive script-based interface that uses spectral 
-methods to solve general partial differential equations, such as the ones within `GeophysicalFlows.jl`. 
-There are also some other isolated codes/scripts in personal websites and in open-source public 
-repositories that have similar functionality as some `GeophysicalFlows.jl` modules. 
+methods to solve general partial differential equations, such as the ones within `GeophysicalFlows.jl`. There are also some other isolated codes/scripts in personal websites and in open-source public repositories that have similar functionality as some `GeophysicalFlows.jl` modules. 
+
+[@qgs]
+[@MAOOAM]
+[@Oceananigans]
 
 `GeophysicalFlows.jl` can be used to investigate a variety of scientific research questions 
 thanks to its various modules and high customizability, and its ease-of-use makes it an ideal 
