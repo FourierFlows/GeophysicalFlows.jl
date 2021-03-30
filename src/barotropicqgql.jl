@@ -30,7 +30,7 @@ nothingfunction(args...) = nothing
 """
     Problem(dev::Device; parameters...)
 
-Construct a BarotropicQGQL turbulence problem on device `dev`.
+Construct a BarotropicQGQL problem on device `dev`.
 """
 function Problem(dev::Device=CPU();
   # Numerical parameters
@@ -197,7 +197,8 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     DecayingVars(dev, grid)
 
-Return the vars for unforced two-dimensional barotropic QG problem with `grid`.
+Return the vars for unforced two-dimensional quasi-linear barotropic QG problem on device `dev` 
+and with `grid`.
 """
 function DecayingVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
@@ -210,7 +211,8 @@ end
 """
     ForcedVars(dev, grid)
 
-Return the `vars` for forced two-dimensional barotropic QG QL problem on device `dev` and `grid`.
+Return the `vars` for forced two-dimensional quasi-linear barotropic QG problem on device 
+`dev` and with `grid`.
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
@@ -223,8 +225,8 @@ end
 """
     StochasticForcedVars(dev, grid)
 
-Return the `vars` for stochastically forced two-dimensional barotropic QG QL problem on 
-device `dev` and `grid`.
+Return the `vars` for stochastically forced two-dimensional quasi-linear barotropic QG problem 
+on device `dev` and with `grid`.
 """
 function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)

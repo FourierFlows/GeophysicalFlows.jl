@@ -1,6 +1,6 @@
 # # Decaying barotropic QG turbulence over topography
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decay_topography.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decaying_topography.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence over topography.
 
@@ -234,4 +234,4 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
   SingleLayerQG.updatevars!(prob)
 end
 
-mp4(anim, "barotropicqg_decay_topography.mp4", fps=12)
+mp4(anim, "singlelayerqg_decaying_topography.mp4", fps=12)
