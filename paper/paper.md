@@ -82,11 +82,7 @@ packages are that `GeophysicalFlows.jl` can be run on GPUs or CPUs and leverages
 package (`FourierFlows.jl`; which is continuously developed) to solve differential equations 
 and compute diagnostics, while `pyqg` can only be run on CPUs and uses a self-contained kernel. 
 Dedalus [@Burns2020] is Python package with an intuitive script-based interface that uses spectral 
-methods to solve general partial differential equations, such as the ones within `GeophysicalFlows.jl`. There are also some other isolated codes/scripts in personal websites and in open-source public repositories that have similar functionality as some `GeophysicalFlows.jl` modules. 
-
-[@qgs]
-[@MAOOAM]
-[@Oceananigans]
+methods to solve general partial differential equations, such as the ones within `GeophysicalFlows.jl`. `Oceananigans.jl` [@Oceananigans] is not bad either. It also runs on GPUs, it allows for more variety of boundary conditions but is slower and does not have spectral accuracy. (Greg could you write a blurp (e.g. 1 sentence) comparing it with `GeophysicalFlows.jl`? Just delete my sentence all together if you like --- I just wrote up something simply as a placeholder.) The `MAOOAM` [@MAOOAM] package (and its Python implementation `qgs` [@qgs]) provides a reduced-order quasi-geostrophic coupled ocean–atmosphere model. These packages are fully spectral and thus allow to study how the solutions depend on the number of spectral-mode truncation in the ocean and atmosphere. The physics in `MAOOAM` and `qgs` share similarities with the `SingleLayerQG` and `MultiLayerQG` modules of `GeophysicalFlows.jl`; but neither `MAOOAM` nor `qgs` can run on GPUs. There are also some other isolated codes/scripts in personal websites and in open-source public repositories that have similar functionality as some `GeophysicalFlows.jl` modules. 
 
 `GeophysicalFlows.jl` can be used to investigate a variety of scientific research questions 
 thanks to its various modules and high customizability, and its ease-of-use makes it an ideal 
