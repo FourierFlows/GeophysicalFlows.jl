@@ -34,26 +34,25 @@ affiliations:
    index: 4
  - name: Oregon State University
    index: 5
-date: 30 January 2021
+date: 30 March 2021
 bibliography: paper.bib
 ---
 
 
 # Summary
 
-`GeophysicalFlows.jl` is a Julia package that contains partial differential equations solvers for 
-a collection of geophysical fluid systems in periodic domains. All modules use Fourier-based 
+`GeophysicalFlows.jl` is a Julia package that contains partial differential equations solvers 
+for a collection of geophysical fluid systems in periodic domains. All modules use Fourier-based 
 pseudospectral numerical methods and leverage the framework provided by the `FourierFlows.jl` 
-[@FourierFlows] Julia package for time-stepping, diagnostics, and saving output.
+[@FourierFlows] Julia package for time-stepping, custom diagnostics, and saving output.
 
-`GeophysicalFlows.jl` utilizes Julia's functionality and abstraction to enable all modules to
-run on CPUs or GPUs, and to provide a high level of customizability within modules. This allows 
-simulations to be tailored for specific research questions, via the choice of parameters, domain 
-properties, and schemes for damping, forcing, time-stepping etc. Simulations can easily be carried 
-out on different computing architectures. Selection of the architecture on which equations are 
-solved is done by providing the argument `CPU()` or `GPU()` during the construction of a particular 
-problem.
 
+# Statement of need
+
+Conceptual models in simple domain configurations often provide stepping stones for better understanding in geophysical and astrophysical settings: atmospheric, oceanic, climate, and planetary atmospheres. These conceptual models are used in research but also invalueable for grasping concepts in teaching.  Moreover, the explosion of machine-learning applications in atmospheric and oceanic scieces advocates for the need of being able to solve partial differential equations on GPUs. Often people code up their own versions of solvers for the same partial differential equation. 
+
+`GeophysicalFlows.jl` provides a collection of modules for solving sets of partial differential equations often used as conceptual models. These modules are continuously tested (unit tests and tests for the physics involved) and are well-documented. `GeophysicalFlows.jl` utilizes Julia's functionality and abstraction to enable all modules to run on CPUs or GPUs, and to provide a high level of customizability within modules. The abstractions allow simulations to be tailored for specific research questions, via the choice of parameters, domain properties, and schemes for damping, forcing, time-stepping etc. Simulations can easily be carried out on different computing architectures. Selection of the architecture on which equations are solved is done by providing the argument `CPU()` or `GPU()` during the construction of a particular problem.
+ 
 Documented examples for each geophysical system (module) appear in the package's documentation, 
 providing a stepping stone for new users and for the development of new or customized modules. 
 Current modules include two-dimensional flow and a variety of quasi-geostrophic (QG) dynamical 
@@ -71,6 +70,9 @@ simulated with 512² grid-points. Plots were made with the `Plots.jl` Julia pack
 which utilizes the `cmocean` colormaps collection [@Thyng2016]. Scripts to reproduce the 
 simulation reside in the repository `github.com/FourierFlows/MultilayerQG-example`. 
 \label{fig1}](PV_eady_nlayers5.png)
+
+
+# State of the field
 
 `GeophysicalFlows.jl` is a unique Julia package and shares similarities in functionality to 
 the Python package `pyqg` [@pyqg]. Beyond their base language, the major differences between these 
