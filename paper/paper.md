@@ -56,7 +56,7 @@ On top of the above-mentioned needs, the recent explosion of machine-learning ap
 `GeophysicalFlows.jl` provides a collection of modules for solving sets of partial differential equations often used as conceptual models. These modules are continuously tested (unit tests and tests for the physics involved) and are well-documented. `GeophysicalFlows.jl` utilizes Julia's functionality and abstraction to enable all modules to run on CPUs or GPUs, and to provide a high level of customizability within modules. The abstractions allow simulations to be tailored for specific research questions, via the choice of parameters, domain properties, and schemes for damping, forcing, time-stepping etc. Simulations can easily be carried out on different computing architectures. Selection of the architecture on which equations are solved is done by providing the argument `CPU()` or `GPU()` during the construction of a particular problem.
  
 Documented examples for each geophysical system (module) appear in the package's documentation, 
-providing a stepping stone for new users and for the development of new or customized modules. 
+providing a starting point for new users and for the development of new or customized modules. 
 Current modules include two-dimensional flow and a variety of quasi-geostrophic (QG) dynamical 
 systems, which provide analogues to the large-scale dynamics of atmospheres and oceans. The QG 
 systems currently in `GeophysicalFlows.jl` extend two-dimensional dynamics to include the leading
@@ -65,19 +65,22 @@ conditions, stratification and quasi-two-dimensional layering. A community-based
 of diagnostics throughout the modules are used to compute quantities like energy, enstrophy, 
 dissipation, etc.
 
-![Snapshots from a nonlinearly equilibrated simulation of the Eady instability over a
-meridional ridge. Simulation used `MultiLayerQG` module of `GeophysicalFlows.jl`. The Eady 
-problem was approximated here using 5 layers stacked up in the vertical. Each layer was 
-simulated with 512² grid-points. Plots were made with the `Plots.jl` Julia package, 
-which utilizes the `cmocean` colormaps collection [@Thyng2016]. Scripts to reproduce the 
-simulation reside in the repository `github.com/FourierFlows/MultilayerQG-example`. 
-\label{fig1}](PV_eady_nlayers5.png)
+![Potential vorticity snapshots from a nonlinearly equilibrated simulation of the Eady instability 
+over a meridional ridge. Simulation used `MultiLayerQG` module of `GeophysicalFlows.jl`. The Eady 
+problem was approximated here using 5 layers stacked up in the vertical. Each layer was simulated 
+with 512² grid-points. Plots were made with the `Plots.jl` Julia package, which utilizes the 
+`cmocean` colormaps collection [@Thyng2016]. Scripts to reproduce the simulation reside in the 
+repository `github.com/FourierFlows/MultilayerQG-example`. \label{fig1}](PV_eady_nlayers5.png)
 
 
 # State of the field
 
-`GeophysicalFlows.jl` is a unique Julia package and shares similarities in functionality to 
-the Python package `pyqg` [@pyqg]. Beyond their base language, the major differences between these 
+`GeophysicalFlows.jl` is a unique Julia package that shares some features and similarities with 
+other packages. 
+
+- Python package `pyqg` [@pyqg].
+
+Beyond their base language, the major differences between these 
 packages are that `GeophysicalFlows.jl` can be run on GPUs or CPUs and leverages a separate 
 package (`FourierFlows.jl`; which is continuously developed) to solve differential equations 
 and compute diagnostics, while `pyqg` can only be run on CPUs and uses a self-contained kernel. 
@@ -91,16 +94,16 @@ teaching tool for fluids courses [@GeophysicalFlows-Examples; @CLExWinterSchool2
 [@Karrasch2020]. Currently, `GeophysicalFlows.jl` is being used, e.g., (i) to test new theories 
 for diagnosing turbulent energy transfers in geophysical flows [e.g. @Pearson2021], (ii) to compare 
 different observational sampling techniques in these flows, (iii) to study the bifurcation properties 
-Kolmogorov flows [@KolmogorovFlow], (iv) to study the genesis and persistence of the polygons 
-of vortices present at Jovian high latitudes (Siegelman, Young, and Ingersoll; in prep)."
+of Kolmogorov flows [@KolmogorovFlow], (iv) to study the genesis and persistence of the polygons 
+of vortices present at Jovian high latitudes (Siegelman, Young, and Ingersoll; in prep), (v) to study how mesoscale macroturbulence affects mixing of tracers [@QG_tracer_advection].
 
 
 # Acknowledgements
 
-We acknowledge discussions with Keaton Burns, Valentin Churavy, Cesar Rocha, and William Young. 
-B. C. P. was supported by the National Science Foundation under Grant No. 2023721. We would 
-also like to take a moment to remember Sean R. Haney (February 1987-January 2021) who left 
-us a bit too early.
+We acknowledge discussions with Keaton Burns, Valentin Churavy, Theodore Drivas, Cesar Rocha, 
+and William Young. B. C. P. was supported by the National Science Foundation under Grant 
+No. 2023721. We would also like to take a moment to remember our friend and colleague 
+Sean R. Haney (February 1987 - January 2021) who left us a bit too early.
 
 
 # References
