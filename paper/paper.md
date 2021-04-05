@@ -78,16 +78,36 @@ repository `github.com/FourierFlows/MultilayerQG-example`. \label{fig1}](PV_eady
 `GeophysicalFlows.jl` is a unique Julia package that shares some features and similarities with 
 other packages. In particular:
 
-- `pyqg` [@pyqg] (Python package)
+- `pyqg` [@pyqg] (Python)
 
   Beyond their base language, the major differences between `GeophysicalFlows.jl` and `pyqg` 
   is that `GeophysicalFlows.jl` can be run on GPUs or CPUs and leverages a separate package (`FourierFlows.jl`; which is continuously developed) to solve differential equations and compute diagnostics, while `pyqg` can only be run on CPUs and uses a self-contained kernel. 
   
-  - Dedalus [@Burns2020] (Python package)
+- Dedalus [@Burns2020] (Python)
   
-  is a Python package with an intuitive script-based interface that uses spectral 
+  Dedalus is a Python package with an intuitive script-based interface that uses spectral methods 
+  to solve general partial differential equations, such as the ones within `GeophysicalFlows.jl`.
+  It allows for more general boundary conditions in one of the dimensions.
   
-methods to solve general partial differential equations, such as the ones within `GeophysicalFlows.jl`. `Oceananigans.jl` [@Oceananigans] is a fluid solver focussed on the Navier-Stokes equations under the Boussinesq approximation. `Oceananigans.jl` also runs on GPUs, and it allows for more variety of boundary conditions but it does not have spectral accuracy as it uses finite-volume discretization methods. The `MAOOAM` [@MAOOAM] package, and its expanded Python implementation `qgs` [@qgs], simulate two atmospheric layers with QG dynamics, above either land or an oceanic fluid layer with reduced-gravity QG dynamics. The dynamics of individual layers have overlap with the `MultiLayerQG` and `SingleLayerQG` modules, however the layer configuration of `MOAAM` and `qgs` is specifically designed to study the dynamics of Earth's mid-latitude atmosphere. Neither `MAOOAM` nor `qgs` can run on GPUs. Finally, there exist also some other isolated codes/scripts in personal websites and in open-source public repositories that have similar functionality as some `GeophysicalFlows.jl` modules but usually come without any or poor documentation and typically are not tested.
+- `Oceananigans.jl` [@Oceananigans] (Julia)
+  
+  `Oceananigans.jl` is a fluid solver focussed on the Navier-Stokes equations under the Boussinesq
+  approximation. `Oceananigans.jl` also runs on GPUs, and it allows for more variety of boundary
+  conditions but it does not have spectral accuracy as it uses finite-volume discretization methods.
+  
+- `MAOOAM` [@MAOOAM] (Fortran) and its expanded Python implementation `qgs` [@qgs]
+  `MAOOAM` and `qgs` simulate two atmospheric layers with QG dynamics, above either land or 
+  an oceanic fluid layer with reduced-gravity QG dynamics. The dynamics of individual layers 
+  have overlap with the `MultiLayerQG` and `SingleLayerQG` modules, however the layer configuration 
+  of `MOAAM` and `qgs` is specifically designed to study the dynamics of Earth's mid-latitude 
+  atmosphere. Neither `MAOOAM` nor `qgs` can run on GPUs.
+  
+- Isolated codes/scripts 
+
+  Several codes/scripts exist in personal websites and in open-source public repositories with
+  similar functionality as some `GeophysicalFlows.jl` modules (e.g., `TwoDNavierStokes` or 
+  `SingleLayerQG`). Usually, though, these codes come without any or poor documentation and 
+  typically they are not continuously tested.
 
 `GeophysicalFlows.jl` can be used to investigate a variety of scientific research questions 
 thanks to its various modules and high customizability, and its ease-of-use makes it an ideal 
