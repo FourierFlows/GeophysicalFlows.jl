@@ -87,7 +87,8 @@ other packages. In particular:
   
   Dedalus is a Python package with an intuitive script-based interface that uses spectral methods 
   to solve general partial differential equations, such as the ones within `GeophysicalFlows.jl`.
-  It allows for more general boundary conditions in one of the dimensions.
+  Dedalus allows for more general boundary conditions in one of the dimensions. It only runs on 
+  CPUs (not on GPUs) but can be MPI-parallelized.
   
 - `Oceananigans.jl` [@Oceananigans] (Julia)
   
