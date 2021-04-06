@@ -450,7 +450,7 @@ function calcS!(S, Fp, Fm, nlayers, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   
   for n=1:grid.nl, m=1:grid.nkr
-    CUDA.@allowscalar k² = grid.Krsq[m, n]
+    k² = CUDA.@allowscalar grid.Krsq[m, n]
     Skl = SMatrix{nlayers, nlayers}(- k² * I + F)
     S[m, n] = Skl
   end
@@ -468,7 +468,7 @@ function calcS⁻¹!(S⁻¹, Fp, Fm, nlayers, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   
   for n=1:grid.nl, m=1:grid.nkr
-    CUDA.@allowscalar k² = grid.Krsq[m, n] == 0 ? 1 : grid.Krsq[m, n]
+    k² = CUDA.@allowscalar grid.Krsq[m, n] == 0 ? 1 : grid.Krsq[m, n]
     Skl = - k² * I + F
     S⁻¹[m, n] = SMatrix{nlayers, nlayers}(I / Skl)
   end

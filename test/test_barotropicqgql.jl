@@ -61,7 +61,7 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   kf, dkf = 12.0, 2.0
   ε = 0.1
   
-  CUDA.@allowscalar Kr = ArrayType(dev)([ grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
+  Kr = CUDA.@allowscalar ArrayType(dev)([ grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
   forcing_spectrum = zeros(dev, T, (grid.nkr, grid.nl))
   @. forcing_spectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
