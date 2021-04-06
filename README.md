@@ -36,6 +36,7 @@
 This package leverages the [FourierFlows.jl] framework to provide modules for solving problems in
 Geophysical Fluid Dynamics on periodic domains using Fourier-based pseudospectral methods.
 
+
 ## Installation
 
 To install, do
@@ -57,6 +58,28 @@ See `examples/` for example scripts. These examples are best viewed by browsing 
 the package's [documentation]. 
 
 Some animations created with GeophysicalFlows.jl are [online @ youtube].
+
+
+## Scalability
+
+For now, GeophysicalFlows.jl is restricted to run on either a single CPU or single GPU. These
+restrictions come from FourierFlows.jl. Multi-threading can enhance performance for the Fourier
+transforms. By default, FourierFlows.jl will use the maximum number of threads available on 
+your machine. You can set the number of threads used by FourierFlows.jl by setting the 
+environment variable, e.g.,
+
+```
+$ export JULIA_NUM_THREADS=4
+```
+
+For more information on multi-threading users are directed to the [Julia Documentation](https://docs.julialang.org/en/v1/manual/multi-threading/).
+
+If your machine has more than one GPU available, then functionality within CUDA.jl package 
+enables the user to choose the GPU device that FourierFlows.jl should use. The user is referred
+to the [CUDA.jl Documentation](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#Device-Management);
+in particular, [`CUDA.devices`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.devices) 
+and [`CUDA.CuDevice`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.CuDevice). 
+The user is also referred to the [GPU section](https://fourierflows.github.io/FourierFlowsDocumentation/stable/gpu/) in the FourierFlows.jl documentation.
 
 
 ## Modules
@@ -98,7 +121,7 @@ For more information, check out our [contributor's guide](https://github.com/Fou
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.11.5 (Version v0.11.5). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
+> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.11.6 (Version v0.11.6). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
