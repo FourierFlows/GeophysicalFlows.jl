@@ -22,7 +22,7 @@ authors:
     affiliation: 5
   - name: André Palóczy
     orcid: 0000-0001-8231-8298
-    affiliation: 4
+    affiliation: 6
 affiliations:
  - name: Australian National University
    index: 1
@@ -34,7 +34,9 @@ affiliations:
    index: 4
  - name: Oregon State University
    index: 5
-date: 30 March 2021
+ - name: University of Oslo
+   index: 6
+date: 7 April 2021
 bibliography: paper.bib
 ---
 
@@ -96,7 +98,8 @@ other packages. In particular:
   approximation. `Oceananigans.jl` also runs on GPUs, and it allows for more variety of boundary
   conditions but it does not have spectral accuracy as it uses finite-volume discretization methods.
   
-- `MAOOAM` [@MAOOAM] (Fortran) and its expanded Python implementation `qgs` [@qgs]
+- `MAOOAM` [@MAOOAM] (Fortran, Python, and Lua) and its expanded Python implementation `qgs` [@qgs]
+
   `MAOOAM` and `qgs` simulate two atmospheric layers with QG dynamics, above either land or 
   an oceanic fluid layer with reduced-gravity QG dynamics. The dynamics of individual layers 
   have overlap with the `MultiLayerQG` and `SingleLayerQG` modules, however the layer configuration 
