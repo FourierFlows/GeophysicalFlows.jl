@@ -1,7 +1,7 @@
 # GeophysicalFlows.jl/examples
 
 
-These are some basic examples of the various modules included in GeophysicalFlows.jl. The best way to go through the examples is via the <a href="https://fourierflows.github.io/GeophysicalFlows.jl/dev/">documentation <img src="https://img.shields.io/badge/docs-dev-blue.svg"></a>.
+These are some basic examples of the various modules included in GeophysicalFlows.jl. The best way to go through the examples by browsing them within the package's <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/">documentation <img src="https://img.shields.io/badge/docs-dev-blue.svg"></a>.
 
 
 ## Run the examples

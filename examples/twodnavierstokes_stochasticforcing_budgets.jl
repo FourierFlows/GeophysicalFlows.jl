@@ -1,7 +1,6 @@
 # # 2D forced-dissipative turbulence budgets
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing_budgets.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing_budgets.ipynb).
+#md # This example can viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing_budgets.ipynb).
 #
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
@@ -16,13 +15,13 @@ using Random: seed!
 using FFTW: irfft
 
 import GeophysicalFlows.TwoDNavierStokes
-import GeophysicalFlows.TwoDNavierStokes: energy, energy_dissipation, energy_work, energy_drag
-import GeophysicalFlows.TwoDNavierStokes: enstrophy, enstrophy_dissipation, enstrophy_work, enstrophy_drag
+import GeophysicalFlows.TwoDNavierStokes: energy, energy_dissipation_hyperviscosity, energy_dissipation_hypoviscosity, energy_work
+import GeophysicalFlows.TwoDNavierStokes: enstrophy, enstrophy_dissipation_hyperviscosity, enstrophy_dissipation_hypoviscosity, enstrophy_work
 
 
 # ## Choosing a device: CPU or GPU
 
-dev = CPU()    # Device (CPU/GPU)
+dev = CPU()     # Device (CPU/GPU)
 nothing # hide
 
 
@@ -41,34 +40,38 @@ nothing # hide
 
 # ## Forcing
 
-# We force the vorticity equation with stochastic excitation that is delta-correlated
-# in time and while spatially homogeneously and isotropically correlated. The forcing
-# has a spectrum with power in a ring in wavenumber space of radious $k_f$ and
-# width $\delta k_f$, and it injects energy per unit area and per unit time equal
-# to $\varepsilon$.
+# We force the vorticity equation with stochastic excitation that is delta-correlated in time 
+# and while spatially homogeneously and isotropically correlated. The forcing has a spectrum 
+# with power in a ring in wavenumber space of radius ``k_f`` (`forcing_wavenumber`) and width 
+# ``\delta k_f`` (`forcing_bandwidth`), and it injects energy per unit area and per unit time 
+# equal to ``\varepsilon``. That is, the forcing covariance spectrum is proportional to 
+# ``\exp{(-(|\bm{k}| - k_f)^2 / (2 \delta k_f^2))}``.
 
-forcing_wavenumber = 14.0    # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
-forcing_bandwidth  = 1.5     # the width of the forcing spectrum
-ε = 0.1                      # energy input rate by the forcing
+forcing_wavenumber = 14.0 * 2π/L   # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
+forcing_bandwidth  = 1.5  * 2π/L   # the width of the forcing spectrum
+ε = 0.1                            # energy input rate by the forcing
 
 grid = TwoDGrid(dev, n, L)
 
-K = @. sqrt(grid.Krsq)
+K = @. sqrt(grid.Krsq)             # a 2D array with the total wavenumber
+
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
-forcing_spectrum[K .< ( 2 * 2π/L)] .= 0 # no power at low wavenumbers
-forcing_spectrum[K .> (20 * 2π/L)] .= 0 # no power at high wavenumbers
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
-@. forcing_spectrum *= ε/ε0             # normalize forcing to inject energy at rate ε
+@. forcing_spectrum *= ε/ε0        # normalize forcing to inject energy at rate ε
 
 seed!(1234)
 nothing # hide
 
-# Next we construct function `calcF!` that computes a forcing realization every timestep
+# Next we construct function `calcF!` that computes a forcing realization every timestep.
+# `ArrayType()` function returns the type of array depending on the device, i.e., `Array` for
+# `dev = CPU()` and `CuArray` for `dev = GPU()`.
 function calcF!(Fh, sol, t, clock, vars, params, grid)
-  ξ = ArrayType(dev)(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
+  ξ = exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt)
   ξ[1, 1] = 0
-  @. Fh = ξ * sqrt(forcing_spectrum)
-  nothing
+  
+  Fh .= ArrayType(dev)(ξ) .* sqrt.(forcing_spectrum)
+  
+  return nothing
 end
 nothing # hide
 
@@ -89,10 +92,13 @@ nothing # hide
 
 # First let's see how a forcing realization looks like. Function `calcF!()` computes 
 # the forcing in Fourier space and saves it into variable `vars.Fh`, so we first need to
-# go back to physical space.
+# go back to physical space. 
+#
+# Note that when plotting, we decorate the variable to be plotted with `Array()` to make sure 
+# it is brought back on the CPU when the variable lives on the GPU.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, irfft(vars.Fh, grid.nx),
+heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
      aspectratio = 1,
                c = :balance,
             clim = (-200, 200),
@@ -109,20 +115,20 @@ heatmap(x, y, irfft(vars.Fh, grid.nx),
 # ## Setting initial conditions
 
 # Our initial condition is a fluid at rest.
-TwoDNavierStokes.set_zeta!(prob, zeros(grid.nx, grid.ny))
+TwoDNavierStokes.set_ζ!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
 
 
 # ## Diagnostics
 
 # Create Diagnostics; the diagnostics are aimed to probe the energy and enstrophy budgets.
-E  = Diagnostic(energy,                prob, nsteps=nt) # energy
-Rᵋ = Diagnostic(energy_drag,           prob, nsteps=nt) # energy dissipation by drag
-Dᵋ = Diagnostic(energy_dissipation,    prob, nsteps=nt) # energy dissipation by hyperviscosity
-Wᵋ = Diagnostic(energy_work,           prob, nsteps=nt) # energy work input by forcing
-Z  = Diagnostic(enstrophy,             prob, nsteps=nt) # enstrophy
-Rᶻ = Diagnostic(enstrophy_drag,        prob, nsteps=nt) # enstrophy dissipation by drag
-Dᶻ = Diagnostic(enstrophy_dissipation, prob, nsteps=nt) # enstrophy dissipation by hyperviscosity
-Wᶻ = Diagnostic(enstrophy_work,        prob, nsteps=nt) # enstrophy work input by forcing
+E  = Diagnostic(energy,                               prob, nsteps=nt) # energy
+Rᵋ = Diagnostic(energy_dissipation_hypoviscosity,     prob, nsteps=nt) # energy dissipation by drag μ
+Dᵋ = Diagnostic(energy_dissipation_hyperviscosity,    prob, nsteps=nt) # energy dissipation by drag μ
+Wᵋ = Diagnostic(energy_work,                          prob, nsteps=nt) # energy work input by forcing
+Z  = Diagnostic(enstrophy,                            prob, nsteps=nt) # enstrophy
+Rᶻ = Diagnostic(enstrophy_dissipation_hypoviscosity,  prob, nsteps=nt) # enstrophy dissipation by drag μ
+Dᶻ = Diagnostic(enstrophy_dissipation_hyperviscosity, prob, nsteps=nt) # enstrophy dissipation by drag μ
+Wᶻ = Diagnostic(enstrophy_work,                       prob, nsteps=nt) # enstrophy work input by forcing
 diags = [E, Dᵋ, Wᵋ, Rᵋ, Z, Dᶻ, Wᶻ, Rᶻ] # a list of Diagnostics passed to `stepforward!` will  be updated every timestep.
 nothing # hide
 
@@ -132,8 +138,8 @@ nothing # hide
 # We define a function that plots the vorticity field and the evolution of
 # the diagnostics: energy, enstrophy, and all terms involved in the energy and 
 # enstrophy budgets. Last, we also check (by plotting) whether the energy and enstrophy
-# budgets are accurately computed, e.g., $\mathrm{d}E/\mathrm{d}t = W^\varepsilon - 
-# R^\varepsilon - D^\varepsilon$.
+# budgets are accurately computed, e.g., ``\mathrm{d}E/\mathrm{d}t = W^\varepsilon - 
+# R^\varepsilon - D^\varepsilon``.
 
 function computetendencies_and_makeplot(prob, diags)
   sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
@@ -147,15 +153,15 @@ function computetendencies_and_makeplot(prob, diags)
   dEdt_numerical = (E[2:E.i] - E[1:E.i-1]) / clock.dt # numerical first-order approximation of energy tendency
   dZdt_numerical = (Z[2:Z.i] - Z[1:Z.i-1]) / clock.dt # numerical first-order approximation of enstrophy tendency
 
-  dEdt_computed = Wᵋ[2:E.i] - Dᵋ[1:E.i-1] - Rᵋ[1:E.i-1]
-  dZdt_computed = Wᶻ[2:Z.i] - Dᶻ[1:Z.i-1] - Rᶻ[1:Z.i-1]
+  dEdt_computed = Wᵋ[2:E.i] + Dᵋ[1:E.i-1] + Rᵋ[1:E.i-1]
+  dZdt_computed = Wᶻ[2:Z.i] + Dᶻ[1:Z.i-1] + Rᶻ[1:Z.i-1]
 
   residual_E = dEdt_computed - dEdt_numerical
   residual_Z = dZdt_computed - dZdt_numerical
 
   εᶻ = parsevalsum(forcing_spectrum / 2, grid) / (grid.Lx * grid.Ly)
 
-  pzeta = heatmap(x, y, vars.zeta,
+  pζ = heatmap(x, y, Array(vars.ζ'),
             aspectratio = 1,
             legend = false,
                  c = :viridis,
@@ -166,14 +172,14 @@ function computetendencies_and_makeplot(prob, diags)
             yticks = -3:3,
             xlabel = "μt",
             ylabel = "y",
-             title = "∇²ψ(x, y, μt="*@sprintf("%.2f", μ*clock.t)*")",
+             title = "∇²ψ(x, y, μt=" * @sprintf("%.2f", μ * clock.t) * ")",
         framestyle = :box)
 
-  pζ = plot(pzeta, size = (400, 400))
+  pζ = plot(pζ, size = (400, 400))
 
   t = E.t[2:E.i]
 
-  p1E = plot(μ * t, [Wᵋ[2:E.i] ε.+0*t -Dᵋ[1:E.i-1] -Rᵋ[1:E.i-1]],
+  p1E = plot(μ * t, [Wᵋ[2:E.i] ε.+0*t Dᵋ[1:E.i-1] Rᵋ[1:E.i-1]],
              label = ["energy work, Wᵋ" "ensemble mean energy work, <Wᵋ>" "dissipation, Dᵋ" "drag, Rᵋ = - 2μE"],
          linestyle = [:solid :dash :solid :solid],
          linewidth = 2,
@@ -197,7 +203,7 @@ function computetendencies_and_makeplot(prob, diags)
 
   t = Z.t[2:E.i]
 
-  p1Z = plot(μ * t, [Wᶻ[2:Z.i] εᶻ.+0*t -Dᶻ[1:Z.i-1] -Rᶻ[1:Z.i-1]],
+  p1Z = plot(μ * t, [Wᶻ[2:Z.i] εᶻ.+0*t Dᶻ[1:Z.i-1] Rᶻ[1:Z.i-1]],
            label = ["enstrophy work, Wᶻ" "mean enstrophy work, <Wᶻ>" "enstrophy dissipation, Dᶻ" "enstrophy drag, Rᶻ = - 2μZ"],
        linestyle = [:solid :dash :solid :solid],
        linewidth = 2,

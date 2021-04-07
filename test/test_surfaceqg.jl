@@ -70,10 +70,10 @@ function test_sqg_kineticenergy_buoyancyvariance(dev::Device=CPU())
   nx, Lx  = 128, 2π
   ny, Ly  = 128, 3π
   
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
-  x, y = gridpoints(gr)
+  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+  x, y = gridpoints(grid)
 
-  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
+  k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly # fundamental wavenumbers
   ψ₀ = @. sin(2k₀*x)*cos(2l₀*y) + 2sin(k₀*x)*cos(3l₀*y)
   b₀ = @. - sqrt(8) * sin(2k₀*x)*cos(2l₀*y) - sqrt(10) * 2sin(k₀*x)*cos(3l₀*y)
 
@@ -113,9 +113,9 @@ function test_sqg_noforcing(dev::Device=CPU())
   prob_unforced = SurfaceQG.Problem(dev; nx=n, Lx=L, stepper="ForwardEuler")
 
   SurfaceQG.addforcing!(prob_unforced.timestepper.N, prob_unforced.sol, prob_unforced.clock.t, prob_unforced.clock, prob_unforced.vars, prob_unforced.params, prob_unforced.grid)
-  
+    
   function calcF!(Fh, sol, t, clock, vars, params, grid)
-    Fh .= 2*ones(size(sol))
+    Fh .= 2 * ArrayType(dev)(ones(size(sol)))
     return nothing
   end
   
@@ -123,7 +123,7 @@ function test_sqg_noforcing(dev::Device=CPU())
 
   SurfaceQG.addforcing!(prob_forced.timestepper.N, prob_forced.sol, prob_forced.clock.t, prob_forced.clock, prob_forced.vars, prob_forced.params, prob_forced.grid)
   
-  return prob_unforced.timestepper.N == Complex.(zeros(size(prob_unforced.sol))) && prob_forced.timestepper.N == Complex.(2*ones(size(prob_unforced.sol)))
+  return prob_unforced.timestepper.N == Complex.(ArrayType(dev)(zeros(size(prob_unforced.sol)))) && prob_forced.timestepper.N == Complex.(2*ArrayType(dev)(ones(size(prob_unforced.sol))))
 end
 
 function test_sqg_deterministicforcing_buoyancy_variance_budget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, tf=10.0)
@@ -175,20 +175,20 @@ function test_sqg_stochasticforcing_buoyancy_variance_budget(dev::Device=CPU(); 
 
   Kr = ArrayType(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
-  forcingcovariancespectrum = ArrayType(dev)(zero(grid.Krsq))
-  @. forcingcovariancespectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
-  CUDA.@allowscalar @. forcingcovariancespectrum[grid.Krsq .< 2^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[grid.Krsq .> 20^2] = 0
-  CUDA.@allowscalar @. forcingcovariancespectrum[Kr .< 2π/L] = 0
-  εᵇ0 = parsevalsum(forcingcovariancespectrum, grid) / (grid.Lx * grid.Ly)
-  forcingcovariancespectrum .= εᵇ / εᵇ0 * forcingcovariancespectrum
+  forcing_spectrum = ArrayType(dev)(zero(grid.Krsq))
+  @. forcing_spectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
+  @. forcing_spectrum = ifelse(grid.Krsq < 2^2, 0, forcing_spectrum)
+  @. forcing_spectrum = ifelse(grid.Krsq > 20^2, 0, forcing_spectrum)
+  @. forcing_spectrum = ifelse(Kr < 2π/L, 0, forcing_spectrum)
+  εᵇ0 = parsevalsum(forcing_spectrum, grid) / (grid.Lx * grid.Ly)
+  forcing_spectrum .= εᵇ / εᵇ0 * forcing_spectrum
   
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
     eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
-    @. Fh = eta * sqrt(forcingcovariancespectrum)
+    @. Fh = eta * sqrt(forcing_spectrum)
     nothing
   end
 
@@ -208,10 +208,7 @@ function test_sqg_stochasticforcing_buoyancy_variance_budget(dev::Device=CPU(); 
 
   dBdt_numerical = (B[2:B.i] - B[1:B.i-1]) / prob.clock.dt
 
-  # If the Ito interpretation was used for the work
-  # then we need to add the drift term
-  # dBdt_computed = W[2:B.i] + εᵇ - D[1:B.i-1]      # Ito
-  dBdt_computed = W[2:B.i] - D[1:B.i-1]        # Stratonovich
+  dBdt_computed = W[2:B.i] - D[1:B.i-1]
   
   return isapprox(dBdt_numerical, dBdt_computed, rtol = 1e-4)
 end

@@ -1,85 +1,99 @@
-# TwoDNavierStokes Module
+# TwoDNavierStokes
 
 
 ### Basic Equations
 
-This module solves two-dimensional incompressible turbulence. The flow is given
-through a streamfunction $\psi$ as $(u,\upsilon) = (-\partial_y\psi, \partial_x\psi)$.
-The dynamical variable used here is the component of the vorticity of the flow
-normal to the plane of motion, $\zeta=\partial_x \upsilon- \partial_y u = \nabla^2\psi$.
-The equation solved by the module is:
+This module solves two-dimensional incompressible Navier-Stokes equations using the 
+vorticity-streamfunction formulation. The flow ``\bm{u} = (u, v)`` is obtained through a 
+streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. The only non-zero 
+component of vorticity is that normal to the plane of motion, 
+``\partial_x v - \partial_y u = \nabla^2 \psi``. The module solves the two-dimensional 
+vorticity equation:
 
-$$\partial_t \zeta + \mathsf{J}(\psi, \zeta) = \underbrace{-\left[\mu(-1)^{n_\mu} \nabla^{2n_\mu}
-+\nu(-1)^{n_\nu} \nabla^{2n_\nu}\right] \zeta}_{\textrm{dissipation}} + f\ .$$
+```math
+\partial_t \zeta + \mathsf{J}(\psi, \zeta) = \underbrace{-\left [ \mu (-\nabla^2)^{n_\mu}
++ \nu (-\nabla^2)^{n_\nu} \right ] \zeta}_{\textrm{dissipation}} + F ,
+```
 
-where $\mathsf{J}(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x b)$. On
-the right hand side, $f(x,y,t)$ is forcing, $\mu$ is hypoviscosity, and $\nu$ is
-hyperviscosity. Plain old linear drag corresponds to $n_{\mu}=0$, while normal
-viscosity corresponds to $n_{\nu}=1$.
+where ``\mathsf{J}(\psi, \zeta) = (\partial_x \psi)(\partial_y \zeta) - (\partial_y \psi)(\partial_x \zeta)`` 
+is the two-dimensional Jacobian and ``F(x, y, t)`` is forcing. The Jacobian term is the advection
+of relative vorticity, ``\mathsf{J}(ψ, ζ) = \bm{u \cdot \nabla} \zeta``. Both ``ν`` and ``μ`` 
+terms are viscosities; typically the former is chosen to act at small scales (``n_ν ≥ 1``), 
+while the latter at large scales (``n_ν ≤ 0``). Plain old viscocity corresponds to ``n_ν=1`` 
+while ``n_μ=0`` corresponds to linear drag. Values of ``n_ν ≥ 2`` or ``n_μ ≤ -1`` are referred 
+to as hyper- or hypo-viscosities, respectively.
+
 
 ### Implementation
 
 The equation is time-stepped forward in Fourier space:
 
-$$\partial_t \widehat{\zeta} = - \widehat{\mathsf{J}(\psi, \zeta)} -\left(\mu k^{2n_\mu}
-+\nu k^{2n_\nu}\right) \widehat{\zeta}  + \widehat{f}\ .$$
+```math
+\partial_t \widehat{\zeta} = - \widehat{\mathsf{J}(\psi, \zeta)} - \left ( \mu |𝐤|^{2n_\mu}
++ \nu |𝐤|^{2n_\nu} \right ) \widehat{\zeta} + \widehat{F} .
+```
 
-In doing so the Jacobian is computed in the conservative form: $\mathsf{J}(a,b) =
-\partial_y [ (\partial_x a) b] -\partial_x[ (\partial_y a) b]$.
+The state variable `sol` is the Fourier transform of vorticity, [`ζh`](@ref GeophysicalFlows.TwoDNavierStokes.Vars).
 
-Thus:
+The Jacobian is computed in the conservative form: ``\mathsf{J}(a, b) = 
+\partial_y [(\partial_x a) b] - \partial_x[(\partial_y a) b]``.
 
-$$\mathcal{L} = -\mu k^{-2n_\mu} - \nu k^{2n_\nu}\ ,$$
-$$\mathcal{N}(\widehat{\zeta}) = - \mathrm{i}k_x \mathrm{FFT}(u \zeta)-
-	\mathrm{i}k_y \mathrm{FFT}(\upsilon \zeta) + \widehat{f}\ .$$
+The linear operator is constructed in `Equation`
 
+```@docs
+GeophysicalFlows.TwoDNavierStokes.Equation
+```
 
-### AbstractTypes and Functions
+The nonlinear terms are computed via
 
-**Params**
+```@docs
+GeophysicalFlows.TwoDNavierStokes.calcN!
+```
 
-For the unforced case ($f=0$) parameters AbstractType is build with `Params` and it includes:
-- `ν`:   Float; viscosity or hyperviscosity coefficient.
-- `nν`: Integer$>0$; the order of viscosity $n_\nu$. Case $n_\nu=1$ gives normal viscosity.
-- `μ`: Float; bottom drag or hypoviscosity coefficient.
-- `nμ`: Integer$\ge 0$; the order of hypodrag $n_\mu$. Case $n_\mu=0$ gives plain linear drag $\mu$.
-
-For the forced case ($f\ne 0$) parameters AbstractType is build with `ForcedParams`. It includes all parameters in `Params` and additionally:
-- `calcF!`: Function that calculates the forcing $\widehat{f}$
-
-
-**Vars**
-
-For the unforced case ($f=0$) variables AbstractType is build with `Vars` and it includes:
-- `zeta`: Array of Floats; relative vorticity.
-- `u`: Array of Floats; $x$-velocity, $u$.
-- `v`: Array of Floats; $y$-velocity, $\upsilon$.
-- `sol`: Array of Complex; the solution, $\widehat{\zeta}$.
-- `zetah`: Array of Complex; the Fourier transform $\widehat{\zeta}$.
-- `uh`: Array of Complex; the Fourier transform $\widehat{u}$.
-- `vh`: Array of Complex; the Fourier transform $\widehat{\upsilon}$.
-
-For the forced case ($f\ne 0$) variables AbstractType is build with `ForcedVars`. It includes all variables in `Vars` and additionally:
-- `Fh`: Array of Complex; the Fourier transform $\widehat{f}$.
-- `prevsol`: Array of Complex; the values of the solution `sol` at the previous time-step (useful for calculating the work done by the forcing).
+which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.TwoDNavierStokes.calcN_advection!) 
+and [`addforcing!`](@ref GeophysicalFlows.TwoDNavierStokes.addforcing!).
 
 
+### Parameters and Variables
 
-**`calcN!` function**
+All required parameters are included inside [`Params`](@ref GeophysicalFlows.TwoDNavierStokes.Params)
+and all module variables are included inside [`Vars`](@ref GeophysicalFlows.TwoDNavierStokes.Vars).
 
-The nonlinear term $\mathcal{N}(\widehat{\zeta})$ is computed via functions:
+For decaying case (no forcing, ``F=0``), `vars` can be constructed with [`Vars`](@ref GeophysicalFlows.TwoDNavierStokes.Vars). 
+For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.TwoDNavierStokes.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.TwoDNavierStokes.StochasticForcedVars).
 
-- `calcN_advection!`: computes $- \widehat{\mathsf{J}(\psi, \zeta)}$ and stores it in array `N`.
 
-- `calcN_forced!`: computes $- \widehat{\mathsf{J}(\psi, \zeta)}$ via `calcN_advection!` and then adds to it the forcing $\widehat{f}$ computed via `calcF!` function. Also saves the solution $\widehat{\zeta}$ of the previous time-step in array `prevsol`.
+### Helper functions
 
-- `updatevars!`: uses `sol` to compute $\zeta$, $u$, $\upsilon$, $\widehat{u}$, and $\widehat{\upsilon}$ and stores them into corresponding arrays of `Vars`/`ForcedVars`.
+Some helper functions included in the module are:
+
+```@docs
+GeophysicalFlows.TwoDNavierStokes.updatevars!
+GeophysicalFlows.TwoDNavierStokes.set_ζ!
+```
+
+
+### Diagnostics
+
+Some useful diagnostics are:
+
+```@docs
+GeophysicalFlows.TwoDNavierStokes.energy
+GeophysicalFlows.TwoDNavierStokes.enstrophy
+```
+
+Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.TwoDNavierStokes.energy_dissipation), 
+[`energy_work`](@ref GeophysicalFlows.TwoDNavierStokes.energy_work), 
+[`enstrophy_dissipation`](@ref GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation), and
+[`enstrophy_work`](@ref GeophysicalFlows.TwoDNavierStokes.enstrophy_work).
 
 
 ## Examples
 
-- `examples/twodnavierstokes_decaying.jl`: A script that simulates decaying two-dimensional turbulence reproducing the results of the paper by
+- [`examples/twodnavierstokes_decaying.jl`](../generated/twodnavierstokes_decaying/): A script that simulates decaying two-dimensional turbulence reproducing the results by
 
   > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43.
 
-- `examples/twodnavierstokes_stochasticforcing.jl`: A script that simulates forced-dissipative two-dimensional turbulence with isotropic temporally delta-correlated stochastic forcing.
+- [`examples/twodnavierstokes_stochasticforcing.jl`](../generated/twodnavierstokes_stochasticforcing/): A script that simulates forced-dissipative two-dimensional turbulence with isotropic temporally delta-correlated stochastic forcing.
+
+- [`examples/twodnavierstokes_stochasticforcing_budgets.jl`](../generated/twodnavierstokes_stochasticforcing_budgets/): A script that simulates forced-dissipative two-dimensional turbulence demonstrating how we can compute the energy and enstrophy budgets.

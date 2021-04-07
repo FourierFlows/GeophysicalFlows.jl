@@ -1,17 +1,17 @@
 # # Phillips model of Baroclinic Instability
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
 #
 # A simulation of the growth of barolinic instability in the Phillips 2-layer model
-# when we impose a vertical mean flow shear as a difference $\Delta U$ in the
+# when we impose a vertical mean flow shear as a difference ``\Delta U`` in the
 # imposed, domain-averaged, zonal flow at each layer.
 
 using FourierFlows, Plots, Printf
 
 using FFTW: rfft, irfft
-import GeophysicalFlows.MultilayerQG
-import GeophysicalFlows.MultilayerQG: energies
+using Random: seed!
+import GeophysicalFlows.MultiLayerQG
+import GeophysicalFlows.MultiLayerQG: energies
 
 
 # ## Choosing a device: CPU or GPU
@@ -22,9 +22,7 @@ nothing # hide
 
 # ## Numerical parameters and time-stepping parameters
 
-nx = 128        # 2D resolution = nx^2
-ny = nx
-
+n = 128                  # 2D resolution = n²
 stepper = "FilteredRK4"  # timestepper
      dt = 6e-3           # timestep
  nsteps = 7000           # total number of time-steps
@@ -33,14 +31,14 @@ nothing # hide
 
 
 # ## Physical parameters
-Lx = 2π         # domain size
- μ = 5e-2       # bottom drag
- β = 5          # the y-gradient of planetary PV
+ L = 2π                  # domain size
+ μ = 5e-2                # bottom drag
+ β = 5                   # the y-gradient of planetary PV
  
-nlayers = 2      # number of layers
-f0, g = 1, 1     # Coriolis parameter and gravitational constant
- H = [0.2, 0.8]  # the rest depths of each layer
- ρ = [4.0, 5.0]  # the density of each layer
+nlayers = 2              # number of layers
+f₀, g = 1, 1             # Coriolis parameter and gravitational constant
+ H = [0.2, 0.8]          # the rest depths of each layer
+ ρ = [4.0, 5.0]          # the density of each layer
  
  U = zeros(nlayers) # the imposed mean zonal flow in each layer
  U[1] = 1.0
@@ -50,12 +48,12 @@ nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments,
-prob = MultilayerQG.Problem(nlayers, dev; nx=nx, Lx=Lx, f0=f0, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
+prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
 nothing # hide
 
 # and define some shortcuts.
-sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
-x, y = gr.x, gr.y
+sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
+x, y = grid.x, grid.y
 nothing # hide
 
 
@@ -63,12 +61,15 @@ nothing # hide
 
 # Our initial condition is some small amplitude random noise. We smooth our initial
 # condidtion using the `timestepper`'s high-wavenumber `filter`.
+# `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
+# `dev = CPU()` and `CuArray` for `dev = GPU()`.
 
-q_i  = 4e-3randn((nx, ny, nlayers))
-qh_i = prob.timestepper.filter .* rfft(q_i, (1, 2)) # only apply rfft in dims=1, 2
-q_i  = irfft(qh_i, gr.nx, (1, 2)) # only apply irfft in dims=1, 2
+seed!(1234) # reset of the random number generator for reproducibility
+q₀  = 4e-3 * ArrayType(dev)(randn((grid.nx, grid.ny, nlayers)))
+q₀h = prob.timestepper.filter .* rfft(q₀, (1, 2)) # only apply rfft in dims=1, 2
+q₀  = irfft(q₀h, grid.nx, (1, 2)) # only apply irfft in dims=1, 2
 
-MultilayerQG.set_q!(prob, q_i)
+MultiLayerQG.set_q!(prob, q₀)
 nothing # hide
 
 
@@ -97,35 +98,41 @@ nothing # hide
 # And then create Output
 get_sol(prob) = sol # extracts the Fourier-transformed solution
 function get_u(prob)
-  @. v.qh = sol
-  streamfunctionfrompv!(v.ψh, v.qh, p, g)
-  @. v.uh = -im * g.l * v.ψh
-  invtransform!(v.u, v.uh, p)
-  return v.u
+  sol, params, vars, grid = prob.sol, prob.params, prob.vars, prob.grid
+  
+  @. vars.qh = sol
+  streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
+  @. vars.uh = -im * grid.l * vars.ψh
+  invtransform!(vars.u, vars.uh, params)
+  
+  return vars.u
 end
+
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
-nothing #hide
+nothing # hide
 
 
 # ## Visualizing the simulation
 
-# We define a function that plots the potential vorticity field and the evolution 
-# of energy and enstrophy.
+# We define a function that plots the potential vorticity field and the evolution of energy 
+# and enstrophy. Note that when plotting, we decorate the variable to be plotted with `Array()` 
+# to make sure it is brought back on the CPU when `vars` live on the GPU.
 
 symlims(data) = maximum(abs.(extrema(data))) |> q -> (-q, q)
 
 function plot_output(prob)
+  Lx, Ly = prob.grid.Lx, prob.grid.Ly
   
-  l = @layout grid(2, 3)
-  p = plot(layout=l, size = (1000, 600), dpi=150)
+  l = @layout Plots.grid(2, 3)
+  p = plot(layout=l, size = (1000, 600))
   
   for m in 1:nlayers
-    heatmap!(p[(m-1)*3+1], x, y, vs.q[:, :, m],
+    heatmap!(p[(m-1) * 3 + 1], x, y, Array(vars.q[:, :, m]'),
          aspectratio = 1,
               legend = false,
                    c = :balance,
-               xlims = (-gr.Lx/2, gr.Lx/2),
-               ylims = (-gr.Ly/2, gr.Ly/2),
+               xlims = (-Lx/2, Lx/2),
+               ylims = (-Ly/2, Ly/2),
                clims = symlims,
               xticks = -3:3,
               yticks = -3:3,
@@ -134,13 +141,13 @@ function plot_output(prob)
                title = "q_"*string(m),
           framestyle = :box)
 
-    contourf!(p[(m-1)*3+2], x, y, vs.ψ[:, :, m],
+    contourf!(p[(m-1) * 3 + 2], x, y, Array(vars.ψ[:, :, m]'),
               levels = 8,
          aspectratio = 1,
               legend = false,
                    c = :viridis,
-               xlims = (-gr.Lx/2, gr.Lx/2),
-               ylims = (-gr.Ly/2, gr.Ly/2),
+               xlims = (-Lx/2, Lx/2),
+               ylims = (-Ly/2, Ly/2),
                clims = symlims,
               xticks = -3:3,
               yticks = -3:3,
@@ -185,32 +192,34 @@ p = plot_output(prob)
 
 startwalltime = time()
 
-anim = @animate for j=0:Int(nsteps/nsubs)
-  
-  cfl = cl.dt*maximum([maximum(vs.u)/gr.dx, maximum(vs.v)/gr.dy])
-  
-  log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, KE1: %.4f, KE2: %.4f, PE: %.4f, walltime: %.2f min", cl.step, cl.t, cfl, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
+anim = @animate for j = 0:round(Int, nsteps / nsubs)
+  if j % (1000 / nsubs) == 0
+    cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
+    
+    log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, KE1: %.3e, KE2: %.3e, PE: %.3e, walltime: %.2f min", clock.step, clock.t, cfl, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
 
-  if j%(1000/nsubs)==0; println(log) end
-  
-  for m in 1:nlayers
-    p[(m-1)*3+1][1][:z] = @. vs.q[:, :, m]
-    p[(m-1)*3+2][1][:z] = @. vs.ψ[:, :, m]
+    println(log)
   end
   
-  push!(p[3][1], μ*E.t[E.i], E.data[E.i][1][1])
-  push!(p[3][2], μ*E.t[E.i], E.data[E.i][1][2])
-  push!(p[6][1], μ*E.t[E.i], E.data[E.i][2][1])
+  for m in 1:nlayers
+    p[(m-1) * 3 + 1][1][:z] = Array(vars.q[:, :, m])
+    p[(m-1) * 3 + 2][1][:z] = Array(vars.ψ[:, :, m])
+  end
+  
+  push!(p[3][1], μ * E.t[E.i], E.data[E.i][1][1])
+  push!(p[3][2], μ * E.t[E.i], E.data[E.i][1][2])
+  push!(p[6][1], μ * E.t[E.i], E.data[E.i][2][1])
   
   stepforward!(prob, diags, nsubs)
-  MultilayerQG.updatevars!(prob)
+  MultiLayerQG.updatevars!(prob)
 end
 
 mp4(anim, "multilayerqg_2layer.mp4", fps=18)
 
 
 # ## Save
-
-# Finally save the last snapshot.
-savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), cl.step)
-savefig(savename)
+# Finally, we can save, e.g., the last snapshot via
+# ```julia
+# savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), clock.step)
+# savefig(savename)
+# ```
