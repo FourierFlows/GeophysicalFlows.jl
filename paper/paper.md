@@ -70,10 +70,11 @@ dissipation, etc.
 
 ![Potential vorticity snapshots from a nonlinearly equilibrated simulation of the Eady instability 
 over a meridional ridge. Simulation used `MultiLayerQG` module of `GeophysicalFlows.jl`. The Eady 
-problem was approximated here using 5 layers stacked up in the vertical. Each layer was simulated 
-with 512² grid-points. Plots were made with the `Plots.jl` Julia package, which utilizes the 
-`cmocean` colormaps collection [@Thyng2016]. Scripts to reproduce the simulation reside in the 
-repository `github.com/FourierFlows/MultilayerQG-example`. \label{fig1}](PV_eady_nlayers5.png)
+problem was approximated here using 5 fluid layers stacked up in the vertical. Each layer was
+simulated with 512² grid-points. Plots were made with the `Plots.jl` Julia package, which 
+utilizes the `cmocean` colormaps collection [@Thyng2016]. Scripts to reproduce the simulation 
+reside in the repository `github.com/FourierFlows/MultilayerQG-example`.
+\label{fig1}](PV_eady_nlayers5.png)
 
 
 # State of the field
