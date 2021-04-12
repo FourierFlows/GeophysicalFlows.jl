@@ -6,7 +6,7 @@
 # a beta plane under the *quasi-linear approximation*. The dynamics include 
 # linear drag and stochastic excitation.
 
-using FourierFlows, Plots, Statistics, Printf, Random
+using FourierFlows, Plots, Statistics, Printf, Random, CUDA
 
 using FourierFlows: parsevalsum
 using FFTW: irfft

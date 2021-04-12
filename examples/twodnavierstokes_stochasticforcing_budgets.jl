@@ -8,7 +8,7 @@
 # each of the forcing and dissipation terms contribute to the energy and the 
 # enstrophy budgets.
 
-using FourierFlows, Printf, Plots
+using FourierFlows, Printf, Plots, CUDA
 
 using FourierFlows: parsevalsum
 using Random: seed!

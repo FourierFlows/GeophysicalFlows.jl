@@ -5,7 +5,7 @@
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane. The dynamics include linear drag and stochastic excitation.
 
-using FourierFlows, Plots, Statistics, Printf, Random
+using FourierFlows, Plots, Statistics, Printf, Random, CUDA
 
 using FourierFlows: parsevalsum
 using FFTW: irfft

@@ -6,7 +6,7 @@
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
 # the form of linear drag and hyperviscosity. 
 
-using FourierFlows, Printf, Plots
+using FourierFlows, Printf, Plots, CUDA
 
 using FourierFlows: parsevalsum
 using Random: seed!
