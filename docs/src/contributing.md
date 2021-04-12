@@ -12,8 +12,8 @@ New contributors should make sure to read that guide.
 * Tackle an existing [issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues).
 
 * Try to run your favorite GeophysicalFlows.jl module and play around with it to simulate 
-  your particular favorite setup. If you run into any problems or find it difficult
-  to use, modify, or understand, please [open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues)!
+  your favorite setup. If you run into any problems or find it difficult to use, modify, or 
+  understand, please [open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues)!
 
 * Write up an example or tutorial on how to do something useful with one of the current modules
   in GeophysicalFlows.jl, like how to set up a new physical configuration.
@@ -25,10 +25,9 @@ New contributors should make sure to read that guide.
 * Implement a new module from scratch to solve your favorite partial differential equation with
   periodic boundary conditions.
 
-If you're interested in working on something, let us know by commenting on
-existing issues or by opening a new issue. This is to make sure no one else
-is working on the same issue and so we can help and guide you in case there
-is anything you need to know beforehand.
+If you're interested in working on something, let us know by commenting on an existing issue 
+or by opening a new issue. This is to make sure no one else is working on the same issue and 
+so we can help and guide you in case there is anything you need to know beforehand.
 
 ## Ground Rules
 
@@ -101,7 +100,7 @@ or the guide [“How to Contribute to Open Source"](https://opensource.guide/how
 
 ## Documentation
 
-All PRs that introduces new features or new modules should be accompanied with appropriate 
+All PRs that introduce new features or new modules should be accompanied with appropriate 
 docstrings and documentation. Writing documentation strings is really important to make sure 
 others use your functionality properly. Didn't write new functions? That's fine, but be sure 
 that the documentation for the code you touched is still in great shape. It is not uncommon 
