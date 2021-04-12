@@ -60,14 +60,15 @@ seed!(1234)
 nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
-# `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
-# `dev = CPU()` and `CuArray` for `dev = GPU()`.
+# First we make sure that if `dev=GPU()`, then `CUDA.rand()` function is called for random
+# numbers uniformy distributed between 0 and 1.
+random_uniform = dev==CPU() ? rand : CUDA.rand
+
 function calcF!(Fh, sol, t, clock, vars, params, grid)
-  ξ = exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt)
-  ξ[1, 1] = 0
-  
-  Fh .= ArrayType(dev)(ξ) .* sqrt.(forcing_spectrum)
-  
+  Fh .= sqrt.(forcing_spectrum) .* exp(2π * im * random_uniform(eltype(grid))) ./ sqrt(clock.dt)
+
+  @CUDA.allowscalar Fh[1, 1] = 0 # make sure forcing has zero domain-average
+
   return nothing
 end
 nothing # hide
