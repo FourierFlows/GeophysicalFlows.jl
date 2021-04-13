@@ -59,7 +59,7 @@ forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0        # normalize forcing to inject energy at rate ε
 
-seed!(1234)
+if dev==CPU(); seed!(1234); else; CUDA.seed!(1234); end
 nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
@@ -67,8 +67,8 @@ nothing # hide
 # numbers uniformly distributed between 0 and 1.
 random_uniform = dev==CPU() ? rand : CUDA.rand
 
-function calcF!(Fh, sol, t, clock, vars, params, grid)
-  Fh .= sqrt.(forcing_spectrum) .* exp(2π * im * random_uniform(eltype(grid))) ./ sqrt(clock.dt)
+function calcF!(Fh, sol, t, clock, vars, params, grid) 
+  Fh .= sqrt.(forcing_spectrum) .* exp.(2π * im * random_uniform(eltype(grid), size(sol))) ./ sqrt(clock.dt)
 
   @CUDA.allowscalar Fh[1, 1] = 0 # make sure forcing has zero domain-average
 
