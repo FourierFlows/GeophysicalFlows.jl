@@ -42,7 +42,7 @@ nothing # hide
 # has a spectrum with power in a ring in wavenumber space of radius ``k_f`` (`forcing_wavenumber`) and width 
 # ``\delta k_f`` (`forcing_bandwidth`), and it injects energy per unit area and per unit time 
 # equal to ``\varepsilon``. That is, the forcing covariance spectrum is proportional to 
-# ``\exp{(-(|\bm{k}| - k_f)^2 / (2 \delta k_f^2))}``.
+# ``\exp{[-(|\bm{k}| - k_f)^2 / (2 \delta k_f^2)]}``.
 
 forcing_wavenumber = 14.0 * 2π/L   # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
 forcing_bandwidth  = 1.5  * 2π/L   # the width of the forcing spectrum
@@ -64,8 +64,8 @@ nothing # hide
 # numbers uniformy distributed between 0 and 1.
 random_uniform = dev==CPU() ? rand : CUDA.rand
 
-function calcF!(Fh, sol, t, clock, vars, params, grid)
-  Fh .= sqrt.(forcing_spectrum) .* exp(2π * im * random_uniform(eltype(grid))) ./ sqrt(clock.dt)
+function calcF!(Fh, sol, t, clock, vars, params, grid::AbstractGrid{T}) where T
+  @. Fh = sqrt(forcing_spectrum) * exp(2π * im * random_uniform(T)) / sqrt(clock.dt)
 
   @CUDA.allowscalar Fh[1, 1] = 0 # make sure forcing has zero domain-average
 
