@@ -6,10 +6,9 @@
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
 # the form of linear drag and hyperviscosity. 
 
-using CUDA, FourierFlows, Printf, Plots
+using CUDA, FourierFlows, Random, Printf, Plots
 
 using FourierFlows: parsevalsum
-using Random: seed!
 using FFTW: irfft
 
 import GeophysicalFlows.TwoDNavierStokes
@@ -18,7 +17,7 @@ import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy
 
 # ## Choosing a device: CPU or GPU
 
-dev = CPU()     # Device (CPU/GPU)
+dev = GPU()     # Device (CPU/GPU)
 nothing # hide
 
 
@@ -37,16 +36,16 @@ nothing # hide
 
 # ## Forcing
 
-# We force the vorticity equation with stochastic excitation that is delta-correlated
-# in time and while spatially homogeneously and isotropically correlated. The forcing
-# has a spectrum with power in a ring in wavenumber space of radius ``k_f`` (`forcing_wavenumber`) and width 
-# ``\delta k_f`` (`forcing_bandwidth`), and it injects energy per unit area and per unit time 
+# We force the vorticity equation with stochastic excitation that is delta-correlated in time 
+# and while spatially homogeneously and isotropically correlated. The forcing has a spectrum 
+# with power in a ring in wavenumber space of radius ``k_f`` (`forcing_wavenumber`) and width 
+# ``δ_f`` (`forcing_bandwidth`), and it injects energy per unit area and per unit time 
 # equal to ``\varepsilon``. That is, the forcing covariance spectrum is proportional to 
-# ``\exp{[-(|\bm{k}| - k_f)^2 / (2 \delta k_f^2)]}``.
+# ``\exp{[-(|\bm{k}| - k_f)^2 / (2 δ_f^2)]}``.
 
-forcing_wavenumber = 14.0 * 2π/L   # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
-forcing_bandwidth  = 1.5  * 2π/L   # the width of the forcing spectrum
-ε = 0.1                            # energy input rate by the forcing
+forcing_wavenumber = 14.0 * 2π/L  # the forcing wavenumber, `k_f`, for a spectrum that is a ring in wavenumber space
+forcing_bandwidth  = 1.5  * 2π/L  # the width of the forcing spectrum, `δ_f`
+ε = 0.1                           # energy input rate by the forcing
 
 grid = TwoDGrid(dev, n, L)
 
@@ -55,9 +54,13 @@ K = @. sqrt(grid.Krsq)             # a 2D array with the total wavenumber
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0        # normalize forcing to inject energy at rate ε
-
-if dev==CPU(); seed!(1234); else; CUDA.seed!(1234); end
 nothing # hide
+
+
+# We reset of the random number generator for reproducibility
+if dev==CPU(); Random.seed!(1234); else; CUDA.seed!(1234); end
+nothing # hide
+
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
 # First we make sure that if `dev=GPU()`, then `CUDA.rand()` function is called for random
