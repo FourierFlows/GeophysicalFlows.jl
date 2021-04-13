@@ -127,3 +127,4 @@ The code is citable via [zenodo](https://zenodo.org). Please cite as:
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
 [documentation]: https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/
 [online @ youtube]: https://www.youtube.com/channel/UCO_0ugkNUwCsFUMtepwYTqw
+
