@@ -60,6 +60,18 @@ the package's [documentation].
 Some animations created with GeophysicalFlows.jl are [online @ youtube].
 
 
+## Modules
+
+* `TwoDNavierStokes`: the two-dimensional vorticity equation.
+* `SingleLayerQG`: the barotropic or equivalent-barotropic quasi-geostrophic equation, which 
+  generalizes `TwoDNavierStokes` to cases with topography, Coriolis parameters of the form 
+  `f = f₀ + βy`, and finite Rossby radius of deformation.
+* `MultiLayerQG`: a multi-layer quasi-geostrophic model over topography and with the ability 
+  to impose a zonal flow `U_n(y)` in each layer.
+* `SurfaceQG`: a surface quasi-geostrophic model.
+* `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
+
+
 ## Scalability
 
 For now, GeophysicalFlows.jl is restricted to run on either a single CPU or single GPU. These
@@ -80,18 +92,6 @@ to the [CUDA.jl Documentation](https://juliagpu.github.io/CUDA.jl/stable/lib/dri
 in particular, [`CUDA.devices`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.devices) 
 and [`CUDA.CuDevice`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.CuDevice). 
 The user is also referred to the [GPU section](https://fourierflows.github.io/FourierFlowsDocumentation/stable/gpu/) in the FourierFlows.jl documentation.
-
-
-## Modules
-
-* `TwoDNavierStokes`: the two-dimensional vorticity equation.
-* `SingleLayerQG`: the barotropic or equivalent-barotropic quasi-geostrophic equation, which 
-  generalizes `TwoDNavierStokes` to cases with topography, Coriolis parameters of the form 
-  `f = f₀ + βy`, and finite Rossby radius of deformation.
-* `MultiLayerQG`: a multi-layer quasi-geostrophic model over topography and with the ability 
-  to impose a zonal flow `U_n(y)` in each layer.
-* `SurfaceQG`: a surface quasi-geostrophic model.
-* `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
 
 
 ## Getting help
