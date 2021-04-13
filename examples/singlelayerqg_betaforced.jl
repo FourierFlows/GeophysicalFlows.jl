@@ -66,7 +66,7 @@ nothing # hide
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
 # First we make sure that if `dev=GPU()`, then `CUDA.rand()` function is called for random
-# numbers uniformy distributed between 0 and 1.
+# numbers uniformly distributed between 0 and 1.
 random_uniform = dev==CPU() ? rand : CUDA.rand
 
 function calcF!(Fh, sol, t, clock, vars, params, grid)
