@@ -18,7 +18,7 @@ import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy
 
 # ## Choosing a device: CPU or GPU
 
-dev = GPU()     # Device (CPU/GPU)
+dev = CPU()     # Device (CPU/GPU)
 nothing # hide
 
 
@@ -64,7 +64,7 @@ nothing # hide
 # numbers uniformly distributed between 0 and 1.
 random_uniform = dev==CPU() ? rand : CUDA.rand
 
-function calcF!(Fh, sol, t, clock, vars, params, grid)
+function calcF!(Fh, sol, t, clock, vars, params, grid) 
   Fh .= sqrt.(forcing_spectrum) .* exp.(2π * im * random_uniform(eltype(grid), size(sol))) ./ sqrt(clock.dt)
 
   @CUDA.allowscalar Fh[1, 1] = 0 # make sure forcing has zero domain-average
