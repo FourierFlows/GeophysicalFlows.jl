@@ -31,7 +31,7 @@ const rtol_surfaceqg = 1e-13 # tolerance for surfaceqg forcing tests
 testtime = @elapsed begin
 for dev in devices
   
-  println("testing on "*string(typeof(dev)))
+  @info "testing on " * string(typeof(dev))
   
   @testset "Utils" begin
     include("test_utils.jl")
