@@ -5,12 +5,11 @@
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane. The dynamics include linear drag and stochastic excitation.
 
-using FourierFlows, Plots, Statistics, Printf, Random
+using CUDA, FourierFlows, Random, Printf, Plots, Statistics
 
 using FourierFlows: parsevalsum
 using FFTW: irfft
 using Statistics: mean
-using Random: seed!
 
 import GeophysicalFlows.SingleLayerQG
 import GeophysicalFlows.SingleLayerQG: energy, enstrophy
@@ -45,12 +44,12 @@ nothing # hide
 # We force the vorticity equation with stochastic excitation that is delta-correlated in time 
 # and while spatially homogeneously and isotropically correlated. The forcing has a spectrum 
 # with power in a ring in wavenumber space of radius ``k_f`` (`forcing_wavenumber`) and width 
-# ``\delta k_f`` (`forcing_bandwidth`), and it injects energy per unit area and per unit time 
+# ``δ_f`` (`forcing_bandwidth`), and it injects energy per unit area and per unit time 
 # equal to ``\varepsilon``. That is, the forcing covariance spectrum is proportional to 
-# ``\exp{(-(|\bm{k}| - k_f)^2 / (2 \delta k_f^2))}``.
+# ``\exp{[-(|\bm{k}| - k_f)^2 / (2 δ_f^2)]}``.
 
-forcing_wavenumber = 14.0 * 2π/L  # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
-forcing_bandwidth  = 1.5  * 2π/L  # the width of the forcing spectrum 
+forcing_wavenumber = 14.0 * 2π/L  # the forcing wavenumber, `k_f`, for a spectrum that is a ring in wavenumber space
+forcing_bandwidth  = 1.5  * 2π/L  # the width of the forcing spectrum, `δ_f`
 ε = 0.001                         # energy input rate by the forcing
 
 grid = TwoDGrid(dev, n, L)
@@ -60,18 +59,24 @@ K = @. sqrt(grid.Krsq)            # a 2D array with the total wavenumber
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0       # normalize forcing to inject energy at rate ε
-
-seed!(1234) # reset of the random number generator for reproducibility
 nothing # hide
 
+
+# We reset of the random number generator for reproducibility
+if dev==CPU(); Random.seed!(1234); else; CUDA.seed!(1234); end
+nothing # hide
+
+
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
-# `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
-# `dev = CPU()` and `CuArray` for `dev = GPU()`.
-function calcF!(Fh, sol, t, clock, vars, params, grid)
-  ξ = exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt)
-  
-  Fh .= ArrayType(dev)(ξ) .* sqrt.(forcing_spectrum)
-  
+# First we make sure that if `dev=GPU()`, then `CUDA.rand()` function is called for random
+# numbers uniformly distributed between 0 and 1.
+random_uniform = dev==CPU() ? rand : CUDA.rand
+
+function calcF!(Fh, sol, t, clock, vars, params, grid) 
+  Fh .= sqrt.(forcing_spectrum) .* exp.(2π * im * random_uniform(eltype(grid), size(sol))) ./ sqrt(clock.dt)
+
+  @CUDA.allowscalar Fh[1, 1] = 0 # make sure forcing has zero domain-average
+
   return nothing
 end
 nothing # hide
