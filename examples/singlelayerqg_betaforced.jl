@@ -4,15 +4,23 @@
 #
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane. The dynamics include linear drag and stochastic excitation.
+#
+# ## Install dependencies
+#
+# First let's make sure we have all required packages installed.
 
-using CUDA, FourierFlows, Random, Printf, Plots, Statistics
+# ```julia
+# using Pkg
+# pkg"add GeophysicalFlows, Random, Printf, Plots, Statistics"
+# ```
+
+# ## Let's begin
+# Let's load `GeophysicalFlows.jl` and some other needed packages.
+#
+using GeophysicalFlows, Random, Printf, Plots
 
 using FourierFlows: parsevalsum
-using FFTW: irfft
 using Statistics: mean
-
-import GeophysicalFlows.SingleLayerQG
-import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 
 # ## Choosing a device: CPU or GPU
@@ -125,8 +133,8 @@ SingleLayerQG.set_q!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
 # ## Diagnostics
 
 # Create Diagnostic -- `energy` and `enstrophy` are functions imported at the top.
-E = Diagnostic(energy, prob; nsteps=nsteps)
-Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
+E = Diagnostic(SingleLayerQG.energy, prob; nsteps=nsteps)
+Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps=nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 

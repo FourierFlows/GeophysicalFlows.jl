@@ -6,15 +6,25 @@
 # A simulation of decaying surface quasi-geostrophic turbulence.
 # We reproduce here the initial value problem for an elliptical 
 # vortex as done by Held et al. 1995, _J. Fluid Mech_.
+# 
+# An example of decaying barotropic quasi-geostrophic turbulence over topography.
+#
+# ## Install dependencies
+#
+# First let's make sure we have all required packages installed.
 
-using FourierFlows, Plots, Statistics, Printf, Random
+# ```julia
+# using Pkg
+# pkg"add GeophysicalFlows, Plots, Printf, Random, Statistics"
+# ```
 
-using FFTW: irfft
+# ## Let's begin
+# Let's load `GeophysicalFlows.jl` and some other needed packages.
+#
+using GeophysicalFlows, Plots, Printf, Random
+
 using Statistics: mean
 using Random: seed!
-
-import GeophysicalFlows.SurfaceQG
-import GeophysicalFlows.SurfaceQG: kinetic_energy, buoyancy_variance, buoyancy_dissipation
 
 
 # ## Choosing a device: CPU or GPU
@@ -84,9 +94,9 @@ heatmap(x, y, Array(vars.b'),
 
 # Create Diagnostics; `buoyancy_variance`, `kinetic_energy` and `buoyancy_dissipation` 
 # functions were imported at the top.
-B  = Diagnostic(buoyancy_variance, prob; nsteps=nsteps)
-KE = Diagnostic(kinetic_energy, prob; nsteps=nsteps)
-Dᵇ = Diagnostic(buoyancy_dissipation, prob; nsteps=nsteps)
+B  = Diagnostic(SurfaceQG.buoyancy_variance, prob; nsteps=nsteps)
+KE = Diagnostic(SurfaceQG.kinetic_energy, prob; nsteps=nsteps)
+Dᵇ = Diagnostic(SurfaceQG.buoyancy_dissipation, prob; nsteps=nsteps)
 diags = [B, KE, Dᵇ] # A list of Diagnostics types passed to `stepforward!`. Diagnostics are updated every timestep.
 nothing # hidenothing # hide
 

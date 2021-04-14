@@ -5,14 +5,21 @@
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
 # the form of linear drag and hyperviscosity. 
+#
+# ## Install dependencies
+#
+# First let's make sure we have all required packages installed.
 
-using CUDA, FourierFlows, Random, Printf, Plots
+# ```julia
+# using Pkg
+# pkg"add GeophysicalFlows, Random, Printf, Plots"
+# ```
 
+# ## Let's begin
+# Let's load `GeophysicalFlows.jl` and some other needed packages.
+#
+using GeophysicalFlows, Random, Printf, Plots
 using FourierFlows: parsevalsum
-using FFTW: irfft
-
-import GeophysicalFlows.TwoDNavierStokes
-import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy
 
 
 # ## Choosing a device: CPU or GPU
@@ -122,8 +129,8 @@ TwoDNavierStokes.set_ζ!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
 # ## Diagnostics
 
 # Create Diagnostics; the diagnostics are aimed to probe the energy budget.
-E  = Diagnostic(energy,                prob, nsteps=nsteps) # energy
-Z  = Diagnostic(enstrophy,             prob, nsteps=nsteps) # enstrophy
+E  = Diagnostic(TwoDNavierStokes.energy,                prob, nsteps=nsteps) # energy
+Z  = Diagnostic(TwoDNavierStokes.enstrophy,             prob, nsteps=nsteps) # enstrophy
 diags = [E, Z] # a list of Diagnostics passed to `stepforward!` will  be updated every timestep.
 nothing # hide
 
