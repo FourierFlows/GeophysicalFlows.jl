@@ -7,15 +7,21 @@
 # the form of linear drag and hyperviscosity. As a demonstration, we compute how
 # each of the forcing and dissipation terms contribute to the energy and the 
 # enstrophy budgets.
+#
+# ## Install dependencies
+#
+# First let's make sure we have all required packages installed.
 
-using CUDA, FourierFlows, Random, Printf, Plots
+# ```julia
+# using Pkg
+# pkg"add GeophysicalFlows, Random, Printf, Plots"
+# ```
 
+# ## Let's begin
+# Let's load `GeophysicalFlows.jl` and some other needed packages.
+#
+using GeophysicalFlows, Random, Printf, Plots
 using FourierFlows: parsevalsum
-using FFTW: irfft
-
-import GeophysicalFlows.TwoDNavierStokes
-import GeophysicalFlows.TwoDNavierStokes: energy, energy_dissipation_hyperviscosity, energy_dissipation_hypoviscosity, energy_work
-import GeophysicalFlows.TwoDNavierStokes: enstrophy, enstrophy_dissipation_hyperviscosity, enstrophy_dissipation_hypoviscosity, enstrophy_work
 
 
 # ## Choosing a device: CPU or GPU
@@ -125,14 +131,14 @@ TwoDNavierStokes.set_ζ!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
 # ## Diagnostics
 
 # Create Diagnostics; the diagnostics are aimed to probe the energy and enstrophy budgets.
-E  = Diagnostic(energy,                               prob, nsteps=nt) # energy
-Rᵋ = Diagnostic(energy_dissipation_hypoviscosity,     prob, nsteps=nt) # energy dissipation by drag μ
-Dᵋ = Diagnostic(energy_dissipation_hyperviscosity,    prob, nsteps=nt) # energy dissipation by drag μ
-Wᵋ = Diagnostic(energy_work,                          prob, nsteps=nt) # energy work input by forcing
-Z  = Diagnostic(enstrophy,                            prob, nsteps=nt) # enstrophy
-Rᶻ = Diagnostic(enstrophy_dissipation_hypoviscosity,  prob, nsteps=nt) # enstrophy dissipation by drag μ
-Dᶻ = Diagnostic(enstrophy_dissipation_hyperviscosity, prob, nsteps=nt) # enstrophy dissipation by drag μ
-Wᶻ = Diagnostic(enstrophy_work,                       prob, nsteps=nt) # enstrophy work input by forcing
+E  = Diagnostic(TwoDNavierStokes.energy,                               prob, nsteps=nt) # energy
+Rᵋ = Diagnostic(TwoDNavierStokes.energy_dissipation_hypoviscosity,     prob, nsteps=nt) # energy dissipation by drag μ
+Dᵋ = Diagnostic(TwoDNavierStokes.energy_dissipation_hyperviscosity,    prob, nsteps=nt) # energy dissipation by drag μ
+Wᵋ = Diagnostic(TwoDNavierStokes.energy_work,                          prob, nsteps=nt) # energy work input by forcing
+Z  = Diagnostic(TwoDNavierStokes.enstrophy,                            prob, nsteps=nt) # enstrophy
+Rᶻ = Diagnostic(TwoDNavierStokes.enstrophy_dissipation_hypoviscosity,  prob, nsteps=nt) # enstrophy dissipation by drag μ
+Dᶻ = Diagnostic(TwoDNavierStokes.enstrophy_dissipation_hyperviscosity, prob, nsteps=nt) # enstrophy dissipation by drag μ
+Wᶻ = Diagnostic(TwoDNavierStokes.enstrophy_work,                       prob, nsteps=nt) # enstrophy work input by forcing
 diags = [E, Dᵋ, Wᵋ, Rᵋ, Z, Dᶻ, Wᶻ, Rᶻ] # a list of Diagnostics passed to `stepforward!` will  be updated every timestep.
 nothing # hide
 

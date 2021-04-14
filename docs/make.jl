@@ -1,4 +1,4 @@
-push!(LOAD_PATH, "..")
+push!(LOAD_PATH, joinpath(@__DIR__, "..")) # add GeophysicalFlows to environment stack
 
 using
   Documenter,

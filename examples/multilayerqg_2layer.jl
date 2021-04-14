@@ -5,13 +5,22 @@
 # A simulation of the growth of barolinic instability in the Phillips 2-layer model
 # when we impose a vertical mean flow shear as a difference ``\Delta U`` in the
 # imposed, domain-averaged, zonal flow at each layer.
+#
+# ## Install dependencies
+#
+# First let's make sure we have all required packages installed.
 
-using FourierFlows, Plots, Printf
+# ```julia
+# using Pkg
+# pkg"add GeophysicalFlows, Plots, Printf"
+# ```
 
-using FFTW: rfft, irfft
+# ## Let's begin
+# Let's load `GeophysicalFlows.jl` and some other needed packages.
+#
+using GeophysicalFlows, Plots, Printf
+
 using Random: seed!
-import GeophysicalFlows.MultiLayerQG
-import GeophysicalFlows.MultiLayerQG: energies
 
 
 # ## Choosing a device: CPU or GPU
@@ -76,7 +85,7 @@ nothing # hide
 # ## Diagnostics
 
 # Create Diagnostics -- `energies` function is imported at the top.
-E = Diagnostic(energies, prob; nsteps=nsteps)
+E = Diagnostic(MultiLayerQG.energies, prob; nsteps=nsteps)
 diags = [E] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 
