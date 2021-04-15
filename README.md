@@ -39,10 +39,12 @@ Geophysical Fluid Dynamics on periodic domains using Fourier-based pseudospectra
 
 ## Installation
 
-To install, do
+To install, use Julia's  built-in package manager (accessed by pressing `]` in the Julia REPL command prompt) to add the package and also to instantiate/build all the required dependencies
 
 ```julia
-] add GeophysicalFlows
+julia>]
+(v1.5) pkg> add GeophysicalFlows
+(v1.5) pkg> instantiate
 ```
 
 The most recent version of GeophysicalFlows.jl requires Julia v1.5 or later.
@@ -58,6 +60,18 @@ See `examples/` for example scripts. These examples are best viewed by browsing 
 the package's [documentation]. 
 
 Some animations created with GeophysicalFlows.jl are [online @ youtube].
+
+
+## Modules
+
+* `TwoDNavierStokes`: the two-dimensional vorticity equation.
+* `SingleLayerQG`: the barotropic or equivalent-barotropic quasi-geostrophic equation, which 
+  generalizes `TwoDNavierStokes` to cases with topography, Coriolis parameters of the form 
+  `f = f₀ + βy`, and finite Rossby radius of deformation.
+* `MultiLayerQG`: a multi-layer quasi-geostrophic model over topography and with the ability 
+  to impose a zonal flow `U_n(y)` in each layer.
+* `SurfaceQG`: a surface quasi-geostrophic model.
+* `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
 
 
 ## Scalability
@@ -80,18 +94,6 @@ to the [CUDA.jl Documentation](https://juliagpu.github.io/CUDA.jl/stable/lib/dri
 in particular, [`CUDA.devices`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.devices) 
 and [`CUDA.CuDevice`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.CuDevice). 
 The user is also referred to the [GPU section](https://fourierflows.github.io/FourierFlowsDocumentation/stable/gpu/) in the FourierFlows.jl documentation.
-
-
-## Modules
-
-* `TwoDNavierStokes`: the two-dimensional vorticity equation.
-* `SingleLayerQG`: the barotropic or equivalent-barotropic quasi-geostrophic equation, which 
-  generalizes `TwoDNavierStokes` to cases with topography, Coriolis parameters of the form 
-  `f = f₀ + βy`, and finite Rossby radius of deformation.
-* `MultiLayerQG`: a multi-layer quasi-geostrophic model over topography and with the ability 
-  to impose a zonal flow `U_n(y)` in each layer.
-* `SurfaceQG`: a surface quasi-geostrophic model.
-* `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
 
 
 ## Getting help
@@ -121,9 +123,10 @@ For more information, check out our [contributor's guide](https://github.com/Fou
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.11.6 (Version v0.11.6). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
+> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.12.0 (Version v0.12.0). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
 [documentation]: https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/
 [online @ youtube]: https://www.youtube.com/channel/UCO_0ugkNUwCsFUMtepwYTqw
+

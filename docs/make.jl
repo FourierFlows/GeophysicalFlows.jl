@@ -1,9 +1,7 @@
-push!(LOAD_PATH, "..")
-
 using
   Documenter,
   Literate,
-  Plots,  # to not capture precompilation output
+  Plots,   # to not capture precompilation output
   GeophysicalFlows
 
 # Gotta set this environment variable when using the GR run-time on Travis CI.

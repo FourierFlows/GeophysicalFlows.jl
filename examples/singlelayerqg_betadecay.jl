@@ -3,14 +3,23 @@
 #md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betadecay.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence on a beta plane.
+#
+# ## Install dependencies
+#
+# First let's make sure we have all required packages installed.
 
-using FourierFlows, Plots, Printf, Random
+# ```julia
+# using Pkg
+# pkg"add GeophysicalFlows, Plots, Printf, Statistics, Random"
+# ```
+
+# ## Let's begin
+# Let's load `GeophysicalFlows.jl` and some other needed packages.
+#
+using GeophysicalFlows, Plots, Printf, Random
 
 using Statistics: mean
-using FFTW: irfft
 
-import GeophysicalFlows.SingleLayerQG
-import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 # ## Choosing a device: CPU or GPU
 
@@ -65,7 +74,7 @@ q₀h = ArrayType(dev)(randn(Complex{eltype(grid)}, size(sol)))
 @. q₀h = ifelse(K < 6  * 2π/L, 0, q₀h)
 @. q₀h = ifelse(K > 10 * 2π/L, 0, q₀h)
 @. q₀h[1, :] = 0    # remove any power from zonal wavenumber k=0
-q₀h *= sqrt(E₀ / energy(q₀h, vars, params, grid)) # normalize q₀ to have energy E₀
+q₀h *= sqrt(E₀ / SingleLayerQG.energy(q₀h, vars, params, grid)) # normalize q₀ to have energy E₀
 q₀ = irfft(q₀h, grid.nx)
 
 SingleLayerQG.set_q!(prob, q₀)
@@ -109,8 +118,8 @@ p = plot(p1, p2, layout = layout, size = (800, 360))
 # ## Diagnostics
 
 # Create Diagnostics -- `energy` and `enstrophy` functions are imported at the top.
-E = Diagnostic(energy, prob; nsteps=nsteps)
-Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
+E = Diagnostic(SingleLayerQG.energy, prob; nsteps=nsteps)
+Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps=nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 

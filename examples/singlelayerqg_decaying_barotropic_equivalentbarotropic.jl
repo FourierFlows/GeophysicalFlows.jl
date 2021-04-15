@@ -4,14 +4,23 @@
 #
 # We use here the `SingleLayerQG` module to simulate decaying two-dimensional turbulence and
 # investigate how does a finite Rossby radius of deformation affects its evolution.
+#
+# ## Install dependencies
+#
+# First let's make sure we have all required packages installed.
 
-using FourierFlows, Printf, Random, Plots
+# ```julia
+# using Pkg
+# pkg"add GeophysicalFlows, Printf, Random, Plots"
+# ```
+
+# ## Let's begin
+# Let's load `GeophysicalFlows.jl` and some other needed packages.
+#
+using GeophysicalFlows, Printf, Random, Plots
  
+using GeophysicalFlows: peakedisotropicspectrum
 using Random: seed!
-using FFTW: rfft, irfft
-
-import GeophysicalFlows.SingleLayerQG
-import GeophysicalFlows: peakedisotropicspectrum
 
 
 # ## Choosing a device: CPU or GPU
