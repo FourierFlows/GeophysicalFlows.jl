@@ -39,10 +39,12 @@ Geophysical Fluid Dynamics on periodic domains using Fourier-based pseudospectra
 
 ## Installation
 
-To install, do
+To install, use Julia's  built-in package manager (accessed by pressing `]` in the Julia REPL command prompt) to add the package and also to instantiate/build all the required dependencies
 
 ```julia
-] add GeophysicalFlows
+julia>]
+(v1.5) pkg> add GeophysicalFlows
+(v1.5) pkg> instantiate
 ```
 
 The most recent version of GeophysicalFlows.jl requires Julia v1.5 or later.
