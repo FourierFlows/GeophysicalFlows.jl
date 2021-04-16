@@ -52,7 +52,7 @@ and saving output.
 
 # Statement of need
 
-Conceptual models in simple domains often provide stepping stones for better understanding geophysical and astrophysical systems, particularly the atmospheres and oceans of Earth and other planets. These conceptual models are used in research but also are of great value for helping students in class to grasp on new concepts and phenomena. Oftentimes people end up coding their own versions of solvers for the same partial differential equations for research or classwork. `GeophysicalFlows.jl` package is designed to be easily utilized and adaptable for a wide variety of both research and pedagogical purposes.
+Conceptual models in simple domains often provide stepping stones for better understanding geophysical and astrophysical systems, particularly the atmospheres and oceans of Earth and other planets. These conceptual models are used in research but also are of great value for helping students in class to grasp new concepts and phenomena. Oftentimes people end up coding their own versions of solvers for the same partial differential equations for research or classwork. `GeophysicalFlows.jl` package is designed to be easily utilized and adaptable for a wide variety of both research and pedagogical purposes.
 
 On top of the above-mentioned needs, the recent explosion of machine-learning applications in atmospheric and oceanic sciences advocates for the need that solvers for partial differential equations can be run on GPUs. 
 
