@@ -1,5 +1,5 @@
 using
-  GeophysicalFlows
+  GeophysicalFlows,
   Statistics,
   Random,
   FFTW,
