@@ -49,7 +49,7 @@ nothing # hide
 # a viscosity coefficient `ν` leads to the module's default value: `ν=0`. In this
 # example numerical instability due to accumulation of enstrophy at high wavenumbers
 # is taken care with the `FilteredTimestepper` we picked. 
-prob = SingleLayerQG.Problem(dev; nx=n, ny=n+2, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper)
+prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper)
 nothing # hide
 
 # and define some shortcuts
