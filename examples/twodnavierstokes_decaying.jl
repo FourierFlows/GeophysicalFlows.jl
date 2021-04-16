@@ -4,8 +4,6 @@
 #
 # A simulation of decaying two-dimensional turbulence.
 # 
-# An example of decaying barotropic quasi-geostrophic turbulence over topography.
-#
 # ## Install dependencies
 #
 # First let's make sure we have all required packages installed.

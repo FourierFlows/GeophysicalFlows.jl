@@ -2,7 +2,7 @@ name = "GeophysicalFlows"
 uuid = "44ee3b1c-bc02-53fa-8355-8e347616e15e"
 license = "MIT"
 authors = ["Navid C. Constantinou <navidcy@gmail.com>", "Gregory L. Wagner <wagner.greg@gmail.com>", "and co-contributors"]
-version = "0.12.0"
+version = "0.12.1"
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
@@ -21,7 +21,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 CUDA = "^1, ^2.4.2, ^3.0"
 DocStringExtensions = "^0.8"
 FFTW = "^1"
-FourierFlows = "^0.6.16"
+FourierFlows = "^0.6.17"
 JLD2 = "^0.1, ^0.2, ^0.3, ^0.4"
 Reexport = "^0.2, ^1"
 SpecialFunctions = "^0.10, ^1"
