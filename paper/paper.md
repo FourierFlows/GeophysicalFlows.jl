@@ -119,11 +119,12 @@ other packages. In particular:
 thanks to its various modules and high customizability, and its ease-of-use makes it an ideal 
 teaching tool for fluids courses [@GeophysicalFlows-Examples; @CLExWinterSchool2020]. 
 `GeophysicalFlows.jl` has been used in developing Lagrangian vortices identification algorithms 
-[@Karrasch2020]. Currently, `GeophysicalFlows.jl` is being used, e.g., (i) to test new theories 
-for diagnosing turbulent energy transfers in geophysical flows [e.g. @Pearson2021], (ii) to compare 
-different observational sampling techniques in these flows, (iii) to study the bifurcation properties 
-of Kolmogorov flows [@KolmogorovFlow], (iv) to study the genesis and persistence of the polygons 
-of vortices present at Jovian high latitudes (Siegelman, Young, and Ingersoll; in prep), (v) to study how mesoscale macroturbulence affects mixing of tracers [@QG_tracer_advection].
+[@Karrasch2020] and to test new theories for diagnosing turbulent energy transfers in geophysical 
+flows [@Pearson2021]. Currently, `GeophysicalFlows.jl` is being used, e.g., (i) to compare 
+different observational sampling techniques in these flows, (ii) to study the bifurcation properties 
+of Kolmogorov flows [@KolmogorovFlow], (iii) to study the genesis and persistence of the polygons 
+of vortices present at Jovian high latitudes (Siegelman, Young, and Ingersoll; in prep), and 
+(iv) to study how mesoscale macroturbulence affects mixing of tracers [@QG_tracer_advection].
 
 
 # Acknowledgements
