@@ -119,12 +119,16 @@ than happy to help along the way.
 For more information, check out our [contributor's guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/master/CONTRIBUTING.md).
 
 
-## Cite
+## Citing
 
-The code is citable via [zenodo](https://zenodo.org). Please cite as:
+If you use GeophysicalFlows.jl in research, teaching, or other activities, we would be grateful 
+if you could mention GeophysicalFlows.jl and cite our paper in JOSS:
 
-> Constantinou et al., (2021). GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs &amp; GPUs. Journal of Open Source Software, 6(60), 3053, doi:[10.21105/joss.03053](https://doi.org/10.21105/joss.03053)
+> Constantinou et al., (2021). GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs & GPUs. Journal of Open Source Software, 6(60), 3053, doi:[10.21105/joss.03053](https://doi.org/10.21105/joss.03053)
 
+The bibtex entry for the paper is:
+
+```bibtex
 @article{Constantinou2021,
   doi = {10.21105/joss.03053},
   url = {https://doi.org/10.21105/joss.03053},
@@ -137,9 +141,7 @@ The code is citable via [zenodo](https://zenodo.org). Please cite as:
   title = {GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs &amp; GPUs},
   journal = {Journal of Open Source Software}
 }
-
-> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.12.1 (Version v0.12.1). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
-
+```
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
 [documentation]: https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/

@@ -60,7 +60,9 @@ course of time various people have contributed to GeophysicalFlows.jl, including
 If you use GeophysicalFlows.jl in research, teaching, or other activities, we would be grateful 
 if you could mention GeophysicalFlows.jl and cite our paper in JOSS:
 
-> Constantinou et al., (2021). GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs &amp; GPUs. Journal of Open Source Software, 6(60), 3053, doi:[10.21105/joss.03053](https://doi.org/10.21105/joss.03053)
+Constantinou et al., (2021). GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs & GPUs. _Journal of Open Source Software_, **6(60)**, 3053, doi:[10.21105/joss.03053](https://doi.org/10.21105/joss.03053)
+
+The bibtex entry for the paper is:
 
 ```bibtex
 @article{Constantinou2021,
