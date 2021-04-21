@@ -55,6 +55,24 @@ course of time various people have contributed to GeophysicalFlows.jl, including
 [Lia Siegelman](https://scholar.google.com/citations?user=BQJtj6sAAAAJ), [Brodie Pearson](https://brodiepearson.github.io), and [André Palóczy](https://scholar.google.com/citations?user=o4tYEH8AAAAJ) (see the [example in FourierFlows.jl](https://fourierflows.github.io/FourierFlowsDocumentation/stable/generated/OneDShallowWaterGeostrophicAdjustment/)).
 
 
-## Cite
+## Citing
 
-The code is citable via [zenodo](https://doi.org/10.5281/zenodo.1463809).
+If you use GeophysicalFlows.jl in research, teaching, or other activities, we would be grateful 
+if you could mention GeophysicalFlows.jl and cite our paper in JOSS:
+
+> Constantinou et al., (2021). GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs &amp; GPUs. Journal of Open Source Software, 6(60), 3053, doi:[10.21105/joss.03053](https://doi.org/10.21105/joss.03053)
+
+```bibtex
+@article{Constantinou2021,
+  doi = {10.21105/joss.03053},
+  url = {https://doi.org/10.21105/joss.03053},
+  year = {2021},
+  publisher = {The Open Journal},
+  volume = {6},
+  number = {60},
+  pages = {3053},
+  author = {Navid C. Constantinou and Gregory LeClaire Wagner and Lia Siegelman and Brodie C. Pearson and André Palóczy},
+  title = {GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs &amp; GPUs},
+  journal = {Journal of Open Source Software}
+}
+```
