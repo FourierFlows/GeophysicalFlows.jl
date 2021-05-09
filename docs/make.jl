@@ -42,7 +42,7 @@ end
 ##### Build and deploy docs
 #####
 
-# Set up a timer to print a space ' ' every 240 seconds. This is to avoid Travis CI
+# Set up a timer to print a space ' ' every 240 seconds. This is to avoid CI machines
 # timing out when building demanding Literate.jl examples.
 Timer(t -> println(" "), 0, interval=240)
 
