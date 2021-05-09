@@ -4,7 +4,7 @@ using
   Plots,   # to not capture precompilation output
   GeophysicalFlows
 
-# Gotta set this environment variable when using the GR run-time on Travis CI.
+# Gotta set this environment variable when using the GR run-time on CI machines.
 # This happens as examples will use Plots.jl to make plots and movies.
 # See: https://github.com/jheinen/GR.jl/issues/278
 ENV["GKSwstype"] = "100"
@@ -42,7 +42,7 @@ end
 ##### Build and deploy docs
 #####
 
-# Set up a timer to print a space ' ' every 240 seconds. This is to avoid Travis CI
+# Set up a timer to print a space ' ' every 240 seconds. This is to avoid CI machines
 # timing out when building demanding Literate.jl examples.
 Timer(t -> println(" "), 0, interval=240)
 
