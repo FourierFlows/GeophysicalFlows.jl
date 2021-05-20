@@ -40,9 +40,10 @@ nothing # hide
 
 # We force the vorticity equation with stochastic excitation that is delta-correlated
 # in time and while spatially homogeneously and isotropically correlated. The forcing
-# has a spectrum with power in a ring in wavenumber space of radius ``k_f`` and
-# width ``\delta k_f``, and it injects energy per unit area and per unit time equal
-# to ``\varepsilon``.
+# has a spectrum with power in a ring in wavenumber space of radius ``k_f`` (`forcing_wavenumber`) and width 
+# ``\delta k_f`` (`forcing_bandwidth`), and it injects energy per unit area and per unit time 
+# equal to ``\varepsilon``. That is, the forcing covariance spectrum is proportional to 
+# ``\exp{[-(|\bm{k}| - k_f)^2 / (2 \delta k_f^2)]}``.
 
 forcing_wavenumber = 14.0 * 2π/L   # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
 forcing_bandwidth  = 1.5  * 2π/L   # the width of the forcing spectrum
@@ -60,12 +61,16 @@ forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2
 seed!(1234)
 nothing # hide
 
-# Next we construct function `calcF!` that computes a forcing realization every timestep
-function calcF!(Fh, sol, t, clock, vars, params, grid)
-  ξ = ArrayType(dev)(exp.(2π * im * rand(eltype(grid), size(sol))) / sqrt(clock.dt))
-  ξ[1, 1] = 0
-  @. Fh = ξ * sqrt(forcing_spectrum)
-  
+# Next we construct function `calcF!` that computes a forcing realization every timestep.
+# First we make sure that if `dev=GPU()`, then `CUDA.rand()` function is called for random
+# numbers uniformy distributed between 0 and 1.
+random_uniform = dev==CPU() ? rand : CUDA.rand
+
+function calcF!(Fh, sol, t, clock, vars, params, grid::AbstractGrid{T}) where T
+  @. Fh = sqrt(forcing_spectrum) * exp(2π * im * random_uniform(T)) / sqrt(clock.dt)
+
+  @CUDA.allowscalar Fh[1, 1] = 0 # make sure forcing has zero domain-average
+
   return nothing
 end
 nothing # hide
