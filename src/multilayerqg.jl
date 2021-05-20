@@ -202,7 +202,7 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
     U = convert_U_to_U3D(dev, nlayers, grid, U)
 
   Uyy = real.(ifft(-l.^2 .* fft(U)))
-  Uyy = repeat(Uyy, outer=(nx, 1, 1))
+  Uyy = CUDA.@allowscalar repeat(Uyy, outer=(nx, 1, 1))
 
   etah = rfft(A(eta))
   etax = irfft(im * kr .* etah, nx)
