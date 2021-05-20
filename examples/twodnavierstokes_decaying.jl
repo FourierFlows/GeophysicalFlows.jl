@@ -1,18 +1,25 @@
 # # 2D decaying turbulence
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_decaying.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_decaying.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_decaying.ipynb).
 #
 # A simulation of decaying two-dimensional turbulence.
+# 
+# ## Install dependencies
+#
+# First let's make sure we have all required packages installed.
 
-using FourierFlows, Printf, Random, Plots
+# ```julia
+# using Pkg
+# pkg"add GeophysicalFlows, Printf, Random, Plots"
+# ```
+
+# ## Let's begin
+# Let's load `GeophysicalFlows.jl` and some other needed packages.
+#
+using GeophysicalFlows, Printf, Random, Plots
  
 using Random: seed!
-using FFTW: rfft, irfft
-
-import GeophysicalFlows.TwoDNavierStokes
-import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy
-import GeophysicalFlows: peakedisotropicspectrum
+using GeophysicalFlows: peakedisotropicspectrum
 
 
 # ## Choosing a device: CPU or GPU
@@ -28,7 +35,7 @@ nothing # hide
 n, L  = 128, 2π             # grid resolution and domain length
 nothing # hide
 
-## Then we pick the time-stepper parameters
+# Then we pick the time-stepper parameters
     dt = 1e-2  # timestep
 nsteps = 4000  # total number of steps
  nsubs = 20    # number of steps between each plot
@@ -49,17 +56,18 @@ nothing # hide
 
 # ## Setting initial conditions
 
-# Our initial condition closely tries to reproduce the initial condition used
-# in the paper by McWilliams (_JFM_, 1984)
+# Our initial condition tries to reproduce the initial condition used by McWilliams (_JFM_, 1984).
 seed!(1234)
 k₀, E₀ = 6, 0.5
 ζ₀ = peakedisotropicspectrum(grid, k₀, E₀, mask=prob.timestepper.filter)
 TwoDNavierStokes.set_ζ!(prob, ζ₀)
 nothing # hide
 
-# Let's plot the initial vorticity field:
-heatmap(x, y, vars.ζ',
-         aspectratio = 1,
+# Let's plot the initial vorticity field. Note that when plotting, we decorate the variable 
+# to be plotted with `Array()` to make sure it is brought back on the CPU when `vars` live on 
+# the GPU.
+heatmap(x, y, Array(vars.ζ'),
+    aspectratio = 1,
               c = :balance,
            clim = (-40, 40),
           xlims = (-L/2, L/2),
@@ -75,8 +83,8 @@ heatmap(x, y, vars.ζ',
 # ## Diagnostics
 
 # Create Diagnostics -- `energy` and `enstrophy` functions are imported at the top.
-E = Diagnostic(energy, prob; nsteps=nsteps)
-Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
+E = Diagnostic(TwoDNavierStokes.energy, prob; nsteps=nsteps)
+Z = Diagnostic(TwoDNavierStokes.enstrophy, prob; nsteps=nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 
@@ -108,7 +116,7 @@ nothing # hide
 # We initialize a plot with the vorticity field and the time-series of
 # energy and enstrophy diagnostics.
 
-p1 = heatmap(x, y, vars.ζ',
+p1 = heatmap(x, y, Array(vars.ζ'),
          aspectratio = 1,
                    c = :balance,
                 clim = (-40, 40),
@@ -150,7 +158,7 @@ anim = @animate for j = 0:Int(nsteps/nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.ζ
+  p[1][1][:z] = Array(vars.ζ)
   p[1][:title] = "vorticity, t=" * @sprintf("%.2f", clock.t)
   push!(p[2][1], E.t[E.i], E.data[E.i]/E.data[1])
   push!(p[2][2], Z.t[Z.i], Z.data[Z.i]/Z.data[1])
@@ -162,8 +170,10 @@ end
 mp4(anim, "twodturb.mp4", fps=18)
 
 
-# Last we save the output.
-saveoutput(out)
+# Last we can save the output by calling
+# ```julia
+# saveoutput(out)`
+# ```
 
 
 # ## Radial energy spectrum

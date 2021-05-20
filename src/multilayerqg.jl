@@ -59,6 +59,12 @@ function Problem(nlayers::Int,                        # number of fluid layers
                   linear = false,
                        T = Float64)
 
+   if dev == GPU()
+     @warn """MultiLayerQG module not well optimized on the GPU yet.
+     See issue on Github at https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112.
+     For now, we suggest running MultiLayerQG on CPUs only."""
+   end
+   
    # topographic PV
    eta === nothing && (eta = zeros(dev, T, (nx, ny)))
    
@@ -196,7 +202,7 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
     U = convert_U_to_U3D(dev, nlayers, grid, U)
 
   Uyy = real.(ifft(-l.^2 .* fft(U)))
-  Uyy = repeat(Uyy, outer=(nx, 1, 1))
+  Uyy = CUDA.@allowscalar repeat(Uyy, outer=(nx, 1, 1))
 
   etah = rfft(A(eta))
   etax = irfft(im * kr .* etah, nx)
@@ -444,7 +450,7 @@ function calcS!(S, Fp, Fm, nlayers, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   
   for n=1:grid.nl, m=1:grid.nkr
-    CUDA.@allowscalar k² = grid.Krsq[m, n]
+    k² = CUDA.@allowscalar grid.Krsq[m, n]
     Skl = SMatrix{nlayers, nlayers}(- k² * I + F)
     S[m, n] = Skl
   end
@@ -462,7 +468,7 @@ function calcS⁻¹!(S⁻¹, Fp, Fm, nlayers, grid)
   F = Matrix(Tridiagonal(Fm, -([Fp; 0] + [0; Fm]), Fp))
   
   for n=1:grid.nl, m=1:grid.nkr
-    CUDA.@allowscalar k² = grid.Krsq[m, n] == 0 ? 1 : grid.Krsq[m, n]
+    k² = CUDA.@allowscalar grid.Krsq[m, n] == 0 ? 1 : grid.Krsq[m, n]
     Skl = - k² * I + F
     S⁻¹[m, n] = SMatrix{nlayers, nlayers}(I / Skl)
   end

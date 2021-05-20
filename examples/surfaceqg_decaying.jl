@@ -6,20 +6,30 @@
 # A simulation of decaying surface quasi-geostrophic turbulence.
 # We reproduce here the initial value problem for an elliptical 
 # vortex as done by Held et al. 1995, _J. Fluid Mech_.
+# 
+# An example of decaying barotropic quasi-geostrophic turbulence over topography.
+#
+# ## Install dependencies
+#
+# First let's make sure we have all required packages installed.
 
-using FourierFlows, Plots, Statistics, Printf, Random
+# ```julia
+# using Pkg
+# pkg"add GeophysicalFlows, Plots, Printf, Random, Statistics"
+# ```
 
-using FFTW: irfft
+# ## Let's begin
+# Let's load `GeophysicalFlows.jl` and some other needed packages.
+#
+using GeophysicalFlows, Plots, Printf, Random
+
 using Statistics: mean
 using Random: seed!
-
-import GeophysicalFlows.SurfaceQG
-import GeophysicalFlows.SurfaceQG: kinetic_energy, buoyancy_variance, buoyancy_dissipation
 
 
 # ## Choosing a device: CPU or GPU
 
-dev = CPU()    # Device (CPU/GPU)
+dev = CPU()     # Device (CPU/GPU)
 nothing # hide
 
 
@@ -64,8 +74,9 @@ b₀ = @. exp(-(X^2 + 4*Y^2))
 SurfaceQG.set_b!(prob, b₀)
 nothing # hide
 
-# Let's plot the initial condition.
-heatmap(x, y, prob.vars.b',
+# Let's plot the initial condition. Note that when plotting, we decorate the variable to be 
+# plotted with `Array()` to make sure it is brought back on the CPU when `vars` live on the GPU.
+heatmap(x, y, Array(vars.b'),
      aspectratio = 1,
                c = :deep,
             clim = (0, 1),
@@ -83,9 +94,9 @@ heatmap(x, y, prob.vars.b',
 
 # Create Diagnostics; `buoyancy_variance`, `kinetic_energy` and `buoyancy_dissipation` 
 # functions were imported at the top.
-B  = Diagnostic(buoyancy_variance, prob; nsteps=nsteps)
-KE = Diagnostic(kinetic_energy, prob; nsteps=nsteps)
-Dᵇ = Diagnostic(buoyancy_dissipation, prob; nsteps=nsteps)
+B  = Diagnostic(SurfaceQG.buoyancy_variance, prob; nsteps=nsteps)
+KE = Diagnostic(SurfaceQG.kinetic_energy, prob; nsteps=nsteps)
+Dᵇ = Diagnostic(SurfaceQG.buoyancy_dissipation, prob; nsteps=nsteps)
 diags = [B, KE, Dᵇ] # A list of Diagnostics types passed to `stepforward!`. Diagnostics are updated every timestep.
 nothing # hidenothing # hide
 
@@ -117,13 +128,13 @@ nothing # hide
 
 # ## Visualizing the simulation
 
-# We define a function that plots the buoyancy field and the time evolution of
-# kinetic energy and buoyancy variance.
+# We define a function that plots the buoyancy field and the time evolution of kinetic energy 
+# and buoyancy variance.
 
 function plot_output(prob)
   b = prob.vars.b
 
-  pb = heatmap(x, y, b',
+  pb = heatmap(x, y, Array(b'),
        aspectratio = 1,
                  c = :deep,
               clim = (0, 1),
@@ -184,7 +195,7 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
     println(log2)
   end
 
-  p[1][1][:z] = vars.b
+  p[1][1][:z] = Array(vars.b)
   p[1][:title] = "buoyancy, t=" * @sprintf("%.2f", clock.t)
   push!(p[2][1], KE.t[KE.i], KE.data[KE.i])
   push!(p[3][1], B.t[B.i], B.data[B.i])
@@ -197,7 +208,7 @@ mp4(anim, "sqg_ellipticalvortex.mp4", fps=14)
 
 # Let's see how all flow fields look like at the end of the simulation.
 
-pu = heatmap(x, y, vars.u',
+pu = heatmap(x, y, Array(vars.u'),
      aspectratio = 1,
                c = :balance,
             clim = (-maximum(abs.(vars.u)), maximum(abs.(vars.u))),
@@ -210,7 +221,7 @@ pu = heatmap(x, y, vars.u',
            title = "uₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")",
       framestyle = :box)
 
-pv = heatmap(x, y, vars.v',
+pv = heatmap(x, y, Array(vars.v'),
      aspectratio = 1,
                c = :balance,
             clim = (-maximum(abs.(vars.v)), maximum(abs.(vars.v))),
@@ -223,7 +234,7 @@ pv = heatmap(x, y, vars.v',
            title = "vₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")",
       framestyle = :box)
 
-pb = heatmap(x, y, vars.b',
+pb = heatmap(x, y, Array(vars.b'),
      aspectratio = 1,
                c = :deep,
             clim = (0, 1),
@@ -240,4 +251,9 @@ layout = @layout [a{0.5h}; b{0.5w} c{0.5w}]
 
 plot_final = plot(pb, pu, pv, layout=layout, size = (800, 800))
 
-# Last we can save the output by calling `saveoutput(out)`.
+# ## Save
+
+# Last we can save the output by calling
+# ```julia
+# saveoutput(out)`
+# ```

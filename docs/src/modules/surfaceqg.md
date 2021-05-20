@@ -1,4 +1,4 @@
-# SurfaceQG Module
+# SurfaceQG
 
 ### Basic Equations
 
@@ -44,7 +44,7 @@ The buoyancy equation is time-stepped forward in Fourier space:
 \partial_t \widehat{b_s} = - \widehat{\mathsf{J}(\psi, b_s)} - \nu |𝐤|^{2 n_\nu} \widehat{b_s} + \widehat{F} .
 ```
 
-The surface buoyancy is [`b`](@ref GeophysicalFlows.SingleLayerQG.Vars). The state variable 
+The surface buoyancy is [`b`](@ref GeophysicalFlows.SurfaceQG.Vars). The state variable 
 `sol` is the Fourier transform of the surface buoyancy, [`bh`](@ref GeophysicalFlows.SurfaceQG.Vars).
 
 The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) =
@@ -96,6 +96,6 @@ Other diagnostic include: [`buoyancy_dissipation`](@ref GeophysicalFlows.Surface
 
 ## Examples
 
-- `examples/surfaceqg_decaying.jl`: A script that simulates decaying surface quasi-geostrophic flow with a prescribed initial buoyancy field, producing a video of the evolution of buoyancy and velocity fields.
+- [`examples/surfaceqg_decaying.jl`](../generated/surfaceqg_decaying/): A script that simulates decaying surface quasi-geostrophic flow with a prescribed initial buoyancy field, producing an animation of the evolution of the surface buoyancy.
 
   > Capet, X. et al., (2008). Surface kinetic energy transfer in surface quasi-geostrophic flows. *J. Fluid Mech.*, **604**, 165-174.

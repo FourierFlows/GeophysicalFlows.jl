@@ -1,12 +1,10 @@
-push!(LOAD_PATH, "..")
-
 using
   Documenter,
   Literate,
-  Plots,  # to not capture precompilation output
+  Plots,   # to not capture precompilation output
   GeophysicalFlows
 
-# Gotta set this environment variable when using the GR run-time on Travis CI.
+# Gotta set this environment variable when using the GR run-time on CI machines.
 # This happens as examples will use Plots.jl to make plots and movies.
 # See: https://github.com/jheinen/GR.jl/issues/278
 ENV["GKSwstype"] = "100"
@@ -24,7 +22,7 @@ examples = [
     "twodnavierstokes_stochasticforcing_budgets.jl",
     "singlelayerqg_betadecay.jl",
     "singlelayerqg_betaforced.jl",
-    "singlelayerqg_decay_topography.jl",
+    "singlelayerqg_decaying_topography.jl",
     "singlelayerqg_decaying_barotropic_equivalentbarotropic.jl",
     "barotropicqgql_betaforced.jl",
     "multilayerqg_2layer.jl",
@@ -44,7 +42,7 @@ end
 ##### Build and deploy docs
 #####
 
-# Set up a timer to print a space ' ' every 240 seconds. This is to avoid Travis CI
+# Set up a timer to print a space ' ' every 240 seconds. This is to avoid CI machines
 # timing out when building demanding Literate.jl examples.
 Timer(t -> println(" "), 0, interval=240)
 
@@ -64,6 +62,8 @@ checkdocs = :all,
 sitename = "GeophysicalFlows.jl",
    pages = Any[
             "Home"    => "index.md",
+            "Installation instructions" => "installation_instructions.md",
+            "GPU" => "gpu.md",
             "Examples" => [
               "TwoDNavierStokes" => Any[
                 "generated/twodnavierstokes_decaying.md",
@@ -73,7 +73,7 @@ sitename = "GeophysicalFlows.jl",
               "SingleLayerQG" => Any[
                 "generated/singlelayerqg_betadecay.md",
                 "generated/singlelayerqg_betaforced.md",
-                "generated/singlelayerqg_decay_topography.md",
+                "generated/singlelayerqg_decaying_topography.md",
                 "generated/singlelayerqg_decaying_barotropic_equivalentbarotropic.md"
                 ],
               "BarotropicQGQL" => Any[
@@ -95,6 +95,7 @@ sitename = "GeophysicalFlows.jl",
               "modules/shallowwater.md"
             ],
             "Stochastic Forcing" => "stochastic_forcing.md",
+            "Contributor's guide" => "contributing.md",
             "Library" => Any[
             "lib/types.md",
             "lib/functions.md"

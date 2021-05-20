@@ -1,6 +1,5 @@
 using
-  CUDA,
-  FourierFlows,
+  GeophysicalFlows,
   Statistics,
   Random,
   FFTW,
@@ -18,8 +17,7 @@ using FourierFlows: parsevalsum
 using GeophysicalFlows: lambdipole, peakedisotropicspectrum
 
 # the devices on which tests will run
-devices = (CPU(),)
-@has_cuda devices = (CPU(), GPU())
+devices = CUDA.has_cuda() ? (CPU(), GPU()) : (CPU(),)
 
 const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
 const rtol_twodnavierstokes = 1e-13 # tolerance for twodnavierstokes forcing tests
@@ -32,7 +30,7 @@ const rtol_surfaceqg = 1e-13 # tolerance for surfaceqg forcing tests
 testtime = @elapsed begin
 for dev in devices
   
-  println("testing on "*string(typeof(dev)))
+  @info "testing on " * string(typeof(dev))
   
   @testset "ShallowWater" begin
     include("test_shallowwater.jl")

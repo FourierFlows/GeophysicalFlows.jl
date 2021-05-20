@@ -1,18 +1,26 @@
 # # SingleLayerQG decaying 2D turbulence with and without finite Rossby radius of deformation
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/singlelayerqg_decaying_barotropic_equivalentbarotropic.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decaying_barotropic_equivalentbarotropic.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decaying_barotropic_equivalentbarotropic.ipynb).
 #
 # We use here the `SingleLayerQG` module to simulate decaying two-dimensional turbulence and
 # investigate how does a finite Rossby radius of deformation affects its evolution.
+#
+# ## Install dependencies
+#
+# First let's make sure we have all required packages installed.
 
-using FourierFlows, Printf, Random, Plots
+# ```julia
+# using Pkg
+# pkg"add GeophysicalFlows, Printf, Random, Plots"
+# ```
+
+# ## Let's begin
+# Let's load `GeophysicalFlows.jl` and some other needed packages.
+#
+using GeophysicalFlows, Printf, Random, Plots
  
+using GeophysicalFlows: peakedisotropicspectrum
 using Random: seed!
-using FFTW: rfft, irfft
-
-import GeophysicalFlows.SingleLayerQG
-import GeophysicalFlows: peakedisotropicspectrum
 
 
 # ## Choosing a device: CPU or GPU
@@ -76,14 +84,14 @@ nothing # hide
 
 
 # Let's plot the initial vorticity field for each problem. A function that returns relative 
-# vorticity from each problem's state variable will prove useful. Since `relativevorticity()` 
-# is only used for plotting purposes, we call `collect()` at the end to bring its output on 
-# CPU in the case `vars` are on the GPU.
-relativevorticity(prob) = collect(irfft(-prob.grid.Krsq .* prob.vars.ψh, prob.grid.nx))
+# vorticity from each problem's state variable will prove useful. Note that when plotting, we 
+# decorate the variable to be plotted with `Array()` to make sure it is brought back on the 
+# CPU when the variable lives on the GPU.
+relativevorticity(prob) = irfft(-prob.grid.Krsq .* prob.vars.ψh, prob.grid.nx)
 
 x, y = prob_bqg.grid.x, prob_bqg.grid.y
 
-p_bqg = heatmap(x, y, relativevorticity(prob_bqg)',
+p_bqg = heatmap(x, y, Array(relativevorticity(prob_bqg)'),
          aspectratio = 1,
                    c = :balance,
                 clim = (-40, 40),
@@ -96,7 +104,7 @@ p_bqg = heatmap(x, y, relativevorticity(prob_bqg)',
                title = "barotropic\n ∇²ψ, t=" * @sprintf("%.2f", prob_bqg.clock.t),
           framestyle = :box)
 
-p_eqbqg = heatmap(x, y, relativevorticity(prob_eqbqg)',
+p_eqbqg = heatmap(x, y, Array(relativevorticity(prob_eqbqg)'),
          aspectratio = 1,
                    c = :balance,
                 clim = (-40, 40),
@@ -132,9 +140,9 @@ anim = @animate for j = 0:Int(nsteps/nsubs)
     println(log_eqbqg)
   end  
 
-  p[1][1][:z] = relativevorticity(prob_bqg)
+  p[1][1][:z] = Array(relativevorticity(prob_bqg))
   p[1][:title] = "barotropic\n ∇²ψ, t=" * @sprintf("%.2f", prob_bqg.clock.t)
-  p[2][1][:z] = relativevorticity(prob_eqbqg)
+  p[2][1][:z] = Array(relativevorticity(prob_eqbqg))
   p[2][:title] = "equivalent barotropic; deformation radius: " * @sprintf("%.2f", prob_eqbqg.params.deformation_radius) * "\n ∇²ψ, t=" * @sprintf("%.2f", prob_eqbqg.clock.t)
   
   stepforward!(prob_bqg, nsubs)

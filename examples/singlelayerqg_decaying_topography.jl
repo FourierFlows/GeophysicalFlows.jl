@@ -1,17 +1,24 @@
 # # Decaying barotropic QG turbulence over topography
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/singlelayerqg_decay_topography.ipynb). 
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decay_topography.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decaying_topography.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence over topography.
+#
+# ## Install dependencies
+#
+# First let's make sure we have all required packages installed.
 
-using FourierFlows, Plots, Printf, Random
+# ```julia
+# using Pkg
+# pkg"add GeophysicalFlows, Plots, Printf, Random, Statistics"
+# ```
+
+# ## Let's begin
+# Let's load `GeophysicalFlows.jl` and some other needed packages.
+#
+using GeophysicalFlows, Plots, Printf, Random
 
 using Statistics: mean
-using FFTW: irfft
-
-import GeophysicalFlows.SingleLayerQG
-import GeophysicalFlows.SingleLayerQG: energy, enstrophy
 
 
 # ## Choosing a device: CPU or GPU
@@ -55,8 +62,10 @@ sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, p
 x, y = grid.x, grid.y
 nothing # hide
 
-# and let's plot the topographic PV:
-contourf(grid.x, grid.y, params.eta',
+# and let's plot the topographic PV. Note that when plotting, we decorate the variable to be 
+# plotted with `Array()` to make sure it is brought back on the CPU when the variable lives 
+# on the GPU.
+contourf(grid.x, grid.y, Array(params.eta'),
           aspectratio = 1,
             linewidth = 0,
                levels = 10,
@@ -74,17 +83,19 @@ contourf(grid.x, grid.y, params.eta',
 # ## Setting initial conditions
 
 # Our initial condition consist of a flow that has power only at wavenumbers with
-# ``6 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 12`` and initial energy ``E_0``:
+# ``6 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 12`` and initial energy ``E_0``.
+# `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
+# `dev = CPU()` and `CuArray` for `dev = GPU()`.
 
 E₀ = 0.04 # energy of initial condition
 
 K = @. sqrt(grid.Krsq)                             # a 2D array with the total wavenumber
 
 Random.seed!(1234)
-qih = randn(Complex{eltype(grid)}, size(sol))
+qih = ArrayType(dev)(randn(Complex{eltype(grid)}, size(sol)))
 @. qih = ifelse(K < 6  * 2π/L, 0, qih)
 @. qih = ifelse(K > 12 * 2π/L, 0, qih)
-qih *= sqrt(E₀ / energy(qih, vars, params, grid))  # normalize qi to have energy E₀
+qih *= sqrt(E₀ / SingleLayerQG.energy(qih, vars, params, grid))  # normalize qi to have energy E₀
 qi = irfft(qih, grid.nx)
 
 SingleLayerQG.set_q!(prob, qi)
@@ -92,7 +103,7 @@ nothing # hide
 
 # Let's plot the initial vorticity field:
 
-p1 = heatmap(x, y, vars.q',
+p1 = heatmap(x, y, Array(vars.q'),
          aspectratio = 1,
               c = :balance,
            clim = (-8, 8),
@@ -105,7 +116,7 @@ p1 = heatmap(x, y, vars.q',
           title = "initial vorticity ∂v/∂x-∂u/∂y",
      framestyle = :box)
 
-p2 = contourf(x, y, vars.ψ',
+p2 = contourf(x, y, Array(vars.ψ'),
         aspectratio = 1,
              c = :viridis,
         levels = range(-0.25, stop=0.25, length=11), 
@@ -126,8 +137,8 @@ p = plot(p1, p2, layout=layout, size = (800, 360))
 # ## Diagnostics
 
 # Create Diagnostics -- `energy` and `enstrophy` functions are imported at the top.
-E = Diagnostic(energy, prob; nsteps=nsteps)
-Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
+E = Diagnostic(SingleLayerQG.energy, prob; nsteps=nsteps)
+Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps=nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 
@@ -159,7 +170,7 @@ function plot_output(prob)
   ψ = prob.vars.ψ
   η = prob.params.eta
 
-  pq = heatmap(x, y, q',
+  pq = heatmap(x, y, Array(q'),
        aspectratio = 1,
             legend = false,
                  c = :balance,
@@ -173,15 +184,15 @@ function plot_output(prob)
              title = "vorticity ∂v/∂x-∂u/∂y",
         framestyle = :box)
   
-  contour!(pq, x, y, η',
+  contour!(pq, x, y, Array(η'),
           levels=0.5:0.5:3,
           lw=2, c=:black, ls=:solid, alpha=0.7)
   
-  contour!(pq, x, y, η',
+  contour!(pq, x, y, Array(η'),
           levels=-2:0.5:-0.5,
           lw=2, c=:black, ls=:dash, alpha=0.7)
   
-  pψ = contourf(x, y, ψ',
+  pψ = contourf(x, y, Array(ψ'),
        aspectratio = 1,
             legend = false,
                  c = :viridis,
@@ -223,12 +234,12 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.q
+  p[1][1][:z] = Array(vars.q)
   p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
-  p[2][1][:z] = vars.ψ
+  p[2][1][:z] = Array(vars.ψ)
 
   stepforward!(prob, diags, nsubs)
   SingleLayerQG.updatevars!(prob)
 end
 
-mp4(anim, "barotropicqg_decay_topography.mp4", fps=12)
+mp4(anim, "singlelayerqg_decaying_topography.mp4", fps=12)

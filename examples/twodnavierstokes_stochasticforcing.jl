@@ -1,25 +1,30 @@
 # # 2D forced-dissipative turbulence
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing.ipynb).
 #
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
 # the form of linear drag and hyperviscosity. 
+#
+# ## Install dependencies
+#
+# First let's make sure we have all required packages installed.
 
-using FourierFlows, Printf, Plots
+# ```julia
+# using Pkg
+# pkg"add GeophysicalFlows, Random, Printf, Plots"
+# ```
 
+# ## Let's begin
+# Let's load `GeophysicalFlows.jl` and some other needed packages.
+#
+using GeophysicalFlows, Random, Printf, Plots
 using FourierFlows: parsevalsum
-using Random: seed!
-using FFTW: irfft
-
-import GeophysicalFlows.TwoDNavierStokes
-import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy
 
 
 # ## Choosing a device: CPU or GPU
 
-dev = CPU()    # Device (CPU/GPU)
+dev = CPU()     # Device (CPU/GPU)
 nothing # hide
 
 
@@ -38,36 +43,39 @@ nothing # hide
 
 # ## Forcing
 
-# We force the vorticity equation with stochastic excitation that is delta-correlated
-# in time and while spatially homogeneously and isotropically correlated. The forcing
-# has a spectrum with power in a ring in wavenumber space of radius ``k_f`` (`forcing_wavenumber`) and width 
-# ``\delta k_f`` (`forcing_bandwidth`), and it injects energy per unit area and per unit time 
+# We force the vorticity equation with stochastic excitation that is delta-correlated in time 
+# and while spatially homogeneously and isotropically correlated. The forcing has a spectrum 
+# with power in a ring in wavenumber space of radius ``k_f`` (`forcing_wavenumber`) and width 
+# ``δ_f`` (`forcing_bandwidth`), and it injects energy per unit area and per unit time 
 # equal to ``\varepsilon``. That is, the forcing covariance spectrum is proportional to 
-# ``\exp{[-(|\bm{k}| - k_f)^2 / (2 \delta k_f^2)]}``.
+# ``\exp{[-(|\bm{k}| - k_f)^2 / (2 δ_f^2)]}``.
 
-forcing_wavenumber = 14.0 * 2π/L   # the central forcing wavenumber for a spectrum that is a ring in wavenumber space
-forcing_bandwidth  = 1.5  * 2π/L   # the width of the forcing spectrum
-ε = 0.1                            # energy input rate by the forcing
+forcing_wavenumber = 14.0 * 2π/L  # the forcing wavenumber, `k_f`, for a spectrum that is a ring in wavenumber space
+forcing_bandwidth  = 1.5  * 2π/L  # the width of the forcing spectrum, `δ_f`
+ε = 0.1                           # energy input rate by the forcing
 
 grid = TwoDGrid(dev, n, L)
 
-K = @. sqrt(grid.Krsq)
-forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
-@. forcing_spectrum = ifelse(K < 2  * 2π/L, 0, forcing_spectrum)      # no power at low wavenumbers
-@. forcing_spectrum = ifelse(K > 20 * 2π/L, 0, forcing_spectrum)      # no power at high wavenumbers
-ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
-@. forcing_spectrum *= ε / ε0             # normalize forcing to inject energy at rate ε
+K = @. sqrt(grid.Krsq)             # a 2D array with the total wavenumber
 
-seed!(1234)
+forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
+ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
+@. forcing_spectrum *= ε/ε0        # normalize forcing to inject energy at rate ε
 nothing # hide
+
+
+# We reset of the random number generator for reproducibility
+if dev==CPU(); Random.seed!(1234); else; CUDA.seed!(1234); end
+nothing # hide
+
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
 # First we make sure that if `dev=GPU()`, then `CUDA.rand()` function is called for random
-# numbers uniformy distributed between 0 and 1.
+# numbers uniformly distributed between 0 and 1.
 random_uniform = dev==CPU() ? rand : CUDA.rand
 
-function calcF!(Fh, sol, t, clock, vars, params, grid::AbstractGrid{T}) where T
-  @. Fh = sqrt(forcing_spectrum) * exp(2π * im * random_uniform(T)) / sqrt(clock.dt)
+function calcF!(Fh, sol, t, clock, vars, params, grid) 
+  Fh .= sqrt.(forcing_spectrum) .* exp.(2π * im * random_uniform(eltype(grid), size(sol))) ./ sqrt(clock.dt)
 
   @CUDA.allowscalar Fh[1, 1] = 0 # make sure forcing has zero domain-average
 
@@ -93,9 +101,12 @@ nothing # hide
 # First let's see how a forcing realization looks like. Function `calcF!()` computes 
 # the forcing in Fourier space and saves it into variable `vars.Fh`, so we first need to
 # go back to physical space.
+
+# Note that when plotting, we decorate the variable to be plotted with `Array()` to make sure 
+# it is brought back on the CPU when the variable lives on the GPU.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, irfft(vars.Fh, grid.nx)',
+heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
      aspectratio = 1,
                c = :balance,
             clim = (-200, 200),
@@ -112,14 +123,14 @@ heatmap(x, y, irfft(vars.Fh, grid.nx)',
 # ## Setting initial conditions
 
 # Our initial condition is a fluid at rest.
-TwoDNavierStokes.set_ζ!(prob, zeros(grid.nx, grid.ny))
+TwoDNavierStokes.set_ζ!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
 
 
 # ## Diagnostics
 
 # Create Diagnostics; the diagnostics are aimed to probe the energy budget.
-E  = Diagnostic(energy,                prob, nsteps=nsteps) # energy
-Z  = Diagnostic(enstrophy,             prob, nsteps=nsteps) # enstrophy
+E  = Diagnostic(TwoDNavierStokes.energy,                prob, nsteps=nsteps) # energy
+Z  = Diagnostic(TwoDNavierStokes.enstrophy,             prob, nsteps=nsteps) # enstrophy
 diags = [E, Z] # a list of Diagnostics passed to `stepforward!` will  be updated every timestep.
 nothing # hide
 
@@ -128,9 +139,9 @@ nothing # hide
 
 # We initialize a plot with the vorticity field and the time-series of
 # energy and enstrophy diagnostics. To plot energy and enstrophy on the same
-# axes we scale enstrophy with $k_f^2$.
+# axes we scale enstrophy with ``k_f^2``.
 
-p1 = heatmap(x, y, vars.ζ',
+p1 = heatmap(x, y, Array(vars.ζ'),
          aspectratio = 1,
                    c = :balance,
                 clim = (-40, 40),
@@ -171,7 +182,7 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = vars.ζ
+  p[1][1][:z] = Array(vars.ζ)
   p[1][:title] = "vorticity, μt = " * @sprintf("%.2f", μ * clock.t)
   push!(p[2][1], μ * E.t[E.i], E.data[E.i])
   push!(p[2][2], μ * Z.t[Z.i], Z.data[Z.i] / forcing_wavenumber^2)

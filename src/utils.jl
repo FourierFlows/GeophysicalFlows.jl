@@ -11,9 +11,9 @@ function lambdipole(U, R, grid::TwoDGrid{T, A}; center=(mean(grid.x), mean(grid.
   q₀ = -2U * k / besselj(0, k * R) # dipole amplitude for strength U and radius R
   x, y = gridpoints(grid)
   xc, yc = center
-  r = @. sqrt( (x - xc)^2 + (y - yc)^2 )
-  CUDA.@allowscalar besselj1 = A([besselj(1, k * r[i, j]) for i=1:grid.nx, j=1:grid.ny])
-  q = @. q₀ * besselj1 * (y - yc) / r
+  r = @. sqrt((x - xc)^2 + (y - yc)^2)
+  besseljorder1 = CUDA.@allowscalar A([besselj1(k * r[i, j]) for i=1:grid.nx, j=1:grid.ny])
+  q = @. q₀ * besseljorder1 * (y - yc) / r
   @. q = ifelse(r >= R, 0, q)
   
   return q
