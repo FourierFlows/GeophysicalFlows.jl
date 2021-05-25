@@ -28,8 +28,8 @@
     <a href="https://github.com/SciML/ColPrac">
       <img alt="ColPrac: Contributor's Guide on Collaborative Practices for Community Packages" src="https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet">
     </a>
-    <a href="https://joss.theoj.org/papers/a8cdf26beae8bcecc751ab4ded53b308">
-        <img src="https://joss.theoj.org/papers/a8cdf26beae8bcecc751ab4ded53b308/status.svg">
+    <a href="https://doi.org/10.21105/joss.03053">
+      <img src="https://joss.theoj.org/papers/10.21105/joss.03053/status.svg" alt="DOI badge" >
     </a>
 </p>
 
@@ -39,10 +39,12 @@ Geophysical Fluid Dynamics on periodic domains using Fourier-based pseudospectra
 
 ## Installation
 
-To install, do
+To install, use Julia's  built-in package manager (accessed by pressing `]` in the Julia REPL command prompt) to add the package and also to instantiate/build all the required dependencies
 
 ```julia
-] add GeophysicalFlows
+julia>]
+(v1.5) pkg> add GeophysicalFlows
+(v1.5) pkg> instantiate
 ```
 
 The most recent version of GeophysicalFlows.jl requires Julia v1.5 or later.
@@ -58,6 +60,18 @@ See `examples/` for example scripts. These examples are best viewed by browsing 
 the package's [documentation]. 
 
 Some animations created with GeophysicalFlows.jl are [online @ youtube].
+
+
+## Modules
+
+* `TwoDNavierStokes`: the two-dimensional vorticity equation.
+* `SingleLayerQG`: the barotropic or equivalent-barotropic quasi-geostrophic equation, which 
+  generalizes `TwoDNavierStokes` to cases with topography, Coriolis parameters of the form 
+  `f = f₀ + βy`, and finite Rossby radius of deformation.
+* `MultiLayerQG`: a multi-layer quasi-geostrophic model over topography and with the ability 
+  to impose a zonal flow `U_n(y)` in each layer.
+* `SurfaceQG`: a surface quasi-geostrophic model.
+* `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
 
 
 ## Scalability
@@ -82,24 +96,39 @@ and [`CUDA.CuDevice`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA
 The user is also referred to the [GPU section](https://fourierflows.github.io/FourierFlowsDocumentation/stable/gpu/) in the FourierFlows.jl documentation.
 
 
-## Modules
-
-* `TwoDNavierStokes`: the two-dimensional vorticity equation.
-* `SingleLayerQG`: the barotropic or equivalent-barotropic quasi-geostrophic equation, which 
-  generalizes `TwoDNavierStokes` to cases with topography, Coriolis parameters of the form 
-  `f = f₀ + βy`, and finite Rossby radius of deformation.
-* `MultiLayerQG`: a multi-layer quasi-geostrophic model over topography and with the ability 
-  to impose a zonal flow `U_n(y)` in each layer.
-* `SurfaceQG`: a surface quasi-geostrophic model.
-* `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
-
-
 ## Getting help
 
 If you are interested in using GeophysicalFlows.jl or are trying to figure out how to use it, 
-please feel free to ask us questions and get in touch! Check out the [examples](https://github.com/FourierFlows/GeophysicalFlows.jl/tree/master/examples) and [open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues/new) 
-or [start a discussion](https://github.com/FourierFlows/GeophysicalFlows.jl/discussions/new) 
-start a if you have any questions, comments, suggestions, etc.
+please feel free to ask us questions and get in touch! Check out the 
+[examples](https://github.com/FourierFlows/GeophysicalFlows.jl/tree/master/examples) and 
+[open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues/new) or 
+[start a discussion](https://github.com/FourierFlows/GeophysicalFlows.jl/discussions/new) 
+if you have any questions, comments, suggestions, etc.
+
+
+## Citing
+
+If you use GeophysicalFlows.jl in research, teaching, or other activities, we would be grateful 
+if you could mention GeophysicalFlows.jl and cite our paper in JOSS:
+
+> Constantinou et al., (2021). GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs & GPUs. _Journal of Open Source Software_, **6(60)**, 3053, doi:[10.21105/joss.03053](https://doi.org/10.21105/joss.03053).
+
+The bibtex entry for the paper is:
+
+```bibtex
+@article{GeophysicalFlowsJOSS,
+  doi = {10.21105/joss.03053},
+  url = {https://doi.org/10.21105/joss.03053},
+  year = {2021},
+  publisher = {The Open Journal},
+  volume = {6},
+  number = {60},
+  pages = {3053},
+  author = {Navid C. Constantinou and Gregory LeClaire Wagner and Lia Siegelman and Brodie C. Pearson and André Palóczy},
+  title = {GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs \& GPUs},
+  journal = {Journal of Open Source Software}
+}
+```
 
 
 ## Contributing
@@ -115,13 +144,6 @@ and want to find a cool little project or issue to work on that fits your intere
 than happy to help along the way.
 
 For more information, check out our [contributor's guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/master/CONTRIBUTING.md).
-
-
-## Cite
-
-The code is citable via [zenodo](https://zenodo.org). Please cite as:
-
-> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.11.6 (Version v0.11.6). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
