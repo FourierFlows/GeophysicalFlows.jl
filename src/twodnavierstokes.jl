@@ -310,9 +310,11 @@ end
 Set the solution `sol` as the transform of `ζ` and then update variables in `vars`.
 """
 function set_ζ!(prob, ζ)
-  mul!(prob.sol, prob.grid.rfftplan, ζ)
+  sol, grid = prob.sol, prob.grid
   
-  CUDA.@allowscalar prob.sol[1, 1] = 0 # enforce zero domain average
+  mul!(sol, grid.rfftplan, ζ)
+  
+  CUDA.@allowscalar sol[1, 1] = 0 # enforce zero domain average
   
   dealias!(sol, grid)
   
