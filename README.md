@@ -98,8 +98,8 @@ The user is also referred to the [GPU section](https://fourierflows.github.io/Fo
 
 ## Getting help
 
-If you are interested in using GeophysicalFlows.jl or are trying to figure out how to use it, 
-please feel free to ask us questions and get in touch! Check out the 
+Interested in GeophysicalFlows.jl or trying to figure out how to use it? Please feel free to 
+ask us questions and get in touch! Check out the 
 [examples](https://github.com/FourierFlows/GeophysicalFlows.jl/tree/master/examples) and 
 [open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues/new) or 
 [start a discussion](https://github.com/FourierFlows/GeophysicalFlows.jl/discussions/new) 
