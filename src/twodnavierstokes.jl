@@ -244,6 +244,8 @@ N = - \\widehat{𝖩(ψ, ζ)} + F̂ .
 ```
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
+  dealias!(sol, grid)
+  
   calcN_advection!(N, sol, t, clock, vars, params, grid)
   
   addforcing!(N, sol, t, clock, vars, params, grid)
@@ -289,6 +291,8 @@ Update variables in `vars` with solution in `sol`.
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
   
+  dealias!(sol, grid)
+  
   @. vars.ζh = sol
   @. vars.uh =   im * grid.l  * grid.invKrsq * sol
   @. vars.vh = - im * grid.kr * grid.invKrsq * sol
@@ -309,6 +313,8 @@ function set_ζ!(prob, ζ)
   mul!(prob.sol, prob.grid.rfftplan, ζ)
   
   CUDA.@allowscalar prob.sol[1, 1] = 0 # enforce zero domain average
+  
+  dealias!(sol, grid)
   
   updatevars!(prob)
   
