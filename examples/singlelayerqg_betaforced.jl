@@ -65,6 +65,8 @@ grid = TwoDGrid(dev, n, L)
 K = @. sqrt(grid.Krsq)            # a 2D array with the total wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
+@CUDA.allowscalar forcing_spectrum[grid.Krsq .== 0] .= 0 # ensure forcing has zero domain-average
+
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0       # normalize forcing to inject energy at rate ε
 nothing # hide
@@ -82,8 +84,6 @@ random_uniform = dev==CPU() ? rand : CUDA.rand
 
 function calcF!(Fh, sol, t, clock, vars, params, grid) 
   Fh .= sqrt.(forcing_spectrum) .* exp.(2π * im * random_uniform(eltype(grid), size(sol))) ./ sqrt(clock.dt)
-
-  @CUDA.allowscalar Fh[1, 1] = 0 # make sure forcing has zero domain-average
 
   return nothing
 end
