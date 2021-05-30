@@ -52,7 +52,7 @@ Construct a single-layer quasi-geostrophic `problem` on device `dev`.
 Keyword arguments
 =================
 
-    - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `model`.
+    - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
     - `nx`: Number of grid points in ``x``-domain.
     - `ny`: Number of grid points in ``y``-domain.
     - `Lx`: Extent of the ``x``-domain.
