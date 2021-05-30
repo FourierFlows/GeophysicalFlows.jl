@@ -30,9 +30,44 @@ using FourierFlows: parsevalsum, parsevalsum2
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev::Device; parameters...)
+    Problem(dev::Device=CPU();
+                      nx = 256,
+                      ny = nx,
+                      Lx = 2π,
+                      Ly = Lx,
+                       β = 0.0,
+      deformation_radius = Inf,
+                     eta = nothing,
+                       ν = 0.0,
+                      nν = 1,
+                       μ = 0.0,
+                      dt = 0.01,
+                 stepper = "RK4",
+                   calcF = nothingfunction,
+              stochastic = false,
+                       T = Float64)
 
-Construct a SingleLayerQG problem on device `dev`.
+Construct a single-layer quasi-geostrophic `problem` on device `dev`.
+
+Keyword arguments
+=================
+
+    - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `model`.
+    - `nx`: Number of grid points in ``x``-domain.
+    - `ny`: Number of grid points in ``y``-domain.
+    - `Lx`: Extent of the ``x``-domain.
+    - `Ly`: Extent of the ``y``-domain.
+    - `β`: Planetary vorticity ``y``-gradient.
+    - `deformation_radius`: Rossby radius of deformation; set `Inf` for purely barotropic.
+    - `eta`: Topographic potential vorticity.
+    - `ν`: Small-scale (hyper)-viscosity coefficient.
+    - `nν`: (Hyper)-viscosity order, `nν```≥ 1``".
+    - `μ`: Linear drag coefficient.
+    - `dt`: Time-step.
+    - `stepper`: The extent of the ``y``-domain.
+    - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
+    - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
+    - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
 function Problem(dev::Device=CPU();
   # Numerical parameters
@@ -40,7 +75,6 @@ function Problem(dev::Device=CPU();
                   ny = nx,
                   Lx = 2π,
                   Ly = Lx,
-                  dt = 0.01,
   # Physical parameters
                    β = 0.0,
   deformation_radius = Inf,
@@ -50,6 +84,7 @@ function Problem(dev::Device=CPU();
                   nν = 1,
                    μ = 0.0,
   # Timestepper and equation options
+                  dt = 0.01,
              stepper = "RK4",
                calcF = nothingfunction,
           stochastic = false,
