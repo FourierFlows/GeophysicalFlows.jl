@@ -62,9 +62,9 @@ end
 # ----------
 
 """
-    Params{T}(ν, nν, calcF!)
+$(TYPEDEF)
 
-A struct containing the parameters for Surface QG dynamics. Included are:
+The parameters for Surface QG dynamics. Included are:
 
 $(TYPEDFIELDS)
 """
@@ -113,7 +113,7 @@ end
 abstract type SurfaceQGVars <: AbstractVars end
 
 """
-    Vars{Aphys, Atrans, F, P}(b, u, v, bh, uh, vh, Fh, prevsol)
+$(TYPEDEF)
 
 The variables for surface QG problem:
 

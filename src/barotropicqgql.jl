@@ -76,9 +76,9 @@ end
 # ----------
 
 """
-    Params{T, Aphys, Atrans}(β, eta, etah, μ, ν, nν, calcF!)
+$(TYPEDEF)
 
-A struct containing the parameters for a barotropic QL QG problem. Included are:
+The parameters for a barotropic QL QG problem. Included are:
 
 $(TYPEDFIELDS)
 """
@@ -141,7 +141,7 @@ end
 # ----
 
 """
-    Vars{Aphys, Atrans, F, P}(u, v, U, uzeta, vzeta, zeta, Zeta, psi, Psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih, Psih, Fh, prevsol)
+$(TYPEDEF)
 
 The variables for barotropic QL QG:
 

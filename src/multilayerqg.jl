@@ -79,9 +79,9 @@ end
 abstract type BarotropicParams <: AbstractParams end
 
 """
-    Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft}(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, calcFq!, g′, Qx, Qy, S, S⁻¹, rfftplan)
+$(TYPEDEF)
 
-A struct containing the parameters for the SingleLayerQG problem. Included are:
+The parameters for the SingleLayerQG problem. Included are:
 
 $(TYPEDFIELDS)
 """
@@ -308,7 +308,7 @@ end
 # ----
 
 """
-    Vars{Aphys, Atrans, F, P}(q, ψ, u, v, qh, , ψh, uh, vh, Fh, prevsol)
+$(TYPEDEF)
 
 The variables for MultiLayer QG:
 

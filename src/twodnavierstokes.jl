@@ -28,7 +28,6 @@ nothingfunction(args...) = nothing
 
 """
     Problem(dev::Device; parameters...)
-
 Construct a two-dimensional Navier-Stokes `problem` on device `dev`.
 """
 function Problem(dev::Device=CPU();
@@ -37,13 +36,13 @@ function Problem(dev::Device=CPU();
           Lx = 2π,
           ny = nx,
           Ly = Lx,
-          dt = 0.01,
   # Drag and/or hyper-/hypo-viscosity
            ν = 0,
           nν = 1,
            μ = 0,
           nμ = 0,
   # Timestepper and equation options
+          dt = 0.01,
      stepper = "RK4",
        calcF = nothingfunction,
   stochastic = false,
@@ -66,9 +65,9 @@ end
 # ----------
 
 """
-    Params{T}(ν, nν, μ, nμ, calcF!)
+$(TYPEDEF)
 
-A struct containing the parameters for the two-dimensional Navier-Stokes. Included are:
+The parameters for the two-dimensional Navier-Stokes. Included are:
 
 $(TYPEDFIELDS)
 """
@@ -122,13 +121,13 @@ end
 abstract type TwoDNavierStokesVars <: AbstractVars end
 
 """
-    Vars{Aphys, Atrans, F, P}(ζ, u, v, ζh, uh, vh, Fh, prevsol)
+$(TYPEDEF)
 
 The variables for two-dimensional Navier-Stokes:
 
 $(FIELDS)
 """
-struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
+struct Vars{Aphys, Atrans, F, P}
     "relative vorticity"
         ζ :: Aphys
     "x-component of velocity"

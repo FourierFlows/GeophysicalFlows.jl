@@ -79,9 +79,9 @@ end
 abstract type SingleLayerQGParams <: AbstractParams end
 
 """
-    Params{T, Aphys, Atrans, ℓ}(β, deformation_radius, eta, etah, μ, ν, nν, calcF!)
+$(TYPEDEF)
 
-A struct containing the parameters for the SingleLayerQG problem. Included are:
+The parameters for the SingleLayerQG problem. Included are:
 
 $(TYPEDFIELDS)
 """
@@ -177,14 +177,14 @@ end
 abstract type SingleLayerQGVars <: AbstractVars end
 
 """
-    Vars{Aphys, Atrans, F, P}(q, ψ, u, v, qh, , ψh, uh, vh, Fh, prevsol)
+$(TYPEDEF)
 
 The variables for SingleLayer QG:
 
 $(FIELDS)
 """
 struct Vars{Aphys, Atrans, F, P} <: SingleLayerQGVars
-    "relative vorticity (+ vortex stretching)"
+    "relative vorticity (+ vortex stretching, if applicable)"
         q :: Aphys
     "streamfunction"
         ψ :: Aphys
