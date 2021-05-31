@@ -58,14 +58,14 @@ Keyword arguments
 function Problem(dev::Device=CPU();
   # Numerical parameters
           nx = 256,
-          Lx = 2π,
           ny = nx,
+          Lx = 2π,
           Ly = Lx,
-          dt = 0.01,
   # Hyper-viscosity parameters
            ν = 0,
           nν = 1,
   # Timestepper and equation options
+          dt = 0.01,
      stepper = "RK4",
        calcF = nothingfunction,
   stochastic = false,

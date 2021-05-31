@@ -74,7 +74,6 @@ function Problem(dev::Device=CPU();
                   ny = nx,
                   Lx = 2π,
                   Ly = Lx,
-                  dt = 0.01,
   # Physical parameters
                    β = 0.0,
   deformation_radius = Inf,
@@ -84,6 +83,7 @@ function Problem(dev::Device=CPU();
                   nν = 1,
                    μ = 0.0,
   # Timestepper and equation options
+                  dt = 0.01,
              stepper = "RK4",
                calcF = nothingfunction,
           stochastic = false,

@@ -64,16 +64,16 @@ Keyword arguments
 function Problem(dev::Device=CPU();
   # Numerical parameters
           nx = 256,
-          Lx = 2π,
           ny = nx,
+          Lx = 2π,
           Ly = Lx,
-          dt = 0.01,
   # Drag and/or hyper-/hypo-viscosity
            ν = 0,
           nν = 1,
            μ = 0,
           nμ = 0,
   # Timestepper and equation options
+          dt = 0.01,
      stepper = "RK4",
        calcF = nothingfunction,
   stochastic = false,

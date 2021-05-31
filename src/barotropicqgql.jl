@@ -68,10 +68,9 @@ Keyword arguments
 function Problem(dev::Device=CPU();
   # Numerical parameters
             nx = 256,
-            Lx = 2π,
             ny = nx,
+            Lx = 2π,
             Ly = Lx,
-            dt = 0.01,
   # Physical parameters
              β = 0.0,
            eta = nothing,
@@ -80,7 +79,8 @@ function Problem(dev::Device=CPU();
             nν = 1,
              μ = 0.0,
   # Timestepper and equation options
-       stepper = "RK4",
+              dt = 0.01,
+         stepper = "RK4",
          calcF = nothingfunction,
     stochastic = false,
              T = Float64)

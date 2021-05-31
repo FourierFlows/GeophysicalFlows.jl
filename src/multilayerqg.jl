@@ -50,6 +50,7 @@ nothingfunction(args...) = nothing
          stochastic = false,
              linear = false,
                   T = Float64)
+
 Construct a multi-layer quasi-geostrophic `problem` with `nlayers` fluid layers on device `dev`.
 
 Keyword arguments
@@ -80,10 +81,9 @@ function Problem(nlayers::Int,                        # number of fluid layers
                      dev = CPU();
               # Numerical parameters
                       nx = 128,
-                      Lx = 2π,
                       ny = nx,
+                      Lx = 2π,
                       Ly = Lx,
-                      dt = 0.01,
               # Physical parameters
                       f₀ = 1.0,                       # Coriolis parameter
                        β = 0.0,                       # y-gradient of Coriolis parameter
@@ -97,6 +97,7 @@ function Problem(nlayers::Int,                        # number of fluid layers
                        ν = 0,
                       nν = 1,
               # Timestepper and equation options
+                      dt = 0.01,
                  stepper = "RK4",
                   calcFq = nothingfunction,
               stochastic = false,
