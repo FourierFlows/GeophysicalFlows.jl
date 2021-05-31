@@ -25,21 +25,47 @@ using FourierFlows: parsevalsum
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev::Device; parameters...)
-
-Construct a Surface QG problem on device `dev`.
-"""
-function Problem(dev::Device=CPU();
-  # Numerical parameters
+    Problem(dev::Device=CPU();
           nx = 256,
           Lx = 2π,
           ny = nx,
           Ly = Lx,
+           ν = 0,
+          nν = 1,
           dt = 0.01,
+     stepper = "RK4",
+       calcF = nothingfunction,
+  stochastic = false,
+           T = Float64)
+
+Construct a surface quasi-geostrophic `problem` on device `dev`.
+
+Keyword arguments
+=================
+    - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
+    - `nx`: Number of grid points in ``x``-domain.
+    - `ny`: Number of grid points in ``y``-domain.
+    - `Lx`: Extent of the ``x``-domain.
+    - `Ly`: Extent of the ``y``-domain.
+    - `ν`: Small-scale (hyper)-viscosity coefficient.
+    - `nν`: (Hyper)-viscosity order, `nν```≥ 1``".
+    - `dt`: Time-step.
+    - `stepper`: The extent of the ``y``-domain.
+    - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
+    - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
+    - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
+"""
+function Problem(dev::Device=CPU();
+  # Numerical parameters
+          nx = 256,
+          ny = nx,
+          Lx = 2π,
+          Ly = Lx,
   # Hyper-viscosity parameters
            ν = 0,
           nν = 1,
   # Timestepper and equation options
+          dt = 0.01,
      stepper = "RK4",
        calcF = nothingfunction,
   stochastic = false,
