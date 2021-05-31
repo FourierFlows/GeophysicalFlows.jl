@@ -244,7 +244,7 @@ N = - \\widehat{𝖩(ψ, ζ)} + F̂ .
 ```
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
-  dealias!(sol, g)
+  dealias!(sol, grid)
   
   calcN_advection!(N, sol, t, clock, vars, params, grid)
   

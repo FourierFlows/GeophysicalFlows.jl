@@ -496,8 +496,12 @@ N_j = - \\widehat{𝖩(ψ_j, q_j)} - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j �
 function calcN!(N, sol, t, clock, vars, params, grid)
   nlayers = numberoflayers(params)
   
+  dealias!(sol, grid)
+  
   calcN_advection!(N, sol, vars, params, grid)
+  
   @views @. N[:, :, nlayers] += params.μ * grid.Krsq * vars.ψh[:, :, nlayers]   # bottom linear drag
+  
   addforcing!(N, sol, t, clock, vars, params, grid)
   
   return nothing
