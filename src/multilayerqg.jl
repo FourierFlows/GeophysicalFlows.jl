@@ -28,9 +28,53 @@ using FourierFlows: parsevalsum, parsevalsum2, superzeros, plan_flows_rfft
 nothingfunction(args...) = nothing
 
 """
-    Problem(nlayers, dev::Device; parameters...)
+    Problem(nlayers::Int,
+                dev = CPU();
+                 nx = 128,
+                 ny = nx,
+                 Lx = 2π,
+                 Ly = Lx,
+                 f₀ = 1.0,
+                  β = 0.0,
+                  g = 1.0,
+                  U = zeros(nlayers),
+                  H = 1/nlayers * ones(nlayers),
+                  ρ = Array{Float64}(1:nlayers),
+                eta = nothing,
+                  μ = 0,
+                  ν = 0,
+                 nν = 1,
+                 dt = 0.01,
+            stepper = "RK4",
+             calcFq = nothingfunction,
+         stochastic = false,
+             linear = false,
+                  T = Float64)
+Construct a multi-layer quasi-geostrophic `problem` with `nlayers` fluid layers on device `dev`.
 
-Construct a multi-layer QG problem on device `dev`.
+Keyword arguments
+=================
+    - `nlayers`: (required) Number of fluid layers.
+    - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
+    - `nx`: Number of grid points in ``x``-domain.
+    - `ny`: Number of grid points in ``y``-domain.
+    - `Lx`: Extent of the ``x``-domain.
+    - `Ly`: Extent of the ``y``-domain.
+    - `f₀`: Constant planetary vorticity.
+    - `β`: Planetary vorticity ``y``-gradient.
+    - `g`: Gravitational accelaration constant.
+    - `U`: T imposed constant zonal flow U(y) in each fluid layer.
+    - `H`: Rest height of each fluid layer.
+    - `ρ`: Densities of each fluid layer.
+    - `eta`: Topographic potential vorticity.
+    - `μ`: Linear bottom drag coefficient.
+    - `ν`: Small-scale (hyper)-viscosity coefficient.
+    - `nν`: (Hyper)-viscosity order, `nν```≥ 1``".
+    - `dt`: Time-step.
+    - `stepper`: The extent of the ``y``-domain.
+    - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
+    - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
+    - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
 function Problem(nlayers::Int,                        # number of fluid layers
                      dev = CPU();
