@@ -647,6 +647,8 @@ end
 Update all problem variables using `sol`.
 """
 function updatevars!(vars, params, grid, sol)
+  dealias!(sol, grid)
+  
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
   @. vars.uh = -im * grid.l  * vars.ψh

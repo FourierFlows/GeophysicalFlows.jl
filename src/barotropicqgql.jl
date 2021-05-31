@@ -343,6 +343,8 @@ end
 Update the `vars` of a problem `prob` that has `grid` and `params` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
+  dealias!(sol, grid)
+  
   CUDA.@allowscalar sol[1, 1] = 0
   @. vars.zetah = sol
   CUDA.@allowscalar @. vars.zetah[1, :] = 0

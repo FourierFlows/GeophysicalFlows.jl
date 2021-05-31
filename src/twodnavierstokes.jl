@@ -291,6 +291,8 @@ Update variables in `vars` with solution in `sol`.
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
   
+  dealias!(sol, grid)
+  
   @. vars.ζh = sol
   @. vars.uh =   im * grid.l  * grid.invKrsq * sol
   @. vars.vh = - im * grid.kr * grid.invKrsq * sol
