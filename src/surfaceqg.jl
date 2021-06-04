@@ -256,7 +256,10 @@ N = - \\widehat{𝖩(ψ, b)} + F̂ .
 ```
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
+  dealias!(sol, grid)
+  
   calcN_advection!(N, sol, t, clock, vars, params, grid)
+  
   addforcing!(N, sol, t, clock, vars, params, grid)
   
   return nothing
@@ -300,6 +303,8 @@ Update variables in `vars` with solution in `sol`.
 """
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
+  
+  dealias!(sol, grid)
   
   @. vars.bh = sol
   @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol

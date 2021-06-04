@@ -333,7 +333,10 @@ N = - \\widehat{𝖩(ψ, q+η)} + F̂ .
 ```
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
+  dealias!(sol, grid)
+  
   calcN_advection!(N, sol, t, clock, vars, params, grid)
+  
   addforcing!(N, sol, t, clock, vars, params, grid)
 
   return nothing
@@ -389,6 +392,8 @@ end
 Update the variables in `vars` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
+  dealias!(sol, grid)
+  
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
   @. vars.uh = -im * grid.l  * vars.ψh
