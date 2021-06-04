@@ -2,7 +2,6 @@ using
   GeophysicalFlows,
   Statistics,
   Random,
-  FFTW,
   Test
 
 import # use 'import' rather than 'using' for submodules to keep namespace clean

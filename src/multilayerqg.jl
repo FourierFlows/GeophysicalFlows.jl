@@ -22,7 +22,6 @@ using
 
 @reexport using FourierFlows
 
-using FFTW: rfft, irfft
 using FourierFlows: parsevalsum, parsevalsum2, superzeros, plan_flows_rfft
 
 nothingfunction(args...) = nothing
