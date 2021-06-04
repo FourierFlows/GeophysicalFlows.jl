@@ -48,8 +48,10 @@ nothing # hide
 # We initialize two problems by providing a set of keyword arguments to the `Problem` constructor.
 # The two problems are otherwise the same, except one has an infinite deformation radius, `prob_bqg`,
 # and the other has finite deformation radius, `prob_eqbqg`.
-prob_bqg = SingleLayerQG.Problem(dev; nx=n, Lx=L, dt=dt, stepper="FilteredRK4")
-prob_eqbqg = SingleLayerQG.Problem(dev; nx=n, Lx=L, deformation_radius = deformation_radius, dt=dt, stepper="FilteredRK4")
+prob_bqg = SingleLayerQG.Problem(dev; nx=n, Lx=L,
+                                      dt=dt, stepper="FilteredRK4", aliased_fraction=0)
+prob_eqbqg = SingleLayerQG.Problem(dev; nx=n, Lx=L, deformation_radius = deformation_radius,
+                                      dt=dt, stepper="FilteredRK4", aliased_fraction=0)
 nothing # hide
 
 

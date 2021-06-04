@@ -223,6 +223,7 @@ function plot_output(prob)
 
   pE = plot(1,
              label = "energy",
+            legend = :bottomright,
          linewidth = 2,
              alpha = 0.7,
              xlims = (-0.1, 4.1),
@@ -236,7 +237,7 @@ function plot_output(prob)
          linewidth = 2,
              alpha = 0.7,
              xlims = (-0.1, 4.1),
-             ylims = (0, 2.5),
+             ylims = (0, 3),
             xlabel = "μt")
 
   l = @layout Plots.grid(2, 3)
