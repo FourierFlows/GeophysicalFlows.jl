@@ -46,9 +46,9 @@ nothing # hide
 
 # ## Physical parameters
 
-  L = 2π        # domain size
- nν = 4
-  ν = 1e-19
+ L = 2π        # domain size
+ ν = 1e-19     # hyper-viscosity coefficient
+nν = 4         # hyper-viscosity order
 nothing # hide
 
 
