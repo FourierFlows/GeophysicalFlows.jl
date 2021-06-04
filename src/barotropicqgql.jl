@@ -43,6 +43,7 @@ nothingfunction(args...) = nothing
                  stepper = "RK4",
                    calcF = nothingfunction,
               stochastic = false,
+        aliased_fraction = 1/3,
                        T = Float64)
 
 Construct a quasi-linear barotropic quasi-geostrophic `problem` on device `dev`.
@@ -63,30 +64,33 @@ Keyword arguments
     - `stepper`: The extent of the ``y``-domain.
     - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
     - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
+    - `aliased_fraction`: the fraction of high-wavenubers that are zero-ed out by `dealias!()`.
     - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
 function Problem(dev::Device=CPU();
   # Numerical parameters
-            nx = 256,
-            ny = nx,
-            Lx = 2π,
-            Ly = Lx,
+                nx = 256,
+                ny = nx,
+                Lx = 2π,
+                Ly = Lx,
   # Physical parameters
-             β = 0.0,
-           eta = nothing,
+                 β = 0.0,
+               eta = nothing,
   # Drag and/or hyper-/hypo-viscosity
-             ν = 0.0,
-            nν = 1,
-             μ = 0.0,
+                 ν = 0.0,
+                nν = 1,
+                 μ = 0.0,
   # Timestepper and equation options
-            dt = 0.01,
-       stepper = "RK4",
-         calcF = nothingfunction,
-    stochastic = false,
-             T = Float64)
+                dt = 0.01,
+           stepper = "RK4",
+             calcF = nothingfunction,
+        stochastic = false,
+  # Float type and dealiasing
+  aliased_fraction = 1/3,
+                 T = Float64)
 
   # the grid
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
+  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T=T)
   x, y = gridpoints(grid)
 
   # topographic PV

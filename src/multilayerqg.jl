@@ -49,6 +49,7 @@ nothingfunction(args...) = nothing
              calcFq = nothingfunction,
          stochastic = false,
              linear = false,
+   aliased_fraction = 1/3,
                   T = Float64)
 
 Construct a multi-layer quasi-geostrophic `problem` with `nlayers` fluid layers on device `dev`.
@@ -75,6 +76,7 @@ Keyword arguments
     - `stepper`: The extent of the ``y``-domain.
     - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
     - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
+    - `aliased_fraction`: the fraction of high-wavenubers that are zero-ed out by `dealias!()`.
     - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
 function Problem(nlayers::Int,                        # number of fluid layers
@@ -102,21 +104,26 @@ function Problem(nlayers::Int,                        # number of fluid layers
                   calcFq = nothingfunction,
               stochastic = false,
                   linear = false,
+              # Float type and dealiasing
+        aliased_fraction = 1/3,
                        T = Float64)
 
-   if dev == GPU()
-     @warn """MultiLayerQG module not well optimized on the GPU yet.
-     See issue on Github at https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112.
-     For now, we suggest running MultiLayerQG on CPUs only."""
-   end
+  if dev == GPU()
+    @warn """MultiLayerQG module not well optimized on the GPU yet.
+    See issue on Github at https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112.
+    For now, we suggest running MultiLayerQG on CPUs only."""
+  end
    
-   # topographic PV
-   eta === nothing && (eta = zeros(dev, T, (nx, ny)))
+  # topographic PV
+  eta === nothing && (eta = zeros(dev, T, (nx, ny)))
    
-   grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
-   params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq, dev=dev)   
-   vars = calcFq == nothingfunction ? DecayingVars(dev, grid, params) : (stochastic ? StochasticForcedVars(dev, grid, params) : ForcedVars(dev, grid, params))
-   equation = linear ? LinearEquation(dev, params, grid) : Equation(dev, params, grid)
+  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T=T)
+   
+  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq, dev=dev)   
+   
+  vars = calcFq == nothingfunction ? DecayingVars(dev, grid, params) : (stochastic ? StochasticForcedVars(dev, grid, params) : ForcedVars(dev, grid, params))
+   
+  equation = linear ? LinearEquation(dev, params, grid) : Equation(dev, params, grid)
 
   FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end

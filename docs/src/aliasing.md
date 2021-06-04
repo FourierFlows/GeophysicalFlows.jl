@@ -8,7 +8,7 @@ in Fourier space before transforming to physical space to compute nonlinear term
 !!! info "De-aliasing scheme"
     FourierFlows.jl curently implements dealiasing by zeroing out the highest-`aliased_fraction` 
     wavenumber components on a `grid`. By default in FourierFlows.jl, `aliased_fraction=1/3`.
-    Users can construct a grid with different `aliased_fraction`, e.g.,
+    Users can construct a `grid` with different `aliased_fraction` via
     
     ```julia
     julia> grid = OneDGrid(64, 2π, aliased_fraction=1/2)
@@ -21,6 +21,23 @@ in Fourier space before transforming to physical space to compute nonlinear term
              ├── grid spacing dx: 0.09817477042468103
              ├─────────── domain: x ∈ [-3.141592653589793, 3.0434178831651124]
              └─ aliased fraction: 0.5
+    ```
+    or provide the keyword argument `aliased_fraction` to the `Problem()` constructor of each
+    module, e.g.,
+    
+    ```julia
+    julia> prob = GeophysicalFlows.TwoDNavierStokes.Problem(; aliased_fraction=1/2)
+    Problem
+      ├─────────── grid: grid (on CPU)
+      ├───── parameters: params
+      ├────── variables: vars
+      ├─── state vector: sol
+      ├─────── equation: eqn
+      ├────────── clock: clock
+      └──── timestepper: RK4TimeStepper
+      
+    julia> prob.grid.aliased_fraction
+    0.5
     ```
 
 Currently, all nonlinearities in all modules included in GeophysicalFlows.jl modules are quadratic 
