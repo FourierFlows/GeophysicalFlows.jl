@@ -23,7 +23,6 @@ using
 
 @reexport using FourierFlows
 
-using FFTW: rfft
 using LinearAlgebra: mul!, ldiv!
 using FourierFlows: parsevalsum, parsevalsum2
 
