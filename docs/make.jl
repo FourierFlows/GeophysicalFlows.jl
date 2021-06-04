@@ -63,6 +63,7 @@ sitename = "GeophysicalFlows.jl",
    pages = Any[
             "Home"    => "index.md",
             "Installation instructions" => "installation_instructions.md",
+            "Aliasing" => "aliasing.md",
             "GPU" => "gpu.md",
             "Examples" => [
               "TwoDNavierStokes" => Any[
