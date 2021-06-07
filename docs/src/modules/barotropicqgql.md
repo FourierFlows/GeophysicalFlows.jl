@@ -3,8 +3,9 @@
 ### Basic Equations
 
 This module solves the *quasi-linear* quasi-geostrophic barotropic vorticity equation on a beta 
-plane of variable fluid depth ``H - h(x, y)``. Quasi-linear refers to the dynamics that *neglect* 
-the eddy--eddy interactions in the eddy evolution equation after an eddy--mean flow decomposition, e.g., 
+plane of variable fluid depth ``H - h(x, y)``. Quasi-linear refers to the dynamics that *neglects* 
+the eddy--eddy interactions in the eddy evolution equation after an eddy--mean flow decomposition, 
+e.g., 
 
 ```math
 \phi(x, y, t) = \overline{\phi}(y, t) + \phi'(x, y, t) ,
@@ -32,12 +33,10 @@ above, the QGPV dynamics are:
 
 ```math
 \begin{aligned}
-\partial_t \overline{\zeta} & + \mathsf{J}(\overline{\psi}, \overline{\zeta} + \overline{\eta}) + \overline{\mathsf{J}(\psi', \zeta' + \eta')} = \underbrace{- \left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
-\right] \overline{\zeta} }_{\textrm{dissipation}} , \\
-\partial_t \zeta' &+ \mathsf{J}(\psi', \overline{\zeta} + \overline{\eta}) + \mathsf{J}(\overline{\psi}, \zeta' + \eta') + \underbrace{\mathsf{J}(\psi', \zeta' + \eta') - \overline{\mathsf{J}(\psi', \zeta' + \eta')}}_{\textrm{EENL}} + 
-\beta \partial_x \psi' = \nonumber \\
-& = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
-\right] \zeta'}_{\textrm{dissipation}} + F .
+	\partial_t \overline{\zeta} + \mathsf{J}(\overline{\psi}, \overline{\zeta} + \overline{\eta}) + \overline{\mathsf{J}(\psi', \zeta' + \eta')} & = \underbrace{- \left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
+	\right] \overline{\zeta} }_{\textrm{dissipation}} , \\
+	\partial_t \zeta'  + \mathsf{J}(\psi', \overline{\zeta} + \overline{\eta}) + \mathsf{J}(\overline{\psi}, \zeta' + \eta') + & \underbrace{\mathsf{J}(\psi', \zeta' + \eta') - \overline{\mathsf{J}(\psi', \zeta' + \eta')}}_{\textrm{EENL}} + \beta \partial_x \psi' = \\
+	& = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] \zeta'}_{\textrm{dissipation}} + F .
 \end{aligned}
 ```
 
