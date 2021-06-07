@@ -330,7 +330,7 @@ end
 Calculate the nonlinear term, that is the advection term and the forcing,
 
 ```math
-N = - \\widehat{𝖩(ψ, ζ + η)}^{\mathrm{QL}} + F̂ .
+N = - \\widehat{𝖩(ψ, ζ + η)}^{\\mathrm{QL}} + F̂ .
 ```
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
