@@ -310,6 +310,7 @@ numberoflayers(::SingleLayerParams) = 1
 
 """
     hyperviscosity(dev, params, grid)
+
 Return the linear operator `L` that corresponds to (hyper)-viscosity of order ``n_ν`` with 
 coefficient ``ν`` for ``n`` fluid layers.
 ```math
@@ -327,6 +328,7 @@ end
 
 """
     LinearEquation(dev, params, grid)
+
 Return the `equation` for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
 The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via 
 `hyperviscosity(dev, params, grid)`.
@@ -341,6 +343,7 @@ end
  
 """
     Equation(dev, params, grid)
+
 Return the `equation` for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
 The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via 
 `hyperviscosity(dev, params, grid)`.
