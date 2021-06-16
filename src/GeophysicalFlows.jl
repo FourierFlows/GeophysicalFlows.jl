@@ -19,6 +19,7 @@ include("twodnavierstokes.jl")
 include("singlelayerqg.jl")
 include("multilayerqg.jl")
 include("surfaceqg.jl")
+include("shallowwater.jl")
 include("barotropicqgql.jl")
 
 @reexport using GeophysicalFlows.TwoDNavierStokes
