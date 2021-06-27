@@ -19,9 +19,8 @@
 #
 using GeophysicalFlows, Random, Printf, Plots
 
-using FourierFlows: parsevalsum
 using Statistics: mean
-
+parsevalsum = FourierFlows.parsevalsum
 
 # ## Choosing a device: CPU or GPU
 
