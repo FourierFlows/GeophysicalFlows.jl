@@ -1,6 +1,6 @@
 # # Decaying barotropic QG beta-plane turbulence
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betadecay.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/singlelayerqg_betadecay.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence on a beta plane.
 #
