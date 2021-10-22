@@ -47,9 +47,7 @@ julia>]
 (v1.5) pkg> instantiate
 ```
 
-The most recent version of GeophysicalFlows.jl requires Julia v1.5 or later.
-
-GeophysicalFlows.jl v0.8.5 is the last version compatible with Julia v1.4.
+The most recent version of GeophysicalFlows.jl requires Julia v1.5 or later.  _We strongly urge you to use this version._
 
 The latest version that is compatible with Julia v1.0.5 (the current long-term-release) is GeophysicalFlows.jl v0.5.1.
 
