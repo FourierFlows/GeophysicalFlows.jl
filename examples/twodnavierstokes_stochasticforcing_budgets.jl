@@ -1,6 +1,6 @@
 # # 2D forced-dissipative turbulence budgets
 #
-#md # This example can viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing_budgets.ipynb).
+#md # This example can viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/twodnavierstokes_stochasticforcing_budgets.ipynb).
 #
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the
 # two-dimensional vorticity equation with stochastic excitation and dissipation in

@@ -1,6 +1,6 @@
 # # Phillips model of Baroclinic Instability
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/multilayerqg_2layer.ipynb).
 #
 # A simulation of the growth of barolinic instability in the Phillips 2-layer model
 # when we impose a vertical mean flow shear as a difference ``\Delta U`` in the
