@@ -1,6 +1,6 @@
 # # SingleLayerQG decaying 2D turbulence with and without finite Rossby radius of deformation
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decaying_barotropic_equivalentbarotropic.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/singlelayerqg_decaying_barotropic_equivalentbarotropic.ipynb).
 #
 # We use here the `SingleLayerQG` module to simulate decaying two-dimensional turbulence and
 # investigate how does a finite Rossby radius of deformation affects its evolution.

@@ -10,11 +10,11 @@ using
 ENV["GKSwstype"] = "100"
 
 #####
-##### Generate examples
+##### Generate literated examples
 #####
 
 const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
-const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
+const OUTPUT_DIR   = joinpath(@__DIR__, "src/literated")
 
 examples = [
     "twodnavierstokes_decaying.jl",
@@ -67,24 +67,24 @@ sitename = "GeophysicalFlows.jl",
             "GPU" => "gpu.md",
             "Examples" => [
               "TwoDNavierStokes" => Any[
-                "generated/twodnavierstokes_decaying.md",
-                "generated/twodnavierstokes_stochasticforcing.md",
-                "generated/twodnavierstokes_stochasticforcing_budgets.md",
+                "literated/twodnavierstokes_decaying.md",
+                "literated/twodnavierstokes_stochasticforcing.md",
+                "literated/twodnavierstokes_stochasticforcing_budgets.md",
                 ],
               "SingleLayerQG" => Any[
-                "generated/singlelayerqg_betadecay.md",
-                "generated/singlelayerqg_betaforced.md",
-                "generated/singlelayerqg_decaying_topography.md",
-                "generated/singlelayerqg_decaying_barotropic_equivalentbarotropic.md"
+                "literated/singlelayerqg_betadecay.md",
+                "literated/singlelayerqg_betaforced.md",
+                "literated/singlelayerqg_decaying_topography.md",
+                "literated/singlelayerqg_decaying_barotropic_equivalentbarotropic.md"
                 ],
               "BarotropicQGQL" => Any[
-                "generated/barotropicqgql_betaforced.md",
+                "literated/barotropicqgql_betaforced.md",
                 ],
               "MultiLayerQG" => Any[
-                "generated/multilayerqg_2layer.md"
+                "literated/multilayerqg_2layer.md"
                 ],
               "SurfaceQG" => Any[
-                "generated/surfaceqg_decaying.md"
+                "literated/surfaceqg_decaying.md"
                 ]
             ],
             "Modules" => Any[
@@ -105,7 +105,8 @@ sitename = "GeophysicalFlows.jl",
 
 withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
   deploydocs(       repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
-                versions = ["stable" => "v^", "v#.#", "dev" => "dev"],
-            push_preview = false
+                versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
+            push_preview = false,
+               devbranch = "main"
             )
 end
