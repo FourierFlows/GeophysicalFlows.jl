@@ -33,9 +33,9 @@ nothing # hide
 
 n = 128                  # 2D resolution = n²
 stepper = "FilteredRK4"  # timestepper
-     dt = 5e-3           # timestep
- nsteps = 10000          # total number of time-steps
- nsubs  = 25             # number of time-steps for plotting (nsteps must be multiple of nsubs)
+     dt = 2.5e-3         # timestep
+ nsteps = 20000          # total number of time-steps
+ nsubs  = 50             # number of time-steps for plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
