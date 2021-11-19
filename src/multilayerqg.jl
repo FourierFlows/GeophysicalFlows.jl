@@ -127,39 +127,37 @@ function Problem(nlayers::Int,                        # number of fluid layers
   FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end
 
-abstract type BarotropicParams <: AbstractParams end
-
 """
     Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft}(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, calcFq!, g′, Qx, Qy, S, S⁻¹, rfftplan)
 
-A struct containing the parameters for the SingleLayerQG problem. Included are:
+A struct containing the parameters for the MultiLayerQG problem. Included are:
 
 $(TYPEDFIELDS)
 """
 struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
   # prescribed params
     "number of fluid layers"
-   nlayers :: Int        # Number of fluid layers
+   nlayers :: Int
     "gravitational constant"
          g :: T
     "constant planetary vorticity"
-        f₀ :: T       
+        f₀ :: T
     "planetary vorticity y-gradient"
-         β :: T       
+         β :: T
     "array with density of each fluid layer"
-         ρ :: Aphys3D 
+         ρ :: Aphys3D
     "array with rest height of each fluid layer"
-         H :: Aphys3D 
+         H :: Aphys3D
     "array with imposed constant zonal flow U(y) in each fluid layer"
-         U :: Aphys3D 
+         U :: Aphys3D
     "array containing topographic PV"
-       eta :: Aphys2D 
+       eta :: Aphys2D
     "linear bottom drag coefficient"
-         μ :: T       
+         μ :: T
     "small-scale (hyper)-viscosity coefficient"
-         ν :: T       
+         ν :: T
     "(hyper)-viscosity order, `nν```≥ 1``"
-        nν :: Int     
+        nν :: Int
     "function that calculates the Fourier transform of the forcing, ``F̂``"
    calcFq! :: Function
 
@@ -185,20 +183,20 @@ A struct containing the parameters for the SingleLayerQG problem. Included are:
 
 $(TYPEDFIELDS)
 """
-struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: BarotropicParams
+struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
   # prescribed params
     "planetary vorticity y-gradient"
-         β :: T       
+         β :: T
     "array with imposed constant zonal flow U(y)"
-         U :: Aphys3D 
+         U :: Aphys3D
     "array containing topographic PV"
-       eta :: Aphys2D 
+       eta :: Aphys2D
     "linear drag coefficient"
-         μ :: T       
+         μ :: T
     "small-scale (hyper)-viscosity coefficient"
-         ν :: T       
+         ν :: T
     "(hyper)-viscosity order, `nν```≥ 1``"
-        nν :: Int     
+        nν :: Int
     "function that calculates the Fourier transform of the forcing, ``F̂``"
    calcFq! :: Function
 
@@ -206,6 +204,49 @@ struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: BarotropicParams
     "array containing x-gradient of PV due to eta"
         Qx :: Aphys3D
     "array containing y-gradient of PV due to β, U, and eta"
+        Qy :: Aphys3D
+    "rfft plan for FFTs"
+  rfftplan :: Trfft
+end
+
+"""
+    TwoLayerParams{T, Aphys3D, Aphys2D, Trfft}(g, f₀, β, ρ, H, U, eta, μ, ν, nν, calcFq!, g′, Qx, Qy, rfftplan)
+
+A struct containing the parameters for the TwoLayerQG problem. Included are:
+
+$(TYPEDFIELDS)
+"""
+struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
+  # prescribed params
+    "gravitational constant"
+         g :: T
+    "constant planetary vorticity"
+        f₀ :: T
+    "planetary vorticity y-gradient"
+         β :: T
+    "array with density of each fluid layer"
+         ρ :: Aphys3D
+    "array with rest height of each fluid layer"
+         H :: Aphys3D
+    "array with imposed constant zonal flow U(y) in each fluid layer"
+         U :: Aphys3D
+    "array containing topographic PV"
+       eta :: Aphys2D
+    "linear bottom drag coefficient"
+         μ :: T
+    "small-scale (hyper)-viscosity coefficient"
+         ν :: T
+    "(hyper)-viscosity order, `nν```≥ 1``"
+        nν :: Int
+    "function that calculates the Fourier transform of the forcing, ``F̂``"
+   calcFq! :: Function
+
+  # derived params
+    "the reduced gravity constants for the fluid interface"
+        g′ :: T
+    "array containing x-gradient of PV due to eta in each fluid layer"
+        Qx :: Aphys3D
+    "array containing y-gradient of PV due to β, U, and eta in each fluid layer"
         Qy :: Aphys3D
     "rfft plan for FFTs"
   rfftplan :: Trfft
@@ -240,9 +281,7 @@ function convert_U_to_U3D(dev, nlayers, grid, U::Number)
   return A(U_3D)
 end
 
-
 function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE, dev::Device=CPU()) where TU
-  
   T = eltype(grid)
   A = ArrayType(dev)
 
@@ -297,12 +336,17 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
     end
     CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
-    return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
+    if nlayers==2
+      return TwoLayerParams(T(g), T(f₀), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
+    else # if nlayers>2
+      return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
+    end
   end
 end
 
 numberoflayers(params) = params.nlayers
 numberoflayers(::SingleLayerParams) = 1
+numberoflayers(::TwoLayerParams) = 2
 
 # ---------
 # Equations
@@ -455,6 +499,53 @@ Compute the inverse Fourier transform of `varh` and store it in `var`.
 invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, varh)
 
 """
+    pvfromstreamfunction!(qh, ψh, params, grid)
+
+Obtains the Fourier transform of the PV from the streamfunction `ψh` in each layer using 
+`qh = params.S * ψh`.
+"""
+function pvfromstreamfunction!(qh, ψh, params, grid)
+  for j=1:grid.nl, i=1:grid.nkr
+    CUDA.@allowscalar @views qh[i, j, :] .= params.S[i, j] * ψh[i, j, :]    
+  end
+  
+  return nothing
+end
+
+"""
+    pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
+
+Obtains the Fourier transform of the PV from the streamfunction `ψh` for the special
+case that we only have one fluid layer. In this case, `qh = - k² * ψh`.
+"""
+function pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
+  @. qh = -grid.Krsq * ψh
+  
+  return nothing
+end
+
+"""
+    pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
+
+Obtains the Fourier transform of the PV from the streamfunction `ψh` for the special
+case that we only have two fluid layers. In this case, `q1h = - k² * ψ1h + f₀² / (g′H₁) * (ψ2h - ψ1h)`
+and `q2h = - k² * ψ2h + f₀² / (g′H₂) * (ψ1h - ψ2h)`.
+
+(Here, we hard-code here the PV-streamfunction relationship to avoid scalar operations
+on the GPU.)
+"""
+function pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
+  f₀, g′, H1, H2 = params.f₀, params.g′, params.H[1], params.H[2]
+  
+  ψ1h, ψ2h = ψh[:, :, 1], ψh[:, :, 2]
+
+  @. qh[:, :, 1] = - grid.Krsq * ψ1h + f₀^2 / (g′ * H1) * (ψ2h - ψ1h)
+  @. qh[:, :, 2] = - grid.Krsq * ψ2h + f₀^2 / (g′ * H2) * (ψ1h - ψ2h)
+  
+  return nothing
+end
+
+"""
     streamfunctionfrompv!(ψh, qh, params, grid)
 
 Inverts the PV to obtain the Fourier transform of the streamfunction `ψh` in each layer from
@@ -469,28 +560,39 @@ function streamfunctionfrompv!(ψh, qh, params, grid)
 end
 
 """
-    pvfromstreamfunction!(qh, ψh, params, grid)
+    streamfunctionfrompv!(ψh, qh, params::SingleLayerParams, grid)
 
-Obtains the Fourier transform of the PV from the streamfunction `ψh` in each layer using 
-`qh = params.S * ψh`.
+Inverts the PV to obtain the Fourier transform of the streamfunction `ψh` for the special
+case that we only have one fluid layer. In this case, `ψh = - k⁻² * qh`.
 """
-function pvfromstreamfunction!(qh, ψh, params, grid)
-  for j=1:grid.nl, i=1:grid.nkr
-    CUDA.@allowscalar @views qh[i, j, :] .= params.S[i, j] * ψh[i, j, :]    
-  end
-  
-  return nothing
-end
-
 function streamfunctionfrompv!(ψh, qh, params::SingleLayerParams, grid)
   @. ψh = -grid.invKrsq * qh
   
   return nothing
 end
 
-function pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
-  @. qh = -grid.Krsq * ψh
+"""
+    streamfunctionfrompv!(ψh, qh, params::TwoLayerParams, grid)
+
+Inverts the PV to obtain the Fourier transform of the streamfunction `ψh` for the special
+case that we only have two fluid layers. In this case, `ψ1h = - k⁻² q1h - (f₀² / g′) * (q1h / H₂ + q2h / H₁)`
+and `ψ2h = - k⁻² * q2h - (f₀² / g′) * (q1h / H₂ + q2h / H₁)`, where `Δ = k²(k² + f₀²(H₁ + H₂)/(g′H₁H₂))`.
   
+(Here, we hard-code here the PV-streamfunction inversion to avoid scalar operations
+on the GPU.)
+"""
+function streamfunctionfrompv!(ψh, qh, params::TwoLayerParams, grid)
+  f₀, g′, H1, H2 = params.f₀, params.g′, params.H[1], params.H[2]
+  
+  q1h, q2h = qh[:, :, 1], qh[:, :, 2]
+
+  @. ψh[:, :, 1] = - grid.Krsq * q1h - f₀^2 / g′ * (q1h / H2 + q2h / H1)
+  @. ψh[:, :, 2] = - grid.Krsq * q2h - f₀^2 / g′ * (q1h / H2 + q2h / H1)
+  
+  for j in 1:2
+    @. ψh[:, :, j] *= grid.invKrsq / (grid.Krsq + f₀^2 / g′ * (H1 + H2) / (H1 * H2))
+  end
+
   return nothing
 end
 
