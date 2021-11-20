@@ -137,3 +137,14 @@ end
 end # time
 
 println("Total test time: ", testtime)
+
+using Pkg; Pkg.add("BenchmarkTools"); using GeophysicalFlows, BenchmarkTools;
+for dev = devices
+  @show dev
+
+  prob2 = MultiLayerQG.Problem(2, dev);
+  @show @btime stepforward!(prob2)
+
+  prob3 = MultiLayerQG.Problem(3, dev);
+  @show @btime stepforward!(prob3)
+end
