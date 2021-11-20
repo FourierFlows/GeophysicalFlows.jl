@@ -23,7 +23,7 @@ const rtol_singlelayerqg = 1e-13 # tolerance for singlelayerqg forcing tests
 const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
 const rtol_surfaceqg = 1e-13 # tolerance for surfaceqg forcing tests
 
-using Pkg; Pkg.add("BenchmarkTools"); using GeophysicalFlows, BenchmarkTools;
+using BenchmarkTools
 for dev = devices
   @show dev
 
