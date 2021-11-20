@@ -55,28 +55,28 @@ Construct a multi-layer quasi-geostrophic `problem` with `nlayers` fluid layers 
 
 Keyword arguments
 =================
-    - `nlayers`: (required) Number of fluid layers.
-    - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
-    - `nx`: Number of grid points in ``x``-domain.
-    - `ny`: Number of grid points in ``y``-domain.
-    - `Lx`: Extent of the ``x``-domain.
-    - `Ly`: Extent of the ``y``-domain.
-    - `f₀`: Constant planetary vorticity.
-    - `β`: Planetary vorticity ``y``-gradient.
-    - `g`: Gravitational accelaration constant.
-    - `U`: T imposed constant zonal flow U(y) in each fluid layer.
-    - `H`: Rest height of each fluid layer.
-    - `ρ`: Densities of each fluid layer.
-    - `eta`: Topographic potential vorticity.
-    - `μ`: Linear bottom drag coefficient.
-    - `ν`: Small-scale (hyper)-viscosity coefficient.
-    - `nν`: (Hyper)-viscosity order, `nν```≥ 1``".
-    - `dt`: Time-step.
-    - `stepper`: The extent of the ``y``-domain.
-    - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
-    - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
-    - `aliased_fraction`: the fraction of high-wavenubers that are zero-ed out by `dealias!()`.
-    - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
+  - `nlayers`: (required) Number of fluid layers.
+  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
+  - `nx`: Number of grid points in ``x``-domain.
+  - `ny`: Number of grid points in ``y``-domain.
+  - `Lx`: Extent of the ``x``-domain.
+  - `Ly`: Extent of the ``y``-domain.
+  - `f₀`: Constant planetary vorticity.
+  - `β`: Planetary vorticity ``y``-gradient.
+  - `g`: Gravitational acceleration constant.
+  - `U`: T imposed constant zonal flow U(y) in each fluid layer.
+  - `H`: Rest height of each fluid layer.
+  - `ρ`: Densities of each fluid layer.
+  - `eta`: Topographic potential vorticity.
+  - `μ`: Linear bottom drag coefficient.
+  - `ν`: Small-scale (hyper)-viscosity coefficient.
+  - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
+  - `dt`: Time-step.
+  - `stepper`: The extent of the ``y``-domain.
+  - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
+  - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
+  - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
+  - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
 function Problem(nlayers::Int,                        # number of fluid layers
                      dev = CPU();
