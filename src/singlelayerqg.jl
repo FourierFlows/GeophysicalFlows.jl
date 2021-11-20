@@ -123,7 +123,7 @@ A struct containing the parameters for the SingleLayerQG problem. Included are:
 $(TYPEDFIELDS)
 """
 struct Params{T, Aphys, Atrans, ℓ} <: SingleLayerQGParams
-    "planetary vorticity y-gradient"
+    "planetary vorticity ``y``-gradient"
                    β :: T
     "Rossby radius of deformation"
   deformation_radius :: ℓ

@@ -120,7 +120,7 @@ A struct containing the parameters for a barotropic QL QG problem. Included are:
 $(TYPEDFIELDS)
 """
 struct Params{T, Aphys, Atrans} <: AbstractParams
-    "planetary vorticity y-gradient"
+    "planetary vorticity ``y``-gradient"
        β :: T
     "topographic potential vorticity"
      eta :: Aphys
