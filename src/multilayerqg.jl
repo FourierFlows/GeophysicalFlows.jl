@@ -233,7 +233,7 @@ struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
          ρ :: Aphys3D
     "tuple with rest height of each fluid layer"
          H :: Tuple
-    "array with imposed constant zonal flow U(y) in each fluid layer"
+   "array with imposed constant zonal flow U(y) in each fluid layer"
          U :: Aphys3D
     "array containing topographic PV"
        eta :: Aphys2D
@@ -603,15 +603,15 @@ where ``Δ = k² [k² + f₀² (H₁ + H₂) / (g′ H₁ H₂)]``.
 on the GPU.)
 """
 function streamfunctionfrompv!(ψh, qh, params::TwoLayerParams, grid)
-  f₀, g′, H₁, H₁ = params.f₀, params.g′, params.H[1], params.H[2]
+  f₀, g′, H₁, H₂ = params.f₀, params.g′, params.H[1], params.H[2]
   
   q1h, q2h = qh[:, :, 1], qh[:, :, 2]
 
-  @. ψh[:, :, 1] = - grid.Krsq * q1h - f₀^2 / g′ * (q1h / H₁ + q2h / H₁)
-  @. ψh[:, :, 2] = - grid.Krsq * q2h - f₀^2 / g′ * (q1h / H₁ + q2h / H₁)
+  @. ψh[:, :, 1] = - grid.Krsq * q1h - f₀^2 / g′ * (q1h / H₂ + q2h / H₁)
+  @. ψh[:, :, 2] = - grid.Krsq * q2h - f₀^2 / g′ * (q1h / H₂ + q2h / H₁)
   
   for j in 1:2
-    @. ψh[:, :, j] *= grid.invKrsq / (grid.Krsq + f₀^2 / g′ * (H₁ + H₁) / (H₁ * H₁))
+    @. ψh[:, :, j] *= grid.invKrsq / (grid.Krsq + f₀^2 / g′ * (H₁ + H₂) / (H₁ * H₂))
   end
 
   return nothing
