@@ -107,10 +107,15 @@ function Problem(nlayers::Int,                        # number of fluid layers
         aliased_fraction = 1/3,
                        T = Float64)
 
-  if dev == GPU()
-    @warn """MultiLayerQG module not well optimized on the GPU yet.
-    See issue on Github at https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112.
-    For now, we suggest running MultiLayerQG on CPUs only."""
+  if dev == GPU() && nlayers > 2
+    @warn """MultiLayerQG module not well optimized on the GPU yet for configurations with
+    3 fluid layers or more!
+    
+    See issues on Github at https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112
+    and https://github.com/FourierFlows/GeophysicalFlows.jl/issues/267.
+    
+    To use MultiLayerQG with 3 fluid layers or more we suggest, for now, to restrict running
+    on CPU."""
   end
    
   # topographic PV
@@ -226,12 +231,8 @@ struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
          β :: T
     "array with density of each fluid layer"
          ρ :: Aphys3D
-    "array with rest height of each fluid layer"
-         H :: Aphys3D
-    "rest height of top fluid layer"
-        H1 :: T
-    "rest height of bottom fluid layer"
-        H2 :: T
+    "tuple with rest height of each fluid layer"
+         H :: Tuple
     "array with imposed constant zonal flow U(y) in each fluid layer"
          U :: Aphys3D
     "array containing topographic PV"
@@ -341,7 +342,7 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
     CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
     if nlayers==2
-      return TwoLayerParams(T(g), T(f₀), T(β), A(ρ), A(H), T(H[1]), T(H[2]), U, eta, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
+      return TwoLayerParams(T(g), T(f₀), T(β), A(ρ), (T(H[1]), T(H[2])), U, eta, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
     else # if nlayers>2
       return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
     end
@@ -505,7 +506,7 @@ invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, v
 """
     pvfromstreamfunction!(qh, ψh, params, grid)
 
-Obtains the Fourier transform of the PV from the streamfunction `ψh` in each layer using 
+Obtain the Fourier transform of the PV from the streamfunction `ψh` in each layer using 
 `qh = params.S * ψh`.
 """
 function pvfromstreamfunction!(qh, ψh, params, grid)
@@ -519,8 +520,8 @@ end
 """
     pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
 
-Obtains the Fourier transform of the PV from the streamfunction `ψh` for the special
-case that we only have one fluid layer. In this case, `qh = - k² * ψh`.
+Obtain the Fourier transform of the PV from the streamfunction `ψh` for the special
+case of a single fluid layer configuration. In this case, ``q̂ = - k² ψ̂``.
 """
 function pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
   @. qh = -grid.Krsq * ψh
@@ -531,20 +532,27 @@ end
 """
     pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
 
-Obtains the Fourier transform of the PV from the streamfunction `ψh` for the special
-case that we only have two fluid layers. In this case, `q1h = - k² * ψ1h + f₀² / (g′H₁) * (ψ2h - ψ1h)`
-and `q2h = - k² * ψ2h + f₀² / (g′H₂) * (ψ1h - ψ2h)`.
+Obtain the Fourier transform of the PV from the streamfunction `ψh` for the special
+case of a two fluid layer configuration. In this case we have,
 
-(Here, we hard-code here the PV-streamfunction relationship to avoid scalar operations
+```math
+q̂₁ = - k² ψ̂₁ + f₀² / (g′ H₁) * (ψ̂₂ - ψ̂₁) ,
+```
+
+```math
+q̂₂ = - k² ψ̂₂ + f₀² / (g′ H₂) * (ψ̂₁ - ψ̂₂) .
+```
+
+(Here, the PV-streamfunction relationship is hard-coded to avoid scalar operations
 on the GPU.)
 """
 function pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
-  f₀, g′, H1, H2 = params.f₀, params.g′, params.H1, params.H2
+  f₀, g′, H₁, H₂ = params.f₀, params.g′, params.H[1], params.H[2]
   
   ψ1h, ψ2h = ψh[:, :, 1], ψh[:, :, 2]
 
-  @. qh[:, :, 1] = - grid.Krsq * ψ1h + f₀^2 / (g′ * H1) * (ψ2h - ψ1h)
-  @. qh[:, :, 2] = - grid.Krsq * ψ2h + f₀^2 / (g′ * H2) * (ψ1h - ψ2h)
+  @. qh[:, :, 1] = - grid.Krsq * ψ1h + f₀^2 / (g′ * H₁) * (ψ2h - ψ1h)
+  @. qh[:, :, 2] = - grid.Krsq * ψ2h + f₀^2 / (g′ * H₂) * (ψ1h - ψ2h)
   
   return nothing
 end
@@ -552,7 +560,7 @@ end
 """
     streamfunctionfrompv!(ψh, qh, params, grid)
 
-Inverts the PV to obtain the Fourier transform of the streamfunction `ψh` in each layer from
+Invert the PV to obtain the Fourier transform of the streamfunction `ψh` in each layer from
 `qh` using `ψh = params.S⁻¹ qh`.
 """
 function streamfunctionfrompv!(ψh, qh, params, grid)
@@ -566,8 +574,8 @@ end
 """
     streamfunctionfrompv!(ψh, qh, params::SingleLayerParams, grid)
 
-Inverts the PV to obtain the Fourier transform of the streamfunction `ψh` for the special
-case that we only have one fluid layer. In this case, `ψh = - k⁻² * qh`.
+Invert the PV to obtain the Fourier transform of the streamfunction `ψh` for the special
+case of a single fluid layer configuration. In this case, ``ψ̂ = - k⁻² q̂``.
 """
 function streamfunctionfrompv!(ψh, qh, params::SingleLayerParams, grid)
   @. ψh = -grid.invKrsq * qh
@@ -578,23 +586,32 @@ end
 """
     streamfunctionfrompv!(ψh, qh, params::TwoLayerParams, grid)
 
-Inverts the PV to obtain the Fourier transform of the streamfunction `ψh` for the special
-case that we only have two fluid layers. In this case, `ψ1h = - k⁻² q1h - (f₀² / g′) * (q1h / H₂ + q2h / H₁)`
-and `ψ2h = - k⁻² * q2h - (f₀² / g′) * (q1h / H₂ + q2h / H₁)`, where `Δ = k²(k² + f₀²(H₁ + H₂)/(g′H₁H₂))`.
+Invert the PV to obtain the Fourier transform of the streamfunction `ψh` for the special
+case of a two fluid layer configuration. In this case we have,
+
+```math
+ψ̂₁ = - [k⁻² q̂₁ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
+```
+
+```math
+ψ̂₂ = - [k⁻² q̂₂ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
+```
+
+where ``Δ = k² [k² + f₀² (H₁ + H₂) / (g′ H₁ H₂)]``.
   
-(Here, we hard-code here the PV-streamfunction inversion to avoid scalar operations
+(Here, the PV-streamfunction relationship is hard-coded to avoid scalar operations
 on the GPU.)
 """
 function streamfunctionfrompv!(ψh, qh, params::TwoLayerParams, grid)
-  f₀, g′, H1, H2 = params.f₀, params.g′, params.H1, params.H2
+  f₀, g′, H₁, H₁ = params.f₀, params.g′, params.H[1], params.H[2]
   
   q1h, q2h = qh[:, :, 1], qh[:, :, 2]
 
-  @. ψh[:, :, 1] = - grid.Krsq * q1h - f₀^2 / g′ * (q1h / H2 + q2h / H1)
-  @. ψh[:, :, 2] = - grid.Krsq * q2h - f₀^2 / g′ * (q1h / H2 + q2h / H1)
+  @. ψh[:, :, 1] = - grid.Krsq * q1h - f₀^2 / g′ * (q1h / H₁ + q2h / H₁)
+  @. ψh[:, :, 2] = - grid.Krsq * q2h - f₀^2 / g′ * (q1h / H₁ + q2h / H₁)
   
   for j in 1:2
-    @. ψh[:, :, j] *= grid.invKrsq / (grid.Krsq + f₀^2 / g′ * (H1 + H2) / (H1 * H2))
+    @. ψh[:, :, j] *= grid.invKrsq / (grid.Krsq + f₀^2 / g′ * (H₁ + H₁) / (H₁ * H₁))
   end
 
   return nothing
