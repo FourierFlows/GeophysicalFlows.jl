@@ -23,6 +23,17 @@ const rtol_singlelayerqg = 1e-13 # tolerance for singlelayerqg forcing tests
 const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
 const rtol_surfaceqg = 1e-13 # tolerance for surfaceqg forcing tests
 
+using Pkg; Pkg.add("BenchmarkTools"); using GeophysicalFlows, BenchmarkTools;
+for dev = devices
+  @show dev
+
+  prob2 = MultiLayerQG.Problem(2, dev);
+  @show @btime stepforward!(prob2)
+
+  prob3 = MultiLayerQG.Problem(3, dev);
+  @show @btime stepforward!(prob3)
+end
+
 
 # Run tests
 testtime = @elapsed begin
@@ -137,14 +148,3 @@ end
 end # time
 
 println("Total test time: ", testtime)
-
-using Pkg; Pkg.add("BenchmarkTools"); using GeophysicalFlows, BenchmarkTools;
-for dev = devices
-  @show dev
-
-  prob2 = MultiLayerQG.Problem(2, dev);
-  @show @btime stepforward!(prob2)
-
-  prob3 = MultiLayerQG.Problem(3, dev);
-  @show @btime stepforward!(prob3)
-end
