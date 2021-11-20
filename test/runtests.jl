@@ -24,15 +24,16 @@ const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
 const rtol_surfaceqg = 1e-13 # tolerance for surfaceqg forcing tests
 
 using BenchmarkTools
-for dev = devices
-  @show dev
 
-  prob2 = MultiLayerQG.Problem(2, dev);
-  @show @btime stepforward!(prob2)
+dev = GPU()
 
-  prob3 = MultiLayerQG.Problem(3, dev);
-  @show @btime stepforward!(prob3)
-end
+@show nlayers = 2
+prob = GeophysicalFlows.MultiLayerQG.Problem(nlayers, dev)
+@btime stepforward!(prob)
+
+@show nlayers = 3
+prob = GeophysicalFlows.MultiLayerQG.Problem(nlayers, dev)
+@btime stepforward!(prob)
 
 
 # Run tests
