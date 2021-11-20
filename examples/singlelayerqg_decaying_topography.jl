@@ -1,6 +1,6 @@
 # # Decaying barotropic QG turbulence over topography
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decaying_topography.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/singlelayerqg_decaying_topography.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence over topography.
 #

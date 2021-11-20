@@ -10,7 +10,7 @@ using
 ENV["GKSwstype"] = "100"
 
 #####
-##### Generate examples
+##### Generate literated examples
 #####
 
 const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
@@ -106,6 +106,7 @@ sitename = "GeophysicalFlows.jl",
 withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
   deploydocs(       repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
                 versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
-            push_preview = false
+            push_preview = false,
+               devbranch = "main"
             )
 end

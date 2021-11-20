@@ -1,6 +1,6 @@
 # # Phillips model of Baroclinic Instability
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/multilayerqg_2layer.ipynb).
 #
 # A simulation of the growth of barolinic instability in the Phillips 2-layer model
 # when we impose a vertical mean flow shear as a difference ``\Delta U`` in the
@@ -33,9 +33,9 @@ nothing # hide
 
 n = 128                  # 2D resolution = n²
 stepper = "FilteredRK4"  # timestepper
-     dt = 5e-3           # timestep
- nsteps = 10000          # total number of time-steps
- nsubs  = 25             # number of time-steps for plotting (nsteps must be multiple of nsubs)
+     dt = 2.5e-3         # timestep
+ nsteps = 20000          # total number of time-steps
+ nsubs  = 50             # number of time-steps for plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
