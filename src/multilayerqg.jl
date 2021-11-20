@@ -64,9 +64,9 @@ Keyword arguments
   - `f₀`: Constant planetary vorticity.
   - `β`: Planetary vorticity ``y``-gradient.
   - `g`: Gravitational acceleration constant.
-  - `U`: T imposed constant zonal flow U(y) in each fluid layer.
+  - `U`: The imposed constant zonal flow ``U(y)`` in each fluid layer.
   - `H`: Rest height of each fluid layer.
-  - `ρ`: Densities of each fluid layer.
+  - `ρ`: Density of each fluid layer.
   - `eta`: Topographic potential vorticity.
   - `μ`: Linear bottom drag coefficient.
   - `ν`: Small-scale (hyper)-viscosity coefficient.
