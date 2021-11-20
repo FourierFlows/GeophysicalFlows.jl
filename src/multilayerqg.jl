@@ -228,6 +228,10 @@ struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
          ρ :: Aphys3D
     "array with rest height of each fluid layer"
          H :: Aphys3D
+    "rest height of top fluid layer"
+        H1 :: T
+    "rest height of bottom fluid layer"
+        H2 :: T
     "array with imposed constant zonal flow U(y) in each fluid layer"
          U :: Aphys3D
     "array containing topographic PV"
@@ -337,7 +341,7 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
     CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
     if nlayers==2
-      return TwoLayerParams(T(g), T(f₀), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
+      return TwoLayerParams(T(g), T(f₀), T(β), A(ρ), A(H), T(H[1]), T(H[2]), U, eta, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
     else # if nlayers>2
       return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
     end
@@ -535,7 +539,7 @@ and `q2h = - k² * ψ2h + f₀² / (g′H₂) * (ψ1h - ψ2h)`.
 on the GPU.)
 """
 function pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
-  f₀, g′, H1, H2 = params.f₀, params.g′, params.H[1], params.H[2]
+  f₀, g′, H1, H2 = params.f₀, params.g′, params.H1, params.H2
   
   ψ1h, ψ2h = ψh[:, :, 1], ψh[:, :, 2]
 
@@ -582,7 +586,7 @@ and `ψ2h = - k⁻² * q2h - (f₀² / g′) * (q1h / H₂ + q2h / H₁)`, where
 on the GPU.)
 """
 function streamfunctionfrompv!(ψh, qh, params::TwoLayerParams, grid)
-  f₀, g′, H1, H2 = params.f₀, params.g′, params.H[1], params.H[2]
+  f₀, g′, H1, H2 = params.f₀, params.g′, params.H1, params.H2
   
   q1h, q2h = qh[:, :, 1], qh[:, :, 2]
 
