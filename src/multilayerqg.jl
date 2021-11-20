@@ -108,7 +108,7 @@ function Problem(nlayers::Int,                        # number of fluid layers
                        T = Float64)
 
   if dev == GPU() && nlayers > 2
-    @warn """MultiLayerQG module not well optimized on the GPU yet for configurations with
+    @warn """MultiLayerQG module is not optimized on the GPU yet for configurations with
     3 fluid layers or more!
     
     See issues on Github at https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112
