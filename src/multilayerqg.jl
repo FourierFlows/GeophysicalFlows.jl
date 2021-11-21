@@ -939,7 +939,7 @@ function energies(vars, params, grid, sol)
 
   return KE, PE
 end
-
+#=
 function energies(vars, params::TwoLayerParams, grid, sol)
   nlayers = numberoflayers(params)
   KE, PE = zeros(nlayers), zeros(nlayers-1)
@@ -960,8 +960,7 @@ function energies(vars, params::TwoLayerParams, grid, sol)
   
   return KE, PE
 end
-
-
+=#
 function energies(vars, params::SingleLayerParams, grid, sol)
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
@@ -1018,7 +1017,7 @@ function fluxes(vars, params, grid, sol)
 
   return lateralfluxes, verticalfluxes
 end
-
+#=
 function fluxes(vars, params::TwoLayerParams, grid, sol)
   nlayers = numberoflayers(params)
   
@@ -1045,7 +1044,7 @@ function fluxes(vars, params::TwoLayerParams, grid, sol)
 
   return lateralfluxes, verticalfluxes
 end
-
+=#
 function fluxes(vars, params::SingleLayerParams, grid, sol)
   updatevars!(vars, params, grid, sol)
 
