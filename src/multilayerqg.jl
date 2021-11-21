@@ -611,7 +611,7 @@ function streamfunctionfrompv!(ψh, qh, params::TwoLayerParams, grid)
   @views @. ψh[:, :, 2] = - grid.Krsq * q2h - f₀^2 / g′ * (q1h / H₂ + q2h / H₁)
   
   for j in 1:2
-    @. ψh[:, :, j] *= grid.invKrsq / (grid.Krsq + f₀^2 / g′ * (H₁ + H₂) / (H₁ * H₂))
+    @views @. ψh[:, :, j] *= grid.invKrsq / (grid.Krsq + f₀^2 / g′ * (H₁ + H₂) / (H₁ * H₂))
   end
 
   return nothing
