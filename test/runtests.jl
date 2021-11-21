@@ -26,6 +26,8 @@ const rtol_surfaceqg = 1e-13 # tolerance for surfaceqg forcing tests
 
 using BenchmarkTools
 
+@show CUDA.has_cuda()
+
 @show dev = CPU()
 
 @show nlayers = 2
@@ -33,24 +35,24 @@ prob = GeophysicalFlows.MultiLayerQG.Problem(nlayers, dev)
 energies = Diagnostic(MultiLayerQG.energies, prob, freq=1, nsteps=10)
 fluxes = Diagnostic(MultiLayerQG.fluxes, prob, freq=1, nsteps=10)
 
-println("no diags")
-@benchmark stepforward!(prob, 10)
-println("energies")
-@benchmark stepforward!(prob, [energies], 10)
-println("fluxes")
-@benchmark stepforward!(prob, [fluxes], 10)
+@info "no diags"
+@btime stepforward!(prob, 10)
+@info "energies"
+@btime stepforward!(prob, [energies], 10)
+@info "fluxes"
+@btime stepforward!(prob, [fluxes], 10)
 
 @show nlayers = 3
 prob = GeophysicalFlows.MultiLayerQG.Problem(nlayers, dev)
 energies = Diagnostic(MultiLayerQG.energies, prob, freq=1, nsteps=10)
 fluxes = Diagnostic(MultiLayerQG.fluxes, prob, freq=1, nsteps=10)
 
-println("no diags")
-@benchmark stepforward!(prob, 10)
-println("energies")
-@benchmark stepforward!(prob, [energies], 10)
-println("fluxes")
-@benchmark stepforward!(prob, [fluxes], 10)
+@info "no diags"
+@btime stepforward!(prob, 10)
+@info "energies"
+@btime stepforward!(prob, [energies], 10)
+@info "fluxes"
+@btime stepforward!(prob, [fluxes], 10)
 
 
 @show dev = GPU()
@@ -60,24 +62,24 @@ prob = GeophysicalFlows.MultiLayerQG.Problem(nlayers, dev)
 energies = Diagnostic(MultiLayerQG.energies, prob, freq=1, nsteps=10)
 fluxes = Diagnostic(MultiLayerQG.fluxes, prob, freq=1, nsteps=10)
 
-println("no diags")
-@benchmark CUDA.@sync stepforward!(prob, 10)
-println("energies")
-@benchmark CUDA.@sync stepforward!(prob, [energies], 10)
-println("fluxes")
-@benchmark CUDA.@sync stepforward!(prob, [fluxes], 10)
+@info "no diags"
+@btime CUDA.@sync stepforward!(prob, 10)
+@info "energies"
+@btime CUDA.@sync stepforward!(prob, [energies], 10)
+@info "fluxes"
+@btime CUDA.@sync stepforward!(prob, [fluxes], 10)
 
 @show nlayers = 3
 prob = GeophysicalFlows.MultiLayerQG.Problem(nlayers, dev)
 energies = Diagnostic(MultiLayerQG.energies, prob, freq=1, nsteps=10)
 fluxes = Diagnostic(MultiLayerQG.fluxes, prob, freq=1, nsteps=10)
 
-println("no diags")
-@benchmark CUDA.@sync stepforward!(prob, 10)
-println("energies")
-@benchmark CUDA.@sync stepforward!(prob, [energies], 10)
-println("fluxes")
-@benchmark CUDA.@sync stepforward!(prob, [fluxes], 10)
+@info "no diags"
+@btime CUDA.@sync stepforward!(prob, 10)
+@info "energies"
+@btime CUDA.@sync stepforward!(prob, [energies], 10)
+@info "fluxes"
+@btime CUDA.@sync stepforward!(prob, [fluxes], 10)
 
 #=
 # Run tests
