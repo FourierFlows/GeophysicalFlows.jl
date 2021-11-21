@@ -46,7 +46,7 @@ fluxes = Diagnostic(MultiLayerQG.fluxes, prob, freq=1, nsteps=10)
 @btime stepforward!(prob, [energies], 10)
 @btime stepforward!(prob, [fluxes], 10)
 
-#=
+
 @show dev = GPU()
 
 @show nlayers = 2
@@ -66,7 +66,7 @@ fluxes = Diagnostic(MultiLayerQG.fluxes, prob, freq=1, nsteps=10)
 @btime stepforward!(prob, 10)
 @btime stepforward!(prob, [energies], 10)
 @btime stepforward!(prob, [fluxes], 10)
-=#
+
 
 #=
 # Run tests
