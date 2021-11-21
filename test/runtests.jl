@@ -23,7 +23,6 @@ const rtol_singlelayerqg = 1e-13 # tolerance for singlelayerqg forcing tests
 const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
 const rtol_surfaceqg = 1e-13 # tolerance for surfaceqg forcing tests
 
-
 # Run tests
 testtime = @elapsed begin
 for dev in devices

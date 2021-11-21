@@ -107,10 +107,15 @@ function Problem(nlayers::Int,                        # number of fluid layers
         aliased_fraction = 1/3,
                        T = Float64)
 
-  if dev == GPU()
-    @warn """MultiLayerQG module not well optimized on the GPU yet.
-    See issue on Github at https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112.
-    For now, we suggest running MultiLayerQG on CPUs only."""
+  if dev == GPU() && nlayers > 2
+    @warn """MultiLayerQG module is not optimized on the GPU yet for configurations with
+    3 fluid layers or more!
+    
+    See issues on Github at https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112
+    and https://github.com/FourierFlows/GeophysicalFlows.jl/issues/267.
+    
+    To use MultiLayerQG with 3 fluid layers or more we suggest, for now, to restrict running
+    on CPU."""
   end
    
   # topographic PV
@@ -127,39 +132,37 @@ function Problem(nlayers::Int,                        # number of fluid layers
   FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end
 
-abstract type BarotropicParams <: AbstractParams end
-
 """
     Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft}(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, calcFq!, g′, Qx, Qy, S, S⁻¹, rfftplan)
 
-A struct containing the parameters for the SingleLayerQG problem. Included are:
+A struct containing the parameters for the MultiLayerQG problem. Included are:
 
 $(TYPEDFIELDS)
 """
 struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
   # prescribed params
     "number of fluid layers"
-   nlayers :: Int        # Number of fluid layers
+   nlayers :: Int
     "gravitational constant"
          g :: T
     "constant planetary vorticity"
-        f₀ :: T       
+        f₀ :: T
     "planetary vorticity y-gradient"
-         β :: T       
+         β :: T
     "array with density of each fluid layer"
-         ρ :: Aphys3D 
+         ρ :: Aphys3D
     "array with rest height of each fluid layer"
-         H :: Aphys3D 
+         H :: Aphys3D
     "array with imposed constant zonal flow U(y) in each fluid layer"
-         U :: Aphys3D 
+         U :: Aphys3D
     "array containing topographic PV"
-       eta :: Aphys2D 
+       eta :: Aphys2D
     "linear bottom drag coefficient"
-         μ :: T       
+         μ :: T
     "small-scale (hyper)-viscosity coefficient"
-         ν :: T       
+         ν :: T
     "(hyper)-viscosity order, `nν```≥ 1``"
-        nν :: Int     
+        nν :: Int
     "function that calculates the Fourier transform of the forcing, ``F̂``"
    calcFq! :: Function
 
@@ -185,20 +188,20 @@ A struct containing the parameters for the SingleLayerQG problem. Included are:
 
 $(TYPEDFIELDS)
 """
-struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: BarotropicParams
+struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
   # prescribed params
     "planetary vorticity y-gradient"
-         β :: T       
+         β :: T
     "array with imposed constant zonal flow U(y)"
-         U :: Aphys3D 
+         U :: Aphys3D
     "array containing topographic PV"
-       eta :: Aphys2D 
+       eta :: Aphys2D
     "linear drag coefficient"
-         μ :: T       
+         μ :: T
     "small-scale (hyper)-viscosity coefficient"
-         ν :: T       
+         ν :: T
     "(hyper)-viscosity order, `nν```≥ 1``"
-        nν :: Int     
+        nν :: Int
     "function that calculates the Fourier transform of the forcing, ``F̂``"
    calcFq! :: Function
 
@@ -206,6 +209,49 @@ struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: BarotropicParams
     "array containing x-gradient of PV due to eta"
         Qx :: Aphys3D
     "array containing y-gradient of PV due to β, U, and eta"
+        Qy :: Aphys3D
+    "rfft plan for FFTs"
+  rfftplan :: Trfft
+end
+
+"""
+    TwoLayerParams{T, Aphys3D, Aphys2D, Trfft}(g, f₀, β, ρ, H, U, eta, μ, ν, nν, calcFq!, g′, Qx, Qy, rfftplan)
+
+A struct containing the parameters for the TwoLayerQG problem. Included are:
+
+$(TYPEDFIELDS)
+"""
+struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
+  # prescribed params
+    "gravitational constant"
+         g :: T
+    "constant planetary vorticity"
+        f₀ :: T
+    "planetary vorticity y-gradient"
+         β :: T
+    "array with density of each fluid layer"
+         ρ :: Aphys3D
+    "tuple with rest height of each fluid layer"
+         H :: Tuple
+   "array with imposed constant zonal flow U(y) in each fluid layer"
+         U :: Aphys3D
+    "array containing topographic PV"
+       eta :: Aphys2D
+    "linear bottom drag coefficient"
+         μ :: T
+    "small-scale (hyper)-viscosity coefficient"
+         ν :: T
+    "(hyper)-viscosity order, `nν```≥ 1``"
+        nν :: Int
+    "function that calculates the Fourier transform of the forcing, ``F̂``"
+   calcFq! :: Function
+
+  # derived params
+    "the reduced gravity constants for the fluid interface"
+        g′ :: T
+    "array containing x-gradient of PV due to eta in each fluid layer"
+        Qx :: Aphys3D
+    "array containing y-gradient of PV due to β, U, and eta in each fluid layer"
         Qy :: Aphys3D
     "rfft plan for FFTs"
   rfftplan :: Trfft
@@ -240,9 +286,7 @@ function convert_U_to_U3D(dev, nlayers, grid, U::Number)
   return A(U_3D)
 end
 
-
 function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE, dev::Device=CPU()) where TU
-  
   T = eltype(grid)
   A = ArrayType(dev)
 
@@ -297,12 +341,17 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
     end
     CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
-    return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
+    if nlayers==2
+      return TwoLayerParams(T(g), T(f₀), T(β), A(ρ), (T(H[1]), T(H[2])), U, eta, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
+    else # if nlayers>2
+      return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
+    end
   end
 end
 
 numberoflayers(params) = params.nlayers
 numberoflayers(::SingleLayerParams) = 1
+numberoflayers(::TwoLayerParams) = 2
 
 # ---------
 # Equations
@@ -455,9 +504,63 @@ Compute the inverse Fourier transform of `varh` and store it in `var`.
 invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, varh)
 
 """
+    pvfromstreamfunction!(qh, ψh, params, grid)
+
+Obtain the Fourier transform of the PV from the streamfunction `ψh` in each layer using 
+`qh = params.S * ψh`.
+"""
+function pvfromstreamfunction!(qh, ψh, params, grid)
+  for j=1:grid.nl, i=1:grid.nkr
+    CUDA.@allowscalar @views qh[i, j, :] .= params.S[i, j] * ψh[i, j, :]    
+  end
+  
+  return nothing
+end
+
+"""
+    pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
+
+Obtain the Fourier transform of the PV from the streamfunction `ψh` for the special
+case of a single fluid layer configuration. In this case, ``q̂ = - k² ψ̂``.
+"""
+function pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
+  @. qh = -grid.Krsq * ψh
+  
+  return nothing
+end
+
+"""
+    pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
+
+Obtain the Fourier transform of the PV from the streamfunction `ψh` for the special
+case of a two fluid layer configuration. In this case we have,
+
+```math
+q̂₁ = - k² ψ̂₁ + f₀² / (g′ H₁) * (ψ̂₂ - ψ̂₁) ,
+```
+
+```math
+q̂₂ = - k² ψ̂₂ + f₀² / (g′ H₂) * (ψ̂₁ - ψ̂₂) .
+```
+
+(Here, the PV-streamfunction relationship is hard-coded to avoid scalar operations
+on the GPU.)
+"""
+function pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
+  f₀, g′, H₁, H₂ = params.f₀, params.g′, params.H[1], params.H[2]
+  
+  ψ1h, ψ2h = view(ψh, :, :, 1), view(ψh, :, :, 2)
+
+  @views @. qh[:, :, 1] = - grid.Krsq * ψ1h + f₀^2 / (g′ * H₁) * (ψ2h - ψ1h)
+  @views @. qh[:, :, 2] = - grid.Krsq * ψ2h + f₀^2 / (g′ * H₂) * (ψ1h - ψ2h)
+  
+  return nothing
+end
+
+"""
     streamfunctionfrompv!(ψh, qh, params, grid)
 
-Inverts the PV to obtain the Fourier transform of the streamfunction `ψh` in each layer from
+Invert the PV to obtain the Fourier transform of the streamfunction `ψh` in each layer from
 `qh` using `ψh = params.S⁻¹ qh`.
 """
 function streamfunctionfrompv!(ψh, qh, params, grid)
@@ -469,28 +572,48 @@ function streamfunctionfrompv!(ψh, qh, params, grid)
 end
 
 """
-    pvfromstreamfunction!(qh, ψh, params, grid)
+    streamfunctionfrompv!(ψh, qh, params::SingleLayerParams, grid)
 
-Obtains the Fourier transform of the PV from the streamfunction `ψh` in each layer using 
-`qh = params.S * ψh`.
+Invert the PV to obtain the Fourier transform of the streamfunction `ψh` for the special
+case of a single fluid layer configuration. In this case, ``ψ̂ = - k⁻² q̂``.
 """
-function pvfromstreamfunction!(qh, ψh, params, grid)
-  for j=1:grid.nl, i=1:grid.nkr
-    CUDA.@allowscalar @views qh[i, j, :] .= params.S[i, j] * ψh[i, j, :]    
-  end
-  
-  return nothing
-end
-
 function streamfunctionfrompv!(ψh, qh, params::SingleLayerParams, grid)
   @. ψh = -grid.invKrsq * qh
   
   return nothing
 end
 
-function pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
-  @. qh = -grid.Krsq * ψh
+"""
+    streamfunctionfrompv!(ψh, qh, params::TwoLayerParams, grid)
+
+Invert the PV to obtain the Fourier transform of the streamfunction `ψh` for the special
+case of a two fluid layer configuration. In this case we have,
+
+```math
+ψ̂₁ = - [k⁻² q̂₁ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
+```
+
+```math
+ψ̂₂ = - [k⁻² q̂₂ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
+```
+
+where ``Δ = k² [k² + f₀² (H₁ + H₂) / (g′ H₁ H₂)]``.
   
+(Here, the PV-streamfunction relationship is hard-coded to avoid scalar operations
+on the GPU.)
+"""
+function streamfunctionfrompv!(ψh, qh, params::TwoLayerParams, grid)
+  f₀, g′, H₁, H₂ = params.f₀, params.g′, params.H[1], params.H[2]
+  
+  q1h, q2h = view(qh, :, :, 1), view(qh, :, :, 2)
+
+  @views @. ψh[:, :, 1] = - grid.Krsq * q1h - f₀^2 / g′ * (q1h / H₂ + q2h / H₁)
+  @views @. ψh[:, :, 2] = - grid.Krsq * q2h - f₀^2 / g′ * (q1h / H₂ + q2h / H₁)
+  
+  for j in 1:2
+    @views @. ψh[:, :, j] *= grid.invKrsq / (grid.Krsq + f₀^2 / g′ * (H₁ + H₂) / (H₁ * H₂))
+  end
+
   return nothing
 end
 
@@ -817,6 +940,27 @@ function energies(vars, params, grid, sol)
   return KE, PE
 end
 
+function energies(vars, params::TwoLayerParams, grid, sol)
+  nlayers = numberoflayers(params)
+  KE, PE = zeros(nlayers), zeros(nlayers-1)
+  
+  @. vars.qh = sol
+  streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
+  
+  abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
+  @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
+
+  ψ1h, ψ2h = view(vars.ψh, :, :, 1), view(vars.ψh, :, :, 2)
+
+  for j = 1:nlayers
+    CUDA.@allowscalar KE[j] = @views 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j] / sum(params.H)
+  end
+
+  PE = @views 1 / (2 * grid.Lx * grid.Ly) * params.f₀^2 / params.g′ * parsevalsum(abs2.(ψ2h .- ψ1h), grid)
+  
+  return KE, PE
+end
+
 function energies(vars, params::SingleLayerParams, grid, sol)
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
@@ -870,6 +1014,33 @@ function fluxes(vars, params, grid, sol)
     CUDA.@allowscalar verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
     CUDA.@allowscalar verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
   end
+
+  return lateralfluxes, verticalfluxes
+end
+
+function fluxes(vars, params::TwoLayerParams, grid, sol)
+  nlayers = numberoflayers(params)
+  
+  lateralfluxes, verticalfluxes = zeros(nlayers), zeros(nlayers-1)
+
+  updatevars!(vars, params, grid, sol)
+
+  ∂u∂yh = vars.uh           # use vars.uh as scratch variable
+  ∂u∂y  = vars.u            # use vars.u  as scratch variable
+
+  @. ∂u∂yh = im * grid.l * vars.uh
+  invtransform!(∂u∂y, ∂u∂yh, params)
+
+  lateralfluxes = (sum(@. params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
+  @. lateralfluxes *= params.H
+  lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
+
+  U₁, U₂ = view(params.U, :, :, 1), view(params.U, :, :, 2)
+  ψ₁ = view(vars.ψ, :, :, 1)
+  v₂ = view(vars.v, :, :, 2)
+  
+  verticalfluxes = sum(@views @. params.f₀^2 / params.g′ * (U₁ - U₂) * v₂ * ψ₁; dims=(1, 2))
+  verticalfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   return lateralfluxes, verticalfluxes
 end
