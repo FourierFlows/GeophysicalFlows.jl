@@ -551,8 +551,8 @@ function pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
   
   ψ1h, ψ2h = view(ψh, :, :, 1), view(ψh, :, :, 2)
 
-  @. qh[:, :, 1] = - grid.Krsq * ψ1h + f₀^2 / (g′ * H₁) * (ψ2h - ψ1h)
-  @. qh[:, :, 2] = - grid.Krsq * ψ2h + f₀^2 / (g′ * H₂) * (ψ1h - ψ2h)
+  @views @. qh[:, :, 1] = - grid.Krsq * ψ1h + f₀^2 / (g′ * H₁) * (ψ2h - ψ1h)
+  @views @. qh[:, :, 2] = - grid.Krsq * ψ2h + f₀^2 / (g′ * H₂) * (ψ1h - ψ2h)
   
   return nothing
 end
@@ -605,10 +605,10 @@ on the GPU.)
 function streamfunctionfrompv!(ψh, qh, params::TwoLayerParams, grid)
   f₀, g′, H₁, H₂ = params.f₀, params.g′, params.H[1], params.H[2]
   
-  q1h, q2h = qh[:, :, 1], qh[:, :, 2]
+  q1h, q2h = view(qh, :, :, 1), view(qh, :, :, 2)
 
-  @. ψh[:, :, 1] = - grid.Krsq * q1h - f₀^2 / g′ * (q1h / H₂ + q2h / H₁)
-  @. ψh[:, :, 2] = - grid.Krsq * q2h - f₀^2 / g′ * (q1h / H₂ + q2h / H₁)
+  @views @. ψh[:, :, 1] = - grid.Krsq * q1h - f₀^2 / g′ * (q1h / H₂ + q2h / H₁)
+  @views @. ψh[:, :, 2] = - grid.Krsq * q2h - f₀^2 / g′ * (q1h / H₂ + q2h / H₁)
   
   for j in 1:2
     @. ψh[:, :, j] *= grid.invKrsq / (grid.Krsq + f₀^2 / g′ * (H₁ + H₂) / (H₁ * H₂))
