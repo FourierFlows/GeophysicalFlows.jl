@@ -940,6 +940,28 @@ function energies(vars, params, grid, sol)
   return KE, PE
 end
 
+function energies(vars, params::TwoLayerParams, grid, sol)
+  nlayers = numberoflayers(params)
+  KE, PE = zeros(nlayers), zeros(nlayers-1)
+  
+  @. vars.qh = sol
+  streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
+  
+  abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
+  @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
+
+  ψ1h, ψ2h = view(vars.ψh, :, :, 1), view(vars.ψh, :, :, 2)
+
+  for j = 1:nlayers
+    CUDA.@allowscalar KE[j] = @views 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j] / sum(params.H)
+  end
+
+  PE = @views 1 / (2 * grid.Lx * grid.Ly) * params.f₀^2 / params.g′ * parsevalsum(abs2.(ψ2h .- ψ1h), grid)
+  
+  return KE, PE
+end
+
+
 function energies(vars, params::SingleLayerParams, grid, sol)
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
@@ -986,14 +1008,40 @@ function fluxes(vars, params, grid, sol)
   @. ∂u∂yh = im * grid.l * vars.uh
   invtransform!(∂u∂y, ∂u∂yh, params)
 
-  lateralfluxes = (sum(@. params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
-  @. lateralfluxes *= params.H
+  lateralfluxes = (sum(@. params.H * params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   for j = 1:nlayers-1
     CUDA.@allowscalar verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
     CUDA.@allowscalar verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
   end
+
+  return lateralfluxes, verticalfluxes
+end
+
+function fluxes(vars, params::TwoLayerParams, grid, sol)
+  nlayers = numberoflayers(params)
+  
+  lateralfluxes, verticalfluxes = zeros(nlayers), zeros(nlayers-1)
+
+  updatevars!(vars, params, grid, sol)
+
+  ∂u∂yh = vars.uh           # use vars.uh as scratch variable
+  ∂u∂y  = vars.u            # use vars.u  as scratch variable
+
+  @. ∂u∂yh = im * grid.l * vars.uh
+  invtransform!(∂u∂y, ∂u∂yh, params)
+
+  lateralfluxes = (sum(@. params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
+  @. lateralfluxes *= params.H
+  lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
+
+  U₁, U₂ = view(params.U, :, :, 1), view(params.U, :, :, 2)
+  ψ₁ = view(vars.ψ, :, :, 1)
+  v₂ = view(vars.v, :, :, 2)
+  
+  verticalfluxes = sum(@views @. params.f₀^2 / params.g′ * (U₁ - U₂) * v₂ * ψ₁; dims=(1, 2))
+  verticalfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   return lateralfluxes, verticalfluxes
 end
