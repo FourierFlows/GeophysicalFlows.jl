@@ -549,7 +549,7 @@ on the GPU.)
 function pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
   f₀, g′, H₁, H₂ = params.f₀, params.g′, params.H[1], params.H[2]
   
-  ψ1h, ψ2h = ψh[:, :, 1], ψh[:, :, 2]
+  ψ1h, ψ2h = view(ψh, :, :, 1), view(ψh, :, :, 2)
 
   @. qh[:, :, 1] = - grid.Krsq * ψ1h + f₀^2 / (g′ * H₁) * (ψ2h - ψ1h)
   @. qh[:, :, 2] = - grid.Krsq * ψ2h + f₀^2 / (g′ * H₂) * (ψ1h - ψ2h)
