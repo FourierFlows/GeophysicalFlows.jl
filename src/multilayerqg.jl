@@ -55,28 +55,28 @@ Construct a multi-layer quasi-geostrophic `problem` with `nlayers` fluid layers 
 
 Keyword arguments
 =================
-    - `nlayers`: (required) Number of fluid layers.
-    - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
-    - `nx`: Number of grid points in ``x``-domain.
-    - `ny`: Number of grid points in ``y``-domain.
-    - `Lx`: Extent of the ``x``-domain.
-    - `Ly`: Extent of the ``y``-domain.
-    - `f₀`: Constant planetary vorticity.
-    - `β`: Planetary vorticity ``y``-gradient.
-    - `g`: Gravitational accelaration constant.
-    - `U`: T imposed constant zonal flow U(y) in each fluid layer.
-    - `H`: Rest height of each fluid layer.
-    - `ρ`: Densities of each fluid layer.
-    - `eta`: Topographic potential vorticity.
-    - `μ`: Linear bottom drag coefficient.
-    - `ν`: Small-scale (hyper)-viscosity coefficient.
-    - `nν`: (Hyper)-viscosity order, `nν```≥ 1``".
-    - `dt`: Time-step.
-    - `stepper`: The extent of the ``y``-domain.
-    - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
-    - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
-    - `aliased_fraction`: the fraction of high-wavenubers that are zero-ed out by `dealias!()`.
-    - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
+  - `nlayers`: (required) Number of fluid layers.
+  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
+  - `nx`: Number of grid points in ``x``-domain.
+  - `ny`: Number of grid points in ``y``-domain.
+  - `Lx`: Extent of the ``x``-domain.
+  - `Ly`: Extent of the ``y``-domain.
+  - `f₀`: Constant planetary vorticity.
+  - `β`: Planetary vorticity ``y``-gradient.
+  - `g`: Gravitational acceleration constant.
+  - `U`: The imposed constant zonal flow ``U(y)`` in each fluid layer.
+  - `H`: Rest height of each fluid layer.
+  - `ρ`: Density of each fluid layer.
+  - `eta`: Topographic potential vorticity.
+  - `μ`: Linear bottom drag coefficient.
+  - `ν`: Small-scale (hyper)-viscosity coefficient.
+  - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
+  - `dt`: Time-step.
+  - `stepper`: Time-stepping method.
+  - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
+  - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
+  - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
+  - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
 function Problem(nlayers::Int,                        # number of fluid layers
                      dev = CPU();
@@ -147,16 +147,16 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
          g :: T
     "constant planetary vorticity"
         f₀ :: T
-    "planetary vorticity y-gradient"
-         β :: T
+    "planetary vorticity ``y``-gradient"
+         β :: T       
     "array with density of each fluid layer"
          ρ :: Aphys3D
     "array with rest height of each fluid layer"
-         H :: Aphys3D
-    "array with imposed constant zonal flow U(y) in each fluid layer"
-         U :: Aphys3D
-    "array containing topographic PV"
-       eta :: Aphys2D
+         H :: Aphys3D 
+    "array with imposed constant zonal flow ``U(y)`` in each fluid layer"
+         U :: Aphys3D 
+    "array containing the topographic PV"
+       eta :: Aphys2D 
     "linear bottom drag coefficient"
          μ :: T
     "small-scale (hyper)-viscosity coefficient"
@@ -169,9 +169,9 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
   # derived params
     "array with the reduced gravity constants for each fluid interface"
         g′ :: Aphys1D
-    "array containing x-gradient of PV due to eta in each fluid layer"
+    "array containing ``x``-gradient of PV due to eta in each fluid layer"
         Qx :: Aphys3D
-    "array containing y-gradient of PV due to β, U, and eta in each fluid layer"
+    "array containing ``y``-gradient of PV due to ``β``, ``U``, and topographic PV in each fluid layer"
         Qy :: Aphys3D
     "array containing coeffients for getting PV from streamfunction"
          S :: Atrans4D

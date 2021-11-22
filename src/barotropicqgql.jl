@@ -50,22 +50,22 @@ Construct a quasi-linear barotropic quasi-geostrophic `problem` on device `dev`.
 
 Keyword arguments
 =================
-    - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
-    - `nx`: Number of grid points in ``x``-domain.
-    - `ny`: Number of grid points in ``y``-domain.
-    - `Lx`: Extent of the ``x``-domain.
-    - `Ly`: Extent of the ``y``-domain.
-    - `β`: Planetary vorticity ``y``-gradient.
-    - `eta`: Topographic potential vorticity.
-    - `ν`: Small-scale (hyper)-viscosity coefficient.
-    - `nν`: (Hyper)-viscosity order, `nν```≥ 1``".
-    - `μ`: Linear drag coefficient.
-    - `dt`: Time-step.
-    - `stepper`: The extent of the ``y``-domain.
-    - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
-    - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
-    - `aliased_fraction`: the fraction of high-wavenubers that are zero-ed out by `dealias!()`.
-    - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
+  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
+  - `nx`: Number of grid points in ``x``-domain.
+  - `ny`: Number of grid points in ``y``-domain.
+  - `Lx`: Extent of the ``x``-domain.
+  - `Ly`: Extent of the ``y``-domain.
+  - `β`: Planetary vorticity ``y``-gradient.
+  - `eta`: Topographic potential vorticity.
+  - `ν`: Small-scale (hyper)-viscosity coefficient.
+  - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
+  - `μ`: Linear drag coefficient.
+  - `dt`: Time-step.
+  - `stepper`: Time-stepping method.
+  - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
+  - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
+  - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
+  - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
 function Problem(dev::Device=CPU();
   # Numerical parameters
@@ -120,7 +120,7 @@ A struct containing the parameters for a barotropic QL QG problem. Included are:
 $(TYPEDFIELDS)
 """
 struct Params{T, Aphys, Atrans} <: AbstractParams
-    "planetary vorticity y-gradient"
+    "planetary vorticity ``y``-gradient"
        β :: T
     "topographic potential vorticity"
      eta :: Aphys

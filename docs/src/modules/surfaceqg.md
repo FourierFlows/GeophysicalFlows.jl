@@ -96,6 +96,6 @@ Other diagnostic include: [`buoyancy_dissipation`](@ref GeophysicalFlows.Surface
 
 ## Examples
 
-- [`examples/surfaceqg_decaying.jl`](../literated/surfaceqg_decaying/): A script that simulates decaying surface quasi-geostrophic flow with a prescribed initial buoyancy field, producing an animation of the evolution of the surface buoyancy.
+- [`examples/surfaceqg_decaying.jl`](../../literated/surfaceqg_decaying/): A script that simulates decaying surface quasi-geostrophic flow with a prescribed initial buoyancy field, producing an animation of the evolution of the surface buoyancy.
 
   > Capet, X. et al., (2008). Surface kinetic energy transfer in surface quasi-geostrophic flows. *J. Fluid Mech.*, **604**, 165-174.

@@ -17,16 +17,16 @@ const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/literated")
 
 examples = [
-    "twodnavierstokes_decaying.jl",
-    "twodnavierstokes_stochasticforcing.jl",
-    "twodnavierstokes_stochasticforcing_budgets.jl",
-    "singlelayerqg_betadecay.jl",
-    "singlelayerqg_betaforced.jl",
-    "singlelayerqg_decaying_topography.jl",
-    "singlelayerqg_decaying_barotropic_equivalentbarotropic.jl",
-    "barotropicqgql_betaforced.jl",
-    "multilayerqg_2layer.jl",
-    "surfaceqg_decaying.jl",
+  "twodnavierstokes_decaying.jl",
+  "twodnavierstokes_stochasticforcing.jl",
+  "twodnavierstokes_stochasticforcing_budgets.jl",
+  "singlelayerqg_betadecay.jl",
+  "singlelayerqg_betaforced.jl",
+  "singlelayerqg_decaying_topography.jl",
+  "singlelayerqg_decaying_barotropic_equivalentbarotropic.jl",
+  "barotropicqgql_betaforced.jl",
+  "multilayerqg_2layer.jl",
+  "surfaceqg_decaying.jl",
 ]
 
 for example in examples
@@ -97,8 +97,8 @@ sitename = "GeophysicalFlows.jl",
             "Stochastic Forcing" => "stochastic_forcing.md",
             "Contributor's guide" => "contributing.md",
             "Library" => Any[
-            "lib/types.md",
-            "lib/functions.md"
+              "lib/types.md",
+              "lib/functions.md"
             ]
            ]
 )
