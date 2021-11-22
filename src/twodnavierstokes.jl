@@ -57,7 +57,7 @@ Keyword arguments
   - `μ`: Large-scale (hypo)-viscosity coefficient.
   - `nμ`: (Hypo)-viscosity order, `nμ```≤ 0``.
   - `dt`: Time-step.
-  - `stepper`: The extent of the ``y``-domain.
+  - `stepper`: Time-stepping method.
   - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
   - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
   - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
