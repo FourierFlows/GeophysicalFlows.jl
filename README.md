@@ -8,10 +8,10 @@
 <!-- Badges -->
 <p align="left">
     <a href="https://buildkite.com/julialang/geophysicalflows-dot-jl">
-        <img alt="Buildkite CPU+GPU build status" src="https://img.shields.io/buildkite/4d921fc17b95341ea5477fb62df0e6d9364b61b154e050a123/master?logo=buildkite&label=Buildkite%20CPU%2BGPU">
+        <img alt="Buildkite CPU+GPU build status" src="https://img.shields.io/buildkite/4d921fc17b95341ea5477fb62df0e6d9364b61b154e050a123/main?logo=buildkite&label=Buildkite%20CPU%2BGPU">
     </a>
     <a href="https://ci.appveyor.com/project/navidcy/geophysicalflows-jl">
-        <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/geophysicalflows-jl/master?label=Window&logo=appveyor&logoColor=white">
+        <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/geophysicalflows-jl/main?label=Window&logo=appveyor&logoColor=white">
     </a>
     <a href="https://FourierFlows.github.io/GeophysicalFlowsDocumentation/stable">
         <img alt="stable docs" src="https://img.shields.io/badge/documentation-stable%20release-blue">
@@ -100,7 +100,7 @@ The user is also referred to the [GPU section](https://fourierflows.github.io/Fo
 
 Interested in GeophysicalFlows.jl or trying to figure out how to use it? Please feel free to 
 ask us questions and get in touch! Check out the 
-[examples](https://github.com/FourierFlows/GeophysicalFlows.jl/tree/master/examples) and 
+[examples](https://github.com/FourierFlows/GeophysicalFlows.jl/tree/main/examples) and 
 [open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues/new) or 
 [start a discussion](https://github.com/FourierFlows/GeophysicalFlows.jl/discussions/new) 
 if you have any questions, comments, suggestions, etc.
@@ -143,7 +143,7 @@ if you'd like to work on a new feature or implement a new module, if you're new 
 and want to find a cool little project or issue to work on that fits your interests! We're more 
 than happy to help along the way.
 
-For more information, check out our [contributor's guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/master/CONTRIBUTING.md).
+For more information, check out our [contributor's guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/main/CONTRIBUTING.md).
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
