@@ -1,6 +1,6 @@
 # # 2D decaying turbulence
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_decaying.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/twodnavierstokes_decaying.ipynb).
 #
 # A simulation of decaying two-dimensional turbulence.
 # 

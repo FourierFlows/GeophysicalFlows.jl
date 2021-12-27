@@ -23,16 +23,51 @@ using
 
 @reexport using FourierFlows
 
-using FFTW: rfft
 using LinearAlgebra: mul!, ldiv!
 using FourierFlows: parsevalsum, parsevalsum2
 
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev::Device; parameters...)
+    Problem(dev::Device=CPU();
+                      nx = 256,
+                      ny = nx,
+                      Lx = 2π,
+                      Ly = Lx,
+                       β = 0.0,
+      deformation_radius = Inf,
+                     eta = nothing,
+                       ν = 0.0,
+                      nν = 1,
+                       μ = 0.0,
+                      dt = 0.01,
+                 stepper = "RK4",
+                   calcF = nothingfunction,
+              stochastic = false,
+        aliased_fraction = 1/3,
+                       T = Float64)
 
-Construct a SingleLayerQG problem on device `dev`.
+Construct a single-layer quasi-geostrophic `problem` on device `dev`.
+
+Keyword arguments
+=================
+  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
+  - `nx`: Number of grid points in ``x``-domain.
+  - `ny`: Number of grid points in ``y``-domain.
+  - `Lx`: Extent of the ``x``-domain.
+  - `Ly`: Extent of the ``y``-domain.
+  - `β`: Planetary vorticity ``y``-gradient.
+  - `deformation_radius`: Rossby radius of deformation; set `Inf` for purely barotropic.
+  - `eta`: Topographic potential vorticity.
+  - `ν`: Small-scale (hyper)-viscosity coefficient.
+  - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
+  - `μ`: Linear drag coefficient.
+  - `dt`: Time-step.
+  - `stepper`: Time-stepping method.
+  - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
+  - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
+  - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
+  - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
 function Problem(dev::Device=CPU();
   # Numerical parameters
@@ -40,7 +75,6 @@ function Problem(dev::Device=CPU();
                   ny = nx,
                   Lx = 2π,
                   Ly = Lx,
-                  dt = 0.01,
   # Physical parameters
                    β = 0.0,
   deformation_radius = Inf,
@@ -50,13 +84,16 @@ function Problem(dev::Device=CPU();
                   nν = 1,
                    μ = 0.0,
   # Timestepper and equation options
+                  dt = 0.01,
              stepper = "RK4",
                calcF = nothingfunction,
           stochastic = false,
+  # Float type and dealiasing
+    aliased_fraction = 1/3,
                    T = Float64)
 
   # the grid
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly; T=T)
+  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T=T)
   x, y = gridpoints(grid)
 
   # topographic PV
@@ -86,7 +123,7 @@ A struct containing the parameters for the SingleLayerQG problem. Included are:
 $(TYPEDFIELDS)
 """
 struct Params{T, Aphys, Atrans, ℓ} <: SingleLayerQGParams
-    "planetary vorticity y-gradient"
+    "planetary vorticity ``y``-gradient"
                    β :: T
     "Rossby radius of deformation"
   deformation_radius :: ℓ
@@ -299,7 +336,10 @@ N = - \\widehat{𝖩(ψ, q+η)} + F̂ .
 ```
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
+  dealias!(sol, grid)
+  
   calcN_advection!(N, sol, t, clock, vars, params, grid)
+  
   addforcing!(N, sol, t, clock, vars, params, grid)
 
   return nothing
@@ -355,6 +395,8 @@ end
 Update the variables in `vars` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
+  dealias!(sol, grid)
+  
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
   @. vars.uh = -im * grid.l  * vars.ψh

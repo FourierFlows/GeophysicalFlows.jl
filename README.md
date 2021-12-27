@@ -8,10 +8,10 @@
 <!-- Badges -->
 <p align="left">
     <a href="https://buildkite.com/julialang/geophysicalflows-dot-jl">
-        <img alt="Buildkite CPU+GPU build status" src="https://img.shields.io/buildkite/4d921fc17b95341ea5477fb62df0e6d9364b61b154e050a123/master?logo=buildkite&label=Buildkite%20CPU%2BGPU">
+        <img alt="Buildkite CPU+GPU build status" src="https://img.shields.io/buildkite/4d921fc17b95341ea5477fb62df0e6d9364b61b154e050a123/main?logo=buildkite&label=Buildkite%20CPU%2BGPU">
     </a>
     <a href="https://ci.appveyor.com/project/navidcy/geophysicalflows-jl">
-        <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/geophysicalflows-jl/master?label=Window&logo=appveyor&logoColor=white">
+        <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/geophysicalflows-jl/main?label=Window&logo=appveyor&logoColor=white">
     </a>
     <a href="https://FourierFlows.github.io/GeophysicalFlowsDocumentation/stable">
         <img alt="stable docs" src="https://img.shields.io/badge/documentation-stable%20release-blue">
@@ -20,7 +20,7 @@
         <img alt="latest docs" src="https://img.shields.io/badge/documentation-in%20development-orange">
     </a>
     <a href="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl">
-        <img src="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl/branch/master/graph/badge.svg" />
+        <img src="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl/branch/main/graph/badge.svg" />
     </a>
     <a href="https://doi.org/10.5281/zenodo.1463809">
         <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1463809.svg" alt="DOI">
@@ -43,13 +43,13 @@ To install, use Julia's  built-in package manager (accessed by pressing `]` in t
 
 ```julia
 julia>]
-(v1.5) pkg> add GeophysicalFlows
-(v1.5) pkg> instantiate
+(v1.6) pkg> add GeophysicalFlows
+(v1.6) pkg> instantiate
 ```
 
-The most recent version of GeophysicalFlows.jl requires Julia v1.5 or later.
+The most recent version of GeophysicalFlows.jl requires Julia v1.6 or later.  _We strongly urge you to use this version._
 
-GeophysicalFlows.jl v0.8.5 is the last version compatible with Julia v1.4.
+The latest version that is compatible with Julia v1.5 is GeophysicalFlows.jl v0.13.1.
 
 The latest version that is compatible with Julia v1.0.5 (the current long-term-release) is GeophysicalFlows.jl v0.5.1.
 
@@ -98,9 +98,9 @@ The user is also referred to the [GPU section](https://fourierflows.github.io/Fo
 
 ## Getting help
 
-If you are interested in using GeophysicalFlows.jl or are trying to figure out how to use it, 
-please feel free to ask us questions and get in touch! Check out the 
-[examples](https://github.com/FourierFlows/GeophysicalFlows.jl/tree/master/examples) and 
+Interested in GeophysicalFlows.jl or trying to figure out how to use it? Please feel free to 
+ask us questions and get in touch! Check out the 
+[examples](https://github.com/FourierFlows/GeophysicalFlows.jl/tree/main/examples) and 
 [open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues/new) or 
 [start a discussion](https://github.com/FourierFlows/GeophysicalFlows.jl/discussions/new) 
 if you have any questions, comments, suggestions, etc.
@@ -143,7 +143,7 @@ if you'd like to work on a new feature or implement a new module, if you're new 
 and want to find a cool little project or issue to work on that fits your interests! We're more 
 than happy to help along the way.
 
-For more information, check out our [contributor's guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/master/CONTRIBUTING.md).
+For more information, check out our [contributor's guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/main/CONTRIBUTING.md).
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl

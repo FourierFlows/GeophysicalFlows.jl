@@ -1,6 +1,6 @@
 # # Forced-dissipative barotropic QG beta-plane turbulence
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betaforced.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/singlelayerqg_betaforced.ipynb).
 #
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane. The dynamics include linear drag and stochastic excitation.
@@ -19,9 +19,8 @@
 #
 using GeophysicalFlows, Random, Printf, Plots
 
-using FourierFlows: parsevalsum
 using Statistics: mean
-
+parsevalsum = FourierFlows.parsevalsum
 
 # ## Choosing a device: CPU or GPU
 
@@ -65,6 +64,8 @@ grid = TwoDGrid(dev, n, L)
 K = @. sqrt(grid.Krsq)            # a 2D array with the total wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
+@CUDA.allowscalar forcing_spectrum[grid.Krsq .== 0] .= 0 # ensure forcing has zero domain-average
+
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0       # normalize forcing to inject energy at rate ε
 nothing # hide
@@ -82,8 +83,6 @@ random_uniform = dev==CPU() ? rand : CUDA.rand
 
 function calcF!(Fh, sol, t, clock, vars, params, grid) 
   Fh .= sqrt.(forcing_spectrum) .* exp.(2π * im * random_uniform(eltype(grid), size(sol))) ./ sqrt(clock.dt)
-
-  @CUDA.allowscalar Fh[1, 1] = 0 # make sure forcing has zero domain-average
 
   return nothing
 end
@@ -223,6 +222,7 @@ function plot_output(prob)
 
   pE = plot(1,
              label = "energy",
+            legend = :bottomright,
          linewidth = 2,
              alpha = 0.7,
              xlims = (-0.1, 4.1),
@@ -236,7 +236,7 @@ function plot_output(prob)
          linewidth = 2,
              alpha = 0.7,
              xlims = (-0.1, 4.1),
-             ylims = (0, 2.5),
+             ylims = (0, 3),
             xlabel = "μt")
 
   l = @layout Plots.grid(2, 3)

@@ -12,7 +12,7 @@ coverage/
 # Documenter.jl and MkDocs
 docs/build/
 docs/site/
-docs/src/generated
+docs/src/literated
 docs/src/examples
 docs/Manifest.toml
 

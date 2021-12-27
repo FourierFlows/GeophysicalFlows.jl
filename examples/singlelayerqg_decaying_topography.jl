@@ -1,6 +1,6 @@
 # # Decaying barotropic QG turbulence over topography
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decaying_topography.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/singlelayerqg_decaying_topography.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence over topography.
 #
@@ -49,12 +49,14 @@ topographicPV(x, y) = 3exp(-(x-1)^2/(2σx^2) -(y-1)^2/(2σy^2)) - 2exp(-(x+1)^2/
 nothing # hide
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments. Not providing
-# a viscosity coefficient `ν` leads to the module's default value: `ν=0`. In this
-# example numerical instability due to accumulation of enstrophy in high wavenumbers
-# is taken care with the `FilteredTimestepper` we picked. The topophic PV is prescribed
-# via keyword argument `eta`.
-prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, eta=topographicPV, dt=dt, stepper=stepper)
+# We initialize a `Problem` by providing a set of keyword arguments. Not providing a viscosity 
+# coefficient `ν` leads to the module's default value: `ν=0`. In this example numerical instability 
+# due to accumulation of enstrophy in high wavenumbers is taken care with the `FilteredTimestepper` 
+# we picked. Thus, we choose not to do any dealiasing by providing `aliased_fraction=0`.
+#
+# The topophic PV is prescribed via keyword argument `eta`.
+prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, eta=topographicPV,
+                                  dt=dt, stepper=stepper, aliased_fraction=0)
 nothing # hide
 
 # and define some shortcuts

@@ -1,6 +1,6 @@
 # # Decaying barotropic QG beta-plane turbulence
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betadecay.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/singlelayerqg_betadecay.ipynb).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence on a beta plane.
 #
@@ -45,11 +45,13 @@ L = 2π        # domain size
 nothing # hide
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments. Not providing
-# a viscosity coefficient `ν` leads to the module's default value: `ν=0`. In this
-# example numerical instability due to accumulation of enstrophy at high wavenumbers
-# is taken care with the `FilteredTimestepper` we picked. 
-prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper)
+# We initialize a `Problem` by providing a set of keyword arguments. Not providing a viscosity 
+# coefficient `ν` leads to the module's default value: `ν=0`. In this example numerical instability 
+# due to accumulation of enstrophy at high wavenumbers is taken care with the `FilteredTimestepper` 
+# we picked. Thus, we choose not to do any dealiasing by providing `aliased_fraction=0`.
+
+prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ,
+                                  dt=dt, stepper=stepper, aliased_fraction=0)
 nothing # hide
 
 # and define some shortcuts

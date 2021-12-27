@@ -1,6 +1,6 @@
 # # SingleLayerQG decaying 2D turbulence with and without finite Rossby radius of deformation
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_decaying_barotropic_equivalentbarotropic.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/singlelayerqg_decaying_barotropic_equivalentbarotropic.ipynb).
 #
 # We use here the `SingleLayerQG` module to simulate decaying two-dimensional turbulence and
 # investigate how does a finite Rossby radius of deformation affects its evolution.
@@ -48,8 +48,10 @@ nothing # hide
 # We initialize two problems by providing a set of keyword arguments to the `Problem` constructor.
 # The two problems are otherwise the same, except one has an infinite deformation radius, `prob_bqg`,
 # and the other has finite deformation radius, `prob_eqbqg`.
-prob_bqg = SingleLayerQG.Problem(dev; nx=n, Lx=L, dt=dt, stepper="FilteredRK4")
-prob_eqbqg = SingleLayerQG.Problem(dev; nx=n, Lx=L, deformation_radius = deformation_radius, dt=dt, stepper="FilteredRK4")
+prob_bqg = SingleLayerQG.Problem(dev; nx=n, Lx=L,
+                                      dt=dt, stepper="FilteredRK4", aliased_fraction=0)
+prob_eqbqg = SingleLayerQG.Problem(dev; nx=n, Lx=L, deformation_radius = deformation_radius,
+                                      dt=dt, stepper="FilteredRK4", aliased_fraction=0)
 nothing # hide
 
 

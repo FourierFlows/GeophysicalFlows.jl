@@ -2,7 +2,6 @@ using
   GeophysicalFlows,
   Statistics,
   Random,
-  FFTW,
   Test
 
 import # use 'import' rather than 'using' for submodules to keep namespace clean
@@ -23,7 +22,6 @@ const rtol_twodnavierstokes = 1e-13 # tolerance for twodnavierstokes forcing tes
 const rtol_singlelayerqg = 1e-13 # tolerance for singlelayerqg forcing tests
 const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
 const rtol_surfaceqg = 1e-13 # tolerance for surfaceqg forcing tests
-
 
 # Run tests
 testtime = @elapsed begin

@@ -1,6 +1,6 @@
 # # Phillips model of Baroclinic Instability
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/multilayerqg_2layer.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/multilayerqg_2layer.ipynb).
 #
 # A simulation of the growth of barolinic instability in the Phillips 2-layer model
 # when we impose a vertical mean flow shear as a difference ``\Delta U`` in the
@@ -33,16 +33,16 @@ nothing # hide
 
 n = 128                  # 2D resolution = n²
 stepper = "FilteredRK4"  # timestepper
-     dt = 6e-3           # timestep
- nsteps = 7000           # total number of time-steps
- nsubs  = 25             # number of time-steps for plotting (nsteps must be multiple of nsubs)
+     dt = 2.5e-3         # timestep
+ nsteps = 20000          # total number of time-steps
+ nsubs  = 50             # number of time-steps for plotting (nsteps must be multiple of nsubs)
 nothing # hide
 
 
 # ## Physical parameters
- L = 2π                  # domain size
- μ = 5e-2                # bottom drag
- β = 5                   # the y-gradient of planetary PV
+L = 2π                   # domain size
+μ = 5e-2                 # bottom drag
+β = 5                    # the y-gradient of planetary PV
  
 nlayers = 2              # number of layers
 f₀, g = 1, 1             # Coriolis parameter and gravitational constant
@@ -56,8 +56,11 @@ nothing # hide
 
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments,
-prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ, U=U, dt=dt, stepper=stepper, μ=μ, β=β)
+# We initialize a `Problem` by providing a set of keyword arguments. In this example we don't
+# do any dealiasing to our solution by providing `aliased_fraction=0`.
+prob = MultiLayerQG.Problem(nlayers, dev;
+                            nx=n, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ, U=U, μ=μ, β=β,
+                            dt=dt, stepper=stepper, aliased_fraction=0)
 nothing # hide
 
 # and define some shortcuts.
@@ -68,15 +71,16 @@ nothing # hide
 
 # ## Setting initial conditions
 
-# Our initial condition is some small amplitude random noise. We smooth our initial
+# Our initial condition is some small-amplitude random noise. We smooth our initial
 # condidtion using the `timestepper`'s high-wavenumber `filter`.
+#
 # `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
 # `dev = CPU()` and `CuArray` for `dev = GPU()`.
 
 seed!(1234) # reset of the random number generator for reproducibility
-q₀  = 4e-3 * ArrayType(dev)(randn((grid.nx, grid.ny, nlayers)))
-q₀h = prob.timestepper.filter .* rfft(q₀, (1, 2)) # only apply rfft in dims=1, 2
-q₀  = irfft(q₀h, grid.nx, (1, 2)) # only apply irfft in dims=1, 2
+q₀  = 1e-2 * ArrayType(dev)(randn((grid.nx, grid.ny, nlayers)))
+q₀h = prob.timestepper.filter .* rfft(q₀, (1, 2)) # apply rfft  only in dims=1, 2
+q₀  = irfft(q₀h, grid.nx, (1, 2))                 # apply irfft only in dims=1, 2
 
 MultiLayerQG.set_q!(prob, q₀)
 nothing # hide
@@ -167,14 +171,14 @@ function plot_output(prob)
   end
 
   plot!(p[3], 2,
-             label = ["KE1" "KE2"],
+             label = ["KE₁" "KE₂"],
             legend = :bottomright,
          linewidth = 2,
              alpha = 0.7,
              xlims = (-0.1, 2.35),
-             ylims = (5e-10, 1e0),
+             ylims = (1e-9, 1e0),
             yscale = :log10,
-            yticks = 10.0.^(-9:2:0),
+            yticks = 10.0.^(-9:0),
             xlabel = "μt")
           
   plot!(p[6], 1,
@@ -184,9 +188,9 @@ function plot_output(prob)
          linewidth = 2,
              alpha = 0.7,
              xlims = (-0.1, 2.35),
-             ylims = (1e-10, 1e0),
+             ylims = (1e-9, 1e0),
             yscale = :log10,
-            yticks = 10.0.^(-10:2:0),
+            yticks = 10.0.^(-9:0),
             xlabel = "μt")
 
 end
@@ -205,7 +209,7 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
   if j % (1000 / nsubs) == 0
     cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
     
-    log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, KE1: %.3e, KE2: %.3e, PE: %.3e, walltime: %.2f min", clock.step, clock.t, cfl, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
+    log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, KE₁: %.3e, KE₂: %.3e, PE: %.3e, walltime: %.2f min", clock.step, clock.t, cfl, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
 
     println(log)
   end
