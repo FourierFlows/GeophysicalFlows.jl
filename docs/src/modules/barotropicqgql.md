@@ -3,8 +3,9 @@
 ### Basic Equations
 
 This module solves the *quasi-linear* quasi-geostrophic barotropic vorticity equation on a beta 
-plane of variable fluid depth ``H - h(x, y)``. Quasi-linear refers to the dynamics that *neglect* 
-the eddy--eddy interactions in the eddy evolution equation after an eddy--mean flow decomposition, e.g., 
+plane of variable fluid depth ``H - h(x, y)``. Quasi-linear refers to the dynamics that *neglects* 
+the eddy--eddy interactions in the eddy evolution equation after an eddy--mean flow decomposition, 
+e.g., 
 
 ```math
 \phi(x, y, t) = \overline{\phi}(y, t) + \phi'(x, y, t) ,
@@ -32,21 +33,19 @@ above, the QGPV dynamics are:
 
 ```math
 \begin{aligned}
-\partial_t \overline{\zeta} & + \mathsf{J}(\overline{\psi}, \underbrace{\overline{\zeta} + \overline{\eta}}_{\equiv \overline{q}}) + \overline{\mathsf{J}(\psi', \underbrace{\zeta' + \eta'}_{\equiv q'})} = \underbrace{- \left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
-\right] \overline{\zeta} }_{\textrm{dissipation}} , \\
-\partial_t \zeta' &+ \mathsf{J}(\psi', \overline{q}) + \mathsf{J}(\overline{\psi}, q') + \underbrace{\mathsf{J}(\psi', q') - \overline{\mathsf{J}(\psi', q')}}_{\textrm{EENL}} + 
-\beta \partial_x \psi' = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
-\right] \zeta'}_{\textrm{dissipation}} + F .
+	\partial_t \overline{\zeta} + \mathsf{J}(\overline{\psi}, \overline{\zeta} + \overline{\eta}) + \overline{\mathsf{J}(\psi', \zeta' + \eta')} & = \underbrace{- \left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
+	\right] \overline{\zeta} }_{\textrm{dissipation}} , \\
+	\partial_t \zeta'  + \mathsf{J}(\psi', \overline{\zeta} + \overline{\eta}) + \mathsf{J}(\overline{\psi}, \zeta' + \eta') + & \underbrace{\mathsf{J}(\psi', \zeta' + \eta') - \overline{\mathsf{J}(\psi', \zeta' + \eta')}}_{\textrm{EENL}} + \beta \partial_x \psi' = \\
+	& = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] \zeta'}_{\textrm{dissipation}} + F .
 \end{aligned}
 ```
 
 where ``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b) - (\partial_y a)(\partial_x b)``. On 
 the right hand side, ``F(x, y, t)`` is forcing (which is assumed to have zero zonal mean, 
 ``\overline{F} = 0``), ``\mu`` is linear drag, and ``\nu`` is hyperviscosity. Plain old 
-viscosity corresponds to ``n_{\nu} = 1``. The sum of relative vorticity and topographic PV is 
-denoted with ``q \equiv \zeta + \eta``.
+viscosity corresponds to ``n_{\nu} = 1``.
 
-*Quasi-linear* dynamics **neglect the term eddy-eddy nonlinearity (EENL) term** above.
+*Quasi-linear* dynamics **neglects the term eddy-eddy nonlinearity (EENL) term** above.
 
 
 ### Implementation
@@ -54,14 +53,14 @@ denoted with ``q \equiv \zeta + \eta``.
 The equation is time-stepped forward in Fourier space:
 
 ```math
-\partial_t \widehat{\zeta} = - \widehat{\mathsf{J}(\psi, q)}^{\textrm{QL}} + \beta \frac{i k_x}{|𝐤|^2} \widehat{\zeta} - \left ( \mu + \nu |𝐤|^{2n_\nu} \right ) \widehat{\zeta} + \widehat{F} .
+\partial_t \widehat{\zeta} = - \widehat{\mathsf{J}(\psi, \zeta + \eta)}^{\textrm{QL}} + \beta \frac{i k_x}{|𝐤|^2} \widehat{\zeta} - \left ( \mu + \nu |𝐤|^{2n_\nu} \right ) \widehat{\zeta} + \widehat{F} .
 ```
 
 The state variable `sol` is the Fourier transform of vorticity, [`ζh`](@ref GeophysicalFlows.BarotropicQGQL.Vars).
 
-The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) = \partial_y [ (\partial_x f) g] 
-- \partial_x [ (\partial_y f) g]``. The superscript QL on the Jacobian term above denotes that 
-triad interactions that correspond to the EENL term are removed.
+The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) = \partial_y 
+[ (\partial_x f) g] - \partial_x [ (\partial_y f) g]``. The superscript QL on the Jacobian term 
+above denotes that triad interactions that correspond to the EENL term are removed.
 
 The linear operator is constructed in `Equation`
 
@@ -116,4 +115,4 @@ Other diagnostic include: [`dissipation`](@ref GeophysicalFlows.BarotropicQGQL.d
 
 ## Examples
 
-- [`examples/barotropicqgql_betaforced.jl`](../generated/barotropicqgql_betaforced/): A script that simulates forced-dissipative quasi-linear quasi-geostrophic flow on a beta plane demonstrating zonation. The forcing is temporally delta-correlated and its spatial structure is isotropic with power in a narrow annulus of total radius ``k_f`` in wavenumber space. This example demonstrates that the anisotropic inverse energy cascade is not required for zonation.
+- [`examples/barotropicqgql_betaforced.jl`](../../literated/barotropicqgql_betaforced/): A script that simulates forced-dissipative quasi-linear quasi-geostrophic flow on a beta plane demonstrating zonation. The forcing is temporally delta-correlated and its spatial structure is isotropic with power in a narrow annulus of total radius ``k_f`` in wavenumber space. This example demonstrates that the anisotropic inverse energy cascade is not required for zonation.

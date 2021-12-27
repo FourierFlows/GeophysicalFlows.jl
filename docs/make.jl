@@ -10,31 +10,31 @@ using
 ENV["GKSwstype"] = "100"
 
 #####
-##### Generate examples
+##### Generate literated examples
 #####
 
 const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
-const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
+const OUTPUT_DIR   = joinpath(@__DIR__, "src/literated")
 
 examples = [
-    "twodnavierstokes_decaying.jl",
-    "twodnavierstokes_stochasticforcing.jl",
-    "twodnavierstokes_stochasticforcing_budgets.jl",
-    "singlelayerqg_betadecay.jl",
-    "singlelayerqg_betaforced.jl",
-    "singlelayerqg_decaying_topography.jl",
-    "singlelayerqg_decaying_barotropic_equivalentbarotropic.jl",
-    "barotropicqgql_betaforced.jl",
-    "multilayerqg_2layer.jl",
-    "surfaceqg_decaying.jl",
+  "twodnavierstokes_decaying.jl",
+  "twodnavierstokes_stochasticforcing.jl",
+  "twodnavierstokes_stochasticforcing_budgets.jl",
+  "singlelayerqg_betadecay.jl",
+  "singlelayerqg_betaforced.jl",
+  "singlelayerqg_decaying_topography.jl",
+  "singlelayerqg_decaying_barotropic_equivalentbarotropic.jl",
+  "barotropicqgql_betaforced.jl",
+  "multilayerqg_2layer.jl",
+  "surfaceqg_decaying.jl",
 ]
 
 for example in examples
   withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
     example_filepath = joinpath(EXAMPLES_DIR, example)
-    Literate.markdown(example_filepath, OUTPUT_DIR, documenter=true)
-    Literate.notebook(example_filepath, OUTPUT_DIR, documenter=true)
-    Literate.script(example_filepath, OUTPUT_DIR, documenter=true)
+    Literate.markdown(example_filepath, OUTPUT_DIR; flavor = Literate.DocumenterFlavor())
+    Literate.notebook(example_filepath, OUTPUT_DIR)
+    Literate.script(example_filepath, OUTPUT_DIR)
   end
 end
 
@@ -63,27 +63,28 @@ sitename = "GeophysicalFlows.jl",
    pages = Any[
             "Home"    => "index.md",
             "Installation instructions" => "installation_instructions.md",
+            "Aliasing" => "aliasing.md",
             "GPU" => "gpu.md",
             "Examples" => [
               "TwoDNavierStokes" => Any[
-                "generated/twodnavierstokes_decaying.md",
-                "generated/twodnavierstokes_stochasticforcing.md",
-                "generated/twodnavierstokes_stochasticforcing_budgets.md",
+                "literated/twodnavierstokes_decaying.md",
+                "literated/twodnavierstokes_stochasticforcing.md",
+                "literated/twodnavierstokes_stochasticforcing_budgets.md",
                 ],
               "SingleLayerQG" => Any[
-                "generated/singlelayerqg_betadecay.md",
-                "generated/singlelayerqg_betaforced.md",
-                "generated/singlelayerqg_decaying_topography.md",
-                "generated/singlelayerqg_decaying_barotropic_equivalentbarotropic.md"
+                "literated/singlelayerqg_betadecay.md",
+                "literated/singlelayerqg_betaforced.md",
+                "literated/singlelayerqg_decaying_topography.md",
+                "literated/singlelayerqg_decaying_barotropic_equivalentbarotropic.md"
                 ],
               "BarotropicQGQL" => Any[
-                "generated/barotropicqgql_betaforced.md",
+                "literated/barotropicqgql_betaforced.md",
                 ],
               "MultiLayerQG" => Any[
-                "generated/multilayerqg_2layer.md"
+                "literated/multilayerqg_2layer.md"
                 ],
               "SurfaceQG" => Any[
-                "generated/surfaceqg_decaying.md"
+                "literated/surfaceqg_decaying.md"
                 ]
             ],
             "Modules" => Any[
@@ -96,15 +97,16 @@ sitename = "GeophysicalFlows.jl",
             "Stochastic Forcing" => "stochastic_forcing.md",
             "Contributor's guide" => "contributing.md",
             "Library" => Any[
-            "lib/types.md",
-            "lib/functions.md"
+              "lib/types.md",
+              "lib/functions.md"
             ]
            ]
 )
 
 withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
   deploydocs(       repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
-                versions = ["stable" => "v^", "v#.#", "dev" => "dev"],
-            push_preview = false
+                versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
+            push_preview = false,
+               devbranch = "main"
             )
 end

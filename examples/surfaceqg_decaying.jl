@@ -1,7 +1,7 @@
 # # Decaying Surface QG turbulence
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/surfaceqg_decaying.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/surfaceqg_decaying.ipynb).
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/literated/surfaceqg_decaying.ipynb).
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/surfaceqg_decaying.ipynb).
 #
 # A simulation of decaying surface quasi-geostrophic turbulence.
 # We reproduce here the initial value problem for an elliptical 
@@ -46,9 +46,9 @@ nothing # hide
 
 # ## Physical parameters
 
-  L = 2π        # domain size
- nν = 4
-  ν = 1e-19
+ L = 2π        # domain size
+ ν = 1e-19     # hyper-viscosity coefficient
+nν = 4         # hyper-viscosity order
 nothing # hide
 
 

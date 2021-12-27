@@ -1,6 +1,6 @@
 # # 2D forced-dissipative turbulence budgets
 #
-#md # This example can viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_stochasticforcing_budgets.ipynb).
+#md # This example can viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/twodnavierstokes_stochasticforcing_budgets.ipynb).
 #
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
@@ -21,8 +21,7 @@
 # Let's load `GeophysicalFlows.jl` and some other needed packages.
 #
 using GeophysicalFlows, Random, Printf, Plots
-using FourierFlows: parsevalsum
-
+parsevalsum = FourierFlows.parsevalsum
 
 # ## Choosing a device: CPU or GPU
 
@@ -61,6 +60,8 @@ grid = TwoDGrid(dev, n, L)
 K = @. sqrt(grid.Krsq)             # a 2D array with the total wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
+@CUDA.allowscalar forcing_spectrum[grid.Krsq .== 0] .= 0 # ensure forcing has zero domain-average
+
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0        # normalize forcing to inject energy at rate ε
 nothing # hide
@@ -78,8 +79,6 @@ random_uniform = dev==CPU() ? rand : CUDA.rand
 
 function calcF!(Fh, sol, t, clock, vars, params, grid) 
   Fh .= sqrt.(forcing_spectrum) .* exp.(2π * im * random_uniform(eltype(grid), size(sol))) ./ sqrt(clock.dt)
-
-  @CUDA.allowscalar Fh[1, 1] = 0 # make sure forcing has zero domain-average
 
   return nothing
 end

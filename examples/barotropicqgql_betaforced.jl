@@ -1,6 +1,6 @@
 # # Quasi-Linear forced-dissipative barotropic QG beta-plane turbulence
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/barotropicqgql_betaforced.ipynb).
+#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/barotropicqgql_betaforced.ipynb).
 #
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane under the *quasi-linear approximation*. The dynamics include 
@@ -17,12 +17,10 @@
 
 # ## Let's begin
 # Let's load `GeophysicalFlows.jl` and some other needed packages.
-#
+
 using GeophysicalFlows, Random, Printf, Plots
-
-using FourierFlows: parsevalsum
 using Statistics: mean
-
+parsevalsum = FourierFlows.parsevalsum
 
 # ## Choosing a device: CPU or GPU
 
@@ -66,6 +64,8 @@ grid = TwoDGrid(dev, n, L)
 K = @. sqrt(grid.Krsq)            # a 2D array with the total wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
+@CUDA.allowscalar forcing_spectrum[grid.Krsq .== 0] .= 0 # ensure forcing has zero domain-average
+
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0       # normalize forcing to inject energy at rate ε
 nothing # hide
@@ -84,20 +84,18 @@ random_uniform = dev==CPU() ? rand : CUDA.rand
 function calcF!(Fh, sol, t, clock, vars, params, grid) 
   Fh .= sqrt.(forcing_spectrum) .* exp.(2π * im * random_uniform(eltype(grid), size(sol))) ./ sqrt(clock.dt)
 
-  @CUDA.allowscalar Fh[1, 1] = 0 # make sure forcing has zero domain-average
-
   return nothing
 end
 nothing # hide
 
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments. Not providing
-# a viscosity coefficient ν leads to the module's default value: ν=0. In this
-# example numerical instability due to accumulation of enstrophy in high wavenumbers
-# is taken care with the `FilteredTimestepper` we picked. 
+# We initialize a `Problem` by providing a set of keyword arguments. Not providing a viscosity 
+# coefficient `ν` leads to the module's default value: `ν=0`. In this example numerical instability 
+# due to accumulation of enstrophy in high wavenumbers is taken care with the `FilteredTimestepper` 
+# we picked. Thus, we choose not to do any dealiasing by providing `aliased_fraction=0`.
 prob = BarotropicQGQL.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper, 
-                              calcF=calcF!, stochastic=true)
+                              calcF=calcF!, stochastic=true, aliased_fraction=0)
 nothing # hide
 
 # and define some shortcuts.
