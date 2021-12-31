@@ -194,7 +194,7 @@ function Equation(dev, params, grid)
   nlayers = numberoflayers(params)
   T = eltype(grid)
   L = ArrayType(dev){T}(undef, (grid.nkr, grid.nl, nlayers))
-  @views @. L[:,:,1] = - params.ν * grid.Krsq^params.nν - params.μ * grid.Krsq^params.nμ - params.β * im * grid.kr * sqrt(grid.invKrsq)
+  @views @. L[:,:,1] = - params.ν * grid.Krsq^params.nν - params.μ * grid.Krsq^params.nμ
   @views @. L[:,:,2:nlayers] = - params.κ * grid.Krsq^params.nκ
   # Need to add diffusivities for different layers
   @views @. L[1, 1, :] = 0
