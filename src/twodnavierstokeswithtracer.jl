@@ -139,7 +139,7 @@ struct Params{T, Trfft} <: AbstractParams
   rfftplan :: Trfft
 end
 
-function Params(ntracers, ν, nν, μ, nμ, κ, nκ, β, grid; calcF=nothingfunction,  effort=FFTW.MEASURE, dev::Device=CPU()) where TU
+function Params(ntracers, ν, nν, μ, nμ, κ, nκ, grid; calcF=nothingfunction,  effort=FFTW.MEASURE, dev::Device=CPU()) where TU
   T = eltype(grid)
   A = ArrayType(dev)
 
@@ -149,7 +149,7 @@ function Params(ntracers, ν, nν, μ, nμ, κ, nκ, β, grid; calcF=nothingfunc
   
   rfftplanlayered = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, ntracers + 1), [1, 2]; flags=effort)
 
-  return Params(ntracers, ν, nν, μ, nμ, κ, nκ, β, calcF, rfftplanlayered)
+  return Params(ntracers, ν, nν, μ, nμ, κ, nκ, calcF, rfftplanlayered)
 end
 
 """
