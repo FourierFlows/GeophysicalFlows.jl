@@ -242,7 +242,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 Return the `vars` for unforced two-dimensional Navier-Stokes problem on device `dev` and
 with `grid`.
 """
-function DecayingVars(::Dev, grid::AbstractGrid) where Dev
+function DecayingVars(::Dev, grid::AbstractGrid, params) where Dev
   nlayers = numberoflayers(params)
   T = eltype(grid)
 
@@ -259,7 +259,7 @@ end
 
 Return the `vars` for forced two-dimensional Navier-Stokes on device `dev` and with `grid`.
 """
-function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function ForcedVars(dev::Dev, grid::AbstractGrid, params) where Dev
   nlayers = numberoflayers(params)
   T = eltype(grid)
 
@@ -277,7 +277,7 @@ end
 Return the `vars` for stochastically forced two-dimensional Navier-Stokes on device `dev` and
 with `grid`.
 """
-function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function StochasticForcedVars(dev::Dev, grid::AbstractGrid, params) where Dev
   nlayers = numberoflayers(params)
   T = eltype(grid)
 
