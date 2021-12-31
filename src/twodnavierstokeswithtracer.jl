@@ -312,8 +312,8 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.ζh = sol
 
   for j in 1:nlayers
-    @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol[:, :, 1]
-    @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol[:, :, 1]
+    @. vars.uh =   im * grid.l  * grid.invKrsq * sol[:, :, 1]
+    @. vars.vh = - im * grid.kr * grid.invKrsq * sol[:, :, 1]
     ldiv!(vars.u, grid.rfftplan, vars.ζh[:, :, j])
     vars.ζ[:, : ,j] = vars.u
     ldiv!(vars.u, grid.rfftplan, vars.uh)
