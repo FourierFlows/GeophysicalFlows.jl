@@ -411,7 +411,6 @@ Set the first solution layer `sol[:,:,1]` as the transform of `ζ` and lower lay
 Then update variables in `vars`.
 """
 function set_ζ_and_tracers!(prob, ζ, tracers)
-  mul!(prob.sol, prob.grid.rfftplan, ζ)
   full_ζ = cat(ζ, tracers, dims=3)     # append b and tracers for use in sol
   fwdtransform!(prob.sol, full_ζ, prob.params)
   @views CUDA.@allowscalar prob.sol[1, 1, 1] = 0 # zero domain average
