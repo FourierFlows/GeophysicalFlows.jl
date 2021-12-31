@@ -80,9 +80,9 @@ function Problem(ntracers::Int,       # number of tracers
                 Lx = 2π,
                 Ly = Lx,
   # Drag and/or hyper-/hypo-viscosity
-                 ν = 0,
+                 ν = 0.0,
                 nν = 1,
-                 μ = 0,
+                 μ = 0.0,
                 nμ = 0,
                  κ = 0.0,
                 nκ = 0,
