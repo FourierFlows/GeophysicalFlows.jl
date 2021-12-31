@@ -283,8 +283,8 @@ function StochasticForcedVars(dev::Dev, grid::AbstractGrid, params) where Dev
 
   @devzeros Dev T (grid.nx, grid.ny, nlayers) ζ
   @devzeros Dev T (grid.nx, grid.ny) u v
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl, nlayers) ζh 
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) uh vh Fh prevsol
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl, nlayers) ζh prevsol
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) uh vh Fh
 
   return Vars(ζ, u, v, ζh, uh, vh, Fh, prevsol)
 end
@@ -359,12 +359,13 @@ end
 When the problem includes forcing, calculate the forcing term ``F̂`` and add it to the
 nonlinear term ``N``.
 """
-addforcing!(N, sol, t, clock, vars::DecayingVars, params, grid) = nothing
+#addforcing!(N, sol, t, clock, vars::DecayingVars, params, grid) = nothing
 
-function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
-  params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
-
-  @views @. N[:, :, 1] += vars.Fh 
+function addforcing!(N, sol, t, clock, vars::Vars, params, grid)
+  if !isnothing(vars.Fh) # Ignore if there is no forcing
+    params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
+    @views @. N[:, :, 1] += vars.Fh 
+  end
 
   return nothing
 end
