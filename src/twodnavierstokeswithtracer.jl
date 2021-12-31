@@ -1,6 +1,8 @@
-module TwoDNavierStokes
+module TwoDNavierStokesTracer
 
 export
+  fwdtransform!,
+  invtransform!,
   Problem,
   set_ζ!,
   updatevars!,
@@ -15,6 +17,7 @@ export
   enstrophy_work
 
 using
+  FFTW,
   CUDA,
   Reexport,
   DocStringExtensions
@@ -22,12 +25,13 @@ using
 @reexport using FourierFlows
 
 using LinearAlgebra: mul!, ldiv!
-using FourierFlows: parsevalsum
+using FourierFlows: parsevalsum, plan_flows_rfft
 
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev::Device=CPU();
+    Problem(ntracers::Int,
+              dev::Device=CPU();
                 nx = 256,
                 ny = nx,
                 Lx = 2π,
@@ -36,6 +40,8 @@ nothingfunction(args...) = nothing
                 nν = 1,
                  μ = 0,
                 nμ = 0,
+                 κ = 0,
+                nκ = 1,
                 dt = 0.01,
            stepper = "RK4",
              calcF = nothingfunction,
@@ -43,10 +49,11 @@ nothingfunction(args...) = nothing
   aliased_fraction = 1/3,
                  T = Float64)
 
-Construct a two-dimensional Navier-Stokes `problem` on device `dev`.
+Construct a two-dimensional Navier-Stokes with tracers `problem` on device `dev`.
 
 Keyword arguments
 =================
+  - `ntracers`: (required) Number of tracers.
   - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
   - `nx`: Number of grid points in ``x``-domain.
   - `ny`: Number of grid points in ``y``-domain.
@@ -56,6 +63,8 @@ Keyword arguments
   - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
   - `μ`: Large-scale (hypo)-viscosity coefficient.
   - `nμ`: (Hypo)-viscosity order, `nμ```≤ 0``.
+  - `κ`: Small-scale diffusivity coefficient.
+  - `nκ`: Diffusivity order, `nκ```≥ 1``.
   - `dt`: Time-step.
   - `stepper`: Time-stepping method.
   - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
@@ -63,7 +72,8 @@ Keyword arguments
   - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
   - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
-function Problem(dev::Device=CPU();
+function Problem(ntracers::Int,       # number of tracers
+                dev::Device=CPU();
   # Numerical parameters
                 nx = 256,
                 ny = nx,
@@ -74,6 +84,8 @@ function Problem(dev::Device=CPU();
                 nν = 1,
                  μ = 0,
                 nμ = 0,
+                 κ = 0.0,
+                nκ = 0,
   # Timestepper and equation options
                 dt = 0.01,
            stepper = "RK4",
@@ -85,11 +97,11 @@ function Problem(dev::Device=CPU();
 
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T=T)
 
-  params = Params{T}(ν, nν, μ, nμ, calcF)
+  params = Params{T}(ν, nν, μ, nμ, κ, nκ, calcF)
 
-  vars = calcF == nothingfunction ? DecayingVars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
+  vars = calcF == nothingfunction ? DecayingVars(dev, grid, params) : (stochastic ? StochasticForcedVars(dev, grid, params) : ForcedVars(dev, grid, params))
 
-  equation = Equation(params, grid)
+  equation = Equation(dev, params, grid)
 
   return FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end
@@ -100,13 +112,15 @@ end
 # ----------
 
 """
-    Params{T}(ν, nν, μ, nμ, calcF!)
+    Params{T}(ν, nν, μ, nμ, κ, nκ calcF!)
 
-A struct containing the parameters for the two-dimensional Navier-Stokes. Included are:
+A struct containing the parameters for the two-dimensional Navier-Stokes with tracers. Included are:
 
 $(TYPEDFIELDS)
 """
-struct Params{T} <: AbstractParams
+struct Params{T, Trfft} <: AbstractParams
+    "number of tracers"
+       ntracers :: Int
     "small-scale (hyper)-viscosity coefficient"
        ν :: T
     "(hyper)-viscosity order, `nν```≥ 1``"
@@ -115,45 +129,82 @@ struct Params{T} <: AbstractParams
        μ :: T
     "(hypo)-viscosity order, `nμ```≤ 0``"
       nμ :: Int
+    "tracer diffusivity coefficient"
+       κ :: T
+   "tracer diffusivity order"
+      nκ :: Int
     "function that calculates the Fourier transform of the forcing, ``F̂``"
-  calcF! :: Function
+      calcF! :: Function
+    "rfft plan for FFTs (Derived parameter)"
+  rfftplan :: Trfft
 end
 
-Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
+function Params(ntracers, ν, nν, μ, nμ, κ, nκ, β, grid; calcF=nothingfunction,  effort=FFTW.MEASURE, dev::Device=CPU()) where TU
+  T = eltype(grid)
+  A = ArrayType(dev)
+
+   ny, nx = grid.ny , grid.nx
+  nkr, nl = grid.nkr, grid.nl
+   kr, l  = grid.kr , grid.l
+  
+  rfftplanlayered = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, ntracers + 1), [1, 2]; flags=effort)
+
+  return Params(ntracers, ν, nν, μ, nμ, κ, nκ, β, calcF, rfftplanlayered)
+end
+
+"""
+    fwdtransform!(varh, var, params)
+Compute the Fourier transform of `var` and store it in `varh`.
+"""
+fwdtransform!(varh, var, params::AbstractParams) = mul!(varh, params.rfftplan, var)
+
+"""
+    invtransform!(var, varh, params)
+Compute the inverse Fourier transform of `varh` and store it in `var`.
+"""
+invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, varh)
 
 
 # ---------
 # Equations
 # ---------
 
+"Create a variable for number of layers. First layer describes motion, the other layers are tracers."
+numberoflayers(params) = params.ntracers + 1
+
 """
-    Equation(params, grid)
-
-Return the `equation` for two-dimensional Navier-Stokes with `params` and `grid`. The linear
-operator ``L`` includes (hyper)-viscosity of order ``n_ν`` with coefficient ``ν`` and
-hypo-viscocity of order ``n_μ`` with coefficient ``μ``,
-
-```math
-L = - ν |𝐤|^{2 n_ν} - μ |𝐤|^{2 n_μ} .
-```
-
-Plain old viscocity corresponds to ``n_ν=1`` while ``n_μ=0`` corresponds to linear drag.
-
-The nonlinear term is computed via the function `calcN!`.
+    Equation(dev, params, grid)
+    Return the `equation` for two-dimensional dynamics and the `equations`` for tracer evolution under these dynamics,
+    using `params` and `grid`. The first layer of the linear operator ``L`` describes the dynamics and 
+    includes (hyper)-viscosity of order ``n_ν`` with coefficient ``ν`` and hypo-viscocity of order ``n_μ`` 
+    with coefficient ``μ``. The second layer onwards of ``L`` describe the tracer diffusion of order ``n_κ``
+    with coefficient ``κ``.
+    
+    ```math
+    L[:, :, 1] = - ν |𝐤|^{2 n_ν} - μ |𝐤|^{2 n_μ} .
+    ```
+    ```math
+    L[:, :, 2:ntracers+1] = - κ |𝐤|^{2 n_κ}.
+    ```
+  Plain old viscocity corresponds to ``n_ν=1`` while ``n_μ=0`` corresponds to linear drag.
+  The nonlinear term is computed via function `calcN!()`.
 """
-function Equation(params::Params, grid::AbstractGrid)
-  L = @. - params.ν * grid.Krsq^params.nν - params.μ * grid.Krsq^params.nμ
-  CUDA.@allowscalar L[1, 1] = 0
-
+function Equation(dev, params, grid)
+  #L = hyperviscosity(dev, params, grid)
+  nlayers = numberoflayers(params)
+  T = eltype(grid)
+  L = ArrayType(dev){T}(undef, (grid.nkr, grid.nl, nlayers))
+  @views @. L[:,:,1] = - params.ν * grid.Krsq^params.nν - params.μ * grid.Krsq^params.nμ - params.β * im * grid.kr * sqrt(grid.invKrsq)
+  @views @. L[:,:,2:nlayers] = - params.κ * grid.Krsq^params.nκ
+  # Need to add diffusivities for different layers
+  @views @. L[1, 1, :] = 0
+  
   return FourierFlows.Equation(L, calcN!, grid)
 end
-
 
 # ----
 # Vars
 # ----
-
-abstract type TwoDNavierStokesVars <: AbstractVars end
 
 """
     Vars{Aphys, Atrans, F, P}(ζ, u, v, ζh, uh, vh, Fh, prevsol)
@@ -162,15 +213,15 @@ The variables for two-dimensional Navier-Stokes:
 
 $(FIELDS)
 """
-struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
-    "relative vorticity"
-        ζ :: Aphys
+struct Vars{Aphys3D, Aphys, Atrans3D, Atrans, F, P} <: AbstractVars
+    "relative vorticity ([:, :, 1] layer) and tracers (other layers)"
+        ζ :: Aphys3D
     "x-component of velocity"
         u :: Aphys
     "y-component of velocity"
         v :: Aphys
-    "Fourier transform of relative vorticity"
-       ζh :: Atrans
+    "Fourier transform of relative vorticity ([:, :, 1] layer) and tracers (other layers)"
+       ζh :: Atrans3D
     "Fourier transform of x-component of velocity"
        uh :: Atrans
     "Fourier transform of y-component of velocity"
@@ -192,10 +243,13 @@ Return the `vars` for unforced two-dimensional Navier-Stokes problem on device `
 with `grid`.
 """
 function DecayingVars(::Dev, grid::AbstractGrid) where Dev
+  nlayers = numberoflayers(params)
   T = eltype(grid)
 
-  @devzeros Dev T (grid.nx, grid.ny) ζ u v
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) ζh uh vh
+  @devzeros Dev T (grid.nx, grid.ny, nlayers) ζ
+  @devzeros Dev T (grid.nx, grid.ny) u v
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl, nlayers) ζh
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) uh vh
 
   return Vars(ζ, u, v, ζh, uh, vh, nothing, nothing)
 end
@@ -206,10 +260,13 @@ end
 Return the `vars` for forced two-dimensional Navier-Stokes on device `dev` and with `grid`.
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+  nlayers = numberoflayers(params)
   T = eltype(grid)
 
-  @devzeros Dev T (grid.nx, grid.ny) ζ u v
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) ζh uh vh Fh
+  @devzeros Dev T (grid.nx, grid.ny, nlayers) ζ
+  @devzeros Dev T (grid.nx, grid.ny) u v
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl, nlayers) ζh
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) uh vh Fh
 
   return Vars(ζ, u, v, ζh, uh, vh, Fh, nothing)
 end
@@ -221,10 +278,13 @@ Return the `vars` for stochastically forced two-dimensional Navier-Stokes on dev
 with `grid`.
 """
 function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+  nlayers = numberoflayers(params)
   T = eltype(grid)
 
-  @devzeros Dev T (grid.nx, grid.ny) ζ u v
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) ζh uh vh Fh prevsol
+  @devzeros Dev T (grid.nx, grid.ny, nlayers) ζ
+  @devzeros Dev T (grid.nx, grid.ny) u v
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl, nlayers) ζh 
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) uh vh Fh prevsol
 
   return Vars(ζ, u, v, ζh, uh, vh, Fh, prevsol)
 end
@@ -243,27 +303,33 @@ i.e., ``- ∂_x[(∂_y ψ)ζ] - ∂_y[(∂_x ψ)ζ]`` and store it in `N`:
 ```math
 N = - \\widehat{𝖩(ψ, ζ)} = - i k_x \\widehat{u ζ} - i k_y \\widehat{v ζ} .
 ```
+
+Note the first layer ``N[:, :, 1]`` of this advection term corresponds to advection of vorticity ``ζ``.
+The subsequent layers of ``N[:, :, 2:ntracers+1]`` correspond to advection of the each tracer.
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
-  @. vars.uh =   im * grid.l  * grid.invKrsq * sol
-  @. vars.vh = - im * grid.kr * grid.invKrsq * sol
+  nlayers = numberoflayers(params)
   @. vars.ζh = sol
 
-  ldiv!(vars.u, grid.rfftplan, vars.uh)
-  ldiv!(vars.v, grid.rfftplan, vars.vh)
-  ldiv!(vars.ζ, grid.rfftplan, vars.ζh)
+  for j in 1:nlayers
+    @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol[:, :, 1]
+    @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol[:, :, 1]
+    ldiv!(vars.u, grid.rfftplan, vars.ζh[:, :, j])
+    vars.ζ[:, : ,j] = vars.u
+    ldiv!(vars.u, grid.rfftplan, vars.uh)
+    ldiv!(vars.v, grid.rfftplan, vars.vh)
 
-  uζ = vars.u                  # use vars.u as scratch variable
-  @. uζ *= vars.ζ              # u*ζ
-  vζ = vars.v                  # use vars.v as scratch variable
-  @. vζ *= vars.ζ              # v*ζ
+    uζ, uζh = vars.u, vars.uh         # use vars.u, vars.uh as scratch variables
+    vζ, vζh = vars.v, vars.vh         # use vars.v, vars.vh as scratch variables
 
-  uζh = vars.uh                # use vars.uh as scratch variable
-  mul!(uζh, grid.rfftplan, uζ) # \hat{u*ζ}
-  vζh = vars.vh                # use vars.vh as scratch variable
-  mul!(vζh, grid.rfftplan, vζ) # \hat{v*ζ}
+    @. uζ *= vars.ζ[:, :, j]                   # u*ζ [note u is 2D array and ζ is 3D array]
+    @. vζ *= vars.ζ[:, :, j]                   # v*ζ [note v is 2D array and ζ is 3D array]
 
-  @. N = - im * grid.kr * uζh - im * grid.l * vζh
+    mul!(uζh, grid.rfftplan, uζ) # \hat{u*ζ}
+    mul!(vζh, grid.rfftplan, vζ) # \hat{v*ζ}
+
+    @views @. N[:, :, j] = - im * grid.kr * uζh - im * grid.l * vζh
+  end
 
   return nothing
 end
@@ -298,16 +364,16 @@ addforcing!(N, sol, t, clock, vars::DecayingVars, params, grid) = nothing
 function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
   params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
 
-  @. N += vars.Fh
+  @views @. N[:, :, 1] += vars.Fh 
 
   return nothing
 end
 function addforcing!(N, sol, t, clock, vars::StochasticForcedVars, params, grid)
   if t == clock.t # not a substep
-    @. vars.prevsol = sol # sol at previous time-step is needed to compute budgets for stochastic forcing
+    @. vars.prevsol = sol[:, :, 1] # sol at previous time-step is needed to compute budgets for stochastic forcing
     params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
   end
-  @. N += vars.Fh
+  @views @. N[:, :, 1] += vars.Fh 
 
   return nothing
 end
@@ -328,10 +394,10 @@ function updatevars!(prob)
   dealias!(sol, grid)
   
   @. vars.ζh = sol
-  @. vars.uh =   im * grid.l  * grid.invKrsq * sol
-  @. vars.vh = - im * grid.kr * grid.invKrsq * sol
-
-  ldiv!(vars.ζ, grid.rfftplan, deepcopy(vars.ζh)) # deepcopy() since inverse real-fft destroys its input
+  @. vars.uh =   im * grid.l  * grid.invKrsq * sol[:,:,1]
+  @. vars.vh = - im * grid.kr * grid.invKrsq * sol[:,:,1]
+  
+  invtransform!(vars.ζ, deepcopy(vars.ζh), prob.params) # deepcopy() since inverse real-fft destroys its input
   ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh)) # deepcopy() since inverse real-fft destroys its input
   ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh)) # deepcopy() since inverse real-fft destroys its input
 
@@ -339,14 +405,16 @@ function updatevars!(prob)
 end
 
 """
-    set_ζ!(prob, ζ)
+    set_ζ_and_tracers!(prob, ζ)
 
-Set the solution `sol` as the transform of `ζ` and then update variables in `vars`.
+Set the first solution layer `sol[:,:,1]` as the transform of `ζ` and lower layers as transform of `tracers`.
+Then update variables in `vars`.
 """
-function set_ζ!(prob, ζ)
+function set_ζ_and_tracers!(prob, ζ, tracers)
   mul!(prob.sol, prob.grid.rfftplan, ζ)
-
-  CUDA.@allowscalar prob.sol[1, 1] = 0 # enforce zero domain average
+  full_ζ = cat(ζ, tracers, dims=3)     # append b and tracers for use in sol
+  fwdtransform!(prob.sol, full_ζ, prob.params)
+  @views CUDA.@allowscalar prob.sol[1, 1, 1] = 0 # zero domain average
 
   updatevars!(prob)
 
@@ -367,7 +435,7 @@ kinetic energy is
   sol, vars, grid = prob.sol, prob.vars, prob.grid
   energyh = vars.uh # use vars.uh as scratch variable
 
-  @. energyh = 1 / 2 * grid.invKrsq * abs2(sol)
+  @. energyh = 1 / 2 * grid.invKrsq * abs2(sol[:,:,1])
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energyh, grid)
 end
 
@@ -382,7 +450,7 @@ Returns the domain-averaged enstrophy,
 """
 @inline function enstrophy(prob)
   sol, grid = prob.sol, prob.grid
-  return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs2.(sol), grid)
+  return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs2.(sol[:,:,1]), grid)
 end
 
 """
@@ -400,7 +468,7 @@ where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`
   sol, vars, grid = prob.sol, prob.vars, prob.grid
   energy_dissipationh = vars.uh # use vars.uh as scratch variable
 
-  @. energy_dissipationh = - ξ * grid.Krsq^(nξ - 1) * abs2(sol)
+  @. energy_dissipationh = - ξ * grid.Krsq^(nξ - 1) * abs2(sol[:,:,1])
   CUDA.@allowscalar energy_dissipationh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_dissipationh, grid)
 end
@@ -435,7 +503,7 @@ where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`
   sol, vars, grid = prob.sol, prob.vars, prob.grid
   enstrophy_dissipationh = vars.uh # use vars.uh as scratch variable
 
-  @. enstrophy_dissipationh = - ξ * grid.Krsq^nξ * abs2(sol)
+  @. enstrophy_dissipationh = - ξ * grid.Krsq^nξ * abs2(sol[:,:,1])
   CUDA.@allowscalar enstrophy_dissipationh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_dissipationh, grid)
 end
@@ -467,14 +535,14 @@ Return the domain-averaged rate of work of energy by the forcing ``F``,
 @inline function energy_work(sol, vars::ForcedVars, grid)
   energy_workh = vars.uh # use vars.uh as scratch variable
 
-  @. energy_workh = grid.invKrsq * sol * conj(vars.Fh)
+  @. energy_workh = grid.invKrsq * sol[:,:,1] * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_workh, grid)
 end
 
 @inline function energy_work(sol, vars::StochasticForcedVars, grid)
   energy_workh = vars.uh # use vars.uh as scratch variable
 
-  @. energy_workh = grid.invKrsq * (vars.prevsol + sol) / 2 * conj(vars.Fh)
+  @. energy_workh = grid.invKrsq * (vars.prevsol + sol[:,:,1]) / 2 * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_workh, grid)
 end
 
@@ -493,14 +561,14 @@ Return the domain-averaged rate of work of enstrophy by the forcing ``F``,
 @inline function enstrophy_work(sol, vars::ForcedVars, grid)
   enstrophy_workh = vars.uh # use vars.uh as scratch variable
 
-  @. enstrophy_workh = sol * conj(vars.Fh)
+  @. enstrophy_workh = sol[:,:,1] * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_workh, grid)
 end
 
 @inline function enstrophy_work(sol, vars::StochasticForcedVars, grid)
   enstrophy_workh = vars.uh # use vars.uh as scratch variable
 
-  @. enstrophy_workh = (vars.prevsol + sol) / 2 * conj(vars.Fh)
+  @. enstrophy_workh = (vars.prevsol + sol[:,:,1]) / 2 * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_workh, grid)
 end
 
