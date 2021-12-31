@@ -97,7 +97,7 @@ function Problem(ntracers::Int,       # number of tracers
 
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T=T)
 
-  params = Params{T}(ν, nν, μ, nμ, κ, nκ, calcF)
+  params = Params(ntracers, ν, nν, μ, nμ, κ, nκ, β, grid; calcF, dev)
 
   vars = calcF == nothingfunction ? DecayingVars(dev, grid, params) : (stochastic ? StochasticForcedVars(dev, grid, params) : ForcedVars(dev, grid, params))
 
