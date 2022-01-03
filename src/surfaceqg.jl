@@ -1,7 +1,7 @@
 module SurfaceQG
 
 export
-  Problem,
+  Problem
   set_b!,
   updatevars!,
 
