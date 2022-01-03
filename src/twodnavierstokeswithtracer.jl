@@ -232,9 +232,9 @@ struct Vars{Aphys3D, Aphys, Atrans3D, Atrans, F, P} <: AbstractVars
   prevsol :: P
 end
 
-const DecayingVars = Vars{<:AbstractArray, <:AbstractArray, Nothing, Nothing}
-const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, Nothing}
-const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
+const DecayingVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray, Nothing, Nothing}
+const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray, Nothing}
+const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
 
 """
     DecayingVars(dev, grid)
