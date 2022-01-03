@@ -1,7 +1,7 @@
 module TwoDNavierStokes
 
 export
-  Problem
+  Problem,
   set_ζ!,
   updatevars!,
 
