@@ -369,15 +369,16 @@ function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
 
   return nothing
 end
-function addforcing!(N, sol, t, clock, vars::StochasticForcedVars, params, grid)
-  if t == clock.t # not a substep
-    @. vars.prevsol = sol[:, :, 1] # sol at previous time-step is needed to compute budgets for stochastic forcing
-    params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
-  end
-  @views @. N[:, :, 1] += vars.Fh 
 
-  return nothing
-end
+# function addforcing!(N, sol, t, clock, vars::StochasticForcedVars, params, grid)
+#   if t == clock.t # not a substep
+#     @. vars.prevsol = sol[:, :, 1] # sol at previous time-step is needed to compute budgets for stochastic forcing
+#     params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
+#   end
+#   @views @. N[:, :, 1] += vars.Fh 
+
+#   return nothing
+# end
 
 
 # ----------------
