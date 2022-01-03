@@ -283,8 +283,8 @@ function StochasticForcedVars(dev::Dev, grid::AbstractGrid, params) where Dev
 
   @devzeros Dev T (grid.nx, grid.ny, nlayers) ζ
   @devzeros Dev T (grid.nx, grid.ny) u v
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl, nlayers) ζh prevsol
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) uh vh Fh
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl, nlayers) ζh
+  @devzeros Dev Complex{T} (grid.nkr, grid.nl) uh vh Fh prevsol
 
   return Vars(ζ, u, v, ζh, uh, vh, Fh, prevsol)
 end
