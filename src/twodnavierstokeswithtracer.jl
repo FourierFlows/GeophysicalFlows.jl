@@ -359,22 +359,22 @@ end
 When the problem includes forcing, calculate the forcing term ``F̂`` and add it to the
 nonlinear term ``N``.
 """
-#addforcing!(N, sol, t, clock, vars::DecayingVars, params, grid) = nothing
+addforcing!(N, sol, t, clock, vars::DecayingVars, params, grid) = nothing
 
-function addforcing!(N, sol, t, clock, vars::Vars, params, grid)
-  if !isnothing(vars.Fh) # Ignore if there is no forcing
+function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
+  #if !isnothing(vars.Fh) # Ignore if there is no forcing
     params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
     @views @. N[:, :, 1] += vars.Fh 
-  end
+  #end
 
   return nothing
 end
 function addforcing!(N, sol, t, clock, vars::StochasticForcedVars, params, grid)
-  #if t == clock.t # not a substep
-  #  @. vars.prevsol = sol[:, :, 1] # sol at previous time-step is needed to compute budgets for stochastic forcing
-  #  params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
-  #end
-  #@views @. N[:, :, 1] += vars.Fh 
+  if t == clock.t # not a substep
+    @. vars.prevsol = sol[:, :, 1] # sol at previous time-step is needed to compute budgets for stochastic forcing
+    params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
+  end
+  @views @. N[:, :, 1] += vars.Fh 
 
   return nothing
 end
