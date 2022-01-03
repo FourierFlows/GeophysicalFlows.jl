@@ -34,6 +34,7 @@ nothing # hide
  n, L  = 256, 2π             # grid resolution and domain length
  ν, nν = 2e-7, 2             # hyperviscosity coefficient and hyperviscosity order
  μ, nμ = 1e-1, 0             # linear drag coefficient
+ κ, nκ = 2e-7, 2
     dt = 0.005               # timestep
 nsteps = 4000                # total number of steps
  nsubs = 20                  # number of steps between each plot
@@ -87,7 +88,7 @@ nothing # hide
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used.
-prob = TwoDNavierStokesTracer.Problem(ntracers, dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper="ETDRK4",
+prob = TwoDNavierStokesTracer.Problem(ntracers, dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, κ=κ, nκ=nκ, dt=dt, stepper="ETDRK4",
                                 calcF=calcF!, stochastic=true)
 nothing # hide
 
