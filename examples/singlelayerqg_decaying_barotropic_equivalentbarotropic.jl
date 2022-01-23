@@ -48,11 +48,11 @@ nothing # hide
 # We initialize two problems by providing a set of keyword arguments to the `Problem` constructor.
 # The two problems are otherwise the same, except one has an infinite deformation radius, `prob_bqg`,
 # and the other has finite deformation radius, `prob_eqbqg`.
-#
-# Not providing a viscosity coefficient `ν` leads to the module's default value: `ν=0`. In this
-# example, numerical instability due to accumulation of enstrophy at high wavenumbers is taken
-# care with the `FilteredTimestepper` we picked. Thus, we choose not to do any dealiasing by
-# providing `aliased_fraction=0`.
+
+# For both problems we use `stepper = "FilteredRK4"`. Filtered timesteppers apply a
+# wavenumber-filter at every time-step that removes enstrophy at high wavenumbers and,
+# thereby, stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
+# Thus, we choose not to do any dealiasing by providing `aliased_fraction=0`.
 
 prob_bqg = SingleLayerQG.Problem(dev; nx=n, Lx=L,
                                       dt=dt, stepper="FilteredRK4", aliased_fraction=0)

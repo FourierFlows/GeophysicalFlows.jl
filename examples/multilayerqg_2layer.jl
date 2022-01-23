@@ -57,9 +57,9 @@ nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments.
-# We use `stepper = "FilteredRK4", which applies a filter at every time-step that
-# removes enstrophy at high wavenumbers and thereby stabilizes the problem,
-# despite that we use the default viscosity coefficient `ν=0`.
+# We use `stepper = "FilteredRK4"`. Filtered timesteppers apply a wavenumber-filter 
+# at every time-step that removes enstrophy at high wavenumbers and, thereby,
+# stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
 
 prob = MultiLayerQG.Problem(nlayers, dev;
                             nx=n, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ, U=U, μ=μ, β=β,
