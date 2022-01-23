@@ -53,9 +53,11 @@ nothing # hide
 
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments. In this
-# example numerical instability due to accumulation of buoyancy variance at high
-# wavenumbers is taken care with the `FilteredTimestepper` we picked.
+# We initialize a `Problem` by providing a set of keyword arguments.
+# We use `stepper = "FilteredRK4"`. Filtered timesteppers apply a wavenumber-filter 
+# at every time-step that removes enstrophy at high wavenumbers and, thereby,
+# stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
+
 prob = SurfaceQG.Problem(dev; nx=n, Lx=L, dt=dt, stepper=stepper, ν=ν, nν=nν)
 nothing # hide
 

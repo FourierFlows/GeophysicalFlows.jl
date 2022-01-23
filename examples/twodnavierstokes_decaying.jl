@@ -43,8 +43,11 @@ nothing # hide
 
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments. The
-# `stepper` keyword defines the time-stepper to be used.
+# We initialize a `Problem` by providing a set of keyword arguments.
+# We use `stepper = "FilteredRK4"`. Filtered timesteppers apply a wavenumber-filter 
+# at every time-step that removes enstrophy at high wavenumbers and, thereby,
+# stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
+
 prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ny=n, Ly=L, dt=dt, stepper="FilteredRK4")
 nothing # hide
 
