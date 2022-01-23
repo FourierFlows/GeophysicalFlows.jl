@@ -91,7 +91,7 @@ nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. Not providing a viscosity 
-# coefficient `ν` leads to the module's default value: `ν=0`. In this example numerical instability 
+# coefficient `ν` leads to the module's default value: `ν=0`. In this example, numerical instability 
 # due to accumulation of enstrophy in high wavenumbers is taken care with the `FilteredTimestepper` 
 # we picked. Thus, we choose not to do any dealiasing by providing `aliased_fraction=0`.
 prob = BarotropicQGQL.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper, 

@@ -54,7 +54,7 @@ nothing # hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. In this
-# example numerical instability due to accumulation of buoyancy variance at high
+# example, numerical instability due to accumulation of buoyancy variance at high
 # wavenumbers is taken care with the `FilteredTimestepper` we picked.
 prob = SurfaceQG.Problem(dev; nx=n, Lx=L, dt=dt, stepper=stepper, ν=ν, nν=nν)
 nothing # hide
