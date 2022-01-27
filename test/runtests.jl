@@ -1,4 +1,5 @@
 using
+  CUDA,
   GeophysicalFlows,
   Statistics,
   Random,
