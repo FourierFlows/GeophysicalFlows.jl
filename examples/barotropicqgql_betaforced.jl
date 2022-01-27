@@ -18,7 +18,7 @@
 # ## Let's begin
 # Let's load `GeophysicalFlows.jl` and some other needed packages.
 
-using GeophysicalFlows, Random, Printf, Plots
+using GeophysicalFlows, CUDA, Random, Printf, Plots
 using Statistics: mean
 parsevalsum = FourierFlows.parsevalsum
 
