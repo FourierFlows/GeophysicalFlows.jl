@@ -14,7 +14,7 @@
 
 # ```julia
 # using Pkg
-# pkg"add GeophysicalFlows, Random, Printf, Plots"
+# pkg"add GeophysicalFlows, CUDA, Random, Printf, Plots"
 # ```
 
 # ## Let's begin
