@@ -12,7 +12,7 @@
 
 # ```julia
 # using Pkg
-# pkg"add GeophysicalFlows, Random, Statistics, Printf, Plots"
+# pkg"add GeophysicalFlows, CUDA, Random, Statistics, Printf, Plots"
 # ```
 
 # ## Let's begin
