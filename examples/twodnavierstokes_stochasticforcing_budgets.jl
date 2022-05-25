@@ -237,7 +237,7 @@ function computetendencies_and_makeplot(prob, diags)
         
   layout = @layout Plots.grid(3, 2)
   
-  pbudgets = plot(p1E, p1Z, p2E, p2Z, p3E, p3Z, layout=layout, size = (900, 1200))
+  pbudgets = plot(p1E, p1Z, p2E, p2Z, p3E, p3Z, layout=layout, size = (800, 1100))
 
   return pζ, pbudgets
 end
@@ -273,6 +273,6 @@ pζ, pbudgets = computetendencies_and_makeplot(prob, diags)
 
 pζ
 
-# And finaly the energy and enstrophy budgets.
+# And finaly, we plot the energy and enstrophy budgets.
 
 pbudgets
