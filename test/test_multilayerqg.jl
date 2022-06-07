@@ -423,7 +423,7 @@ function test_mqg_fluxes(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=
 
   ψ1 = @. cos(k₀*x) * cos(l₀*y) + sin(k₀*x)
   ψ2 = @. cos(k₀*x + π/10) * cos(l₀*y)
-  ψ = zeros(gr.nx, gr.ny, nlayers)
+  ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
   CUDA.@allowscalar @views ψ[:, :, 1] .= ψ1
   CUDA.@allowscalar @views ψ[:, :, 2] .= ψ2
   MultiLayerQG.set_ψ!(prob, ψ)
