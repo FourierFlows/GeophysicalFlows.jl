@@ -80,7 +80,7 @@ function test_pvtofromstreamfunction_2layer(dev::Device=CPU())
   H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
   ρ = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
@@ -97,7 +97,10 @@ function test_pvtofromstreamfunction_2layer(dev::Device=CPU())
   MultiLayerQG.streamfunctionfrompv!(vs.ψh, vs.qh, pr, gr)
   MultiLayerQG.invtransform!(vs.ψ, vs.ψh, pr)
 
-  return isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) && isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) && isapprox(ψ1, vs.ψ[:, :, 1], rtol=rtol_multilayerqg) && isapprox(ψ2, vs.ψ[:, :, 2], rtol=rtol_multilayerqg)
+  return isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) &&
+         isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) &&
+         isapprox(ψ1, vs.ψ[:, :, 1], rtol=rtol_multilayerqg) &&
+         isapprox(ψ2, vs.ψ[:, :, 2], rtol=rtol_multilayerqg)
 end
 
 
@@ -121,7 +124,7 @@ function test_pvtofromstreamfunction_3layer(dev::Device=CPU())
   ρ = [4.0, 5.0, 6.0]    # q2 = Δψ2 + 20ψ1 - 44ψ2 + 24ψ3,
                          # q3 = Δψ3        + 12ψ2 - 12ψ3.
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1, ψ2, ψ3, q1, q2, q3 = constructtestfields_3layer(gr)
@@ -140,7 +143,12 @@ function test_pvtofromstreamfunction_3layer(dev::Device=CPU())
   MultiLayerQG.streamfunctionfrompv!(vs.ψh, vs.qh, pr, gr)
   MultiLayerQG.invtransform!(vs.ψ, vs.ψh, pr)
 
-  return isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) && isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) && isapprox(q3, vs.q[:, :, 3], rtol=rtol_multilayerqg) && isapprox(ψ1, vs.ψ[:, :, 1], rtol=rtol_multilayerqg) && isapprox(ψ2, vs.ψ[:, :, 2], rtol=rtol_multilayerqg) && isapprox(ψ3, vs.ψ[:, :, 3], rtol=rtol_multilayerqg)
+  return isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) &&
+         isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) &&
+         isapprox(q3, vs.q[:, :, 3], rtol=rtol_multilayerqg) &&
+         isapprox(ψ1, vs.ψ[:, :, 1], rtol=rtol_multilayerqg) &&
+         isapprox(ψ2, vs.ψ[:, :, 2], rtol=rtol_multilayerqg) &&
+         isapprox(ψ3, vs.ψ[:, :, 3], rtol=rtol_multilayerqg)
 end
 
 
@@ -154,7 +162,8 @@ the advection terms J(ψn, qn) are non-zero. Next, a forcing Ff is derived such
 that a solution to the problem forced by this Ff is then qf.
 (This solution may not be realized, at least at long times, if it is unstable.)
 """
-function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
+                                     n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   
   A = ArrayType(dev)
 
@@ -211,8 +220,9 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
     nothing
   end
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly,
-   f₀=f₀, g=g, H=H, ρ=ρ, U=U, eta=η, β=β, μ=μ, ν=ν, nν=nν, calcFq=calcFq!, stepper=stepper, dt=dt)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ, U,
+                              eta=η, β, μ, ν, nν, calcFq=calcFq!, stepper, dt)
+
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   qf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
@@ -228,7 +238,8 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2�
   stepforward!(prob, nt)
   MultiLayerQG.updatevars!(prob)
   
-  return isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)		
+  return isapprox(vs.q, qf, rtol=rtol_multilayerqg) &&
+         isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)		
 end
 
 """
@@ -242,7 +253,8 @@ Next, a forcing Ff is derived such that a solution to the problem forced by this
 Ff is then qf. (This solution may not be realized, at least at long times, if it
 is unstable.)
 """
-function test_mqg_linearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+function test_mqg_linearadvection(dt, stepper, dev::Device=CPU();
+                                  n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   
   A = ArrayType(dev)
   
@@ -299,7 +311,9 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, 
     nothing
   end
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly, f₀=f₀, g=g, H=H, ρ=ρ, U=U, eta=η, β=β, μ=μ, ν=ν, nν=nν, calcFq=calcFq!, stepper=stepper, dt=dt, linear=true)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ, U,
+                              eta=η, β, μ, ν, nν, calcFq=calcFq!, stepper, dt, linear=true)
+  
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   qf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
@@ -315,7 +329,8 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, 
   stepforward!(prob, nt)
   MultiLayerQG.updatevars!(prob)
 
-  return isapprox(vs.q, qf, rtol=rtol_multilayerqg) && isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)
+  return isapprox(vs.q, qf, rtol=rtol_multilayerqg) &&
+         isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)
 end
 
 """
@@ -324,7 +339,8 @@ end
 Tests the kinetic (KE) and potential (PE) energies function by constructing a
 2-layer problem and initializing it with a flow field whose KE and PE are known.
 """
-function test_mqg_energies(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+function test_mqg_energies(dev::Device=CPU();
+                           dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 64, 66
   Lx, Ly = 2π, 2π
   gr = TwoDGrid(dev, nx, Lx, ny, Ly)
@@ -337,12 +353,13 @@ function test_mqg_energies(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", 
   H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
   ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly, f₀=f₀, g=g, H=H, ρ=ρ)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ)
+  
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
-  qf = zeros(gr.nx, gr.ny, nlayers)
+  qf = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
   CUDA.@allowscalar @views qf[:, :, 1] .= q1
   CUDA.@allowscalar @views qf[:, :, 2] .= q2
 
@@ -350,10 +367,14 @@ function test_mqg_energies(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", 
 
   KE, PE = MultiLayerQG.energies(prob)
 
-  return isapprox(KE[1], 61/640*1e-6, rtol=rtol_multilayerqg) && isapprox(KE[2], 3*1e-6, rtol=rtol_multilayerqg) && isapprox(PE[1], 1025/1152*1e-6, rtol=rtol_multilayerqg) && MultiLayerQG.addforcing!(prob.timestepper.RHS₁, sol, cl.t, cl, vs, pr, gr)==nothing
+  return isapprox(KE[1], 61/640*1e-6, rtol=rtol_multilayerqg) &&
+         isapprox(KE[2], 3*1e-6, rtol=rtol_multilayerqg) &&
+         isapprox(PE[1], 1025/1152*1e-6, rtol=rtol_multilayerqg) &&
+         MultiLayerQG.addforcing!(prob.timestepper.RHS₁, sol, cl.t, cl, vs, pr, gr)==nothing
 end
 
-function test_mqg_energysinglelayer(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", nlayers=1, μ=0.0, ν=0.0, nν=1)
+function test_mqg_energysinglelayer(dev::Device=CPU();
+                                    dt=0.001, stepper="ForwardEuler", nlayers=1, μ=0.0, ν=0.0, nν=1)
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
   gr = TwoDGrid(dev, nx, Lx, ny, Ly)
@@ -366,7 +387,7 @@ function test_mqg_energysinglelayer(dev::Device=CPU(); dt=0.001, stepper="Forwar
   ψ0 = @. sin(2k₀*x)*cos(2l₀*y) + 2sin(k₀*x)*cos(3l₀*y)
   q0 = @. -((2k₀)^2+(2l₀)^2)*sin(2k₀*x)*cos(2l₀*y) - (k₀^2+(3l₀)^2)*2sin(k₀*x)*cos(3l₀*y)
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper=stepper, U=zeros(ny))
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, Lx, ny, Ly, stepper, U=zeros(ny))
 
   MultiLayerQG.set_q!(prob, reshape(q0, (nx, ny, nlayers)))
 
@@ -396,18 +417,21 @@ function test_mqg_fluxes(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=
   U = zeros(ny, nlayers)
   U[:, 1] = @. sech(gr.y / 0.2)^2
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly, f₀=f₀, g=g, H=H, ρ=ρ, U=U)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ, U)
+
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1 = @. cos(k₀*x) * cos(l₀*y) + sin(k₀*x)
   ψ2 = @. cos(k₀*x + π/10) * cos(l₀*y)
-  ψ = zeros(gr.nx, gr.ny, nlayers)
+  ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
   CUDA.@allowscalar @views ψ[:, :, 1] .= ψ1
   CUDA.@allowscalar @views ψ[:, :, 2] .= ψ2
   MultiLayerQG.set_ψ!(prob, ψ)
   lateralfluxes, verticalfluxes = MultiLayerQG.fluxes(prob)
 
-  return CUDA.@allowscalar isapprox(lateralfluxes[1], 0.00626267, rtol=1e-6) && CUDA.@allowscalar isapprox(lateralfluxes[2], 0, atol=1e-12) && CUDA.@allowscalar isapprox(verticalfluxes[1], -0.196539, rtol=1e-6)
+  return CUDA.@allowscalar isapprox(lateralfluxes[1], 0.00626267, rtol=1e-6) &&
+         CUDA.@allowscalar isapprox(lateralfluxes[2], 0, atol=1e-12) &&
+         CUDA.@allowscalar isapprox(verticalfluxes[1], -0.196539, rtol=1e-6)
 end
 
 """
@@ -429,7 +453,8 @@ function test_mqg_fluxessinglelayer(dev::Device=CPU(); dt=0.001, stepper="Forwar
   U = zeros(ny, nlayers)
   U = @. sech(gr.y / 0.2)^2
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=Lx, Ly=Ly, U=U)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, U)
+
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ = @. cos(k₀*x) * cos(l₀*y) + sin(k₀*x)
@@ -458,7 +483,8 @@ function test_mqg_setqsetψ(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler",
   H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
   ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx=L, f₀, g, H, ρ)
+  
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   T = eltype(gr)
@@ -480,7 +506,8 @@ function test_mqg_setqsetψ(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler",
   @. vs.qh = sol
   MultiLayerQG.invtransform!(qtest, vs.qh, pr)
 
-  return isapprox(ψtest, f, rtol=rtol_multilayerqg) && isapprox(qtest, f, rtol=rtol_multilayerqg)
+  return isapprox(ψtest, f, rtol=rtol_multilayerqg) &&
+         isapprox(qtest, f, rtol=rtol_multilayerqg)
 end
 
 """
@@ -511,19 +538,23 @@ function test_mqg_paramsconstructor(dev::Device=CPU(); dt=0.001, stepper="Forwar
   CUDA.@allowscalar Ufloats[1] = U1
   CUDA.@allowscalar Ufloats[2] = U2
 
-  probUvectors = MultiLayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ, U=Uvectors)
-  probUfloats = MultiLayerQG.Problem(nlayers, dev; nx=nx, ny=ny, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ, U=Ufloats)
+  probUvectors = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx=L, f₀, g, H, ρ, U=Uvectors)
+  probUfloats = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx=L, f₀, g, H, ρ, U=Ufloats)
 
   return isapprox(probUfloats.params.U, probUvectors.params.U, rtol=rtol_multilayerqg)
 end
 
 function test_mqg_problemtype(dev, T)
-  prob1 = MultiLayerQG.Problem(1, dev; T=T)
-  prob2 = MultiLayerQG.Problem(2, dev; T=T)
+  prob1 = MultiLayerQG.Problem(1, dev; T)
+  prob2 = MultiLayerQG.Problem(2, dev; T)
   
   A = ArrayType(dev)
   
-  return (typeof(prob1.sol)<:A{Complex{T}, 3} && typeof(prob1.grid.Lx)==T && typeof(prob1.vars.u)<:A{T, 3}) && (typeof(prob2.sol)<:A{Complex{T}, 3} && typeof(prob2.grid.Lx)==T && typeof(prob2.vars.u)<:A{T, 3})
+  return typeof(prob1.sol)<:A{Complex{T}, 3} &&
+         typeof(prob1.grid.Lx)==T &&
+         typeof(prob1.vars.u)<:A{T, 3} &&
+         typeof(prob2.sol)<:A{Complex{T}, 3} &&
+         typeof(prob2.grid.Lx)==T && typeof(prob2.vars.u)<:A{T, 3}
 end
 
 """
@@ -539,7 +570,8 @@ function test_mqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
         β = 2
         U = 0.5
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx=nx, Lx=Lx, U=U, β=β, stepper=stepper, dt=dt)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, Lx, U, β, stepper, dt)
+
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
   x, y = gridpoints(g)
@@ -566,7 +598,8 @@ function test_numberoflayers(dev::Device=CPU())
   prob_nlayers1 = MultiLayerQG.Problem(1, dev)
   prob_nlayers2 = MultiLayerQG.Problem(2, dev)
   
-  return MultiLayerQG.numberoflayers(prob_nlayers1)==1 && MultiLayerQG.numberoflayers(prob_nlayers2)==2
+  return MultiLayerQG.numberoflayers(prob_nlayers1)==1 &&
+         MultiLayerQG.numberoflayers(prob_nlayers2)==2
 end
 
 function test_mqg_stochasticforcedproblemconstructor(dev::Device=CPU())
