@@ -72,8 +72,8 @@ Keyword arguments
   - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
   - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
-function Problem(ntracers::Int,       # number of tracers
-                dev::Device=CPU();
+function Problem(ntracers :: Int,       # number of tracers
+                 dev :: Device=CPU();
   # Numerical parameters
                 nx = 256,
                 ny = nx,
@@ -114,32 +114,39 @@ end
 """
     Params{T}(ν, nν, μ, nμ, κ, nκ calcF!)
 
-A struct containing the parameters for the two-dimensional Navier-Stokes with tracers. Included are:
+A container for the parameters for the two-dimensional Navier-Stokes problem with tracers.
 
 $(TYPEDFIELDS)
 """
 struct Params{T, Trfft} <: AbstractParams
     "number of tracers"
-       ntracers :: Int
+  ntracers :: Int
     "small-scale (hyper)-viscosity coefficient"
-       ν :: T
+         ν :: T
     "(hyper)-viscosity order, `nν```≥ 1``"
-      nν :: Int
+        nν :: Int
     "large-scale (hypo)-viscosity coefficient"
-       μ :: T
+         μ :: T
     "(hypo)-viscosity order, `nμ```≤ 0``"
-      nμ :: Int
+        nμ :: Int
     "tracer diffusivity coefficient"
-       κ :: T
+         κ :: T
    "tracer diffusivity order"
-      nκ :: Int
+        nκ :: Int
     "function that calculates the Fourier transform of the forcing, ``F̂``"
-      calcF! :: Function
+    calcF! :: Function
     "rfft plan for FFTs (Derived parameter)"
   rfftplan :: Trfft
 end
 
-function Params(ntracers, ν, nν, μ, nμ, κ, nκ, grid; calcF=nothingfunction,  effort=FFTW.MEASURE, dev::Device=CPU()) where TU
+"""
+    Params(ntracers, ν, nν, μ, nμ, κ, nκ, grid;
+           calcF=nothingfunction, effort=FFTW.MEASURE, dev::Device=CPU())
+
+Return the parameters for a the two-dimensional Navier-Stokes problem with tracers.
+"""
+function Params(ntracers, ν, nν, μ, nμ, κ, nκ, grid;
+                calcF=nothingfunction, effort=FFTW.MEASURE, dev::Device=CPU()) where TU
   T = eltype(grid)
   A = ArrayType(dev)
 
@@ -154,12 +161,14 @@ end
 
 """
     fwdtransform!(varh, var, params)
+
 Compute the Fourier transform of `var` and store it in `varh`.
 """
 fwdtransform!(varh, var, params::AbstractParams) = mul!(varh, params.rfftplan, var)
 
 """
     invtransform!(var, varh, params)
+
 Compute the inverse Fourier transform of `varh` and store it in `var`.
 """
 invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, varh)
