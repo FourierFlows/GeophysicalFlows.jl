@@ -133,9 +133,9 @@ function Problem(nlayers::Int,                        # number of fluid layers
 end
 
 """
-    Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft}(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, calcFq!, g′, Qx, Qy, S, S⁻¹, rfftplan)
+    struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
 
-A struct containing the parameters for the MultiLayerQG problem. Included are:
+The parameters for the MultiLayerQG problem.
 
 $(TYPEDFIELDS)
 """
@@ -182,9 +182,9 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
 end
 
 """
-    SingleLayerParams{T, Aphys3D, Aphys2D, Trfft}(β, U, eta, μ, ν, nν, calcFq!, Qx, Qy, rfftplan)
+    struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
 
-A struct containing the parameters for the SingleLayerQG problem. Included are:
+The parameters for the SingleLayerQG problem.
 
 $(TYPEDFIELDS)
 """
@@ -215,9 +215,9 @@ struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
 end
 
 """
-    TwoLayerParams{T, Aphys3D, Aphys2D, Trfft}(g, f₀, β, ρ, H, U, eta, μ, ν, nν, calcFq!, g′, Qx, Qy, rfftplan)
+    TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
 
-A struct containing the parameters for the TwoLayerQG problem. Included are:
+The parameters for the TwoLayerQG problem.
 
 $(TYPEDFIELDS)
 """
@@ -378,7 +378,7 @@ end
 """
     LinearEquation(dev, params, grid)
 
-Return the `equation` for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
+Return the equation for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
 The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via 
 `hyperviscosity(dev, params, grid)`.
 
@@ -393,7 +393,7 @@ end
 """
     Equation(dev, params, grid)
 
-Return the `equation` for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
+Return the equation for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
 The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via 
 `hyperviscosity(dev, params, grid)`.
 
@@ -411,9 +411,9 @@ end
 # ----
 
 """
-    Vars{Aphys, Atrans, F, P}(q, ψ, u, v, qh, , ψh, uh, vh, Fh, prevsol)
+    struct Vars{Aphys, Atrans, F, P} <: AbstractVars
 
-The variables for MultiLayer QG:
+The variables for MultiLayer QG.
 
 $(FIELDS)
 """
@@ -447,7 +447,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     DecayingVars(dev, grid, params)
 
-Return the vars for unforced multi-layer QG problem with `grid` and `params`.
+Return the variables for an unforced multi-layer QG problem with `grid` and `params`.
 """
 function DecayingVars(dev::Dev, grid, params) where Dev
   T = eltype(grid)
@@ -462,7 +462,7 @@ end
 """
     ForcedVars(dev, grid, params)
 
-Return the vars for forced multi-layer QG problem with `grid` and `params`.
+Return the variables for a forced multi-layer QG problem with `grid` and `params`.
 """
 function ForcedVars(dev::Dev, grid, params) where Dev
   T = eltype(grid)
@@ -477,7 +477,7 @@ end
 """
     StochasticForcedVars(dev, rid, params)
 
-Return the vars for forced multi-layer QG problem with `grid` and `params`.
+Return the variables for a forced multi-layer QG problem with `grid` and `params`.
 """
 function StochasticForcedVars(dev::Dev, grid, params) where Dev
   T = eltype(grid)
@@ -620,7 +620,7 @@ end
 """
     calcS!(S, Fp, Fm, nlayers, grid)
 
-Constructs the array ``𝕊``, which consists of `nlayer` x `nlayer` static arrays ``𝕊_𝐤`` that 
+Construct the array ``𝕊``, which consists of `nlayer` x `nlayer` static arrays ``𝕊_𝐤`` that 
 relate the ``q̂_j``'s and ``ψ̂_j``'s for every wavenumber: ``q̂_𝐤 = 𝕊_𝐤 ψ̂_𝐤``.
 """
 function calcS!(S, Fp, Fm, nlayers, grid)
@@ -638,7 +638,7 @@ end
 """
     calcS⁻¹!(S, Fp, Fm, nlayers, grid)
 
-Constructs the array ``𝕊⁻¹``, which consists of `nlayer` x `nlayer` static arrays ``(𝕊_𝐤)⁻¹`` 
+Construct the array ``𝕊⁻¹``, which consists of `nlayer` x `nlayer` static arrays ``(𝕊_𝐤)⁻¹`` 
 that relate the ``q̂_j``'s and ``ψ̂_j``'s for every wavenumber: ``ψ̂_𝐤 = (𝕊_𝐤)⁻¹ q̂_𝐤``.
 """
 function calcS⁻¹!(S⁻¹, Fp, Fm, nlayers, grid)
@@ -665,6 +665,7 @@ end
     calcN!(N, sol, t, clock, vars, params, grid)
     
 Compute the nonlinear term, that is the advection term, the bottom drag, and the forcing:
+
 ```math
 N_j = - \\widehat{𝖩(ψ_j, q_j)} - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
  + \\widehat{(∂_y ψ_j)(∂_x Q_j)} - \\widehat{(∂_x ψ_j)(∂_y Q_j)} + δ_{j, n} μ |𝐤|^2 ψ̂_n + F̂_j .
@@ -688,6 +689,7 @@ end
     calcNlinear!(N, sol, t, clock, vars, params, grid)
     
 Compute the nonlinear term of the linearized equations:
+
 ```math
 N_j = - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j} + \\widehat{(∂_y ψ_j)(∂_x Q_j)} 
 - \\widehat{(∂_x ψ_j)(∂_y Q_j)} + δ_{j, n} μ |𝐤|^2 ψ̂_n + F̂_j .
@@ -707,6 +709,7 @@ end
     calcN_advection!(N, sol, vars, params, grid)
 
 Compute the advection term and stores it in `N`:
+
 ```math
 N_j = - \\widehat{𝖩(ψ_j, q_j)} - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
  + \\widehat{(∂_y ψ_j)(∂_x Q_j)} - \\widehat{(∂_x ψ_j)(∂_y Q_j)} .
@@ -755,6 +758,7 @@ end
     calcN_linearadvection!(N, sol, vars, params, grid)
 
 Compute the advection term of the linearized equations and stores it in `N`:
+
 ```math
 N_j = - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
  + \\widehat{(∂_y ψ_j)(∂_x Q_j)} - \\widehat{(∂_x ψ_j)(∂_y Q_j)} .
@@ -909,12 +913,15 @@ Return the kinetic energy of each fluid layer KE``_1, ...,`` KE``_{n}``, and the
 potential energy of each fluid interface PE``_{3/2}, ...,`` PE``_{n-1/2}``, where ``n``
 is the number of layers in the fluid. (When ``n=1``, only the kinetic energy is returned.)
 
-The kinetic energy at the ``j``-th fluid layer is 
+The kinetic energy at the ``j``-th fluid layer is
+
 ```math
 𝖪𝖤_j = \\frac{H_j}{H} \\int \\frac1{2} |{\\bf ∇} ψ_j|^2 \\frac{𝖽x 𝖽y}{L_x L_y} = \\frac1{2} \\frac{H_j}{H} \\sum_{𝐤} |𝐤|² |ψ̂_j|², \\ j = 1, ..., n ,
 ```
+
 while the potential energy that corresponds to the interface ``j+1/2`` (i.e., the interface 
 between the ``j``-th and ``(j+1)``-th fluid layer) is
+
 ```math
 𝖯𝖤_{j+1/2} = \\int \\frac1{2} \\frac{f₀^2}{g'_{j+1/2}} (ψ_j - ψ_{j+1})^2 \\frac{𝖽x 𝖽y}{L_x L_y} = \\frac1{2} \\frac{f₀^2}{g'_{j+1/2}} \\sum_{𝐤} |ψ_j - ψ_{j+1}|², \\ j = 1, ..., n-1 .
 ```
@@ -983,12 +990,15 @@ verticalfluxes``_{3/2},...,``verticalfluxes``_{n-1/2}``, where ``n`` is the tota
 (When ``n=1``, only the lateral fluxes are returned.)
 
 The lateral eddy fluxes within the ``j``-th fluid layer are
+
 ```math
 \\textrm{lateralfluxes}_j = \\frac{H_j}{H} \\int U_j v_j ∂_y u_j 
 \\frac{𝖽x 𝖽y}{L_x L_y} , \\  j = 1, ..., n ,
 ```
+
 while the vertical eddy fluxes at the ``j+1/2``-th fluid interface  (i.e., interface between 
 the ``j``-th and ``(j+1)``-th fluid layer) are
+
 ```math
 \\textrm{verticalfluxes}_{j+1/2} = \\int \\frac{f₀²}{g'_{j+1/2} H} (U_j - U_{j+1}) \\, 
 v_{j+1} ψ_{j} \\frac{𝖽x 𝖽y}{L_x L_y} , \\ j = 1, ..., n-1.

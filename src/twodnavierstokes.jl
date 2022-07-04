@@ -85,7 +85,7 @@ function Problem(dev::Device=CPU();
 
   grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T=T)
 
-  params = Params{T}(ν, nν, μ, nμ, calcF)
+  params = Params(ν, nν, μ, nμ, calcF)
 
   vars = calcF == nothingfunction ? DecayingVars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
@@ -100,9 +100,9 @@ end
 # ----------
 
 """
-    Params{T}(ν, nν, μ, nμ, calcF!)
+    struct Params{T} <: AbstractParams
 
-A struct containing the parameters for the two-dimensional Navier-Stokes. Included are:
+The parameters for a two-dimensional Navier-Stokes problem:
 
 $(TYPEDFIELDS)
 """
@@ -137,7 +137,7 @@ hypo-viscocity of order ``n_μ`` with coefficient ``μ``,
 L = - ν |𝐤|^{2 n_ν} - μ |𝐤|^{2 n_μ} .
 ```
 
-Plain old viscocity corresponds to ``n_ν=1`` while ``n_μ=0`` corresponds to linear drag.
+Plain-old viscocity corresponds to ``n_ν = 1`` while ``n_μ = 0`` corresponds to linear drag.
 
 The nonlinear term is computed via the function `calcN!`.
 """
@@ -156,9 +156,9 @@ end
 abstract type TwoDNavierStokesVars <: AbstractVars end
 
 """
-    Vars{Aphys, Atrans, F, P}(ζ, u, v, ζh, uh, vh, Fh, prevsol)
+    struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
 
-The variables for two-dimensional Navier-Stokes:
+The variables for two-dimensional Navier-Stokes problem:
 
 $(FIELDS)
 """
@@ -188,7 +188,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     DecayingVars(dev, grid)
 
-Return the `vars` for unforced two-dimensional Navier-Stokes problem on device `dev` and 
+Return the variables `vars` for unforced two-dimensional Navier-Stokes problem on device `dev` and 
 with `grid`.
 """
 function DecayingVars(::Dev, grid::AbstractGrid) where Dev
@@ -203,7 +203,7 @@ end
 """
     ForcedVars(dev, grid)
 
-Return the `vars` for forced two-dimensional Navier-Stokes on device `dev` and with `grid`.
+Return the variables `vars` for forced two-dimensional Navier-Stokes on device `dev` and with `grid`.
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
@@ -217,7 +217,7 @@ end
 """
     StochasticForcedVars(dev, grid)
 
-Return the `vars` for stochastically forced two-dimensional Navier-Stokes on device `dev` and 
+Return the variables `vars` for stochastically forced two-dimensional Navier-Stokes on device `dev` and 
 with `grid`.
 """
 function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
@@ -290,7 +290,7 @@ end
 """
     addforcing!(N, sol, t, clock, vars, params, grid)
 
-When the problem includes forcing, calculate the forcing term ``F̂`` and add it to the 
+When the problem includes forcing, calculate the forcing term ``F̂`` and add it to the
 nonlinear term ``N``.
 """
 addforcing!(N, sol, t, clock, vars::DecayingVars, params, grid) = nothing
@@ -320,7 +320,7 @@ end
 """
     updatevars!(prob)
 
-Update variables in `vars` with solution in `sol`.
+Update problem's variables in `prob.vars` using the state in `prob.sol`.
 """
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
@@ -341,7 +341,7 @@ end
 """
     set_ζ!(prob, ζ)
 
-Set the solution `sol` as the transform of `ζ` and then update variables in `vars`.
+Set the solution `sol` as the transform of `ζ` and then update variables in `prob.vars`.
 """
 function set_ζ!(prob, ζ)
   mul!(prob.sol, prob.grid.rfftplan, ζ)
@@ -360,8 +360,10 @@ Return the domain-averaged kinetic energy. Since ``u² + v² = |{\\bf ∇} ψ|²
 kinetic energy is
 
 ```math
-\\int \\frac1{2} |{\\bf ∇} ψ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ψ̂|² .
+\\int \\frac1{2} |{\\bf ∇} ψ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ψ̂|² ,
 ```
+
+where ``ψ`` is the streamfunction.
 """
 @inline function energy(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
@@ -374,16 +376,15 @@ end
 """
     enstrophy(prob)
 
-Returns the domain-averaged enstrophy,
+Returns the problem's (`prob`) domain-averaged enstrophy,
 
 ```math
-\\int \\frac1{2} ζ² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |ζ̂|² .
+\\int \\frac1{2} ζ² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |ζ̂|² ,
 ```
+
+where ``ζ`` is the relative vorticity.
 """
-@inline function enstrophy(prob)
-  sol, grid = prob.sol, prob.grid
-  return 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs2.(sol), grid)
-end
+@inline enstrophy(prob) = 1 / (2 prob.grid.Lx * prob.grid.Ly) * parsevalsum(abs2.(prob.sol), prob.grid)
 
 """
     energy_dissipation(prob, ξ, νξ)
@@ -406,23 +407,23 @@ where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`
 end
 
 """
-    energy_dissipation_hyperviscosity(prob, ξ, νξ)
+    energy_dissipation_hyperviscosity(prob)
 
-Return the domain-averaged energy dissipation rate done by the ``ν`` (hyper)-viscosity.
+Return the problem's (`prob`) domain-averaged energy dissipation rate done by the ``ν`` (hyper)-viscosity.
 """
 energy_dissipation_hyperviscosity(prob) = energy_dissipation(prob, prob.params.ν, prob.params.nν)
 
 """
-    energy_dissipation_hypoviscosity(prob, ξ, νξ)
+    energy_dissipation_hypoviscosity(prob)
 
-Return the domain-averaged energy dissipation rate done by the ``μ`` (hypo)-viscosity.
+Return the problem's (`prob`) domain-averaged energy dissipation rate done by the ``μ`` (hypo)-viscosity.
 """
 energy_dissipation_hypoviscosity(prob) = energy_dissipation(prob, prob.params.μ, prob.params.nμ)
 
 """
     enstrophy_dissipation(prob, ξ, νξ)
 
-Return the domain-averaged enstrophy dissipation rate done by the viscous term,
+Return the problem's (`prob`) domain-averaged enstrophy dissipation rate done by the viscous term,
 
 ```math
 ξ (-1)^{n_ξ+1} \\int ζ ∇^{2n_ξ} ζ \\frac{𝖽x 𝖽y}{L_x L_y} = - ξ \\sum_{𝐤} |𝐤|^{2n_ξ} |ζ̂|² ,
@@ -441,29 +442,32 @@ where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`
 end
 
 """
-    enstrophy_dissipation_hyperviscosity(prob, ξ, νξ)
+    enstrophy_dissipation_hyperviscosity(prob)
 
-Return the domain-averaged enstrophy dissipation rate done by the ``ν`` (hyper)-viscosity.
+Return the problem's (`prob`) domain-averaged enstrophy dissipation rate done by the ``ν`` (hyper)-viscosity.
 """
 enstrophy_dissipation_hyperviscosity(prob) = enstrophy_dissipation(prob, prob.params.ν, prob.params.nν)
 
 """
-    enstrophy_dissipation_hypoviscosity(prob, ξ, νξ)
+    enstrophy_dissipation_hypoviscosity(prob)
 
-Return the domain-averaged enstrophy dissipation rate done by the ``μ`` (hypo)-viscosity.
+Return the problem's (`prob`) domain-averaged enstrophy dissipation rate done by the ``μ`` (hypo)-viscosity.
 """
 enstrophy_dissipation_hypoviscosity(prob) = enstrophy_dissipation(prob, prob.params.μ, prob.params.nμ)
 
 """
     energy_work(prob)
-    energy_work(sol, vars, grid)
 
-Return the domain-averaged rate of work of energy by the forcing ``F``,
+Return the problem's (`prob`) domain-averaged rate of work of energy by the forcing ``F``,
 
 ```math
 - \\int ψ F \\frac{𝖽x 𝖽y}{L_x L_y} = - \\sum_{𝐤} ψ̂ F̂^* .
 ```
+
+where ``ψ`` is the stream flow.
 """
+@inline energy_work(prob) = energy_work(prob.sol, prob.vars, prob.grid)
+
 @inline function energy_work(sol, vars::ForcedVars, grid)
   energy_workh = vars.uh # use vars.uh as scratch variable
   
@@ -478,18 +482,19 @@ end
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_workh, grid)
 end
 
-@inline energy_work(prob) = energy_work(prob.sol, prob.vars, prob.grid)
-
 """
     enstrophy_work(prob)
-    enstrophy_work(sol, vars, grid)
 
-Return the domain-averaged rate of work of enstrophy by the forcing ``F``,
+Return the problem's (`prob`) domain-averaged rate of work of enstrophy by the forcing ``F``,
 
 ```math
-\\int ζ F \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} ζ̂ F̂^* .
+\\int ζ F \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} ζ̂ F̂^* ,
 ```
+
+where ``ζ`` is the relative vorticity.
 """
+@inline enstrophy_work(prob) = enstrophy_work(prob.sol, prob.vars, prob.grid)
+
 @inline function enstrophy_work(sol, vars::ForcedVars, grid)
   enstrophy_workh = vars.uh # use vars.uh as scratch variable
   
@@ -499,11 +504,9 @@ end
 
 @inline function enstrophy_work(sol, vars::StochasticForcedVars, grid)
   enstrophy_workh = vars.uh # use vars.uh as scratch variable
-  
+
   @. enstrophy_workh = (vars.prevsol + sol) / 2 * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_workh, grid)
 end
-
-@inline enstrophy_work(prob) = enstrophy_work(prob.sol, prob.vars, prob.grid)
 
 end # module
