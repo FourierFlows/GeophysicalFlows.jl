@@ -384,7 +384,7 @@ Returns the problem's (`prob`) domain-averaged enstrophy,
 
 where ``ζ`` is the relative vorticity.
 """
-@inline enstrophy(prob) = 1 / (2 prob.grid.Lx * prob.grid.Ly) * parsevalsum(abs2.(prob.sol), prob.grid)
+@inline enstrophy(prob) = 1 / (2 * prob.grid.Lx * prob.grid.Ly) * parsevalsum(abs2.(prob.sol), prob.grid)
 
 """
     energy_dissipation(prob, ξ, νξ)
