@@ -83,9 +83,9 @@ function Problem(dev::Device=CPU();
   aliased_fraction = 1/3,
                  T = Float64)
 
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T=T)
+  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T)
 
-  params = Params(ν, nν, μ, nμ, calcF)
+  params = Params(Τ(ν), nν, Τ(μ), nμ, calcF)
 
   vars = calcF == nothingfunction ? DecayingVars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
 
