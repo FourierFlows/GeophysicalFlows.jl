@@ -930,11 +930,11 @@ function energies(vars, params, grid, sol)
   @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
   
   for j = 1:nlayers
-    CUDA.@allowscalar KE[j] = 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j] / sum(params.H)
+    @views KE[j] = 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j] / sum(params.H)
   end
 
   for j = 1:nlayers-1
-    CUDA.@allowscalar PE[j] = 1 / (2 * grid.Lx * grid.Ly) * params.f₀^2 / params.g′[j] * parsevalsum(abs2.(vars.ψh[:, :, j+1] .- vars.ψh[:, :, j]), grid)
+    @views PE[j] = 1 / (2 * grid.Lx * grid.Ly) * params.f₀^2 / params.g′[j] * parsevalsum(abs2.(vars.ψh[:, :, j+1] .- vars.ψh[:, :, j]), grid)
   end
 
   return KE, PE
@@ -953,7 +953,7 @@ function energies(vars, params::TwoLayerParams, grid, sol)
   ψ1h, ψ2h = view(vars.ψh, :, :, 1), view(vars.ψh, :, :, 2)
 
   for j = 1:nlayers
-    CUDA.@allowscalar KE[j] = @views 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j] / sum(params.H)
+    @views KE[j] = 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j] / sum(params.H)
   end
 
   PE = @views 1 / (2 * grid.Lx * grid.Ly) * params.f₀^2 / params.g′ * parsevalsum(abs2.(ψ2h .- ψ1h), grid)
@@ -1011,8 +1011,8 @@ function fluxes(vars, params, grid, sol)
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   for j = 1:nlayers-1
-    CUDA.@allowscalar verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
-    CUDA.@allowscalar verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
+    @views verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
+    @views verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
   end
 
   return lateralfluxes, verticalfluxes
