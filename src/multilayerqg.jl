@@ -916,7 +916,7 @@ The kinetic energy at the ``j``-th fluid layer is
 while the potential energy that corresponds to the interface ``j+1/2`` (i.e., the interface 
 between the ``j``-th and ``(j+1)``-th fluid layer) is
 ```math
-𝖯𝖤_{j+1/2} = \\int \\frac1{2} \\frac{f₀^2}{g'_{j+1/2}} (ψ_j - ψ_{j+1})^2 \\frac{𝖽x 𝖽y}{L_x L_y} = \\frac1{2} \\frac{f₀^2}{g'_{j+1/2}} \\sum_{𝐤} |ψ_j - ψ_{j+1}|², \\ j = 1, ..., n-1 .
+𝖯𝖤_{j+1/2} = \\int \\frac1{2} \\frac{f₀^2}{g'_{j+1/2} H} (ψ_j - ψ_{j+1})^2 \\frac{𝖽x 𝖽y}{L_x L_y} = \\frac1{2} \\frac{f₀^2}{g'_{j+1/2} H} \\sum_{𝐤} |ψ̂_j - ψ̂_{j+1}|², \\ j = 1, ..., n-1 .
 ```
 """
 function energies(vars, params, grid, sol)
@@ -934,7 +934,7 @@ function energies(vars, params, grid, sol)
   end
 
   for j = 1:nlayers-1
-    CUDA.@allowscalar PE[j] = 1 / (2 * grid.Lx * grid.Ly) * params.f₀^2 / params.g′[j] * parsevalsum(abs2.(vars.ψh[:, :, j+1] .- vars.ψh[:, :, j]), grid)
+    CUDA.@allowscalar PE[j] = 1 / (2 * grid.Lx * grid.Ly * sum(params.H)) * params.f₀^2 / params.g′[j] * parsevalsum(abs2.(vars.ψh[:, :, j+1] .- vars.ψh[:, :, j]), grid)
   end
 
   return KE, PE
@@ -956,7 +956,7 @@ function energies(vars, params::TwoLayerParams, grid, sol)
     CUDA.@allowscalar KE[j] = @views 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j] / sum(params.H)
   end
 
-  PE = @views 1 / (2 * grid.Lx * grid.Ly) * params.f₀^2 / params.g′ * parsevalsum(abs2.(ψ2h .- ψ1h), grid)
+  PE = @views 1 / (2 * grid.Lx * grid.Ly * sum(params.H)) * params.f₀^2 / params.g′ * parsevalsum(abs2.(ψ2h .- ψ1h), grid)
   
   return KE, PE
 end
