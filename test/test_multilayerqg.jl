@@ -347,29 +347,31 @@ function test_mqg_energies(dev::Device=CPU();
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
-
-  nlayers = 2       # these choice of parameters give the
-  f₀, g = 1, 1      # desired PV-streamfunction relations
-  H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
-  ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
-
-  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ)
+  nlayers = 2
   
+  f₀, g = 1, 1
+  H = [2.5, 7.5] # sum(params.H) = 10
+  ρ = [1.0, 2.0] # Make g′ = 1/2
+  
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
-  ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
+  ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
+  
+  CUDA.@allowscalar @views @. ψ[:, :, 1] =       cos(2k₀ * x) * cos(2l₀ * y)
+  CUDA.@allowscalar @views @. ψ[:, :, 2] = 1/2 * cos(2k₀ * x) * cos(2l₀ * y)
 
-  qf = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
-  CUDA.@allowscalar @views qf[:, :, 1] .= q1
-  CUDA.@allowscalar @views qf[:, :, 2] .= q2
+  MultiLayerQG.set_ψ!(prob, ψ)
 
-  MultiLayerQG.set_q!(prob, qf)
+  KE1_calc = 1/4      # = H1/H
+  KE2_calc = 3/4/4    # = H2/H/4
+  PE_calc  = 1/16/10  # = 1/16/H
 
   KE, PE = MultiLayerQG.energies(prob)
 
-  return isapprox(KE[1], 61/640*1e-6, rtol=rtol_multilayerqg) &&
-         isapprox(KE[2], 3*1e-6, rtol=rtol_multilayerqg) &&
-         isapprox(PE[1], 1025/1152*1e-6, rtol=rtol_multilayerqg) &&
+  return isapprox(KE[1], KE1_calc, rtol=rtol_multilayerqg) &&
+         isapprox(KE[2], KE2_calc, rtol=rtol_multilayerqg) &&
+         isapprox(PE[1], PE_calc, rtol=rtol_multilayerqg) &&
          MultiLayerQG.addforcing!(prob.timestepper.RHS₁, sol, cl.t, cl, vs, pr, gr)==nothing
 end
 
