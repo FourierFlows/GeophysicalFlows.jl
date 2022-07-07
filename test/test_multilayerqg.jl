@@ -354,6 +354,7 @@ function test_mqg_energies(dev::Device=CPU();
   ρ = [1.0, 2.0] # Make g′ = 1/2
   
   prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ)
+  sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
   
