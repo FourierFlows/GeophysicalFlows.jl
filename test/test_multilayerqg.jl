@@ -143,12 +143,14 @@ function test_pvtofromstreamfunction_3layer(dev::Device=CPU())
   MultiLayerQG.streamfunctionfrompv!(vs.ψh, vs.qh, pr, gr)
   MultiLayerQG.invtransform!(vs.ψ, vs.ψh, pr)
 
+  KE, PE = MultiLayerQG.energies(prob)
+
   return isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) &&
          isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) &&
          isapprox(q3, vs.q[:, :, 3], rtol=rtol_multilayerqg) &&
          isapprox(ψ1, vs.ψ[:, :, 1], rtol=rtol_multilayerqg) &&
          isapprox(ψ2, vs.ψ[:, :, 2], rtol=rtol_multilayerqg) &&
-         isapprox(ψ3, vs.ψ[:, :, 3], rtol=rtol_multilayerqg)
+         isapprox(ψ3, vs.ψ[:, :, 3], rtol=rtol_multilayerqg) &&
 end
 
 
@@ -197,8 +199,8 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
   μ, ν, nν = 0.1, 0.05, 1
 
   η0, σx, σy = 1.0, Lx/25, Ly/20
-   η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) - (y-Ly/8)^2/(2σy^2) )
-  ηx = @. -(x + Lx/8)/(σx^2) * η
+   η = @. η0 * exp( - (x + Lx/8)^2/2σx^2 - (y - Ly/8)^2/2σy^2)
+  ηx = @. -(x + Lx/8)/σx^2 * η
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
