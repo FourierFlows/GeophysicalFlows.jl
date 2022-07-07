@@ -347,71 +347,31 @@ function test_mqg_energies(dev::Device=CPU();
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
-
-  nlayers = 2       # these choice of parameters give the
-  f₀, g = 1, 1      # desired PV-streamfunction relations
-  H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
-  ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
-
-  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ)
-  
-  sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
-
-  ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
-
-  qf = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
-  CUDA.@allowscalar @views qf[:, :, 1] .= q1
-  CUDA.@allowscalar @views qf[:, :, 2] .= q2
-
-  MultiLayerQG.set_q!(prob, qf)
-
-  KE, PE = MultiLayerQG.energies(prob)
-
-  return isapprox(KE[1], 61/640*1e-6, rtol=rtol_multilayerqg) &&
-         isapprox(KE[2], 3*1e-6, rtol=rtol_multilayerqg) &&
-         isapprox(PE[1], 1025/1152*1e-6, rtol=rtol_multilayerqg) &&
-         MultiLayerQG.addforcing!(prob.timestepper.RHS₁, sol, cl.t, cl, vs, pr, gr)==nothing
-end
-
-"""
-    test_mqg_energies_Hneq1(dev; kwargs...)
-
-Tests the kinetic (KE) and potential (PE) energies function (for a case
-where the total fluid depth is not unity) by constructing a 2-layer problem
-and initializing it with a flow field whose KE and PE are known.
-"""
-function test_mqg_energies_Hneq1(dev::Device=CPU();
-                           dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
-  nx, ny = 64, 66
-  Lx, Ly = 2π, 2π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
-
-  x, y = gridpoints(gr)
-  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
   nlayers = 2
   
   f₀, g = 1, 1
-  H = [2.5, 7.5] # sum(params.H) = 10, makes no difference for KE1, KE2 but changes PE.
+  H = [2.5, 7.5] # sum(params.H) = 10
   ρ = [1.0, 2.0] # Make g′ = 1/2
   
   prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ)
 
   ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
-  ψ1 = @. cos(2k₀*x)*cos(2l₀*y)
-  CUDA.@allowscalar @views ψ[:, :, 1] .= ψ1
-  CUDA.@allowscalar @views ψ[:, :, 2] .= ψ1/2
+  
+  CUDA.@allowscalar @views ψ[:, :, 1] .=       cos(2k₀ * x) * cos(2l₀ * y)
+  CUDA.@allowscalar @views ψ[:, :, 2] .= 1/2 * cos(2k₀ * x) * cos(2l₀ * y)
 
   MultiLayerQG.set_ψ!(prob, ψ)
 
-  KE1_calc = 1/4    # = H1/H
-  KE2_calc = 3/4/4  # = H2/H/4
-  PE_calc = 1/16/10 # = 1/16/H
+  KE1_calc = 1/4      # = H1/H
+  KE2_calc = 3/4/4    # = H2/H/4
+  PE_calc  = 1/16/10  # = 1/16/H
 
   KE, PE = MultiLayerQG.energies(prob)
 
   return isapprox(KE[1], KE1_calc, rtol=rtol_multilayerqg) &&
          isapprox(KE[2], KE2_calc, rtol=rtol_multilayerqg) &&
-         isapprox(PE[1], PE_calc, rtol=rtol_multilayerqg)
+         isapprox(PE[1], PE_calc, rtol=rtol_multilayerqg) &&
+         MultiLayerQG.addforcing!(prob.timestepper.RHS₁, sol, cl.t, cl, vs, pr, gr)==nothing
 end
 
 function test_mqg_energysinglelayer(dev::Device=CPU();

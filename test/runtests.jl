@@ -124,7 +124,6 @@ for dev in devices
     @test test_mqg_nonlinearadvection(0.005, "ForwardEuler", dev)
     @test test_mqg_linearadvection(0.005, "ForwardEuler", dev)
     @test test_mqg_energies(dev)
-    @test test_mqg_energies_Hneq1(dev)
     @test test_mqg_energysinglelayer(dev)
     @test test_mqg_fluxes(dev)
     @test test_mqg_fluxessinglelayer(dev)
