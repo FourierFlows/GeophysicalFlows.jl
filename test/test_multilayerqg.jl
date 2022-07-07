@@ -385,7 +385,6 @@ function test_mqg_energies_Hneq1(dev::Device=CPU();
   nx, ny = 64, 66
   Lx, Ly = 2π, 2π
   gr = TwoDGrid(dev, nx, Lx, ny, Ly)
-  T = eltype(gr)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -397,17 +396,16 @@ function test_mqg_energies_Hneq1(dev::Device=CPU();
   
   prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ)
 
-  ψf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
+  ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
   ψ1 = @. cos(2k₀*x)*cos(2l₀*y)
-  ψ2 = ψ1/2
-  ψf[:, :, 1] = ψ1
-  ψf[:, :, 2] = ψ2
+  CUDA.@allowscalar @views ψ[:, :, 1] .= ψ1
+  CUDA.@allowscalar @views ψ[:, :, 2] .= ψ1/2
 
-  MultiLayerQG.set_ψ!(prob, ψf)
+  MultiLayerQG.set_ψ!(prob, ψ)
 
   KE1_calc = 1/4    # = H1/H
   KE2_calc = 3/4/4  # = H2/H/4
-  PE_calc = 1/16/10 # = 1/16/sum(prob.params.H)
+  PE_calc = 1/16/10 # = 1/16/H
 
   KE, PE = MultiLayerQG.energies(prob)
 
