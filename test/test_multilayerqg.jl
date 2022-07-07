@@ -373,6 +373,49 @@ function test_mqg_energies(dev::Device=CPU();
          MultiLayerQG.addforcing!(prob.timestepper.RHS₁, sol, cl.t, cl, vs, pr, gr)==nothing
 end
 
+"""
+    test_mqg_energies_Hneq1(dev; kwargs...)
+
+Tests the kinetic (KE) and potential (PE) energies function (for a case
+where the total fluid depth is not unity) by constructing a 2-layer problem
+and initializing it with a flow field whose KE and PE are known.
+"""
+function test_mqg_energies_Hneq1(dev::Device=CPU();
+                           dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+  nx, ny = 64, 66
+  Lx, Ly = 2π, 2π
+  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  T = eltype(gr)
+
+  x, y = gridpoints(gr)
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
+  nlayers = 2
+  
+  f₀, g = 1, 1
+  H = [2.5, 7.5] # sum(params.H) = 10, makes no difference for KE1, KE2 but changes PE.
+  ρ = [1.0, 2.0] # Make g′ = 1/2
+  
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ)
+
+  ψf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
+  ψ1 = @. cos(2k₀*x)*cos(2l₀*y)
+  ψ2 = ψ1/2
+  ψf[:, :, 1] = ψ1
+  ψf[:, :, 2] = ψ2
+
+  MultiLayerQG.set_ψ!(prob, ψf)
+
+  KE1_calc = 1/4    # = H1/H
+  KE2_calc = 3/4/4  # = H2/H/4
+  PE_calc = 1/16/10 # = 1/16/sum(prob.params.H)
+
+  KE, PE = MultiLayerQG.energies(prob)
+
+  return isapprox(KE[1], KE1_calc, rtol=rtol_multilayerqg) &&
+         isapprox(KE[2], KE2_calc, rtol=rtol_multilayerqg) &&
+         isapprox(PE[1], PE_calc, rtol=rtol_multilayerqg)
+end
+
 function test_mqg_energysinglelayer(dev::Device=CPU();
                                     dt=0.001, stepper="ForwardEuler", nlayers=1, μ=0.0, ν=0.0, nν=1)
   nx, Lx  = 64, 2π
