@@ -357,8 +357,8 @@ function test_mqg_energies(dev::Device=CPU();
 
   ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
   
-  CUDA.@allowscalar @views ψ[:, :, 1] .=       cos(2k₀ * x) * cos(2l₀ * y)
-  CUDA.@allowscalar @views ψ[:, :, 2] .= 1/2 * cos(2k₀ * x) * cos(2l₀ * y)
+  CUDA.@allowscalar @views @. ψ[:, :, 1] =       cos(2k₀ * x) * cos(2l₀ * y)
+  CUDA.@allowscalar @views @. ψ[:, :, 2] = 1/2 * cos(2k₀ * x) * cos(2l₀ * y)
 
   MultiLayerQG.set_ψ!(prob, ψ)
 
