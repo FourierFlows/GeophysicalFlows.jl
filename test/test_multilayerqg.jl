@@ -151,6 +151,8 @@ function test_pvtofromstreamfunction_3layer(dev::Device=CPU())
          isapprox(ψ1, vs.ψ[:, :, 1], rtol=rtol_multilayerqg) &&
          isapprox(ψ2, vs.ψ[:, :, 2], rtol=rtol_multilayerqg) &&
          isapprox(ψ3, vs.ψ[:, :, 3], rtol=rtol_multilayerqg) &&
+         KE isa Vector{Float64} && length(KE) == nlayers &&
+         PE isa Vector{Float64} && length(PE) == nlayers-1
 end
 
 
