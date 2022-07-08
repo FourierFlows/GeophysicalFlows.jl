@@ -16,12 +16,14 @@ using
 
 include("utils.jl")
 include("twodnavierstokes.jl")
+include("twodnavierstokeswithtracer.jl")
 include("singlelayerqg.jl")
 include("multilayerqg.jl")
 include("surfaceqg.jl")
 include("barotropicqgql.jl")
 
 @reexport using GeophysicalFlows.TwoDNavierStokes
+@reexport using GeophysicalFlows.TwoDNavierStokesTracer
 @reexport using GeophysicalFlows.SingleLayerQG
 @reexport using GeophysicalFlows.MultiLayerQG
 @reexport using GeophysicalFlows.SurfaceQG
