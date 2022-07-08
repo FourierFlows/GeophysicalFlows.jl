@@ -1,6 +1,6 @@
 function test_twodnavierstokes_lambdipole(n, dt, dev::Device=CPU(); L=2π, Ue=1, Re=L/20, ν=0.0, nν=1, ti=L/Ue*0.01, nm=3)
   nt = round(Int, ti/dt)
-  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4")
+  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν, nν, dt, stepper="FilteredRK4")
   x, y = gridpoints(prob.grid)
   ζ = prob.vars.ζ
 
