@@ -116,9 +116,9 @@ end
 abstract type SingleLayerQGParams <: AbstractParams end
 
 """
-    Params{T, Aphys, Atrans, ℓ}(β, deformation_radius, eta, etah, μ, ν, nν, calcF!)
+    struct Params{T, Aphys, Atrans, ℓ} <: SingleLayerQGParams
 
-A struct containing the parameters for the SingleLayerQG problem. Included are:
+The parameters for the `SingleLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
@@ -145,9 +145,9 @@ const BarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractAr
 const EquivalentBarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:AbstractFloat}
 
 """
-    EquivalentBarotropicQGParams(grid::TwoDGrid, β, deformation_radius, eta, μ, ν, nν::Int, calcF
+    EquivalentBarotropicQGParams(grid, β, deformation_radius, eta, μ, ν, nν, calcF)
 
-Constructor for EquivalentBarotropicQGParams (finite Rossby radius of deformation).
+Return the parameters for an Equivalent Barotropic QG problem (i.e., with finite Rossby radius of deformation).
 """
 function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, β, deformation_radius, eta, μ, ν, nν::Int, calcF) where {T, A}
   eta_grid = typeof(eta) <: AbstractArray ? eta : FourierFlows.on_grid(eta, grid)
@@ -156,9 +156,9 @@ function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, β, deformation_
 end
 
 """
-    BarotropicQGParams(grid::TwoDGrid, β, eta, μ, ν, nν::Int, calcF
+    BarotropicQGParams(grid, β, eta, μ, ν, nν, calcF)
 
-Constructor for BarotropicQGParams (infinite Rossby radius of deformation).
+Return the parameters for a Barotropic QG problem (i.e., with infinite Rossby radius of deformation).
 """
 BarotropicQGParams(grid::AbstractGrid, β, eta, μ, ν, nν::Int, calcF) =
     EquivalentBarotropicQGParams(grid, β, nothing, eta, μ, ν, nν, calcF)
@@ -171,14 +171,15 @@ BarotropicQGParams(grid::AbstractGrid, β, eta, μ, ν, nν::Int, calcF) =
 """
     Equation(params::BarotropicQGParams, grid)
 
-Return the `equation` for a barotropic QG problem with `params` and `grid`. Linear operator 
+Return the equation for a barotropic QG problem with `params` and `grid`. Linear operator 
 ``L`` includes bottom drag ``μ``, (hyper)-viscosity of order ``n_ν`` with coefficient ``ν`` 
 and the ``β`` term:
 
 ```math
 L = - μ - ν |𝐤|^{2 n_ν} + i β k_x / |𝐤|² .
 ```
-Nonlinear term is computed via `calcN!` function.
+
+The nonlinear term is computed via `calcN!` function.
 """
 function Equation(params::BarotropicQGParams, grid::AbstractGrid)
   L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq
@@ -190,14 +191,15 @@ end
 """
     Equation(params::EquivalentBarotropicQGParams, grid)
 
-Return the `equation` for an equivalent-barotropic QG problem with `params` and `grid`. 
+Return the equation for an equivalent-barotropic QG problem with `params` and `grid`. 
 Linear operator ``L`` includes bottom drag ``μ``, (hyper)-viscosity of order ``n_ν`` with 
 coefficient ``ν`` and the ``β`` term:
 
 ```math
 L = -μ - ν |𝐤|^{2 n_ν} + i β k_x / (|𝐤|² + 1/ℓ²) .
 ```
-Nonlinear term is computed via `calcN!` function.
+
+The nonlinear term is computed via `calcN!` function.
 """
 function Equation(params::EquivalentBarotropicQGParams, grid::AbstractGrid)
   L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr / (grid.Krsq + 1 / params.deformation_radius^2)
@@ -214,7 +216,7 @@ end
 abstract type SingleLayerQGVars <: AbstractVars end
 
 """
-    Vars{Aphys, Atrans, F, P}(q, ψ, u, v, qh, , ψh, uh, vh, Fh, prevsol)
+    struct Vars{Aphys, Atrans, F, P} <: SingleLayerQGVars
 
 The variables for SingleLayer QG:
 
@@ -253,10 +255,10 @@ Return the `vars` for unforced single-layer QG problem on device `dev` and with 
 """
 function DecayingVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  
+
   @devzeros Dev T (grid.nx, grid.ny) q u v ψ
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh
-  
+
   Vars(q, ψ, u, v, qh, ψh, uh, vh, nothing, nothing)
 end
 
@@ -267,10 +269,10 @@ Return the `vars` for forced single-layer QG problem on device dev and with `gri
 """
 function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
-  
+
   @devzeros Dev T (grid.nx, grid.ny) q u v ψ
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh Fh
-  
+
   return Vars(q, ψ, u, v, qh, ψh, uh, vh, Fh, nothing)
 end
 
@@ -283,7 +285,7 @@ function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T (grid.nx, grid.ny) q u v ψ
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh Fh prevsol
-  
+
   return Vars(q, ψ, u, v, qh, ψh, uh, vh, Fh, prevsol)
 end
 
@@ -313,16 +315,17 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
 
   uq_plus_η = vars.u                                            # use vars.u as scratch variable
-  @. uq_plus_η *= vars.q + params.eta                           # u*(q+η)
+  @. uq_plus_η *= vars.q + params.eta                           # u * (q + η)
   vq_plus_η = vars.v                                            # use vars.v as scratch variable
-  @. vq_plus_η *= vars.q + params.eta                           # v*(q+η)
+  @. vq_plus_η *= vars.q + params.eta                           # v * (q + η)
 
   uq_plus_ηh = vars.uh                                          # use vars.uh as scratch variable
-  mul!(uq_plus_ηh, grid.rfftplan, uq_plus_η)                    # \hat{u*(q+η)}
+  mul!(uq_plus_ηh, grid.rfftplan, uq_plus_η)                    # \hat{u * (q + η)}
   vq_plus_ηh = vars.vh                                          # use vars.vh as scratch variable
-  mul!(vq_plus_ηh, grid.rfftplan, vq_plus_η)                    # \hat{v*(q+η)}
+  mul!(vq_plus_ηh, grid.rfftplan, vq_plus_η)                    # \hat{v * (q + η)}
 
-  @. N = -im * grid.kr * uq_plus_ηh - im * grid.l * vq_plus_ηh  # -∂[u*(q+η)]/∂x -∂[v*(q+η)]/∂y
+  @. N = -im * grid.kr * uq_plus_ηh - im * grid.l * vq_plus_ηh  # - ∂[u*(q+η)]/∂x - ∂[v*(q+η)]/∂y
+
   return nothing
 end
 
@@ -430,14 +433,16 @@ end
 
 """
     kinetic_energy(prob)
-    kinetic_energy(sol, grid, vars, params)
 
-Return the domain-averaged kinetic energy of the fluid. Since ``u² + v² = |{\\bf ∇} ψ|²``, the
-domain-averaged kinetic energy is 
+Return the problem's (`prob`) domain-averaged kinetic energy of the fluid. Since
+``u² + v² = |{\\bf ∇} ψ|²``, the domain-averaged kinetic energy is 
+
 ```math
 \\int \\frac1{2} |{\\bf ∇} ψ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ψ̂|² .
 ```
 """
+@inline kinetic_energy(prob) = kinetic_energy(prob.sol, prob.vars, prob.params, prob.grid)
+
 function kinetic_energy(sol, vars, params, grid)
   streamfunctionfrompv!(vars.ψh, sol, params, grid)
   @. vars.uh = sqrt.(grid.Krsq) * vars.ψh      # vars.uh is a dummy variable
@@ -445,33 +450,31 @@ function kinetic_energy(sol, vars, params, grid)
   return parsevalsum2(vars.uh , grid) / (2 * grid.Lx * grid.Ly)
 end
 
-kinetic_energy(prob) = kinetic_energy(prob.sol, prob.vars, prob.params, prob.grid)
-
 """
     potential_energy(prob)
-    potential_energy(sol, grid, vars, params)
 
-Return the domain-averaged potential energy of the fluid, 
+Return the problem's (`prob`) domain-averaged potential energy of the fluid,
+
 ```math
 \\int \\frac1{2} \\frac{ψ²}{ℓ²} \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} \\frac{|ψ̂|²}{ℓ²} .
 ```
 """
-function potential_energy(sol, vars, params::EquivalentBarotropicQGParams, grid)
-  streamfunctionfrompv!(vars.ψh, sol, params, grid)
-  return 1 / params.deformation_radius^2 * parsevalsum2(vars.ψh, grid) / (2 * grid.Lx * grid.Ly)
-end
+@inline potential_energy(prob) = potential_energy(prob.sol, prob.vars, prob.params, prob.grid)
 
 @inline potential_energy(sol, vars, params::BarotropicQGParams, grid) = 0
 
-@inline potential_energy(prob) = potential_energy(prob.sol, prob.vars, prob.params, prob.grid)
+function potential_energy(sol, vars, params::EquivalentBarotropicQGParams, grid)
+  streamfunctionfrompv!(vars.ψh, sol, params, grid)
+
+  return 1 / params.deformation_radius^2 * parsevalsum2(vars.ψh, grid) / (2 * grid.Lx * grid.Ly)
+end
 
 """
     energy(prob)
-    energy(sol, grid, vars, params)
 
-Return the domain-averaged total energy of the fluid, that is, the kinetic energy for a
-pure barotropic flow or the sum of kinetic and potential energies for an equivalent barotropic
-flow.
+Return the problem's (`prob`) domain-averaged total energy of the fluid, that is, the kinetic
+energy for a pure barotropic flow *or* the sum of kinetic and potential energies for an equivalent
+barotropic flow.
 """
 @inline energy(prob) = energy(prob.sol, prob.vars, prob.params, prob.grid)
 
@@ -481,9 +484,9 @@ flow.
 
 """
     enstrophy(prob)
-    enstrophy(sol, vars, params, grid)
 
-Return the domain-averaged enstrophy
+Return the problem's (`prob`) domain-averaged enstrophy
+
 ```math
 \\int \\frac1{2} (q + η)² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |q̂ + η̂|² .
 ```
@@ -497,10 +500,11 @@ end
 
 """
     energy_dissipation(prob)
-    energy_dissipation(sol, vars, params, grid)
 
-Return the domain-averaged energy dissipation rate. nν must be >= 1.
+Return the problem's (`prob`) domain-averaged energy dissipation rate.
 """
+@inline energy_dissipation(prob) = energy_dissipation(prob.sol, prob.vars, prob.params, prob.grid)
+
 @inline function energy_dissipation(sol, vars, params::BarotropicQGParams, grid)
   energy_dissipationh = vars.uh # use vars.uh as scratch variable
 
@@ -511,14 +515,13 @@ end
 
 energy_dissipation(sol, vars, params::EquivalentBarotropicQGParams, grid) = error("not implemented for finite deformation radius")
 
-@inline energy_dissipation(prob) = energy_dissipation(prob.sol, prob.vars, prob.params, prob.grid)
-
 """
     enstrophy_dissipation(prob)
-    enstrophy_dissipation(sol, vars, params, grid)
 
-Return the domain-averaged enstrophy dissipation rate. nν must be >= 1.
+Return the problem's (`prob`) domain-averaged enstrophy dissipation rate.
 """
+@inline enstrophy_dissipation(prob) = enstrophy_dissipation(prob.sol, prob.vars, prob.params, prob.grid)
+
 @inline function enstrophy_dissipation(sol, vars, params::BarotropicQGParams, grid)
   enstrophy_dissipationh = vars.uh # use vars.uh as scratch variable
 
@@ -529,14 +532,13 @@ end
 
 @inline enstrophy_dissipation(sol, vars, params::EquivalentBarotropicQGParams, grid) = error("not implemented for finite deformation radius")
 
-@inline enstrophy_dissipation(prob) = enstrophy_dissipation(prob.sol, prob.vars, prob.params, prob.grid)
-
 """
     energy_work(prob)
-    energy_work(sol, vars, params, grid)
 
-Return the domain-averaged rate of work of energy by the forcing `Fh`.
+Return the problem's (`prob`) domain-averaged rate of work of energy by the forcing `F`.
 """
+@inline energy_work(prob) = energy_work(prob.sol, prob.vars, prob.params, prob.grid)
+
 @inline function energy_work(sol, vars::ForcedVars, params::BarotropicQGParams, grid)
   energy_workh = vars.uh # use vars.uh as scratch variable
 
@@ -553,14 +555,13 @@ end
 
 @inline energy_work(sol, vars, params::EquivalentBarotropicQGParams, grid) = error("not implemented for finite deformation radius")
 
-@inline energy_work(prob) = energy_work(prob.sol, prob.vars, prob.params, prob.grid)
-
 """
     enstrophy_work(prob)
-    enstrophy_work(sol, vars, params, grid)
 
-Return the domain-averaged rate of work of enstrophy by the forcing `Fh`.
+Return the problem's (`prob`) domain-averaged rate of work of enstrophy by the forcing ``F``.
 """
+@inline enstrophy_work(prob) = enstrophy_work(prob.sol, prob.vars, prob.params, prob.grid)
+
 @inline function enstrophy_work(sol, vars::ForcedVars, params::BarotropicQGParams, grid)
   enstrophy_workh = vars.uh # use vars.uh as scratch variable
 
@@ -577,14 +578,13 @@ end
 
 @inline enstrophy_work(sol, vars, params::EquivalentBarotropicQGParams, grid) = error("not implemented for finite deformation radius")
 
-@inline enstrophy_work(prob) = enstrophy_work(prob.sol, prob.vars, prob.params, prob.grid)
-
 """
     energy_drag(prob)
-    energy_drag(sol, vars, params, grid)
 
-Return the extraction of domain-averaged energy by drag μ.
+Return the problem's (`prob`) extraction of domain-averaged energy by drag ``μ``.
 """
+@inline energy_drag(prob) = energy_drag(prob.sol, prob.vars, prob.params, prob.grid)
+
 @inline function energy_drag(sol, vars, params::BarotropicQGParams, grid)
   energy_dragh = vars.uh # use vars.uh as scratch variable
 
@@ -595,14 +595,13 @@ end
 
 @inline energy_drag(sol, vars, params::EquivalentBarotropicQGParams, grid) = error("not implemented for finite deformation radius")
 
-@inline energy_drag(prob) = energy_drag(prob.sol, prob.vars, prob.params, prob.grid)
-
 """
     enstrophy_drag(prob)
-    enstrophy_drag(sol, vars, params, grid)
 
-Return the extraction of domain-averaged enstrophy by drag/hypodrag μ.
+Return the problem's (`prob`) extraction of domain-averaged enstrophy by drag/hypodrag ``μ``.
 """
+@inline enstrophy_drag(prob) = enstrophy_drag(prob.sol, prob.vars, prob.params, prob.grid)
+
 @inline function enstrophy_drag(sol, vars, params::BarotropicQGParams, grid)
   enstrophy_dragh = vars.uh # use vars.uh as scratch variable
 
@@ -612,7 +611,5 @@ Return the extraction of domain-averaged enstrophy by drag/hypodrag μ.
 end
 
 @inline enstrophy_drag(sol, vars, params::EquivalentBarotropicQGParams, grid) = error("not implemented for finite deformation radius")
-
-@inline enstrophy_drag(prob) = enstrophy_drag(prob.sol, prob.vars, prob.params, prob.grid)
 
 end # module

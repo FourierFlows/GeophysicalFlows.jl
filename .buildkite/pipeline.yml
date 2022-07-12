@@ -13,7 +13,16 @@ steps:
     agents:
       queue: "juliagpu"
       cuda: "*"
-    soft_fail:
-      - exit_status: 1
+    if: build.message !~ /\[skip tests\]/
+    timeout_in_minutes: 60
+
+  - label: "🐫 Julia 1.7"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: 1.7
+      - JuliaCI/julia-test#v1: ~
+    agents:
+      queue: "juliagpu"
+      cuda: "*"
     if: build.message !~ /\[skip tests\]/
     timeout_in_minutes: 60
