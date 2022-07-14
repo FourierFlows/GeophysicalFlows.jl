@@ -152,7 +152,7 @@ Return the parameters for an Equivalent Barotropic QG problem (i.e., with finite
 function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, β, deformation_radius, eta, μ, ν, nν::Int, calcF) where {T, A}
   eta_grid = typeof(eta) <: AbstractArray ? eta : FourierFlows.on_grid(eta, grid)
   eta_gridh = rfft(eta_grid)
-  return Params(β, deformation_radius, eta_grid, eta_gridh, μ, ν, nν, calcF)
+  return Params(β, deformation_radius, A(eta_grid), A(eta_gridh), μ, ν, nν, calcF)
 end
 
 """
@@ -160,8 +160,8 @@ end
 
 Return the parameters for a Barotropic QG problem (i.e., with infinite Rossby radius of deformation).
 """
-BarotropicQGParams(grid::AbstractGrid, β, eta, μ, ν, nν::Int, calcF) =
-    EquivalentBarotropicQGParams(grid, β, nothing, eta, μ, ν, nν, calcF)
+BarotropicQGParams(grid::AbstractGrid{T, A}, β, eta, μ, ν, nν::Int, calcF) where {T, A} =
+    EquivalentBarotropicQGParams(grid, β, nothing, A(eta), μ, ν, nν, calcF)
     
 
 # ---------
