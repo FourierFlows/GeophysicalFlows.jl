@@ -6,7 +6,7 @@ aliasing errors in the [FourierFlows.jl Documentation](https://fourierflows.gith
 in Fourier space before transforming to physical space to compute nonlinear terms.
 
 !!! info "De-aliasing scheme"
-    FourierFlows.jl curently implements dealiasing by zeroing out the highest-`aliased_fraction` 
+    FourierFlows.jl currently implements dealiasing by zeroing out the highest-`aliased_fraction` 
     wavenumber components on a `grid`. By default in FourierFlows.jl, `aliased_fraction=1/3`.
     Users can construct a `grid` with different `aliased_fraction` via
     

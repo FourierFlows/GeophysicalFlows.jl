@@ -141,7 +141,7 @@ if you'd like to work on a new feature or implement a new module, if you're new 
 and want to find a cool little project or issue to work on that fits your interests! We're more 
 than happy to help along the way.
 
-For more information, check out our [contributor's guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/main/CONTRIBUTING.md).
+For more information, check out our [contributors' guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/main/CONTRIBUTING.md).
 
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl

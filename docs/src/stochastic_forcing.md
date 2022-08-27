@@ -13,12 +13,12 @@ computation instead of using one of the two consistently all along.
     All modules included in GeophysicalFlows.jl use **Stratonovich calculus**.
 		
 The choice of Stratonovich calculus for GeophysicalFlows.jl was made since this calculus "works 
-the same" with both stochastic and deterministic forcing, i.e. with Stratonovich calculus we 
+the same" with both stochastic and deterministic forcing, i.e., with Stratonovich calculus we
 have the same chain rules for differentiation for stochastic functions as the chain rules we 
 learn in normal-deterministic calculus). Therefore, with the Stratonovich calculus the code 
 does not really "care" whether the user implement deterministic or stochastic forcing.
 
-If you are interested in learning more regarding the two stochastic calculi and  how they are 
+If you are interested in learning more regarding the two stochastic calculi and how they are 
 numerically implemented then read on; otherwise you can skip this section of the documentation.
 
 ## Stochastic Differential Equations (SDEs)
@@ -53,7 +53,7 @@ with ``W_t`` a Brownian motion or Wiener process, can be written in an integral 
     2. Stationarity. The statistical distribution of the increment ``W_{t+s} − W_s`` does not depend on  ``s`` (and so is identical in distribution to ``W_t``).
     3. Gaussianity. ``W_t`` is a Gaussian process with mean ``\langle W_t \rangle = 0`` and covariance ``\langle W_t W_s \rangle = \min(t, s)``.
 
-!!! tip Notation, e.g., ``x_t``
+!!! tip "Notation, e.g., ``x_t``"
     It's common to use notation ``x_t`` to denote explicit ``t``-dependence of variable ``x``. Not to be confused with the other common usage of subscripts for denoting partial differentiation.
 
 The last integral in the integral representation of a SDE expression above is a stochastic integral 
@@ -258,7 +258,6 @@ Figure below compares the energy evolution as predicted by:
 - direct computation from the ``x_t`` time-series: ``\tfrac{1}{2} x_t^2``,
 - time-integration of (3) using Euler--Maruyama, and
 - time-integration of (4) using Euler--Heun.
-
 
 ```@setup 1
 using Plots
