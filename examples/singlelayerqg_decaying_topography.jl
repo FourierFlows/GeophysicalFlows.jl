@@ -57,7 +57,7 @@ nothing # hide
 #
 # The topophic PV is prescribed via keyword argument `eta`.
 prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, eta=topographicPV,
-                                  dt=dt, stepper=stepper, aliased_fraction=0)
+                                  dt, stepper, aliased_fraction=0)
 nothing # hide
 
 # and define some shortcuts

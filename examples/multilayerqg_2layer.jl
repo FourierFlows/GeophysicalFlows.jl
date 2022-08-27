@@ -12,13 +12,13 @@
 
 # ```julia
 # using Pkg
-# pkg"add GeophysicalFlows, Plots, Printf"
+# pkg"add GeophysicalFlows, CairoMakie, Printf"
 # ```
 
 # ## Let's begin
 # Let's load `GeophysicalFlows.jl` and some other needed packages.
 #
-using GeophysicalFlows, Plots, Printf
+using GeophysicalFlows, CairoMakie, Printf
 
 using Random: seed!
 
@@ -46,12 +46,12 @@ L = 2π                   # domain size
  
 nlayers = 2              # number of layers
 f₀, g = 1, 1             # Coriolis parameter and gravitational constant
- H = [0.2, 0.8]          # the rest depths of each layer
- ρ = [4.0, 5.0]          # the density of each layer
+H = [0.2, 0.8]           # the rest depths of each layer
+ρ = [4.0, 5.0]           # the density of each layer
  
- U = zeros(nlayers) # the imposed mean zonal flow in each layer
- U[1] = 1.0
- U[2] = 0.0
+U = zeros(nlayers)       # the imposed mean zonal flow in each layer
+U[1] = 1.0
+U[2] = 0.0
 nothing # hide
 
 
@@ -61,9 +61,8 @@ nothing # hide
 # at every time-step that removes enstrophy at high wavenumbers and, thereby,
 # stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
 
-prob = MultiLayerQG.Problem(nlayers, dev;
-                            nx=n, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ, U=U, μ=μ, β=β,
-                            dt=dt, stepper=stepper, aliased_fraction=0)
+prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ, U, μ, β,
+                            dt, stepper, aliased_fraction=0)
 nothing # hide
 
 # and define some shortcuts.
@@ -92,7 +91,7 @@ nothing # hide
 # ## Diagnostics
 
 # Create Diagnostics -- `energies` function is imported at the top.
-E = Diagnostic(MultiLayerQG.energies, prob; nsteps=nsteps)
+E = Diagnostic(MultiLayerQG.energies, prob; nsteps)
 diags = [E] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 
@@ -112,7 +111,9 @@ if !isdir(plotpath); mkdir(plotpath); end
 nothing # hide
 
 # And then create Output
-get_sol(prob) = sol # extracts the Fourier-transformed solution
+
+get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
+
 function get_u(prob)
   sol, params, vars, grid = prob.sol, prob.params, prob.vars, prob.grid
   

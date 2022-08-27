@@ -58,7 +58,7 @@ nothing # hide
 # at every time-step that removes enstrophy at high wavenumbers and, thereby,
 # stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
 
-prob = SurfaceQG.Problem(dev; nx=n, Lx=L, dt=dt, stepper=stepper, ν=ν, nν=nν)
+prob = SurfaceQG.Problem(dev; nx=n, Lx=L, dt, stepper, ν, nν)
 nothing # hide
 
 # Let's define some shortcuts.

@@ -86,7 +86,7 @@ nothing # hide
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used.
-prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper="ETDRK4",
+prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν, nν, μ, nμ, dt, stepper="ETDRK4",
                                 calcF=calcF!, stochastic=true)
 nothing # hide
 
@@ -128,8 +128,8 @@ TwoDNavierStokes.set_ζ!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
 # ## Diagnostics
 
 # Create Diagnostics; the diagnostics are aimed to probe the energy budget.
-E  = Diagnostic(TwoDNavierStokes.energy,                prob, nsteps=nsteps) # energy
-Z  = Diagnostic(TwoDNavierStokes.enstrophy,             prob, nsteps=nsteps) # enstrophy
+E  = Diagnostic(TwoDNavierStokes.energy,    prob, nsteps) # energy
+Z  = Diagnostic(TwoDNavierStokes.enstrophy, prob, nsteps) # enstrophy
 diags = [E, Z] # a list of Diagnostics passed to `stepforward!` will  be updated every timestep.
 nothing # hide
 

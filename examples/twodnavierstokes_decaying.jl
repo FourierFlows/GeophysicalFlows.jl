@@ -48,7 +48,7 @@ nothing # hide
 # at every time-step that removes enstrophy at high wavenumbers and, thereby,
 # stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
 
-prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ny=n, Ly=L, dt=dt, stepper="FilteredRK4")
+prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ny=n, Ly=L, dt, stepper="FilteredRK4")
 nothing # hide
 
 # Next we define some shortcuts for convenience.

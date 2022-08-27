@@ -94,7 +94,7 @@ nothing # hide
 # We use `stepper = "FilteredRK4"`. Filtered timesteppers apply a wavenumber-filter 
 # at every time-step that removes enstrophy at high wavenumbers and, thereby,
 # stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
-prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper, 
+prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β, μ, dt, stepper,
                              calcF=calcF!, stochastic=true)
 nothing # hide
 

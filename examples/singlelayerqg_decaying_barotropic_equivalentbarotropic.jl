@@ -55,9 +55,9 @@ nothing # hide
 # Thus, we choose not to do any dealiasing by providing `aliased_fraction=0`.
 
 prob_bqg = SingleLayerQG.Problem(dev; nx=n, Lx=L,
-                                      dt=dt, stepper="FilteredRK4", aliased_fraction=0)
-prob_eqbqg = SingleLayerQG.Problem(dev; nx=n, Lx=L, deformation_radius = deformation_radius,
-                                      dt=dt, stepper="FilteredRK4", aliased_fraction=0)
+                                      dt, stepper="FilteredRK4", aliased_fraction=0)
+prob_eqbqg = SingleLayerQG.Problem(dev; nx=n, Lx=L, deformation_radius,
+                                        dt, stepper="FilteredRK4", aliased_fraction=0)
 nothing # hide
 
 

@@ -51,8 +51,7 @@ nothing # hide
 # stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
 # Thus, we choose not to do any dealiasing by providing `aliased_fraction=0`.
 
-prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ,
-                                  dt=dt, stepper=stepper, aliased_fraction=0)
+prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β, μ, dt, stepper, aliased_fraction=0)
 nothing # hide
 
 # and define some shortcuts
