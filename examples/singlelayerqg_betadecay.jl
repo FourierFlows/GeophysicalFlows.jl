@@ -232,6 +232,9 @@ record(fig, "singlelayerqg_betadecay.mp4", frames, framerate = 8) do j
   SingleLayerQG.updatevars!(prob)
 end
 
+# ![](singlelayerqg_betadecay.mp4)
+
+
 # ## Save
 
 # Finally, we can save, e.g., the last snapshot via
