@@ -135,103 +135,132 @@ nothing # hide
 # and enstrophy. Note that when plotting, we decorate the variable to be plotted with `Array()` 
 # to make sure it is brought back on the CPU when `vars` live on the GPU.
 
-symlims(data) = maximum(abs.(extrema(data))) |> q -> (-q, q)
+Lx, Ly = grid.Lx, grid.Ly
 
-function plot_output(prob)
-  Lx, Ly = prob.grid.Lx, prob.grid.Ly
+title_KE = Observable(@sprintf("μt = %.2f", μ * clock.t))
+
+q₁ = Observable(vars.q[:, :, 1])
+ψ₁ = Observable(vars.ψ[:, :, 1])
+q₂ = Observable(vars.q[:, :, 2])
+ψ₂ = Observable(vars.ψ[:, :, 2])
+
+function compute_levels(maxf)
+  levelsf  = @lift collect(range(-$maxf, stop = $maxf, length=8))
+  levelsf⁺ = @lift collect(range($maxf/7, stop = $maxf, length=4))
+  levelsf⁻ = @lift collect(range(-$maxf, stop = -$maxf/7, length=4))
   
-  l = @layout Plots.grid(2, 3)
-  p = plot(layout=l, size = (1000, 600))
-  
-  for m in 1:nlayers
-    heatmap!(p[(m-1) * 3 + 1], x, y, Array(vars.q[:, :, m]'),
-         aspectratio = 1,
-              legend = false,
-                   c = :balance,
-               xlims = (-Lx/2, Lx/2),
-               ylims = (-Ly/2, Ly/2),
-               clims = symlims,
-              xticks = -3:3,
-              yticks = -3:3,
-              xlabel = "x",
-              ylabel = "y",
-               title = "q_"*string(m),
-          framestyle = :box)
-
-    contourf!(p[(m-1) * 3 + 2], x, y, Array(vars.ψ[:, :, m]'),
-              levels = 8,
-         aspectratio = 1,
-              legend = false,
-                   c = :viridis,
-               xlims = (-Lx/2, Lx/2),
-               ylims = (-Ly/2, Ly/2),
-               clims = symlims,
-              xticks = -3:3,
-              yticks = -3:3,
-              xlabel = "x",
-              ylabel = "y",
-               title = "ψ_"*string(m),
-          framestyle = :box)
-  end
-
-  plot!(p[3], 2,
-             label = ["KE₁" "KE₂"],
-            legend = :bottomright,
-         linewidth = 2,
-             alpha = 0.7,
-             xlims = (-0.1, 2.35),
-             ylims = (1e-9, 1e0),
-            yscale = :log10,
-            yticks = 10.0.^(-9:0),
-            xlabel = "μt")
-          
-  plot!(p[6], 1,
-             label = "PE",
-            legend = :bottomright,
-         linecolor = :red,
-         linewidth = 2,
-             alpha = 0.7,
-             xlims = (-0.1, 2.35),
-             ylims = (1e-9, 1e0),
-            yscale = :log10,
-            yticks = 10.0.^(-9:0),
-            xlabel = "μt")
-
+  return levelsf, levelsf⁺, levelsf⁻
 end
-nothing # hide
+
+maxψ₁ = Observable(maximum(abs, vars.ψ[:, :, 1]))
+maxψ₂ = Observable(maximum(abs, vars.ψ[:, :, 2]))
+
+levelsψ₁, levelsψ₁⁺, levelsψ₁⁻ = compute_levels(maxψ₁)
+levelsψ₂, levelsψ₂⁺, levelsψ₂⁻ = compute_levels(maxψ₂)
+
+KE₁ = Observable(Point2f[(μ * E.t[1], E.data[1][1][1])])
+KE₂ = Observable(Point2f[(μ * E.t[1], E.data[1][1][2])])
+PE  = Observable(Point2f[(μ * E.t[1], E.data[1][2])])
+
+fig = Figure(resolution=(1000, 600))
+
+axq₁ = Axis(fig[1, 1], 
+            xlabel = "x",
+            ylabel = "y",
+            title = "q₁",
+            aspect = 1,
+            limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+
+axψ₁ = Axis(fig[2, 1], 
+            xlabel = "x",
+            ylabel = "y",
+            title = "ψ₁",
+            aspect = 1,
+            limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+
+axq₂ = Axis(fig[1, 2], 
+            xlabel = "x",
+            ylabel = "y",
+            title = "q₂",
+            aspect = 1,
+            limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+
+axψ₂ = Axis(fig[2, 2], 
+            xlabel = "x",
+            ylabel = "y",
+            aspect = 1,
+            title = "ψ₂",
+            limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+
+axKE = Axis(fig[1, 3], 
+            xlabel = "μ t",
+            ylabel = "KE",
+            title = title_KE,
+            yscale = log10,
+            limits = ((-0.1, 2.6), (1e-9, 5)))
+
+axPE = Axis(fig[2, 3], 
+            xlabel = "μ t",
+            ylabel = "PE",
+            yscale = log10,
+            limits = ((-0.1, 2.6), (1e-9, 5)))
+
+heatmap!(axq₁, x, y, q₁; colormap = :balance)
+
+heatmap!(axq₂, x, y, q₂; colormap = :balance)
+
+contourf!(axψ₁, x, y, ψ₁; levels=levelsψ₁,  colormap = :viridis, extendlow = :auto, extendhigh = :auto)
+ contour!(axψ₁, x, y, ψ₁; levels=levelsψ₁⁺, color=:black)
+ contour!(axψ₁, x, y, ψ₁; levels=levelsψ₁⁻, color=:black, linestyle = :dash)
+
+contourf!(axψ₂, x, y, ψ₂; levels=levelsψ₂,  colormap = :viridis, extendlow = :auto, extendhigh = :auto)
+ contour!(axψ₂, x, y, ψ₂; levels=levelsψ₂⁺, color=:black)
+ contour!(axψ₂, x, y, ψ₂; levels=levelsψ₂⁻, color=:black, linestyle = :dash)
+
+ke₁ = lines!(axKE, KE₁; linewidth = 3)
+ke₂ = lines!(axKE, KE₂; linewidth = 3)
+Legend(fig[1, 4], [ke₁, ke₂,], ["KE₁", "KE₂"])
+
+lines!(axPE, PE; linewidth = 3)
+
+fig
 
 
 # ## Time-stepping the `Problem` forward
 
 # Finally, we time-step the `Problem` forward in time.
 
-p = plot_output(prob)
-
 startwalltime = time()
 
-anim = @animate for j = 0:round(Int, nsteps / nsubs)
+frames = 0:round(Int, nsteps / nsubs)
+
+record(fig, "multilayerqg_2layer.mp4", frames, framerate = 18) do j
   if j % (1000 / nsubs) == 0
     cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
     
-    log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, KE₁: %.3e, KE₂: %.3e, PE: %.3e, walltime: %.2f min", clock.step, clock.t, cfl, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
+    log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, KE₁: %.3e, KE₂: %.3e, PE: %.3e, walltime: %.2f min",
+                   clock.step, clock.t, cfl, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
 
     println(log)
   end
   
-  for m in 1:nlayers
-    p[(m-1) * 3 + 1][1][:z] = Array(vars.q[:, :, m])
-    p[(m-1) * 3 + 2][1][:z] = Array(vars.ψ[:, :, m])
-  end
-  
-  push!(p[3][1], μ * E.t[E.i], E.data[E.i][1][1])
-  push!(p[3][2], μ * E.t[E.i], E.data[E.i][1][2])
-  push!(p[6][1], μ * E.t[E.i], E.data[E.i][2][1])
+  q₁[] = vars.q[:, :, 1]
+  ψ₁[] = vars.ψ[:, :, 1]
+  q₂[] = vars.q[:, :, 2]
+  ψ₂[] = vars.ψ[:, :, 2]
+
+  maxψ₁[] = maximum(abs, vars.ψ[:, :, 1])
+  maxψ₂[] = maximum(abs, vars.ψ[:, :, 2])
+
+  KE₁[] = push!(KE₁[], Point2f(μ * E.t[E.i], E.data[E.i][1][1]))
+  KE₂[] = push!(KE₂[], Point2f(μ * E.t[E.i], E.data[E.i][1][2]))
+  PE[]  = push!(PE[] , Point2f(μ * E.t[E.i], E.data[E.i][2]))
+
+  title_KE[] = @sprintf("μt = %.2f", μ * clock.t)
   
   stepforward!(prob, diags, nsubs)
   MultiLayerQG.updatevars!(prob)
 end
-
-mp4(anim, "multilayerqg_2layer.mp4", fps=18)
 
 
 # ## Save
