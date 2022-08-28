@@ -131,8 +131,9 @@ nothing # hide
 
 # ## Visualizing the simulation
 
-# We define a function that plots the potential vorticity field and the evolution of energy 
-# and enstrophy. Note that when plotting, we decorate the variable to be plotted with `Array()` 
+# We create a figure using Makie's [`Observable`](https://makie.juliaplots.org/stable/documentation/nodes/)s
+# that plots the potential vorticity field and the evolution of energy and enstrophy.
+# Note that when plotting, we decorate the variable to be plotted with `Array()` 
 # to make sure it is brought back on the CPU when `vars` live on the GPU.
 
 Lx, Ly = grid.Lx, grid.Ly
@@ -144,10 +145,15 @@ q₁ = Observable(vars.q[:, :, 1])
 q₂ = Observable(vars.q[:, :, 2])
 ψ₂ = Observable(vars.ψ[:, :, 2])
 
-function compute_levels(maxf)
-  levelsf  = @lift collect(range(-$maxf, stop = $maxf, length=8))
-  levelsf⁺ = @lift collect(range($maxf/7, stop = $maxf, length=4))
-  levelsf⁻ = @lift collect(range(-$maxf, stop = -$maxf/7, length=4))
+function compute_levels(maxf, nlevels=8)
+  # -max(|f|):...:max(|f|)
+  levelsf  = @lift collect(range(-$maxf, stop = $maxf, length=nlevels))
+
+  # only positive
+  levelsf⁺ = @lift collect(range($maxf/(nlevels-1), stop = $maxf, length=nlevels/2))
+
+  # only negative
+  levelsf⁻ = @lift collect(range(-$maxf, stop = -$maxf/(nlevels-1), length=nlevels/2))
   
   return levelsf, levelsf⁺, levelsf⁻
 end
@@ -209,13 +215,19 @@ heatmap!(axq₁, x, y, q₁; colormap = :balance)
 
 heatmap!(axq₂, x, y, q₂; colormap = :balance)
 
-contourf!(axψ₁, x, y, ψ₁; levels=levelsψ₁,  colormap = :viridis, extendlow = :auto, extendhigh = :auto)
- contour!(axψ₁, x, y, ψ₁; levels=levelsψ₁⁺, color=:black)
- contour!(axψ₁, x, y, ψ₁; levels=levelsψ₁⁻, color=:black, linestyle = :dash)
+contourf!(axψ₁, x, y, ψ₁;
+          levels = levelsψ₁, colormap = :viridis, extendlow = :auto, extendhigh = :auto)
+ contour!(axψ₁, x, y, ψ₁;
+          levels = levelsψ₁⁺, color=:black)
+ contour!(axψ₁, x, y, ψ₁;
+          levels = levelsψ₁⁻, color=:black, linestyle = :dash)
 
-contourf!(axψ₂, x, y, ψ₂; levels=levelsψ₂,  colormap = :viridis, extendlow = :auto, extendhigh = :auto)
- contour!(axψ₂, x, y, ψ₂; levels=levelsψ₂⁺, color=:black)
- contour!(axψ₂, x, y, ψ₂; levels=levelsψ₂⁻, color=:black, linestyle = :dash)
+contourf!(axψ₂, x, y, ψ₂;
+          levels = levelsψ₂, colormap = :viridis, extendlow = :auto, extendhigh = :auto)
+ contour!(axψ₂, x, y, ψ₂;
+          levels = levelsψ₂⁺, color=:black)
+ contour!(axψ₂, x, y, ψ₂;
+          levels = levelsψ₂⁻, color=:black, linestyle = :dash)
 
 ke₁ = lines!(axKE, KE₁; linewidth = 3)
 ke₂ = lines!(axKE, KE₂; linewidth = 3)
@@ -256,7 +268,7 @@ record(fig, "multilayerqg_2layer.mp4", frames, framerate = 18) do j
   KE₂[] = push!(KE₂[], Point2f(μ * E.t[E.i], E.data[E.i][1][2]))
   PE[]  = push!(PE[] , Point2f(μ * E.t[E.i], E.data[E.i][2]))
 
-  title_KE[] = @sprintf("μt = %.2f", μ * clock.t)
+  title_KE[] = @sprintf("μ t = %.2f", μ * clock.t)
   
   stepforward!(prob, diags, nsubs)
   MultiLayerQG.updatevars!(prob)
