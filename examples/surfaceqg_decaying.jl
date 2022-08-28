@@ -122,8 +122,8 @@ if !isdir(datapath); mkdir(datapath); end
 nothing # hide
 
 # and then create Output.
-get_sol(prob) = sol # extracts the Fourier-transformed solution
-get_u(prob) = irfft(im * grid.l .* sqrt.(grid.invKrsq) .* sol, grid.nx)
+get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
+get_u(prob) = irfft(im * prob.grid.l .* sqrt.(prob.grid.invKrsq) .* prob.sol, prob.grid.nx)
 out = Output(prob, dataname, (:sol, get_sol), (:u, get_u))
 nothing # hide
 

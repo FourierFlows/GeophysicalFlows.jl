@@ -86,8 +86,8 @@ heatmap(x, y, Array(vars.ζ'),
 # ## Diagnostics
 
 # Create Diagnostics -- `energy` and `enstrophy` functions are imported at the top.
-E = Diagnostic(TwoDNavierStokes.energy, prob; nsteps=nsteps)
-Z = Diagnostic(TwoDNavierStokes.enstrophy, prob; nsteps=nsteps)
+E = Diagnostic(TwoDNavierStokes.energy, prob; nsteps)
+Z = Diagnostic(TwoDNavierStokes.enstrophy, prob; nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 

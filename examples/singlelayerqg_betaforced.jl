@@ -132,8 +132,8 @@ SingleLayerQG.set_q!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
 # ## Diagnostics
 
 # Create Diagnostic -- `energy` and `enstrophy` are functions imported at the top.
-E = Diagnostic(SingleLayerQG.energy, prob; nsteps=nsteps)
-Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps=nsteps)
+E = Diagnostic(SingleLayerQG.energy, prob; nsteps)
+Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 
@@ -153,8 +153,8 @@ if !isdir(plotpath); mkdir(plotpath); end
 nothing # hide
 
 # and then create Output.
-get_sol(prob) = sol # extracts the Fourier-transformed solution
-get_u(prob) = irfft(im * grid.l .* grid.invKrsq .* sol, grid.nx)
+get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
+get_u(prob) = irfft(im * prob.grid.l .* prob.grid.invKrsq .* prob.sol, prob.grid.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 nothing # hide
 

@@ -128,8 +128,8 @@ TwoDNavierStokes.set_ζ!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
 # ## Diagnostics
 
 # Create Diagnostics; the diagnostics are aimed to probe the energy budget.
-E  = Diagnostic(TwoDNavierStokes.energy,    prob, nsteps) # energy
-Z  = Diagnostic(TwoDNavierStokes.enstrophy, prob, nsteps) # enstrophy
+E  = Diagnostic(TwoDNavierStokes.energy,    prob; nsteps) # energy
+Z  = Diagnostic(TwoDNavierStokes.enstrophy, prob; nsteps) # enstrophy
 diags = [E, Z] # a list of Diagnostics passed to `stepforward!` will  be updated every timestep.
 nothing # hide
 
