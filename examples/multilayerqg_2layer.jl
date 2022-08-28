@@ -262,6 +262,8 @@ record(fig, "multilayerqg_2layer.mp4", frames, framerate = 18) do j
   MultiLayerQG.updatevars!(prob)
 end
 
+# ![](multilayerqg_2layer.mp4)
+
 
 # ## Save
 # Finally, we can save, e.g., the last snapshot via

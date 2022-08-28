@@ -257,7 +257,7 @@ lines!(axū, 0y, y; linewidth = 1, linestyle=:dash)
 lines!(axE, μt, energy; linewidth = 3)
 lines!(axZ, μt, enstrophy; linewidth = 3, color = :red)
 
-fig
+nothing # hide
 
 
 # ## Time-stepping the `Problem` forward
@@ -293,6 +293,8 @@ record(fig, "barotropicqgql_betaforced.mp4", frames, framerate = 18) do j
   stepforward!(prob, diags, nsubs)
   BarotropicQGQL.updatevars!(prob)
 end
+
+# ![](barotropicqgql_betaforced.mp4)
 
 
 # ## Save
