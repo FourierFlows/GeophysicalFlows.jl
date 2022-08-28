@@ -140,20 +140,20 @@ Lx, Ly = grid.Lx, grid.Ly
 
 title_KE = Observable(@sprintf("μt = %.2f", μ * clock.t))
 
-q₁ = Observable(vars.q[:, :, 1])
-ψ₁ = Observable(vars.ψ[:, :, 1])
-q₂ = Observable(vars.q[:, :, 2])
-ψ₂ = Observable(vars.ψ[:, :, 2])
+q₁ = Observable(Array(vars.q[:, :, 1]))
+ψ₁ = Observable(Array(vars.ψ[:, :, 1]))
+q₂ = Observable(Array(vars.q[:, :, 2]))
+ψ₂ = Observable(Array(vars.ψ[:, :, 2]))
 
 function compute_levels(maxf, nlevels=8)
   # -max(|f|):...:max(|f|)
   levelsf  = @lift collect(range(-$maxf, stop = $maxf, length=nlevels))
 
   # only positive
-  levelsf⁺ = @lift collect(range($maxf/(nlevels-1), stop = $maxf, length=nlevels/2))
+  levelsf⁺ = @lift collect(range($maxf/(nlevels-1), stop = $maxf, length=Int(nlevels/2)))
 
   # only negative
-  levelsf⁻ = @lift collect(range(-$maxf, stop = -$maxf/(nlevels-1), length=nlevels/2))
+  levelsf⁻ = @lift collect(range(-$maxf, stop = -$maxf/(nlevels-1), length=Int(nlevels/2)))
   
   return levelsf, levelsf⁺, levelsf⁻
 end
@@ -175,13 +175,13 @@ axis_kwargs = (xlabel = "x",
                aspect = 1,
                limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
 
-axq₁ = Axis(fig[1, 1], title = "q₁", axis_kwargs...)
+axq₁ = Axis(fig[1, 1]; title = "q₁", axis_kwargs...)
 
-axψ₁ = Axis(fig[2, 1], title = "ψ₁", axis_kwargs...)
+axψ₁ = Axis(fig[2, 1]; title = "ψ₁", axis_kwargs...)
 
-axq₂ = Axis(fig[1, 2], title = "q₂", axis_kwargs...)
+axq₂ = Axis(fig[1, 2]; title = "q₂", axis_kwargs...)
 
-axψ₂ = Axis(fig[2, 2], title = "ψ₂", axis_kwargs...)
+axψ₂ = Axis(fig[2, 2]; title = "ψ₂", axis_kwargs...)
 
 axKE = Axis(fig[1, 3], 
             xlabel = "μ t",
@@ -241,10 +241,10 @@ record(fig, "multilayerqg_2layer.mp4", frames, framerate = 18) do j
     println(log)
   end
   
-  q₁[] = vars.q[:, :, 1]
-  ψ₁[] = vars.ψ[:, :, 1]
-  q₂[] = vars.q[:, :, 2]
-  ψ₂[] = vars.ψ[:, :, 2]
+  q₁[] = Array(vars.q[:, :, 1])
+  ψ₁[] = Array(vars.ψ[:, :, 1])
+  q₂[] = Array(vars.q[:, :, 2])
+  ψ₂[] = Array(vars.ψ[:, :, 2])
 
   maxψ₁[] = maximum(abs, vars.ψ[:, :, 1])
   maxψ₂[] = maximum(abs, vars.ψ[:, :, 2])
