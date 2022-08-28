@@ -10,13 +10,13 @@
 
 # ```julia
 # using Pkg
-# pkg"add GeophysicalFlows, Plots, Printf, Statistics, Random"
+# pkg"add GeophysicalFlows, CairoMakie, Printf, Statistics, Random"
 # ```
 
 # ## Let's begin
 # Let's load `GeophysicalFlows.jl` and some other needed packages.
 #
-using GeophysicalFlows, Plots, Printf, Random
+using GeophysicalFlows, CairoMakie, Printf, Random
 
 using Statistics: mean
 
@@ -86,42 +86,35 @@ nothing # hide
 # the variable to be plotted with `Array()` to make sure it is brought back on the CPU when 
 # `vars` live on the GPU.
 
-p1 = heatmap(x, y, Array(vars.q'),
-         aspectratio = 1,
-              c = :balance,
-           clim = (-12, 12),
-          xlims = (-grid.Lx/2, grid.Lx/2),
-          ylims = (-grid.Ly/2, grid.Ly/2),
-         xticks = -3:3,
-         yticks = -3:3,
-         xlabel = "x",
-         ylabel = "y",
-          title = "initial vorticity ∂v/∂x-∂u/∂y",
-     framestyle = :box)
+fig = Figure(resolution = (800, 360))
 
-p2 = contourf(x, y, Array(vars.ψ'),
-        aspectratio = 1,
-             c = :viridis,
-        levels = range(-0.7, stop=0.7, length=20), 
-          clim = (-0.35, 0.35),
-         xlims = (-grid.Lx/2, grid.Lx/2),
-         ylims = (-grid.Ly/2, grid.Ly/2),
-        xticks = -3:3,
-        yticks = -3:3,
-        xlabel = "x",
-        ylabel = "y",
-         title = "initial streamfunction ψ",
-    framestyle = :box)
+axq = Axis(fig[1, 1];
+           xlabel = "x",
+           ylabel = "y",
+           title = "initial vorticity ∂v/∂x-∂u/∂y",
+           aspect = 1,
+           limits = ((-grid.Lx/2, grid.Lx/2), (-grid.Ly/2, grid.Ly/2))
+           )
 
-layout = @layout Plots.grid(1, 2)
-p = plot(p1, p2, layout = layout, size = (800, 360))
+axψ = Axis(fig[1, 2];
+           xlabel = "x",
+           ylabel = "y",
+           title = "initial streamfunction ψ",
+           aspect = 1,
+           limits = ((-grid.Lx/2, grid.Lx/2), (-grid.Ly/2, grid.Ly/2))
+           )
 
+heatmap!(axq, x, y, Array(vars.q); colormap = :balance)
+
+contourf!(axψ, x, y, Array(vars.ψ); colormap = :viridis)
+
+fig
 
 # ## Diagnostics
 
 # Create Diagnostics -- `energy` and `enstrophy` functions are imported at the top.
-E = Diagnostic(SingleLayerQG.energy, prob; nsteps=nsteps)
-Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps=nsteps)
+E = Diagnostic(SingleLayerQG.energy, prob; nsteps)
+Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 
@@ -141,7 +134,7 @@ if !isdir(plotpath); mkdir(plotpath); end
 nothing # hide
 
 # and then create Output.
-get_sol(prob) = sol # extracts the Fourier-transformed solution
+get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
 out = Output(prob, filename, (:sol, get_sol))
 nothing # hide
 
@@ -151,67 +144,63 @@ nothing # hide
 # We define a function that plots the vorticity and streamfunction and 
 # their corresponding zonal mean structure.
 
-function plot_output(prob)
-  q = Array(prob.vars.q)
-  ψ = Array(prob.vars.ψ)
-  q̄ = Array(mean(q, dims=1)')
-  ū = Array(mean(prob.vars.u, dims=1)')
+Lx, Ly = grid.Lx, grid.Ly
 
-  pq = heatmap(x, y, q',
-       aspectratio = 1,
-            legend = false,
-                 c = :balance,
-              clim = (-12, 12),
-             xlims = (-grid.Lx/2, grid.Lx/2),
-             ylims = (-grid.Ly/2, grid.Ly/2),
-            xticks = -3:3,
-            yticks = -3:3,
-            xlabel = "x",
-            ylabel = "y",
-             title = "vorticity ∂v/∂x-∂u/∂y",
-        framestyle = :box)
+title_q = Observable(@sprintf("vorticity, t = %.2f", clock.t))
+title_ψ = "streamfunction ψ"
 
-  pψ = contourf(x, y, ψ',
-       aspectratio = 1,
-            legend = false,
-                 c = :viridis,
-            levels = range(-0.7, stop=0.7, length=20), 
-              clim = (-0.35, 0.35),
-             xlims = (-grid.Lx/2, grid.Lx/2),
-             ylims = (-grid.Ly/2, grid.Ly/2),
-            xticks = -3:3,
-            yticks = -3:3,
-            xlabel = "x",
-            ylabel = "y",
-             title = "streamfunction ψ",
-        framestyle = :box)
+fig = Figure(resolution=(800, 720))
 
-  pqm = plot(q̄, y,
-            legend = false,
-         linewidth = 2,
-             alpha = 0.7,
-            yticks = -3:3,
-             xlims = (-2.2, 2.2),
-            xlabel = "zonal mean q",
-            ylabel = "y")
-  plot!(pqm, 0*y, y, linestyle=:dash, linecolor=:black)
+axq = Axis(fig[1, 1], 
+           xlabel = "x",
+           ylabel = "y",
+           aspect = 1,
+           title = title_q,
+           limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
 
-  pum = plot(ū, y,
-            legend = false,
-         linewidth = 2,
-             alpha = 0.7,
-            yticks = -3:3,
-             xlims = (-0.55, 0.55),
-            xlabel = "zonal mean u",
-            ylabel = "y")
-  plot!(pum, 0*y, y, linestyle=:dash, linecolor=:black)
+axψ = Axis(fig[2, 1], 
+           xlabel = "x",
+           ylabel = "y",
+           aspect = 1,
+           title = title_ψ,
+           limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
 
-  layout = @layout Plots.grid(2, 2)
-  p = plot(pq, pqm, pψ, pum, layout = layout, size = (800, 720))
-  
-  return p
-end
-nothing # hide
+axq̄ = Axis(fig[1, 2], 
+           xlabel = "zonal mean vorticity",
+           ylabel = "y",
+           aspect = 1,
+           limits = ((-2.1, 2.1), (-Ly/2, Ly/2)))
+
+axū = Axis(fig[2, 2], 
+           xlabel = "zonal mean u",
+           ylabel = "y",
+           aspect = 1,
+           limits = ((-0.5, 0.5), (-Ly/2, Ly/2)))
+
+q = Observable(vars.q)
+ψ = Observable(vars.ψ)
+q̄ₘ = Observable(vec(mean(vars.q, dims=1)))
+ūₘ = Observable(vec(mean(vars.u, dims=1)))
+
+heatmap!(axq, x, y, q;
+         colormap = :balance, colorrange = (-12, 12))
+
+contourf!(axψ, x, y, ψ;
+         levels = collect(range(-0.7, stop=0.7, length=20)),
+         colormap = :viridis,
+         colorrange = (-0.35, 0.35))
+
+contour!(axψ, x, y, ψ;
+        levels = collect(range(-0.7, stop=0.7, length=20)),
+        color = :black)
+
+lines!(axq̄, q̄ₘ, y; linewidth = 3)
+lines!(axq̄, 0y, y; linewidth = 1, linestyle=:dash)
+
+lines!(axū, ūₘ, y; linewidth = 3)
+lines!(axū, 0y, y; lindewidth = 1, linestyle=:dash)
+
+fig
 
 
 # ## Time-stepping the `Problem` forward
@@ -220,10 +209,9 @@ nothing # hide
 
 startwalltime = time()
 
-p = plot_output(prob)
+frames = 0:round(Int, nsteps / nsubs)
 
-anim = @animate for j = 0:round(Int, nsteps/nsubs)
-
+record(fig, "singlelayerqg_betadecay.mp4", frames, framerate = 8) do j
   if j % round(Int, nsteps/nsubs / 4) == 0
     cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
 
@@ -231,20 +219,18 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
       clock.step, clock.t, cfl, E.data[E.i], Z.data[Z.i], (time()-startwalltime)/60)
 
     println(log)
-  end  
+  end
+  
+  q[] = vars.q
+  ψ[] = vars.ψ
+  q̄ₘ[] = vec(mean(vars.q, dims=1))
+  ūₘ[] = vec(mean(vars.u, dims=1))
 
-  p[1][1][:z] = Array(vars.q)
-  p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
-  p[3][1][:z] = Array(vars.ψ)
-  p[2][1][:x] = Array(mean(vars.q, dims=1)')
-  p[4][1][:x] = Array(mean(vars.u, dims=1)')
+  title_q[] = @sprintf("vorticity, t = %.2f", clock.t)
 
   stepforward!(prob, diags, nsubs)
   SingleLayerQG.updatevars!(prob)
-
 end
-
-mp4(anim, "singlelayerqg_betadecay.mp4", fps=8)
 
 # ## Save
 
