@@ -170,33 +170,18 @@ PE  = Observable(Point2f[(μ * E.t[1], E.data[1][2])])
 
 fig = Figure(resolution=(1000, 600))
 
-axq₁ = Axis(fig[1, 1], 
-            xlabel = "x",
-            ylabel = "y",
-            title = "q₁",
-            aspect = 1,
-            limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+axis_kwargs = (xlabel = "x",
+               ylabel = "y",
+               aspect = 1,
+               limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
 
-axψ₁ = Axis(fig[2, 1], 
-            xlabel = "x",
-            ylabel = "y",
-            title = "ψ₁",
-            aspect = 1,
-            limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+axq₁ = Axis(fig[1, 1], title = "q₁", axis_kwargs...)
 
-axq₂ = Axis(fig[1, 2], 
-            xlabel = "x",
-            ylabel = "y",
-            title = "q₂",
-            aspect = 1,
-            limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+axψ₁ = Axis(fig[2, 1], title = "ψ₁", axis_kwargs...)
 
-axψ₂ = Axis(fig[2, 2], 
-            xlabel = "x",
-            ylabel = "y",
-            aspect = 1,
-            title = "ψ₂",
-            limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+axq₂ = Axis(fig[1, 2], title = "q₂", axis_kwargs...)
+
+axψ₂ = Axis(fig[2, 2], title = "ψ₂", axis_kwargs...)
 
 axKE = Axis(fig[1, 3], 
             xlabel = "μ t",
