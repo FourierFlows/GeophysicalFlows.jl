@@ -1,4 +1,4 @@
-# Contributors Guide
+# Contributors' Guide
 
 This is a short guide for potential GeophysicalFlows.jl contributors.
 
