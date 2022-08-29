@@ -23,6 +23,7 @@ using Statistics: mean
 using LinearAlgebra: ldiv!
 
 parsevalsum = FourierFlows.parsevalsum
+record = CairoMakie.record
 
 # ## Choosing a device: CPU or GPU
 
@@ -32,11 +33,11 @@ nothing # hide
 
 # ## Numerical parameters and time-stepping parameters
 
-      n = 128            # 2D resolution: n² grid points
+      n = 128*4            # 2D resolution: n² grid points
 stepper = "FilteredRK4"  # timestepper
-     dt = 0.05           # timestep
- nsteps = 8000           # total number of timesteps
- save_substeps = 10      # number of timesteps after which output is saved
+     dt = 0.05/4           # timestep
+ nsteps = 8000*4          # total number of timesteps
+ save_substeps = 10*4      # number of timesteps after which output is saved
  
 nothing # hide
 
