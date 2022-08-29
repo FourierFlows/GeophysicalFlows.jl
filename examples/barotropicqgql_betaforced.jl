@@ -193,19 +193,14 @@ title_ψ = "streamfunction ψ"
 
 fig = Figure(resolution=(1000, 600))
 
-axζ = Axis(fig[1, 1], 
-           xlabel = "x",
-           ylabel = "y",
-           aspect = 1,
-           title = title_ζ,
-           limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+axis_kwargs = (xlabel = "x",
+               ylabel = "y",
+               aspect = 1,
+               limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
 
-axψ = Axis(fig[2, 1], 
-           xlabel = "x",
-           ylabel = "y",
-           aspect = 1,
-           title = title_ψ,
-           limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+axζ = Axis(fig[1, 1]; title = title_ζ, axis_kwargs...)
+
+axψ = Axis(fig[2, 1]; title = title_ψ, axis_kwargs...)
 
 axζ̄ = Axis(fig[1, 2], 
            xlabel = "zonal mean ζ",

@@ -151,19 +151,14 @@ title_ψ = "streamfunction ψ"
 
 fig = Figure(resolution=(800, 720))
 
-axq = Axis(fig[1, 1], 
-           xlabel = "x",
-           ylabel = "y",
-           aspect = 1,
-           title = title_q,
-           limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+axis_kwargs = (xlabel = "x",
+               ylabel = "y",
+               aspect = 1,
+               limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
 
-axψ = Axis(fig[2, 1], 
-           xlabel = "x",
-           ylabel = "y",
-           aspect = 1,
-           title = title_ψ,
-           limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+axq = Axis(fig[1, 1]; title = title_q, axis_kwargs...)
+
+axψ = Axis(fig[2, 1]; title = title_ψ, axis_kwargs...)
 
 axq̄ = Axis(fig[1, 2], 
            xlabel = "zonal mean vorticity",
@@ -177,28 +172,26 @@ axū = Axis(fig[2, 2],
            aspect = 1,
            limits = ((-0.5, 0.5), (-Ly/2, Ly/2)))
 
-q = Observable(vars.q)
-ψ = Observable(vars.ψ)
+q  = Observable(vars.q)
+ψ  = Observable(vars.ψ)
 q̄ₘ = Observable(vec(mean(vars.q, dims=1)))
 ūₘ = Observable(vec(mean(vars.u, dims=1)))
 
 heatmap!(axq, x, y, q;
          colormap = :balance, colorrange = (-12, 12))
 
-contourf!(axψ, x, y, ψ;
-         levels = collect(range(-0.7, stop=0.7, length=20)),
-         colormap = :viridis,
-         colorrange = (-0.35, 0.35))
+levels = collect(range(-0.7, stop=0.7, length=20))
 
+contourf!(axψ, x, y, ψ;
+         levels, colormap = :viridis, colorrange = (-0.35, 0.35))
 contour!(axψ, x, y, ψ;
-        levels = collect(range(-0.7, stop=0.7, length=20)),
-        color = :black)
+         levels, color = :black)
 
 lines!(axq̄, q̄ₘ, y; linewidth = 3)
-lines!(axq̄, 0y, y; linewidth = 1, linestyle=:dash)
+lines!(axq̄, 0y, y; linewidth = 1, linestyle = :dash)
 
 lines!(axū, ūₘ, y; linewidth = 3)
-lines!(axū, 0y, y; lindewidth = 1, linestyle=:dash)
+lines!(axū, 0y, y; lindewidth = 1, linestyle = :dash)
 
 fig
 
