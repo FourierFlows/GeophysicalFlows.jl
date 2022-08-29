@@ -11,15 +11,16 @@
 
 # ```julia
 # using Pkg
-# pkg"add GeophysicalFlows, Printf, Random, Plots"
+# pkg"add GeophysicalFlows, Printf, Random, CairoMakie"
 # ```
 
 # ## Let's begin
 # Let's load `GeophysicalFlows.jl` and some other needed packages.
 #
-using GeophysicalFlows, Printf, Random, Plots
+using GeophysicalFlows, Printf, Random, CairoMakie
  
 using GeophysicalFlows: peakedisotropicspectrum
+using LinearAlgebra: ldiv!
 using Random: seed!
 
 
@@ -91,43 +92,45 @@ SingleLayerQG.set_q!(prob_eqbqg, q₀_eqbqg)
 nothing # hide
 
 
-# Let's plot the initial vorticity field for each problem. A function that returns relative 
-# vorticity from each problem's state variable will prove useful. Note that when plotting, we 
-# decorate the variable to be plotted with `Array()` to make sure it is brought back on the 
-# CPU when the variable lives on the GPU.
-relativevorticity(prob) = irfft(-prob.grid.Krsq .* prob.vars.ψh, prob.grid.nx)
+# Let's plot the initial vorticity field for each problem.
 
-x, y = prob_bqg.grid.x, prob_bqg.grid.y
+function relativevorticity(prob)
+  vars, grid = prob.vars, prob.grid
 
-p_bqg = heatmap(x, y, Array(relativevorticity(prob_bqg)'),
-         aspectratio = 1,
-                   c = :balance,
-                clim = (-40, 40),
-               xlims = (-L/2, L/2),
-               ylims = (-L/2, L/2),
-              xticks = -3:3,
-              yticks = -3:3,
-              xlabel = "x",
-              ylabel = "y",
-               title = "barotropic\n ∇²ψ, t=" * @sprintf("%.2f", prob_bqg.clock.t),
-          framestyle = :box)
+  ldiv!(vars.q, grid.rfftplan, - grid.Krsq .* vars.ψh)
 
-p_eqbqg = heatmap(x, y, Array(relativevorticity(prob_eqbqg)'),
-         aspectratio = 1,
-                   c = :balance,
-                clim = (-40, 40),
-               xlims = (-L/2, L/2),
-               ylims = (-L/2, L/2),
-              xticks = -3:3,
-              yticks = -3:3,
-              xlabel = "x",
-              ylabel = "y",
-               title = "equivalent barotropic; deformation radius: " * @sprintf("%.2f", prob_eqbqg.params.deformation_radius) * "\n ∇²ψ, t=" * @sprintf("%.2f", prob_eqbqg.clock.t),
-          framestyle = :box)
+  return vars.q
+end
 
-l = @layout Plots.grid(1, 2)
-p = plot(p_bqg, p_eqbqg, layout = l, size = (800, 380))
+x,  y  = prob_bqg.grid.x,  prob_bqg.grid.y
+Lx, Ly = prob_bqg.grid.Lx, prob_bqg.grid.Ly
 
+fig = Figure(resolution=(800, 380))
+
+axis_kwargs = (xlabel = "x",
+               ylabel = "y",
+               aspect = 1,
+               limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+
+t_bqg = Observable(prob_bqg.clock.t)
+t_eqbqg = Observable(prob_eqbqg.clock.t)
+
+title_bqg = @lift "barotropic\n ∇²ψ, t=" * @sprintf("%.2f", $t_bqg)
+title_eqbqg = @lift "equivalent barotropic; deformation radius: " * @sprintf("%.2f", prob_eqbqg.params.deformation_radius) * "\n ∇²ψ, t=" * @sprintf("%.2f", $t_eqbqg)
+
+ax1 = Axis(fig[1, 1]; title = title_bqg, axis_kwargs...)
+ax2 = Axis(fig[1, 2]; title = title_eqbqg, axis_kwargs...)
+
+ζ_bqg = Observable(relativevorticity(prob_bqg))
+ζ_eqbqg = Observable(relativevorticity(prob_eqbqg))
+
+heatmap!(ax1, x, y, ζ_bqg;
+         colormap = :balance, colorrange = (-40, 40))
+
+heatmap!(ax2, x, y, ζ_eqbqg;
+         colormap = :balance, colorrange = (-40, 40))
+
+fig
 
 # ## Time-stepping the `Problem` forward
 
@@ -137,7 +140,7 @@ startwalltime = time()
 
 cfl(prob) = prob.clock.dt * maximum([maximum(prob.vars.u) / prob.grid.dx, maximum(prob.vars.v) / prob.grid.dy])
 
-anim = @animate for j = 0:Int(nsteps/nsubs)
+record(fig, "singlelayerqg_barotropic_equivalentbarotropic.mp4", 0:Int(nsteps/nsubs), framerate = 18) do j
   if j % (1000 / nsubs) == 0
     log_bqg = @sprintf("barotropic; step: %04d, t: %d, cfl: %.2f, walltime: %.2f min",
         prob_bqg.clock.step, prob_bqg.clock.t, cfl(prob_bqg), (time()-startwalltime)/60)
@@ -148,16 +151,16 @@ anim = @animate for j = 0:Int(nsteps/nsubs)
     println(log_eqbqg)
   end  
 
-  p[1][1][:z] = Array(relativevorticity(prob_bqg))
-  p[1][:title] = "barotropic\n ∇²ψ, t=" * @sprintf("%.2f", prob_bqg.clock.t)
-  p[2][1][:z] = Array(relativevorticity(prob_eqbqg))
-  p[2][:title] = "equivalent barotropic; deformation radius: " * @sprintf("%.2f", prob_eqbqg.params.deformation_radius) * "\n ∇²ψ, t=" * @sprintf("%.2f", prob_eqbqg.clock.t)
-  
   stepforward!(prob_bqg, nsubs)
   SingleLayerQG.updatevars!(prob_bqg)
   
   stepforward!(prob_eqbqg, nsubs)
   SingleLayerQG.updatevars!(prob_eqbqg)
+
+  t_bqg[] = prob_bqg.clock.t
+  t_eqbqg[] = prob_eqbqg.clock.t
+  ζ_bqg[] = relativevorticity(prob_bqg)
+  ζ_eqbqg[] = relativevorticity(prob_eqbqg)
 end
 
-mp4(anim, "singlelayerqg_barotropic_equivalentbarotropic.mp4", fps=18)
+# ![](singlelayerqg_barotropic_equivalentbarotropic.mp4)
