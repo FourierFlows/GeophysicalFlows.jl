@@ -1,4 +1,4 @@
-# # 2D decaying turbulence
+# # [2D decaying turbulence](@id twodnavierstokes_decaying_example)
 #
 #md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/twodnavierstokes_decaying.ipynb).
 #
@@ -168,7 +168,6 @@ record(fig, "twodturb.mp4", 0:Int(nsteps/nsubs), framerate = 18) do j
 
   ζ[] = Array(vars.ζ)
 
-  t.val = E.t[1:E.i]
   energy[] = push!(energy[], Point2f(E.t[E.i], E.data[E.i] / E.data[1]))
   enstrophy[] = push!(enstrophy[], Point2f(Z.t[E.i], Z.data[Z.i] / Z.data[1]))
 

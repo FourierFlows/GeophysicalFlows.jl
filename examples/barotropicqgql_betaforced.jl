@@ -1,4 +1,4 @@
-# # Quasi-Linear forced-dissipative barotropic QG beta-plane turbulence
+# # [Quasi-Linear forced-dissipative barotropic QG beta-plane turbulence](@id barotropicqgql_betaforced_example)
 #
 #md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/barotropicqgql_betaforced.ipynb).
 #

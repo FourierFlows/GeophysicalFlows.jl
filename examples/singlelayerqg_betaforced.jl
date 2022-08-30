@@ -1,4 +1,4 @@
-# # Forced-dissipative barotropic QG beta-plane turbulence
+# # [Forced-dissipative barotropic QG beta-plane turbulence](@id singlelayerqg_betaforced_example)
 #
 #md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/singlelayerqg_betaforced.ipynb).
 #
@@ -33,11 +33,11 @@ nothing # hide
 
 # ## Numerical parameters and time-stepping parameters
 
-      n = 128*4            # 2D resolution: n² grid points
+      n = 128            # 2D resolution: n² grid points
 stepper = "FilteredRK4"  # timestepper
-     dt = 0.05/4           # timestep
- nsteps = 8000*4          # total number of timesteps
- save_substeps = 10*4      # number of timesteps after which output is saved
+     dt = 0.05           # timestep
+ nsteps = 8000           # total number of timesteps
+ save_substeps = 10      # number of timesteps after which output is saved
  
 nothing # hide
 
@@ -104,7 +104,8 @@ nothing # hide
 
 # Let's define some shortcuts.
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-x, y = grid.x, grid.y
+x,  y  = grid.x,  grid.y
+Lx, Ly = grid.Lx, grid.Ly
 nothing # hide
 
 
@@ -113,18 +114,19 @@ nothing # hide
 # `vars` live on the GPU.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
-     aspectratio = 1,
-               c = :balance,
-            clim = (-8, 8),
-           xlims = (-grid.Lx/2, grid.Lx/2),
-           ylims = (-grid.Ly/2, grid.Ly/2),
-          xticks = -3:3,
-          yticks = -3:3,
+fig = Figure()
+
+ax = Axis(fig[1, 1], 
           xlabel = "x",
           ylabel = "y",
-           title = "a forcing realization",
-      framestyle = :box)
+          aspect = 1,
+          title = "a forcing realization",
+          limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+
+heatmap!(ax, x, y, Array(irfft(vars.Fh, grid.nx));
+         colormap = :balance, colorrange = (-8, 8))
+
+fig
 
 
 # ## Setting initial conditions
@@ -221,9 +223,10 @@ t = [file["snapshots/t/$i"] for i ∈ iterations]
 qh = [file["snapshots/qh/$i"] for i ∈ iterations]
 u  = [file["snapshots/u/$i"] for i ∈ iterations]
 
-E_t  = file["diags/energy/t"]
-E_data = file["diags/energy/data"]
-Z_data = file["diags/enstrophy/data"]
+E_t  = file["diagnostics/energy/t"]
+Z_t  = file["diagnostics/enstrophy/t"]
+E_data = file["diagnostics/energy/data"]
+Z_data = file["diagnostics/enstrophy/data"]
 
 x,  y  = file["grid/x"],  file["grid/y"]
 nx, ny = file["grid/nx"], file["grid/ny"]
@@ -239,6 +242,9 @@ q̄ = @lift real(ifft(qh[$j][1, :] / ny))
 ū = @lift vec(mean(u[$j], dims=1))
 
 title_q = @lift @sprintf("vorticity, μt = %.2f", μ * t[$j])
+
+energy = Observable([Point2f(E_t[1], E_data[1])])
+enstrophy = Observable([Point2f(Z_t[1], Z_data[1])])
 
 fig = Figure(resolution=(1000, 600))
 
@@ -275,10 +281,6 @@ axZ = Axis(fig[2, 3],
            aspect = 1,
            limits = ((-0.1, 4.1), (0, 3.1)))
 
-μt = Observable(μ * E_t[1:1])
-energy = Observable(E_data[1:1])
-enstrophy = Observable(Z_data[1:1])
-
 heatmap!(axq, x, y, q;
          colormap = :balance, colorrange = (-8, 8))
 
@@ -295,8 +297,8 @@ lines!(axq̄, 0y, y; linewidth = 1, linestyle=:dash)
 lines!(axū, ū, y; linewidth = 3)
 lines!(axū, 0y, y; linewidth = 1, linestyle=:dash)
 
-lines!(axE, μt, energy; linewidth = 3)
-lines!(axZ, μt, enstrophy; linewidth = 3, color = :red)
+lines!(axE, energy; linewidth = 3)
+lines!(axZ, enstrophy; linewidth = 3, color = :red)
 
 fig
 
@@ -306,9 +308,9 @@ fig
 frames = 1:length(t)
 record(fig, "singlelayerqg_betaforced.mp4", frames, framerate = 18) do i
   j[] = i
-  μt.val = μ * E_t[1:i]
-  energy[] = E_data[1:i]
-  enstrophy[] = Z_data[1:i]
+
+  energy[] = push!(energy[], Point2f(μ * E_t[i], E_data[i]))
+  enstrophy[] = push!(enstrophy[], Point2f(μ * Z_t[i], Z_data[i]))
 end
 
 # ![](singlelayerqg_betaforced.mp4)

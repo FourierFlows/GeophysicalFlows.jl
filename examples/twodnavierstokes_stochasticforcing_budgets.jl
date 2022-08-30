@@ -1,4 +1,4 @@
-# # 2D forced-dissipative turbulence budgets
+# # [2D forced-dissipative turbulence budgets](@id twodnavierstokes_stochasticforcing_budgets_example)
 #
 #md # This example can viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/twodnavierstokes_stochasticforcing_budgets.ipynb).
 #
