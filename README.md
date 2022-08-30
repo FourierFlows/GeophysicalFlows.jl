@@ -143,7 +143,6 @@ than happy to help along the way.
 
 For more information, check out our [contributors' guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/main/CONTRIBUTING.md).
 
-
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
 [documentation]: https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/
 [online @ youtube]: https://www.youtube.com/channel/UCO_0ugkNUwCsFUMtepwYTqw
