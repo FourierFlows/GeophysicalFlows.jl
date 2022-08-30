@@ -212,8 +212,8 @@ savediagnostic(Z, "enstrophy", output.path)
 
 # ## Load saved output and visualize
 
-# We now have output from our simulation saved in `singlelayerqg_forcedbeta.jld2`. We can
-# now load the JLD2 output and create a time series for fields that interest us.
+# We now have output from our simulation saved in `singlelayerqg_forcedbeta.jld2` which 
+# we can load to create a time series for the fields we are interested in.
 
 file = jldopen(output.path)
 
