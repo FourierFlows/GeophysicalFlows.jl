@@ -97,7 +97,8 @@ nothing # hide
 # Define some shortcuts for convenience.
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
-x, y = grid.x, grid.y
+x,  y  = grid.x,  grid.y
+Lx, Ly = grid.Lx, grid.Ly
 nothing # hide
 
 
