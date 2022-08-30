@@ -62,14 +62,17 @@ Some animations created with GeophysicalFlows.jl are [online @ youtube].
 
 ## Modules
 
-* [`TwoDNavierStokes`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/twodnavierstokes/): the two-dimensional vorticity equation.
-* [`SingleLayerQG`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/singlelayerqg/): the barotropic or equivalent-barotropic quasi-geostrophic equation, which 
-  generalizes `TwoDNavierStokes` to cases with topography, Coriolis parameters of the form 
-  `f = f₀ + βy`, and finite Rossby radius of deformation.
-* [`MultiLayerQG`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/multilayerqg/): a multi-layer quasi-geostrophic model over topography and with the ability 
-  to impose a zonal flow `U_n(y)` in each layer.
-* [`SurfaceQG`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/surfaceqg/): a surface quasi-geostrophic model.
-* [`BarotropicQGQL`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/barotropicqgql/): the quasi-linear barotropic quasi-geostrophic equation.
+* [`TwoDNavierStokes`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/twodnavierstokes/): the
+  two-dimensional vorticity equation.
+* [`SingleLayerQG`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/singlelayerqg/): the barotropic
+  or equivalent-barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography, Coriolis
+  parameters of the form `f = f₀ + βy`, and finite Rossby radius of deformation.
+* [`MultiLayerQG`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/multilayerqg/): a multi-layer
+  quasi-geostrophic model over topography allowing to impose a zonal flow `U_n(y)` in each layer.
+* [`SurfaceQG`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/surfaceqg/): a surface
+  quasi-geostrophic model.
+* [`BarotropicQGQL`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/barotropicqgql/): the
+  quasi-linear barotropic quasi-geostrophic equation.
 
 
 ## Scalability
