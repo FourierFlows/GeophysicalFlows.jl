@@ -209,5 +209,6 @@ record(fig, "singlelayerqg_decaying_topography.mp4", 0:round(Int, nsteps/nsubs),
   stepforward!(prob, diags, nsubs)
   SingleLayerQG.updatevars!(prob)
 end
+nothing # hide
 
 # ![](singlelayerqg_decaying_topography.mp4)

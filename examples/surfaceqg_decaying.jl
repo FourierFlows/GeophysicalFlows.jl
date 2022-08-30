@@ -199,6 +199,7 @@ record(fig, "sqg_ellipticalvortex.mp4", 0:round(Int, nsteps/nsubs), framerate = 
   stepforward!(prob, diags, nsubs)
   SurfaceQG.updatevars!(prob)
 end
+nothing # hide
 
 # ![](sqg_ellipticalvortex.mp4)
 
@@ -236,7 +237,7 @@ fig
 
 # ## Save
 
-# Last we can save the output by calling
+# Last, we can save the output by calling
 # ```julia
-# saveoutput(out)`
+# saveoutput(out)
 # ```

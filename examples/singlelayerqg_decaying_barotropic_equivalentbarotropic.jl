@@ -92,7 +92,9 @@ SingleLayerQG.set_q!(prob_eqbqg, q₀_eqbqg)
 nothing # hide
 
 
-# Let's plot the initial vorticity field for each problem.
+# Let's plot the initial vorticity field for each problem. Note that when plotting, we decorate 
+# the variable to be plotted with `Array()` to make sure it is brought back on the CPU when 
+# `vars` live on the GPU.
 
 function relativevorticity(prob)
   vars, grid = prob.vars, prob.grid
@@ -162,5 +164,6 @@ record(fig, "singlelayerqg_barotropic_equivalentbarotropic.mp4", 0:Int(nsteps/ns
   ζ_bqg[] = relativevorticity(prob_bqg)
   ζ_eqbqg[] = relativevorticity(prob_eqbqg)
 end
+nothing # hide
 
 # ![](singlelayerqg_barotropic_equivalentbarotropic.mp4)

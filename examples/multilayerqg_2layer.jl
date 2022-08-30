@@ -258,6 +258,7 @@ record(fig, "multilayerqg_2layer.mp4", frames, framerate = 18) do j
   stepforward!(prob, diags, nsubs)
   MultiLayerQG.updatevars!(prob)
 end
+nothing # hide
 
 # ![](multilayerqg_2layer.mp4)
 

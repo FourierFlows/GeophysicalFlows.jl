@@ -312,5 +312,6 @@ record(fig, "singlelayerqg_betaforced.mp4", frames, framerate = 18) do i
   energy[] = push!(energy[], Point2f(μ * E_t[i], E_data[i]))
   enstrophy[] = push!(enstrophy[], Point2f(μ * Z_t[i], Z_data[i]))
 end
+nothing # hide
 
 # ![](singlelayerqg_betaforced.mp4)

@@ -197,5 +197,6 @@ record(fig, "twodturb_forced.mp4", 0:round(Int, nsteps / nsubs), framerate = 18)
   stepforward!(prob, diags, nsubs)
   TwoDNavierStokes.updatevars!(prob)  
 end
+nothing # hide
 
 # ![](twodturb_forced.mp4)

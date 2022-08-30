@@ -223,6 +223,7 @@ record(fig, "singlelayerqg_betadecay.mp4", frames, framerate = 8) do j
   stepforward!(prob, diags, nsubs)
   SingleLayerQG.updatevars!(prob)
 end
+nothing # hide
 
 # ![](singlelayerqg_betadecay.mp4)
 

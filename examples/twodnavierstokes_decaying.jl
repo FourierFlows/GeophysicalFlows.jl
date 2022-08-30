@@ -176,14 +176,9 @@ record(fig, "twodturb.mp4", 0:Int(nsteps/nsubs), framerate = 18) do j
   stepforward!(prob, diags, nsubs)
   TwoDNavierStokes.updatevars!(prob)  
 end
+nothing # hide
 
 # ![](twodturb.mp4)
-
-
-# Last we can save the output by calling
-# ```julia
-# saveoutput(out)`
-# ```
 
 
 # ## Radial energy spectrum
@@ -191,16 +186,18 @@ end
 # After the simulation is done we plot the instantaneous radial energy spectrum to illustrate
 # how `FourierFlows.radialspectrum` can be used,
 
-E  = @. 0.5 * (vars.u^2 + vars.v^2) # energy density
-Eh = rfft(E)                  # Fourier transform of energy density
-kr, Ehr = FourierFlows.radialspectrum(Eh, grid, refinement=1) # compute radial specturm of `Eh`
+E  = @. 0.5 * (vars.u^2 + vars.v^2)  # energy density
+Eh = rfft(E)                         # Fourier transform of energy density
+
+## compute radial specturm of `Eh`
+kr, Ehr = FourierFlows.radialspectrum(Eh, grid, refinement = 1)
 nothing # hide
 
 # and we plot it.
 lines(kr, vec(abs.(Ehr));
       linewidth = 2,
-      axis = (xlabel = "kᵣ",
-              ylabel = "∫ |Ê| kᵣ dk_θ",
+      axis = (xlabel = L"k_r",
+              ylabel = L"\int |\hat{E}| k_r \mathrm{d}k_\theta",
               xscale = log10,
               yscale = log10,
               title = "Radial energy spectrum",

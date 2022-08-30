@@ -289,6 +289,7 @@ record(fig, "barotropicqgql_betaforced.mp4", frames, framerate = 18) do j
   stepforward!(prob, diags, nsubs)
   BarotropicQGQL.updatevars!(prob)
 end
+nothing # hide
 
 # ![](barotropicqgql_betaforced.mp4)
 
