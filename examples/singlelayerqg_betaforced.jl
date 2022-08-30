@@ -159,7 +159,7 @@ if !isdir(plotpath); mkdir(plotpath); end
 nothing # hide
 
 # and then create Output.
-get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
+get_sol(prob) = Array(prob.sol) # extracts the Fourier-transformed solution
 
 function get_u(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
@@ -170,7 +170,7 @@ function get_u(prob)
 
   ldiv!(vars.u, grid.rfftplan, -im * grid.l .* vars.ψh)
 
-  return vars.u
+  return Array(vars.u)
 end
 
 output = Output(prob, filename, (:qh, get_sol), (:u, get_u))
@@ -237,7 +237,7 @@ Lx, Ly = file["grid/Lx"], file["grid/Ly"]
 j = Observable(1)
 
 q = @lift irfft(qh[$j], nx)
-ψ = @lift irfft(- grid.invKrsq .* qh[$j], nx)
+ψ = @lift irfft(- Array(grid.invKrsq) .* qh[$j], nx)
 q̄ = @lift real(ifft(qh[$j][1, :] / ny))
 ū = @lift vec(mean(u[$j], dims=1))
 

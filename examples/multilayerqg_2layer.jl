@@ -241,10 +241,10 @@ record(fig, "multilayerqg_2layer.mp4", frames, framerate = 18) do j
     println(log)
   end
   
-  q₁[] = Array(vars.q[:, :, 1])
-  ψ₁[] = Array(vars.ψ[:, :, 1])
-  q₂[] = Array(vars.q[:, :, 2])
-  ψ₂[] = Array(vars.ψ[:, :, 2])
+  q₁[] = vars.q[:, :, 1]
+  ψ₁[] = vars.ψ[:, :, 1]
+  q₂[] = vars.q[:, :, 2]
+  ψ₂[] = vars.ψ[:, :, 2]
 
   maxψ₁[] = maximum(abs, vars.ψ[:, :, 1])
   maxψ₂[] = maximum(abs, vars.ψ[:, :, 2])

@@ -275,10 +275,10 @@ record(fig, "barotropicqgql_betaforced.mp4", frames, framerate = 18) do j
     println(log)
   end
 
-  ζ[] = Array(@. ζ̄ + ζ′)
-  ψ[] = Array(@. ψ̄ + ψ′)
-  ζ̄ₘ[] = Array(vec(mean(ζ̄, dims=1)))
-  ūₘ[] = Array(vec(mean(prob.vars.U, dims=1)))
+  ζ[] = @. ζ̄ + ζ′
+  ψ[] = @. ψ̄ + ψ′
+  ζ̄ₘ[] = vec(mean(ζ̄, dims=1))
+  ūₘ[] = vec(mean(prob.vars.U, dims=1))
 
   μt.val = μ * E.t[1:E.i]
   energy[] = E.data[1:E.i]

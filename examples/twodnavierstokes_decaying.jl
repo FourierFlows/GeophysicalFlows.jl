@@ -122,7 +122,7 @@ nothing # hide
 # We initialize a plot with the vorticity field and the time-series of
 # energy and enstrophy diagnostics.
 
-ζ = Observable(vars.ζ)
+ζ = Observable(Array(vars.ζ))
 title_ζ = Observable("vorticity, t=" * @sprintf("%.2f", clock.t))
 
 energy = Observable(Point2f[(E.t[1], E.data[1] / E.data[1])])
@@ -166,7 +166,7 @@ record(fig, "twodturb.mp4", 0:Int(nsteps/nsubs), framerate = 18) do j
     println(log)
   end  
 
-  ζ[] = Array(vars.ζ)
+  ζ[] = vars.ζ
 
   energy[] = push!(energy[], Point2f(E.t[E.i], E.data[E.i] / E.data[1]))
   enstrophy[] = push!(enstrophy[], Point2f(Z.t[E.i], Z.data[Z.i] / Z.data[1]))

@@ -121,8 +121,8 @@ title_eqbqg = @lift "equivalent barotropic; deformation radius: " * @sprintf("%.
 ax1 = Axis(fig[1, 1]; title = title_bqg, axis_kwargs...)
 ax2 = Axis(fig[1, 2]; title = title_eqbqg, axis_kwargs...)
 
-ζ_bqg = Observable(relativevorticity(prob_bqg))
-ζ_eqbqg = Observable(relativevorticity(prob_eqbqg))
+ζ_bqg = Observable(Array(relativevorticity(prob_bqg)))
+ζ_eqbqg = Observable(Array(relativevorticity(prob_eqbqg)))
 
 heatmap!(ax1, x, y, ζ_bqg;
          colormap = :balance, colorrange = (-40, 40))

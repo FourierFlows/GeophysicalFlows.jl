@@ -119,7 +119,7 @@ ax = Axis(fig[1, 1],
           title = "a forcing realization",
           limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
 
-heatmap!(ax, x, y, irfft(vars.Fh, grid.nx);
+heatmap!(ax, x, y, Array(irfft(vars.Fh, grid.nx));
          colormap = :balance, colorrange = (-200, 200))
 
 fig

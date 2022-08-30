@@ -23,7 +23,7 @@ using Statistics: mean
 
 # ## Choosing a device: CPU or GPU
 
-dev = CPU()     # Device (CPU/GPU)
+dev = GPU()     # Device (CPU/GPU)
 nothing # hide
 
 
@@ -171,10 +171,10 @@ axū = Axis(fig[2, 2],
            aspect = 1,
            limits = ((-0.5, 0.5), (-Ly/2, Ly/2)))
 
-q  = Observable(vars.q)
-ψ  = Observable(vars.ψ)
-q̄ₘ = Observable(vec(mean(vars.q, dims=1)))
-ūₘ = Observable(vec(mean(vars.u, dims=1)))
+q  = Observable(Array(vars.q))
+ψ  = Observable(Array(vars.ψ))
+q̄ₘ = Observable(Array(vec(mean(vars.q, dims=1))))
+ūₘ = Observable(Array(vec(mean(vars.u, dims=1))))
 
 heatmap!(axq, x, y, q;
          colormap = :balance, colorrange = (-12, 12))
