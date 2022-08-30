@@ -146,13 +146,13 @@ q₂ = Observable(Array(vars.q[:, :, 2]))
 ψ₂ = Observable(Array(vars.ψ[:, :, 2]))
 
 function compute_levels(maxf, nlevels=8)
-  # -max(|f|):...:max(|f|)
+  ## -max(|f|):...:max(|f|)
   levelsf  = @lift collect(range(-$maxf, stop = $maxf, length=nlevels))
 
-  # only positive
+  ## only positive
   levelsf⁺ = @lift collect(range($maxf/(nlevels-1), stop = $maxf, length=Int(nlevels/2)))
 
-  # only negative
+  ## only negative
   levelsf⁻ = @lift collect(range(-$maxf, stop = -$maxf/(nlevels-1), length=Int(nlevels/2)))
   
   return levelsf, levelsf⁺, levelsf⁻
