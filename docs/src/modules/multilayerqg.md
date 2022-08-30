@@ -146,4 +146,4 @@ GeophysicalFlows.MultiLayerQG.fluxes
 
 ## Examples
 
- - [`examples/multilayerqg_2layer.jl`](../../literated/multilayerqg_2layer/): A script that simulates the growth and equilibration of baroclinic eddy turbulence in the Phillips 2-layer model.
+ - [`examples/multilayerqg_2layer.jl`](@ref multilayerqg_2layer_example): Simulate the growth and equilibration of baroclinic eddy turbulence in the Phillips 2-layer model.
