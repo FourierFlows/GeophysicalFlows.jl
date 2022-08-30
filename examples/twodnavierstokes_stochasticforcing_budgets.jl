@@ -14,14 +14,16 @@
 
 # ```julia
 # using Pkg
-# pkg"add GeophysicalFlows, CUDA, Random, Printf, Plots"
+# pkg"add GeophysicalFlows, CUDA, Random, Printf, CairoMakie"
 # ```
 
 # ## Let's begin
 # Let's load `GeophysicalFlows.jl` and some other needed packages.
 #
-using GeophysicalFlows, CUDA, Random, Printf, Plots
+using GeophysicalFlows, CUDA, Random, Printf, CairoMakie
+
 parsevalsum = FourierFlows.parsevalsum
+record = CairoMakie.record
 
 # ## Choosing a device: CPU or GPU
 
@@ -107,18 +109,19 @@ nothing # hide
 # it is brought back on the CPU when the variable lives on the GPU.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
-     aspectratio = 1,
-               c = :balance,
-            clim = (-200, 200),
-           xlims = (-L/2, L/2),
-           ylims = (-L/2, L/2),
-          xticks = -3:3,
-          yticks = -3:3,
+fig = Figure()
+
+ax = Axis(fig[1, 1], 
           xlabel = "x",
           ylabel = "y",
-           title = "a forcing realization",
-      framestyle = :box)
+          aspect = 1,
+          title = "a forcing realization",
+          limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+
+heatmap!(ax, x, y, irfft(vars.Fh, grid.nx);
+         colormap = :balance, colorrange = (-200, 200))
+
+fig
 
 
 # ## Setting initial conditions
@@ -141,114 +144,9 @@ Wᶻ = Diagnostic(TwoDNavierStokes.enstrophy_work,                       prob, n
 diags = [E, Dᵋ, Wᵋ, Rᵋ, Z, Dᶻ, Wᶻ, Rᶻ] # a list of Diagnostics passed to `stepforward!` will  be updated every timestep.
 nothing # hide
 
-
-# ## Visualizing the simulation
-
-# We define a function that plots the vorticity field and the evolution of
-# the diagnostics: energy, enstrophy, and all terms involved in the energy and 
-# enstrophy budgets. Last, we also check (by plotting) whether the energy and enstrophy
-# budgets are accurately computed, e.g., ``\mathrm{d}E/\mathrm{d}t = W^\varepsilon - 
-# R^\varepsilon - D^\varepsilon``.
-
-function computetendencies_and_makeplot(prob, diags)
-  sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-
-  TwoDNavierStokes.updatevars!(prob)
-
-  E, Dᵋ, Wᵋ, Rᵋ, Z, Dᶻ, Wᶻ, Rᶻ = diags
-
-  clocktime = round(μ * clock.t, digits=2)
-
-  dEdt_numerical = (E[2:E.i] - E[1:E.i-1]) / clock.dt # numerical first-order approximation of energy tendency
-  dZdt_numerical = (Z[2:Z.i] - Z[1:Z.i-1]) / clock.dt # numerical first-order approximation of enstrophy tendency
-
-  dEdt_computed = Wᵋ[2:E.i] + Dᵋ[1:E.i-1] + Rᵋ[1:E.i-1]
-  dZdt_computed = Wᶻ[2:Z.i] + Dᶻ[1:Z.i-1] + Rᶻ[1:Z.i-1]
-
-  residual_E = dEdt_computed - dEdt_numerical
-  residual_Z = dZdt_computed - dZdt_numerical
-
-  εᶻ = parsevalsum(forcing_spectrum / 2, grid) / (grid.Lx * grid.Ly)
-
-  pζ = heatmap(x, y, Array(vars.ζ'),
-            aspectratio = 1,
-            legend = false,
-                 c = :viridis,
-              clim = (-25, 25),
-             xlims = (-L/2, L/2),
-             ylims = (-L/2, L/2),
-            xticks = -3:3,
-            yticks = -3:3,
-            xlabel = "μt",
-            ylabel = "y",
-             title = "∇²ψ(x, y, μt=" * @sprintf("%.2f", μ * clock.t) * ")",
-        framestyle = :box)
-
-  pζ = plot(pζ, size = (400, 400))
-
-  t = E.t[2:E.i]
-
-  p1E = plot(μ * t, [Wᵋ[2:E.i] ε.+0*t Dᵋ[1:E.i-1] Rᵋ[1:E.i-1]],
-             label = ["energy work, Wᵋ" "ensemble mean energy work, <Wᵋ>" "dissipation, Dᵋ" "drag, Rᵋ = - 2μE"],
-         linestyle = [:solid :dash :solid :solid],
-         linewidth = 2,
-             alpha = 0.8,
-            xlabel = "μt",
-            ylabel = "energy sources and sinks")
-
-  p2E = plot(μ * t, [dEdt_computed, dEdt_numerical],
-           label = ["computed Wᵋ-Dᵋ" "numerical dE/dt"],
-       linestyle = [:solid :dashdotdot],
-       linewidth = 2,
-           alpha = 0.8,
-          xlabel = "μt",
-          ylabel = "dE/dt")
-
-  p3E = plot(μ * t, residual_E,
-           label = "residual dE/dt = computed - numerical",
-       linewidth = 2,
-           alpha = 0.7,
-          xlabel = "μt")
-
-  t = Z.t[2:E.i]
-
-  p1Z = plot(μ * t, [Wᶻ[2:Z.i] εᶻ.+0*t Dᶻ[1:Z.i-1] Rᶻ[1:Z.i-1]],
-           label = ["enstrophy work, Wᶻ" "mean enstrophy work, <Wᶻ>" "enstrophy dissipation, Dᶻ" "enstrophy drag, Rᶻ = - 2μZ"],
-       linestyle = [:solid :dash :solid :solid],
-       linewidth = 2,
-           alpha = 0.8,
-          xlabel = "μt",
-          ylabel = "enstrophy sources and sinks")
-
-
-  p2Z = plot(μ * t, [dZdt_computed, dZdt_numerical],
-         label = ["computed Wᶻ-Dᶻ" "numerical dZ/dt"],
-     linestyle = [:solid :dashdotdot],
-     linewidth = 2,
-         alpha = 0.8,
-        xlabel = "μt",
-        ylabel = "dZ/dt")
-
-  p3Z = plot(μ * t, residual_Z,
-         label = "residual dZ/dt = computed - numerical",
-     linewidth = 2,
-         alpha = 0.7,
-        xlabel = "μt")
-        
-  layout = @layout Plots.grid(3, 2)
-  
-  pbudgets = plot(p1E, p1Z, p2E, p2Z, p3E, p3Z, layout=layout, size = (800, 1100))
-
-  return pζ, pbudgets
-end
-nothing # hide
-
-
-
-
 # ## Time-stepping the `Problem` forward
 
-# Finally, we time-step the `Problem` forward in time.
+# We time-step the `Problem` forward in time.
 
 startwalltime = time()
 for i = 1:ns
@@ -266,13 +164,102 @@ end
 
 
 # ## Plot
-# And now let's see what we got. First we plot the final snapshot 
-# of the vorticity field.
+# Now let's see the final snapshot of the vorticity.
 
-pζ, pbudgets = computetendencies_and_makeplot(prob, diags)
+fig = Figure(resolution = (400, 400))
 
-pζ
+ax = Axis(fig[1, 1];
+          xlabel = "x",
+          ylabel = "y",
+          title = "∇²ψ(x, y, μt=" * @sprintf("%.2f", μ * clock.t) * ")",
+          aspect = 1,
+          limits = ((-L/2, L/2), (-L/2, L/2)))
 
-# And finaly, we plot the energy and enstrophy budgets.
+heatmap!(ax, x, y, Array(vars.ζ);
+         colormap = :viridis, colorrange = (-25, 25))
 
-pbudgets
+fig
+
+# And finaly, we plot the evolution of the energy and enstrophy diagnostics and all terms
+# involved in the energy and enstrophy budgets. Last, we also check (by plotting) whether
+# the energy and enstrophy budgets are accurately computed, e.g., ``\mathrm{d}E/\mathrm{d}t = W^\varepsilon - 
+# R^\varepsilon - D^\varepsilon``.
+
+sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+
+TwoDNavierStokes.updatevars!(prob)
+
+E, Dᵋ, Wᵋ, Rᵋ, Z, Dᶻ, Wᶻ, Rᶻ = diags
+
+clocktime = round(μ * clock.t, digits=2)
+
+dEdt_numerical = (E[2:E.i] - E[1:E.i-1]) / clock.dt # numerical first-order approximation of energy tendency
+dZdt_numerical = (Z[2:Z.i] - Z[1:Z.i-1]) / clock.dt # numerical first-order approximation of enstrophy tendency
+
+dEdt_computed = Wᵋ[2:E.i] + Dᵋ[1:E.i-1] + Rᵋ[1:E.i-1]
+dZdt_computed = Wᶻ[2:Z.i] + Dᶻ[1:Z.i-1] + Rᶻ[1:Z.i-1]
+
+residual_E = dEdt_computed - dEdt_numerical
+residual_Z = dZdt_computed - dZdt_numerical
+
+εᶻ = parsevalsum(forcing_spectrum / 2, grid) / (grid.Lx * grid.Ly)
+
+t = E.t[2:E.i]
+
+fig = Figure(resolution = (800, 1100))
+
+axis_kwargs = (xlabel = "μ t", )
+
+ax1E = Axis(fig[1, 1]; ylabel = "energy sources/sinks", axis_kwargs...)
+ax2E = Axis(fig[3, 1]; ylabel = "dE/dt", axis_kwargs...)
+ax3E = Axis(fig[5, 1]; axis_kwargs...)
+
+ax1Z = Axis(fig[1, 2]; axis_kwargs...)
+ax2Z = Axis(fig[3, 2]; axis_kwargs...)
+ax3Z = Axis(fig[5, 2]; axis_kwargs...)
+
+hWᵋ = lines!(ax1E, t, Wᵋ[2:E.i];   linestyle = :solid)
+hε  = lines!(ax1E, t, ε .+ 0t;     linestyle = :dash)
+hDᵋ = lines!(ax1E, t, Dᵋ[1:E.i-1]; linestyle = :solid)
+hRᵋ = lines!(ax1E, t, Rᵋ[1:E.i-1]; linestyle = :solid)
+
+Legend(fig[2, 1],
+       [hWᵋ, hε, hDᵋ, hRᵋ],
+       ["energy work, Wᵋ" "ensemble mean energy work, <Wᵋ>" "dissipation, Dᵋ" "drag, Rᵋ = - 2μE"])
+
+hc = lines!(ax2E, t, dEdt_computed; linestyle = :solid)
+hn = lines!(ax2E, t, dEdt_numerical; linestyle = :dash)
+
+Legend(fig[4, 1],
+       [hc, hn],
+       ["computed Wᵋ-Dᵋ" "numerical dE/dt"])
+
+hr = lines!(ax3E, t, residual_E)
+
+Legend(fig[6, 1],
+       [hr],
+       ["residual"])
+
+hWᶻ = lines!(ax1Z, t, Wᶻ[2:Z.i];  linestyle = :solid)
+hεᶻ = lines!(ax1Z, t, εᶻ .+ 0t;    linestyle = :dash)
+hDᶻ = lines!(ax1Z, t, Dᶻ[1:Z.i-1]; linestyle = :solid)
+hRᶻ = lines!(ax1Z, t, Rᶻ[1:Z.i-1]; linestyle = :solid)
+
+Legend(fig[2, 2],
+       [hWᶻ, hεᶻ, hDᶻ, hRᶻ],
+       ["enstrophy work, Wᶻ" "ensemble mean enstophy work, <Wᶻ>" "dissipation, Dᶻ" "drag, Rᶻ = - 2μZ"])
+
+hcᶻ = lines!(ax2Z, t, dZdt_computed; linestyle = :solid)
+hnᶻ = lines!(ax2Z, t, dZdt_numerical; linestyle = :dash)
+
+Legend(fig[4, 2],
+       [hcᶻ, hnᶻ],
+       ["computed Wᶻ-Dᶻ" "numerical dZ/dt"])
+
+hrᶻ = lines!(ax3Z, t, residual_Z)
+
+Legend(fig[6, 2],
+       [hr],
+       ["residual"])
+
+fig

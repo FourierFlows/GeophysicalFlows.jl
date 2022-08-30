@@ -125,10 +125,6 @@ nothing # hide
 ζ = Observable(vars.ζ)
 title_ζ = Observable("vorticity, t=" * @sprintf("%.2f", clock.t))
 
-t = Observable(E.t[1:1])
-energy = Observable(E.data[1:1] / E.data[1])
-enstrophy = Observable(Z.data[1:1] / Z.data[1])
-
 energy = Observable(Point2f[(E.t[1], E.data[1] / E.data[1])])
 enstrophy = Observable(Point2f[(Z.t[1], Z.data[1] / Z.data[1])])
 
@@ -209,4 +205,4 @@ lines(kr, vec(abs.(Ehr));
               xscale = log10,
               yscale = log10,
               title = "Radial energy spectrum",
-              limits = ((1e-1, 1e2), (1e0, 1e4))))
+              limits = ((0.3, 1e2), (1e0, 1e5))))

@@ -12,13 +12,14 @@
 
 # ```julia
 # using Pkg
-# pkg"add GeophysicalFlows, CUDA, Random, Printf, Plots"
+# pkg"add GeophysicalFlows, CUDA, CairoMakie"
 # ```
 
 # ## Let's begin
 # Let's load `GeophysicalFlows.jl` and some other needed packages.
 #
-using GeophysicalFlows, CUDA, Random, Printf, Plots
+using GeophysicalFlows, CUDA, Random, Printf, CairoMakie
+
 parsevalsum = FourierFlows.parsevalsum
 
 # ## Choosing a device: CPU or GPU
@@ -105,18 +106,19 @@ nothing # hide
 # it is brought back on the CPU when the variable lives on the GPU.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
-     aspectratio = 1,
-               c = :balance,
-            clim = (-200, 200),
-           xlims = (-L/2, L/2),
-           ylims = (-L/2, L/2),
-          xticks = -3:3,
-          yticks = -3:3,
+fig = Figure()
+
+ax = Axis(fig[1, 1], 
           xlabel = "x",
           ylabel = "y",
-           title = "a forcing realization",
-      framestyle = :box)
+          aspect = 1,
+          title = "a forcing realization",
+          limits = ((-L/2, L/2), (-L/2, L/2)))
+
+heatmap!(ax, x, y, irfft(vars.Fh, grid.nx);
+         colormap = :balance, colorrange = (-200, 200))
+
+fig
 
 
 # ## Setting initial conditions
@@ -137,33 +139,36 @@ nothing # hide
 # ## Visualizing the simulation
 
 # We initialize a plot with the vorticity field and the time-series of
-# energy and enstrophy diagnostics. To plot energy and enstrophy on the same
-# axes we scale enstrophy with ``k_f^2``.
+# energy and enstrophy diagnostics. To plot energy and enstrophy on the
+# same axes we scale enstrophy with ``k_f^2``.
 
-p1 = heatmap(x, y, Array(vars.ζ'),
-         aspectratio = 1,
-                   c = :balance,
-                clim = (-40, 40),
-               xlims = (-L/2, L/2),
-               ylims = (-L/2, L/2),
-              xticks = -3:3,
-              yticks = -3:3,
-              xlabel = "x",
-              ylabel = "y",
-               title = "vorticity, t=" * @sprintf("%.2f", clock.t),
-          framestyle = :box)
+ζ = Observable(vars.ζ)
+title_ζ = Observable("vorticity, μ t=" * @sprintf("%.2f", μ * clock.t))
 
-p2 = plot(2, # this means "a plot with two series"
-               label = ["energy E(t)" "enstrophy Z(t) / k_f²"],
-              legend = :right,
-           linewidth = 2,
-               alpha = 0.7,
-              xlabel = "μ t",
-               xlims = (0, 1.1 * μ * nsteps * dt),
-               ylims = (0, 0.55))
+energy = Observable(Point2f[(μ * E.t[1], E.data[1])])
+enstrophy = Observable(Point2f[(μ * Z.t[1], Z.data[1] / forcing_wavenumber^2)])
 
-l = @layout Plots.grid(1, 2)
-p = plot(p1, p2, layout = l, size = (900, 420))
+fig = Figure(resolution = (800, 360))
+
+axζ = Axis(fig[1, 1];
+           xlabel = "x",
+           ylabel = "y",
+           title = title_ζ,
+           aspect = 1,
+           limits = ((-L/2, L/2), (-L/2, L/2)))
+
+ax2 = Axis(fig[1, 2],
+           xlabel = "μ t",
+           limits = ((0, 1.1 * μ * nsteps * dt), (0, 0.55)))
+
+heatmap!(axζ, x, y, ζ;
+         colormap = :balance, colorrange = (-40, 40))
+
+hE = lines!(ax2, energy; linewidth = 3)
+hZ = lines!(ax2, enstrophy; linewidth = 3, color = :red)
+Legend(fig[1, 3], [hE, hZ], ["energy E(t)" "enstrophy Z(t) / k_f²"])
+
+fig
 
 
 # ## Time-stepping the `Problem` forward
@@ -172,7 +177,7 @@ p = plot(p1, p2, layout = l, size = (900, 420))
 
 startwalltime = time()
 
-anim = @animate for j = 0:round(Int, nsteps / nsubs)
+record(fig, "twodturb_forced.mp4", 0:round(Int, nsteps / nsubs), framerate = 18) do j
   if j % (1000/nsubs) == 0
     cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
     
@@ -181,13 +186,15 @@ anim = @animate for j = 0:round(Int, nsteps / nsubs)
     println(log)
   end  
 
-  p[1][1][:z] = Array(vars.ζ)
-  p[1][:title] = "vorticity, μt = " * @sprintf("%.2f", μ * clock.t)
-  push!(p[2][1], μ * E.t[E.i], E.data[E.i])
-  push!(p[2][2], μ * Z.t[Z.i], Z.data[Z.i] / forcing_wavenumber^2)
+  ζ[] = Array(vars.ζ)
+
+  energy[] = push!(energy[], Point2f(μ * E.t[E.i], E.data[E.i]))
+  enstrophy[] = push!(enstrophy[], Point2f(μ * Z.t[E.i], Z.data[Z.i] / forcing_wavenumber^2))
+
+  title_ζ[] = "vorticity, μ t=" * @sprintf("%.2f", μ * clock.t)
 
   stepforward!(prob, diags, nsubs)
   TwoDNavierStokes.updatevars!(prob)  
 end
 
-mp4(anim, "twodturb_forced.mp4", fps=18)
+# ![](twodturb_forced.mp4)
