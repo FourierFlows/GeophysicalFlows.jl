@@ -1,13 +1,8 @@
 using
   Documenter,
   Literate,
-  Plots,   # to not capture precompilation output
+  CairoMakie,   # to not capture precompilation output
   GeophysicalFlows
-
-# Gotta set this environment variable when using the GR run-time on CI machines.
-# This happens as examples will use Plots.jl to make plots and movies.
-# See: https://github.com/jheinen/GR.jl/issues/278
-ENV["GKSwstype"] = "100"
 
 #####
 ##### Generate literated examples
