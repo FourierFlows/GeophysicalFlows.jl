@@ -16,7 +16,7 @@
 # ```
 
 # ## Let's begin
-# Let's load `GeophysicalFlows.jl` and some other needed packages.
+# Let's load `GeophysicalFlows.jl` and some other packages we need.
 #
 using GeophysicalFlows, CairoMakie, Printf
 

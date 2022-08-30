@@ -18,7 +18,7 @@
 # ```
 
 # ## Let's begin
-# Let's load `GeophysicalFlows.jl` and some other needed packages.
+# Let's load `GeophysicalFlows.jl` and some other packages we need.
 #
 using GeophysicalFlows, CUDA, Random, Printf, CairoMakie
 
@@ -147,7 +147,7 @@ nothing # hide
 
 # ## Time-stepping the `Problem` forward
 
-# We time-step the `Problem` forward in time.
+# We step the `Problem` forward in time.
 
 startwalltime = time()
 for i = 1:ns
@@ -181,7 +181,7 @@ heatmap!(ax, x, y, Array(vars.ζ);
 
 fig
 
-# And finaly, we plot the evolution of the energy and enstrophy diagnostics and all terms
+# And finally, we plot the evolution of the energy and enstrophy diagnostics and all terms
 # involved in the energy and enstrophy budgets. Last, we also check (by plotting) whether
 # the energy and enstrophy budgets are accurately computed, e.g., ``\mathrm{d}E/\mathrm{d}t = W^\varepsilon - 
 # R^\varepsilon - D^\varepsilon``.

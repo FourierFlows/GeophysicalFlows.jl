@@ -10,11 +10,11 @@
 
 # ```julia
 # using Pkg
-# pkg"add GeophysicalFlows, CairoMakie, Printf, Random, Statistics"
+# pkg"add GeophysicalFlows, CairoMakie"
 # ```
 
 # ## Let's begin
-# Let's load `GeophysicalFlows.jl` and some other needed packages.
+# Let's load `GeophysicalFlows.jl` and some other packages we need.
 #
 using GeophysicalFlows, CairoMakie, Printf, Random
 
@@ -169,8 +169,8 @@ nothing # hide
 
 # ## Visualizing the simulation
 
-# We modify the figure with the initial state slightly. We add the topography contours and
-# also the time.
+# We modify the figure with the initial state slightly by adding the topography contours
+# and mark the time in the title.
 
 contour!(axq, x, y, η;
          levels = collect(0.5:0.5:3), linewidth = 2, color = (:black, 0.5))
@@ -186,7 +186,7 @@ nothing # hide
 
 # ## Time-stepping the `Problem` forward
 
-# We time-step the `Problem` forward in time.
+# We step the `Problem` forward in time.
 
 startwalltime = time()
 

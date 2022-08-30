@@ -16,7 +16,7 @@
 # ```
 
 # ## Let's begin
-# Let's load `GeophysicalFlows.jl` and some other needed packages.
+# Let's load `GeophysicalFlows.jl` and some other packages we need.
 #
 using GeophysicalFlows, CUDA, Random, Printf, CairoMakie
 
@@ -174,7 +174,7 @@ fig
 
 # ## Time-stepping the `Problem` forward
 
-# Finally, we time-step the `Problem` forward in time.
+# We step the `Problem` forward in time.
 
 startwalltime = time()
 

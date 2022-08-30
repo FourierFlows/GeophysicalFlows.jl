@@ -258,7 +258,7 @@ nothing # hide
 
 # ## Time-stepping the `Problem` forward
 
-# We time-step the `Problem` forward in time.
+# We step the `Problem` forward in time.
 
 startwalltime = time()
 

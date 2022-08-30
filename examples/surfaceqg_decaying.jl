@@ -19,7 +19,7 @@
 # ```
 
 # ## Let's begin
-# Let's load `GeophysicalFlows.jl` and some other needed packages.
+# Let's load `GeophysicalFlows.jl` and some other packages we need.
 #
 using GeophysicalFlows, CairoMakie, Printf, Random
 
@@ -237,7 +237,7 @@ fig
 
 # ## Save
 
-# Last, we can save the output by calling
+# We can save the output at the end of the simulation by calling
 # ```julia
 # saveoutput(out)
 # ```
