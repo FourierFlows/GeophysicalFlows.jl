@@ -21,6 +21,7 @@
 using GeophysicalFlows, CUDA, Random, Printf, CairoMakie
 
 parsevalsum = FourierFlows.parsevalsum
+record = CairoMakie.record
 
 # ## Choosing a device: CPU or GPU
 
