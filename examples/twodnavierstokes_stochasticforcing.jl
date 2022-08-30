@@ -116,7 +116,7 @@ ax = Axis(fig[1, 1],
           title = "a forcing realization",
           limits = ((-L/2, L/2), (-L/2, L/2)))
 
-heatmap!(ax, x, y, irfft(vars.Fh, grid.nx);
+heatmap!(ax, x, y, Array(irfft(vars.Fh, grid.nx));
          colormap = :balance, colorrange = (-200, 200))
 
 fig
@@ -143,7 +143,7 @@ nothing # hide
 # energy and enstrophy diagnostics. To plot energy and enstrophy on the
 # same axes we scale enstrophy with ``k_f^2``.
 
-ζ = Observable(vars.ζ)
+ζ = Observable(Array(vars.ζ))
 title_ζ = Observable("vorticity, μ t=" * @sprintf("%.2f", μ * clock.t))
 
 energy = Observable(Point2f[(μ * E.t[1], E.data[1])])
@@ -187,7 +187,7 @@ record(fig, "twodturb_forced.mp4", 0:round(Int, nsteps / nsubs), framerate = 18)
     println(log)
   end  
 
-  ζ[] = Array(vars.ζ)
+  ζ[] = vars.ζ
 
   energy[] = push!(energy[], Point2f(μ * E.t[E.i], E.data[E.i]))
   enstrophy[] = push!(enstrophy[], Point2f(μ * Z.t[E.i], Z.data[Z.i] / forcing_wavenumber^2))

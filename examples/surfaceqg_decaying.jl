@@ -139,7 +139,7 @@ nothing # hide
 # We define a function that plots the buoyancy field and the time evolution of kinetic energy 
 # and buoyancy variance.
 
-b = Observable(vars.b)
+b = Observable(Array(vars.b))
 
 ke = Observable([Point2f(KE.t[1], KE.data[1])])
 b² = Observable([Point2f(B.t[1], B.data[1])])
@@ -189,7 +189,7 @@ record(fig, "sqg_ellipticalvortex.mp4", 0:round(Int, nsteps/nsubs), framerate = 
     println(log2)
   end
 
-  b[] = Array(vars.b)
+  b[] = vars.b
 
   ke[] = push!(ke[], Point2f(KE.t[KE.i], KE.data[KE.i]))
   b²[] = push!(b²[], Point2f(B.t[B.i], B.data[B.i]))
@@ -216,17 +216,17 @@ axb = Axis(fig[1, 1]; title = "bₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")",
 axu = Axis(fig[1, 2]; title = "uₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")", axis_kwargs...)
 axv = Axis(fig[1, 3]; title = "vₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")", axis_kwargs...)
 
-hb = heatmap!(axb, x, y, vars.b;
+hb = heatmap!(axb, x, y, Array(vars.b);
              colormap = :deep, colorrange = (0, 1))
 
 Colorbar(fig[2, 1], hb, vertical = false)
 
-hu = heatmap!(axu, x, y, vars.u;
+hu = heatmap!(axu, x, y, Array(vars.u);
              colormap = :balance, colorrange = (-maximum(abs.(vars.u)), maximum(abs.(vars.u))))
 
 Colorbar(fig[2, 2], hu, vertical = false)
 
-hv = heatmap!(axv, x, y, vars.v;
+hv = heatmap!(axv, x, y, Array(vars.v);
              colormap = :balance, colorrange = (-maximum(abs.(vars.v)), maximum(abs.(vars.v))))
 
 Colorbar(fig[2, 3], hv, vertical = false)

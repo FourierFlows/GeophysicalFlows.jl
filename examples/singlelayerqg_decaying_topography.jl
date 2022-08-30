@@ -70,6 +70,8 @@ nothing # hide
 # plotted with `Array()` to make sure it is brought back on the CPU when the variable lives 
 # on the GPU.
 
+η = Array(params.eta)
+
 fig = Figure()
 ax = Axis(fig[1, 1];
           xlabel = "x",
@@ -77,7 +79,7 @@ ax = Axis(fig[1, 1];
           title = "topographic PV η=f₀h/H",
           limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
 
-contourf!(ax, x, y, params.eta;
+contourf!(ax, x, y, η;
           levels = collect(-3:0.4:3), colormap = :balance, colorrange = (-3, 3))
 
 fig
@@ -105,8 +107,8 @@ nothing # hide
 
 # Let's plot the initial vorticity and streamfunction.
 
-q = Observable(vars.q)
-ψ = Observable(vars.ψ)
+q = Observable(Array(vars.q))
+ψ = Observable(Array(vars.ψ))
 
 fig = Figure(resolution=(800, 380))
 
@@ -169,8 +171,6 @@ nothing # hide
 
 # We modify the figure with the initial state slightly. We add the topography contours and
 # also the time.
-
-η = prob.params.eta
 
 contour!(axq, x, y, η;
          levels = collect(0.5:0.5:3), linewidth = 2, color = (:black, 0.5))
