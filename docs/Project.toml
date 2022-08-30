@@ -2,7 +2,6 @@
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-GeophysicalFlows = "44ee3b1c-bc02-53fa-8355-8e347616e15e"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
