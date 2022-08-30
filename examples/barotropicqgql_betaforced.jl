@@ -112,6 +112,7 @@ nothing # hide
 # First let's see how a forcing realization looks like. Note that when plotting, we decorate 
 # the variable to be plotted with `Array()` to make sure it is brought back on the CPU when 
 # `vars` live on the GPU.
+
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
 fig = Figure()
@@ -123,7 +124,7 @@ ax = Axis(fig[1, 1],
           title = "a forcing realization",
           limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
 
-heatmap!(ax, x, y, irfft(vars.Fh, grid.nx);
+heatmap!(ax, x, y, Array(irfft(vars.Fh, grid.nx));
          colormap = :balance, colorrange = (-8, 8))
 
 fig
@@ -227,11 +228,11 @@ axZ = Axis(fig[2, 3],
            limits = ((-0.1, 4.1), (0, 5)))
 
 ζ̄, ζ′= prob.vars.Zeta, prob.vars.zeta
-ζ = Observable(@. ζ̄ + ζ′)
+ζ = Observable(Array(@. ζ̄ + ζ′))
 ψ̄, ψ′= prob.vars.Psi,  prob.vars.psi
-ψ = Observable(@. ψ̄ + ψ′)
-ζ̄ₘ = Observable(vec(mean(ζ̄, dims=1)))
-ūₘ = Observable(vec(mean(prob.vars.U, dims=1)))
+ψ = Observable(Array(@. ψ̄ + ψ′))
+ζ̄ₘ = Observable(Array(vec(mean(ζ̄, dims=1))))
+ūₘ = Observable(Array(vec(mean(prob.vars.U, dims=1))))
 
 μt = Observable(μ * E.t[1:1])
 energy = Observable(E.data[1:1])
@@ -274,10 +275,10 @@ record(fig, "barotropicqgql_betaforced.mp4", frames, framerate = 18) do j
     println(log)
   end
 
-  ζ[] = @. ζ̄ + ζ′
-  ψ[] = @. ψ̄ + ψ′
-  ζ̄ₘ[] = vec(mean(ζ̄, dims=1))
-  ūₘ[] = vec(mean(prob.vars.U, dims=1))
+  ζ[] = Array(@. ζ̄ + ζ′)
+  ψ[] = Array(@. ψ̄ + ψ′)
+  ζ̄ₘ[] = Array(vec(mean(ζ̄, dims=1)))
+  ūₘ[] = Array(vec(mean(prob.vars.U, dims=1)))
 
   μt.val = μ * E.t[1:E.i]
   energy[] = E.data[1:E.i]
