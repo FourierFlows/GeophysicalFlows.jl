@@ -62,14 +62,17 @@ Some animations created with GeophysicalFlows.jl are [online @ youtube].
 
 ## Modules
 
-* `TwoDNavierStokes`: the two-dimensional vorticity equation.
-* `SingleLayerQG`: the barotropic or equivalent-barotropic quasi-geostrophic equation, which 
-  generalizes `TwoDNavierStokes` to cases with topography, Coriolis parameters of the form 
-  `f = f₀ + βy`, and finite Rossby radius of deformation.
-* `MultiLayerQG`: a multi-layer quasi-geostrophic model over topography and with the ability 
-  to impose a zonal flow `U_n(y)` in each layer.
-* `SurfaceQG`: a surface quasi-geostrophic model.
-* `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
+* [`TwoDNavierStokes`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/twodnavierstokes/): the
+  two-dimensional vorticity equation.
+* [`SingleLayerQG`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/singlelayerqg/): the barotropic
+  or equivalent-barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography, Coriolis
+  parameters of the form `f = f₀ + βy`, and finite Rossby radius of deformation.
+* [`MultiLayerQG`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/multilayerqg/): a multi-layer
+  quasi-geostrophic model over topography allowing to impose a zonal flow `U_n(y)` in each layer.
+* [`SurfaceQG`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/surfaceqg/): a surface
+  quasi-geostrophic model.
+* [`BarotropicQGQL`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/barotropicqgql/): the
+  quasi-linear barotropic quasi-geostrophic equation.
 
 
 ## Scalability
@@ -141,8 +144,7 @@ if you'd like to work on a new feature or implement a new module, if you're new 
 and want to find a cool little project or issue to work on that fits your interests! We're more 
 than happy to help along the way.
 
-For more information, check out our [contributor's guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/main/CONTRIBUTING.md).
-
+For more information, check out our [contributors' guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/main/CONTRIBUTING.md).
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
 [documentation]: https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/

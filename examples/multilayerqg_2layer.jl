@@ -1,4 +1,4 @@
-# # Phillips model of Baroclinic Instability
+# # [Phillips model of Baroclinic Instability](@ref multilayerqg_2layer_example)
 #
 #md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/multilayerqg_2layer.ipynb).
 #
@@ -12,13 +12,13 @@
 
 # ```julia
 # using Pkg
-# pkg"add GeophysicalFlows, Plots, Printf"
+# pkg"add GeophysicalFlows, CairoMakie, Printf"
 # ```
 
 # ## Let's begin
-# Let's load `GeophysicalFlows.jl` and some other needed packages.
+# Let's load `GeophysicalFlows.jl` and some other packages we need.
 #
-using GeophysicalFlows, Plots, Printf
+using GeophysicalFlows, CairoMakie, Printf
 
 using Random: seed!
 
@@ -46,12 +46,12 @@ L = 2π                   # domain size
  
 nlayers = 2              # number of layers
 f₀, g = 1, 1             # Coriolis parameter and gravitational constant
- H = [0.2, 0.8]          # the rest depths of each layer
- ρ = [4.0, 5.0]          # the density of each layer
+H = [0.2, 0.8]           # the rest depths of each layer
+ρ = [4.0, 5.0]           # the density of each layer
  
- U = zeros(nlayers) # the imposed mean zonal flow in each layer
- U[1] = 1.0
- U[2] = 0.0
+U = zeros(nlayers)       # the imposed mean zonal flow in each layer
+U[1] = 1.0
+U[2] = 0.0
 nothing # hide
 
 
@@ -61,9 +61,8 @@ nothing # hide
 # at every time-step that removes enstrophy at high wavenumbers and, thereby,
 # stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
 
-prob = MultiLayerQG.Problem(nlayers, dev;
-                            nx=n, Lx=L, f₀=f₀, g=g, H=H, ρ=ρ, U=U, μ=μ, β=β,
-                            dt=dt, stepper=stepper, aliased_fraction=0)
+prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ, U, μ, β,
+                            dt, stepper, aliased_fraction=0)
 nothing # hide
 
 # and define some shortcuts.
@@ -92,7 +91,7 @@ nothing # hide
 # ## Diagnostics
 
 # Create Diagnostics -- `energies` function is imported at the top.
-E = Diagnostic(MultiLayerQG.energies, prob; nsteps=nsteps)
+E = Diagnostic(MultiLayerQG.energies, prob; nsteps)
 diags = [E] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 
@@ -112,7 +111,9 @@ if !isdir(plotpath); mkdir(plotpath); end
 nothing # hide
 
 # And then create Output
-get_sol(prob) = sol # extracts the Fourier-transformed solution
+
+get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
+
 function get_u(prob)
   sol, params, vars, grid = prob.sol, prob.params, prob.vars, prob.grid
   
@@ -130,107 +131,136 @@ nothing # hide
 
 # ## Visualizing the simulation
 
-# We define a function that plots the potential vorticity field and the evolution of energy 
-# and enstrophy. Note that when plotting, we decorate the variable to be plotted with `Array()` 
+# We create a figure using Makie's [`Observable`](https://makie.juliaplots.org/stable/documentation/nodes/)s
+# that plots the potential vorticity field and the evolution of energy and enstrophy.
+# Note that when plotting, we decorate the variable to be plotted with `Array()` 
 # to make sure it is brought back on the CPU when `vars` live on the GPU.
 
-symlims(data) = maximum(abs.(extrema(data))) |> q -> (-q, q)
+Lx, Ly = grid.Lx, grid.Ly
 
-function plot_output(prob)
-  Lx, Ly = prob.grid.Lx, prob.grid.Ly
+title_KE = Observable(@sprintf("μt = %.2f", μ * clock.t))
+
+q₁ = Observable(Array(vars.q[:, :, 1]))
+ψ₁ = Observable(Array(vars.ψ[:, :, 1]))
+q₂ = Observable(Array(vars.q[:, :, 2]))
+ψ₂ = Observable(Array(vars.ψ[:, :, 2]))
+
+function compute_levels(maxf, nlevels=8)
+  ## -max(|f|):...:max(|f|)
+  levelsf  = @lift collect(range(-$maxf, stop = $maxf, length=nlevels))
+
+  ## only positive
+  levelsf⁺ = @lift collect(range($maxf/(nlevels-1), stop = $maxf, length=Int(nlevels/2)))
+
+  ## only negative
+  levelsf⁻ = @lift collect(range(-$maxf, stop = -$maxf/(nlevels-1), length=Int(nlevels/2)))
   
-  l = @layout Plots.grid(2, 3)
-  p = plot(layout=l, size = (1000, 600))
-  
-  for m in 1:nlayers
-    heatmap!(p[(m-1) * 3 + 1], x, y, Array(vars.q[:, :, m]'),
-         aspectratio = 1,
-              legend = false,
-                   c = :balance,
-               xlims = (-Lx/2, Lx/2),
-               ylims = (-Ly/2, Ly/2),
-               clims = symlims,
-              xticks = -3:3,
-              yticks = -3:3,
-              xlabel = "x",
-              ylabel = "y",
-               title = "q_"*string(m),
-          framestyle = :box)
-
-    contourf!(p[(m-1) * 3 + 2], x, y, Array(vars.ψ[:, :, m]'),
-              levels = 8,
-         aspectratio = 1,
-              legend = false,
-                   c = :viridis,
-               xlims = (-Lx/2, Lx/2),
-               ylims = (-Ly/2, Ly/2),
-               clims = symlims,
-              xticks = -3:3,
-              yticks = -3:3,
-              xlabel = "x",
-              ylabel = "y",
-               title = "ψ_"*string(m),
-          framestyle = :box)
-  end
-
-  plot!(p[3], 2,
-             label = ["KE₁" "KE₂"],
-            legend = :bottomright,
-         linewidth = 2,
-             alpha = 0.7,
-             xlims = (-0.1, 2.35),
-             ylims = (1e-9, 1e0),
-            yscale = :log10,
-            yticks = 10.0.^(-9:0),
-            xlabel = "μt")
-          
-  plot!(p[6], 1,
-             label = "PE",
-            legend = :bottomright,
-         linecolor = :red,
-         linewidth = 2,
-             alpha = 0.7,
-             xlims = (-0.1, 2.35),
-             ylims = (1e-9, 1e0),
-            yscale = :log10,
-            yticks = 10.0.^(-9:0),
-            xlabel = "μt")
-
+  return levelsf, levelsf⁺, levelsf⁻
 end
-nothing # hide
+
+maxψ₁ = Observable(maximum(abs, vars.ψ[:, :, 1]))
+maxψ₂ = Observable(maximum(abs, vars.ψ[:, :, 2]))
+
+levelsψ₁, levelsψ₁⁺, levelsψ₁⁻ = compute_levels(maxψ₁)
+levelsψ₂, levelsψ₂⁺, levelsψ₂⁻ = compute_levels(maxψ₂)
+
+KE₁ = Observable(Point2f[(μ * E.t[1], E.data[1][1][1])])
+KE₂ = Observable(Point2f[(μ * E.t[1], E.data[1][1][2])])
+PE  = Observable(Point2f[(μ * E.t[1], E.data[1][2])])
+
+fig = Figure(resolution=(1000, 600))
+
+axis_kwargs = (xlabel = "x",
+               ylabel = "y",
+               aspect = 1,
+               limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+
+axq₁ = Axis(fig[1, 1]; title = "q₁", axis_kwargs...)
+
+axψ₁ = Axis(fig[2, 1]; title = "ψ₁", axis_kwargs...)
+
+axq₂ = Axis(fig[1, 2]; title = "q₂", axis_kwargs...)
+
+axψ₂ = Axis(fig[2, 2]; title = "ψ₂", axis_kwargs...)
+
+axKE = Axis(fig[1, 3], 
+            xlabel = "μ t",
+            ylabel = "KE",
+            title = title_KE,
+            yscale = log10,
+            limits = ((-0.1, 2.6), (1e-9, 5)))
+
+axPE = Axis(fig[2, 3], 
+            xlabel = "μ t",
+            ylabel = "PE",
+            yscale = log10,
+            limits = ((-0.1, 2.6), (1e-9, 5)))
+
+heatmap!(axq₁, x, y, q₁; colormap = :balance)
+
+heatmap!(axq₂, x, y, q₂; colormap = :balance)
+
+contourf!(axψ₁, x, y, ψ₁;
+          levels = levelsψ₁, colormap = :viridis, extendlow = :auto, extendhigh = :auto)
+ contour!(axψ₁, x, y, ψ₁;
+          levels = levelsψ₁⁺, color=:black)
+ contour!(axψ₁, x, y, ψ₁;
+          levels = levelsψ₁⁻, color=:black, linestyle = :dash)
+
+contourf!(axψ₂, x, y, ψ₂;
+          levels = levelsψ₂, colormap = :viridis, extendlow = :auto, extendhigh = :auto)
+ contour!(axψ₂, x, y, ψ₂;
+          levels = levelsψ₂⁺, color=:black)
+ contour!(axψ₂, x, y, ψ₂;
+          levels = levelsψ₂⁻, color=:black, linestyle = :dash)
+
+ke₁ = lines!(axKE, KE₁; linewidth = 3)
+ke₂ = lines!(axKE, KE₂; linewidth = 3)
+Legend(fig[1, 4], [ke₁, ke₂,], ["KE₁", "KE₂"])
+
+lines!(axPE, PE; linewidth = 3)
+
+fig
 
 
 # ## Time-stepping the `Problem` forward
 
 # Finally, we time-step the `Problem` forward in time.
 
-p = plot_output(prob)
-
 startwalltime = time()
 
-anim = @animate for j = 0:round(Int, nsteps / nsubs)
+frames = 0:round(Int, nsteps / nsubs)
+
+record(fig, "multilayerqg_2layer.mp4", frames, framerate = 18) do j
   if j % (1000 / nsubs) == 0
     cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
     
-    log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, KE₁: %.3e, KE₂: %.3e, PE: %.3e, walltime: %.2f min", clock.step, clock.t, cfl, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
+    log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, KE₁: %.3e, KE₂: %.3e, PE: %.3e, walltime: %.2f min",
+                   clock.step, clock.t, cfl, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
 
     println(log)
   end
   
-  for m in 1:nlayers
-    p[(m-1) * 3 + 1][1][:z] = Array(vars.q[:, :, m])
-    p[(m-1) * 3 + 2][1][:z] = Array(vars.ψ[:, :, m])
-  end
-  
-  push!(p[3][1], μ * E.t[E.i], E.data[E.i][1][1])
-  push!(p[3][2], μ * E.t[E.i], E.data[E.i][1][2])
-  push!(p[6][1], μ * E.t[E.i], E.data[E.i][2][1])
+  q₁[] = vars.q[:, :, 1]
+  ψ₁[] = vars.ψ[:, :, 1]
+  q₂[] = vars.q[:, :, 2]
+  ψ₂[] = vars.ψ[:, :, 2]
+
+  maxψ₁[] = maximum(abs, vars.ψ[:, :, 1])
+  maxψ₂[] = maximum(abs, vars.ψ[:, :, 2])
+
+  KE₁[] = push!(KE₁[], Point2f(μ * E.t[E.i], E.data[E.i][1][1]))
+  KE₂[] = push!(KE₂[], Point2f(μ * E.t[E.i], E.data[E.i][1][2]))
+  PE[]  = push!(PE[] , Point2f(μ * E.t[E.i], E.data[E.i][2]))
+
+  title_KE[] = @sprintf("μ t = %.2f", μ * clock.t)
   
   stepforward!(prob, diags, nsubs)
   MultiLayerQG.updatevars!(prob)
 end
+nothing # hide
 
-mp4(anim, "multilayerqg_2layer.mp4", fps=18)
+# ![](multilayerqg_2layer.mp4)
 
 
 # ## Save

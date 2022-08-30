@@ -1,4 +1,4 @@
-# Contributors Guide
+# Contributors' Guide
 
 Thank you for considering contributing to GeophysicalFlows.jl! 
 

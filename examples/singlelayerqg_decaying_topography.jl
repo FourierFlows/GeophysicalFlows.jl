@@ -1,4 +1,4 @@
-# # Decaying barotropic QG turbulence over topography
+# # [Decaying barotropic QG turbulence over topography](@id singlelayerqg_decaying_topography)
 #
 #md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/singlelayerqg_decaying_topography.ipynb).
 # 
@@ -10,13 +10,13 @@
 
 # ```julia
 # using Pkg
-# pkg"add GeophysicalFlows, Plots, Printf, Random, Statistics"
+# pkg"add GeophysicalFlows, CairoMakie"
 # ```
 
 # ## Let's begin
-# Let's load `GeophysicalFlows.jl` and some other needed packages.
+# Let's load `GeophysicalFlows.jl` and some other packages we need.
 #
-using GeophysicalFlows, Plots, Printf, Random
+using GeophysicalFlows, CairoMakie, Printf, Random
 
 using Statistics: mean
 
@@ -45,7 +45,7 @@ nothing # hide
 # Define the topographic potential vorticity, ``\eta = f_0 h(x, y)/H``. The topography here is 
 # an elliptical mount at ``(x, y) = (1, 1)``, and an elliptical depression at ``(x, y) = (-1, -1)``.
 σx, σy = 0.4, 0.8
-topographicPV(x, y) = 3exp(-(x-1)^2/(2σx^2) -(y-1)^2/(2σy^2)) - 2exp(-(x+1)^2/(2σx^2) -(y+1)^2/(2σy^2))
+topographicPV(x, y) = 3exp(-(x - 1)^2 / 2σx^2 - (y - 1)^2 / 2σy^2) - 2exp(- (x + 1)^2 / 2σx^2 - (y + 1)^2 / 2σy^2)
 nothing # hide
 
 # ## Problem setup
@@ -57,31 +57,32 @@ nothing # hide
 #
 # The topophic PV is prescribed via keyword argument `eta`.
 prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, eta=topographicPV,
-                                  dt=dt, stepper=stepper, aliased_fraction=0)
+                             dt, stepper, aliased_fraction=0)
 nothing # hide
 
 # and define some shortcuts
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-x, y = grid.x, grid.y
+x,  y  = grid.x,  grid.y
+Lx, Ly = grid.Lx, grid.Ly
 nothing # hide
 
 # and let's plot the topographic PV. Note that when plotting, we decorate the variable to be 
 # plotted with `Array()` to make sure it is brought back on the CPU when the variable lives 
 # on the GPU.
-contourf(grid.x, grid.y, Array(params.eta'),
-          aspectratio = 1,
-            linewidth = 0,
-               levels = 10,
-                    c = :balance,
-                 clim = (-3, 3),
-                xlims = (-grid.Lx/2, grid.Lx/2),
-                ylims = (-grid.Ly/2, grid.Ly/2),
-               xticks = -3:3,
-               yticks = -3:3,
-               xlabel = "x",
-               ylabel = "y",
-                title = "topographic PV η=f₀h/H")
 
+η = Array(params.eta)
+
+fig = Figure()
+ax = Axis(fig[1, 1];
+          xlabel = "x",
+          ylabel = "y",
+          title = "topographic PV η=f₀h/H",
+          limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+
+contourf!(ax, x, y, η;
+          levels = collect(-3:0.4:3), colormap = :balance, colorrange = (-3, 3))
+
+fig
 
 # ## Setting initial conditions
 
@@ -104,44 +105,47 @@ qi = irfft(qih, grid.nx)
 SingleLayerQG.set_q!(prob, qi)
 nothing # hide
 
-# Let's plot the initial vorticity field:
+# Let's plot the initial vorticity and streamfunction.
 
-p1 = heatmap(x, y, Array(vars.q'),
-         aspectratio = 1,
-              c = :balance,
-           clim = (-8, 8),
-          xlims = (-grid.Lx/2, grid.Lx/2),
-          ylims = (-grid.Ly/2, grid.Ly/2),
-         xticks = -3:3,
-         yticks = -3:3,
-         xlabel = "x",
-         ylabel = "y",
-          title = "initial vorticity ∂v/∂x-∂u/∂y",
-     framestyle = :box)
+q = Observable(Array(vars.q))
+ψ = Observable(Array(vars.ψ))
 
-p2 = contourf(x, y, Array(vars.ψ'),
-        aspectratio = 1,
-             c = :viridis,
-        levels = range(-0.25, stop=0.25, length=11), 
-          clim = (-0.25, 0.25),
-         xlims = (-grid.Lx/2, grid.Lx/2),
-         ylims = (-grid.Ly/2, grid.Ly/2),
-        xticks = -3:3,
-        yticks = -3:3,
-        xlabel = "x",
-        ylabel = "y",
-         title = "initial streamfunction ψ",
-    framestyle = :box)
+fig = Figure(resolution=(800, 380))
 
-layout = @layout Plots.grid(1, 2)
-p = plot(p1, p2, layout=layout, size = (800, 360))
+axis_kwargs = (xlabel = "x",
+               ylabel = "y",
+               aspect = 1,
+               limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+
+title_q = Observable("initial vorticity ∂v/∂x-∂u/∂y")
+axq = Axis(fig[1, 1]; title = title_q, axis_kwargs...)
+
+title_ψ = Observable("initial streamfunction ψ")
+axψ = Axis(fig[1, 3]; title = title_ψ, axis_kwargs...)
+
+hm = heatmap!(axq, x, y, q;
+         colormap = :balance, colorrange = (-8, 8))
+
+Colorbar(fig[1, 2], hm)
+
+levels = collect(range(-0.28, stop=0.28, length=11))
+
+hc = contourf!(axψ, x, y, ψ;
+          levels, colormap = :viridis, colorrange = (-0.28, 0.28),
+          extendlow = :auto, extendhigh = :auto)
+contour!(axψ, x, y, ψ;
+         levels, color = :black)
+
+Colorbar(fig[1, 4], hc)
+
+fig
 
 
 # ## Diagnostics
 
 # Create Diagnostics -- `energy` and `enstrophy` functions are imported at the top.
-E = Diagnostic(SingleLayerQG.energy, prob; nsteps=nsteps)
-Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps=nsteps)
+E = Diagnostic(SingleLayerQG.energy, prob; nsteps)
+Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 nothing # hide
 
@@ -158,76 +162,35 @@ if isfile(filename); rm(filename); end
 nothing # hide
 
 # and then create Output.
-get_sol(prob) = sol # extracts the Fourier-transformed solution
+get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
 out = Output(prob, filename, (:sol, get_sol))
 nothing # hide
 
 
 # ## Visualizing the simulation
 
-# We define a function that plots the vorticity and streamfunction and 
-# their corresponding zonal mean structure.
+# We modify the figure with the initial state slightly by adding the topography contours
+# and mark the time in the title.
 
-function plot_output(prob)
-  q = prob.vars.q
-  ψ = prob.vars.ψ
-  η = prob.params.eta
+contour!(axq, x, y, η;
+         levels = collect(0.5:0.5:3), linewidth = 2, color = (:black, 0.5))
 
-  pq = heatmap(x, y, Array(q'),
-       aspectratio = 1,
-            legend = false,
-                 c = :balance,
-              clim = (-6, 6),
-             xlims = (-grid.Lx/2, grid.Lx/2),
-             ylims = (-grid.Ly/2, grid.Ly/2),
-            xticks = -3:3,
-            yticks = -3:3,
-            xlabel = "x",
-            ylabel = "y",
-             title = "vorticity ∂v/∂x-∂u/∂y",
-        framestyle = :box)
-  
-  contour!(pq, x, y, Array(η'),
-          levels=0.5:0.5:3,
-          lw=2, c=:black, ls=:solid, alpha=0.7)
-  
-  contour!(pq, x, y, Array(η'),
-          levels=-2:0.5:-0.5,
-          lw=2, c=:black, ls=:dash, alpha=0.7)
-  
-  pψ = contourf(x, y, Array(ψ'),
-       aspectratio = 1,
-            legend = false,
-                 c = :viridis,
-            levels = range(-0.75, stop=0.75, length=31),
-              clim = (-0.75, 0.75),
-             xlims = (-grid.Lx/2, grid.Lx/2),
-             ylims = (-grid.Ly/2, grid.Ly/2),
-            xticks = -3:3,
-            yticks = -3:3,
-            xlabel = "x",
-            ylabel = "y",
-             title = "streamfunction ψ",
-        framestyle = :box)
+contour!(axq, x, y, η;
+         levels = collect(-2:0.5:-0.5), linewidth = 2, color = (:grey, 0.7), linestyle = :dash)
 
-  l = @layout Plots.grid(1, 2)
-  p = plot(pq, pψ, layout = l, size = (800, 360))
-  
-  return p
-end
+title_q[] = "vorticity, t=" * @sprintf("%.2f", clock.t)
+title_ψ[] = "streamfunction ψ"
+
 nothing # hide
 
 
 # ## Time-stepping the `Problem` forward
 
-# We time-step the `Problem` forward in time.
+# We step the `Problem` forward in time.
 
 startwalltime = time()
 
-p = plot_output(prob)
-
-anim = @animate for j = 0:round(Int, nsteps/nsubs)
-
+record(fig, "singlelayerqg_decaying_topography.mp4", 0:round(Int, nsteps/nsubs), framerate = 12) do j
   if j % (1000 / nsubs) == 0
     cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
 
@@ -235,14 +198,17 @@ anim = @animate for j = 0:round(Int, nsteps/nsubs)
       clock.step, clock.t, cfl, E.data[E.i], Z.data[Z.i], (time()-startwalltime)/60)
 
     println(log)
-  end  
+  end
 
-  p[1][1][:z] = Array(vars.q)
-  p[1][:title] = "vorticity, t="*@sprintf("%.2f", clock.t)
-  p[2][1][:z] = Array(vars.ψ)
+  q[] = vars.q
+  ψ[] = vars.ψ
+
+  title_q[] = "vorticity, t="*@sprintf("%.2f", clock.t)
+  title_ψ[] = "streamfunction ψ"
 
   stepforward!(prob, diags, nsubs)
   SingleLayerQG.updatevars!(prob)
 end
+nothing # hide
 
-mp4(anim, "singlelayerqg_decaying_topography.mp4", fps=12)
+# ![](singlelayerqg_decaying_topography.mp4)
