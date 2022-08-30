@@ -2,7 +2,8 @@ using
   Documenter,
   Literate,
   CairoMakie,   # to not capture precompilation output
-  GeophysicalFlows
+  GeophysicalFlows,
+  Glob
 
 #####
 ##### Generate literated examples
@@ -104,4 +105,10 @@ withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
             push_preview = false,
                devbranch = "main"
             )
+end
+
+@info "Cleaning up temporary .jld2 and .nc files created by doctests..."
+
+for file in vcat(glob("docs/*.jld2"), glob("docs/*.nc"))
+    rm(file)
 end
