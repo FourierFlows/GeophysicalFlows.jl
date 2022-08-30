@@ -207,14 +207,14 @@ end
 
 fig = Figure(resolution = (800, 380))
 
-kwargs_axis = (xlabel = "x",
+axis_kwargs = (xlabel = "x",
                ylabel = "y",
                aspect = 1,
                limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
 
-axb = Axis(fig[1, 1]; title = "bₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")", kwargs_axis...)
-axu = Axis(fig[1, 2]; title = "uₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")", kwargs_axis...)
-axv = Axis(fig[1, 3]; title = "vₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")", kwargs_axis...)
+axb = Axis(fig[1, 1]; title = "bₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")", axis_kwargs...)
+axu = Axis(fig[1, 2]; title = "uₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")", axis_kwargs...)
+axv = Axis(fig[1, 3]; title = "vₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")", axis_kwargs...)
 
 hb = heatmap!(axb, x, y, vars.b;
              colormap = :deep, colorrange = (0, 1))
