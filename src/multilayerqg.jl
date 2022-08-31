@@ -133,7 +133,7 @@ function Problem(nlayers::Int,                        # number of fluid layers
 end
 
 """
-    struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
+    struct Params{T, Aphys3D, Aphys2D, Atrans4D, Trfft} <: AbstractParams
 
 The parameters for the MultiLayerQG problem.
 
