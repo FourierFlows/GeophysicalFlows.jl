@@ -117,16 +117,16 @@ function Problem(nlayers::Int,                        # number of fluid layers
     To use MultiLayerQG with 3 fluid layers or more we suggest, for now, to restrict running
     on CPU."""
   end
-   
+  
   # topographic PV
   eta === nothing && (eta = zeros(dev, T, (nx, ny)))
-   
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T=T)
-   
-  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq, dev=dev)   
-   
+
+  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T)
+
+  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq, dev)
+
   vars = calcFq == nothingfunction ? DecayingVars(dev, grid, params) : (stochastic ? StochasticForcedVars(dev, grid, params) : ForcedVars(dev, grid, params))
-   
+
   equation = linear ? LinearEquation(dev, params, grid) : Equation(dev, params, grid)
 
   FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
@@ -139,7 +139,7 @@ The parameters for the MultiLayerQG problem.
 
 $(TYPEDFIELDS)
 """
-struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
+struct Params{T, Aphys3D, Aphys2D, Atrans4D, Trfft} <: AbstractParams
   # prescribed params
     "number of fluid layers"
    nlayers :: Int
@@ -150,7 +150,7 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
     "planetary vorticity ``y``-gradient"
          β :: T       
     "array with density of each fluid layer"
-         ρ :: Aphys3D
+         ρ :: Tuple
     "array with rest height of each fluid layer"
          H :: Tuple
     "array with imposed constant zonal flow ``U(y)`` in each fluid layer"
@@ -230,7 +230,7 @@ struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
     "planetary vorticity y-gradient"
          β :: T
     "array with density of each fluid layer"
-         ρ :: Aphys3D
+         ρ :: Tuple
     "tuple with rest height of each fluid layer"
          H :: Tuple
    "array with imposed constant zonal flow U(y) in each fluid layer"
@@ -259,6 +259,7 @@ end
 
 function convert_U_to_U3D(dev, nlayers, grid, U::AbstractArray{TU, 1}) where TU
   T = eltype(grid)
+
   if length(U) == nlayers
     U_2D = zeros(dev, T, (1, nlayers))
     U_2D[:] = U
@@ -267,8 +268,10 @@ function convert_U_to_U3D(dev, nlayers, grid, U::AbstractArray{TU, 1}) where TU
     U_2D = zeros(dev, T, (grid.ny, 1))
     U_2D[:] = U
   end
+
   U_3D = zeros(dev, T, (1, grid.ny, nlayers))
   @views U_3D[1, :, :] = U_2D
+
   return U_3D
 end
 
@@ -276,6 +279,7 @@ function convert_U_to_U3D(dev, nlayers, grid, U::AbstractArray{TU, 2}) where TU
   T = eltype(grid)
   U_3D = zeros(dev, T, (1, grid.ny, nlayers))
   @views U_3D[1, :, :] = U
+
   return U_3D
 end
 
@@ -283,10 +287,11 @@ function convert_U_to_U3D(dev, nlayers, grid, U::Number)
   T = eltype(grid)
   A = ArrayType(dev)
   U_3D = reshape(repeat([T(U)], outer=(grid.ny, 1)), (1, grid.ny, nlayers))
+
   return A(U_3D)
 end
 
-function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE, dev::Device=CPU()) where TU
+function Params(nlayers::Int, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid::TwoDGrid; calcFq=nothingfunction, effort=FFTW.MEASURE, dev::Device=CPU())
   T = eltype(grid)
   A = ArrayType(dev)
 
@@ -313,10 +318,9 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
   rfftplanlayered = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
   
   if nlayers==1
-    return SingleLayerParams(T(β), U, eta, T(μ), T(ν), nν, calcFq, Qx, Qy, rfftplanlayered)
+    return SingleLayerParams(T(β), T.(U), eta, T(μ), T(ν), nν, calcFq, Qx, Qy, rfftplanlayered)
   
   else # if nlayers≥2
-    
     ρ = reshape(T.(ρ), (1,  1, nlayers))
     H = Tuple(T.(H))
 
@@ -325,7 +329,7 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
     Fm = @. T(f₀^2 / (g′ * H[2:nlayers]))
     Fp = @. T(f₀^2 / (g′ * H[1:nlayers-1]))
 
-    typeofSkl = SArray{Tuple{nlayers, nlayers}, T, 2, nlayers^2} # StaticArrays of type T and dims = (nlayers x nlayers)
+    typeofSkl = SArray{Tuple{nlayers, nlayers}, T, 2, nlayers^2} # StaticArrays of type T and dims = (nlayers, nlayers)
     
     S = Array{typeofSkl, 2}(undef, (nkr, nl))
     calcS!(S, Fp, Fm, nlayers, grid)
@@ -342,9 +346,9 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
     CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
     if nlayers==2
-      return TwoLayerParams(T(g), T(f₀), T(β), A(ρ), (T(H[1]), T(H[2])), U, eta, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
+      return TwoLayerParams(T(g), T(f₀), T(β), Tuple(T.(ρ)), Tuple(T.(H)), U, eta, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
     else # if nlayers>2
-      return Params(nlayers, T(g), T(f₀), T(β), A(ρ), T.(H), U, eta, T(μ), T(ν), nν, calcFq, Tuple(T.(g′)), Qx, Qy, S, S⁻¹, rfftplanlayered)
+      return Params(nlayers, T(g), T(f₀), T(β), Tuple(T.(ρ)), T.(H), U, eta, T(μ), T(ν), nν, calcFq, Tuple(T.(g′)), Qx, Qy, S, S⁻¹, rfftplanlayered)
     end
   end
 end
