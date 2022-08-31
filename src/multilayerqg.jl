@@ -936,12 +936,14 @@ function energies(vars, params, grid, sol)
   abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
   @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
   
+  LxLyH = grid.Lx * grid.Ly * sum(params.H)
+
   for j = 1:nlayers
-    views(KE, j) = 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j] / sum(params.H)
+    @views KE[j] = 1 / (2 * LxLyH) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j]
   end
 
   for j = 1:nlayers-1
-    views(PE, j) = 1 / (2 * grid.Lx * grid.Ly * sum(params.H)) * params.f₀^2 / params.g′[j] * parsevalsum(abs2.(vars.ψh[:, :, j] .- vars.ψh[:, :, j+1]), grid)
+    @views PE[j] = 1 / (2 * LxLyH) * params.f₀^2 / params.g′[j] * parsevalsum(abs2.(vars.ψh[:, :, j] .- vars.ψh[:, :, j+1]), grid)
   end
 
   return KE, PE
@@ -957,10 +959,12 @@ function energies(vars, params::TwoLayerParams, grid, sol)
   abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
   @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
 
+  LxLyH = grid.Lx * grid.Ly * sum(params.H)
+
   ψ1h, ψ2h = view(vars.ψh, :, :, 1), view(vars.ψh, :, :, 2)
 
   for j = 1:nlayers
-    views(KE, j) = 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j] / sum(params.H)
+    @views KE[j] = 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j] / sum(params.H)
   end
 
   PE = 1 / (2 * grid.Lx * grid.Ly * sum(params.H)) * params.f₀^2 / params.g′ * parsevalsum(abs2.(ψ1h .- ψ2h), grid)
