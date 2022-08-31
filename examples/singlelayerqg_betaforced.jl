@@ -232,6 +232,9 @@ x,  y  = file["grid/x"],  file["grid/y"]
 nx, ny = file["grid/nx"], file["grid/ny"]
 Lx, Ly = file["grid/Lx"], file["grid/Ly"]
 
+close(file)
+
+
 # We create a figure using Makie's [`Observable`](https://makie.juliaplots.org/stable/documentation/nodes/)s
 
 j = Observable(1)
@@ -315,3 +318,6 @@ end
 nothing # hide
 
 # ![](singlelayerqg_betaforced.mp4)
+
+## we delete the .jld2 file before deploying the docs (takes too much space) #hide
+rm(output.path) #hide
