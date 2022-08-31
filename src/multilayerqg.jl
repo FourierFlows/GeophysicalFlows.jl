@@ -152,7 +152,7 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
     "array with density of each fluid layer"
          ρ :: Aphys3D
     "array with rest height of each fluid layer"
-         H :: Aphys3D 
+         H :: Tuple
     "array with imposed constant zonal flow ``U(y)`` in each fluid layer"
          U :: Aphys3D 
     "array containing the topographic PV"
@@ -168,7 +168,7 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
 
   # derived params
     "array with the reduced gravity constants for each fluid interface"
-        g′ :: Aphys1D
+        g′ :: Tuple
     "array containing ``x``-gradient of PV due to eta in each fluid layer"
         Qx :: Aphys3D
     "array containing ``y``-gradient of PV due to ``β``, ``U``, and topographic PV in each fluid layer"
@@ -318,7 +318,7 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
   else # if nlayers≥2
     
     ρ = reshape(T.(ρ), (1,  1, nlayers))
-    H = reshape(T.(H), (1,  1, nlayers))
+    H = Tuple(T.(H))
 
     g′ = T(g) * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface
 
@@ -344,7 +344,7 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
     if nlayers==2
       return TwoLayerParams(T(g), T(f₀), T(β), A(ρ), (T(H[1]), T(H[2])), U, eta, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
     else # if nlayers>2
-      return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
+      return Params(nlayers, T(g), T(f₀), T(β), A(ρ), T.(H), U, eta, T(μ), T(ν), nν, calcFq, Tuple(T.(g′)), Qx, Qy, S, S⁻¹, rfftplanlayered)
     end
   end
 end
@@ -936,15 +936,14 @@ function energies(vars, params, grid, sol)
   abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
   @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
   
-  H = reshape(params.H, (nlayers,))
   LxLyH = grid.Lx * grid.Ly * sum(params.H)
 
   for j = 1:nlayers
-    view(KE, j) .= 1 / (2 * LxLyH) * parsevalsum(view(abs²∇𝐮h, :, :, j), grid) .* view(params.H, j)
+    view(KE, j) .= 1 / (2 * LxLyH) * parsevalsum(view(abs²∇𝐮h, :, :, j), grid) * params.H[j]
   end
 
   for j = 1:nlayers-1
-    view(PE, j) .= 1 / (2 * LxLyH) * params.f₀^2 ./ view(params.g′, j) .* parsevalsum(abs2.(view(vars.ψh, :, :, j) .- view(vars.ψh, :, :, j+1)), grid)
+    view(PE, j) .= 1 / (2 * LxLyH) * params.f₀^2 ./ params.g′[j] .* parsevalsum(abs2.(view(vars.ψh, :, :, j) .- view(vars.ψh, :, :, j+1)), grid)
   end
 
   return KE, PE
