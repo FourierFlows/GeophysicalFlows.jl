@@ -143,6 +143,8 @@ function test_pvtofromstreamfunction_3layer(dev::Device=CPU())
   MultiLayerQG.streamfunctionfrompv!(vs.ψh, vs.qh, pr, gr)
   MultiLayerQG.invtransform!(vs.ψ, vs.ψh, pr)
 
+  MultiLayerQG.set_q!(prob, vs.q)
+
   KE, PE = MultiLayerQG.energies(prob)
 
   return isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) &&
@@ -361,7 +363,7 @@ function test_mqg_energies(dev::Device=CPU();
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
-  
+
   CUDA.@allowscalar @views @. ψ[:, :, 1] =       cos(2k₀ * x) * cos(2l₀ * y)
   CUDA.@allowscalar @views @. ψ[:, :, 2] = 1/2 * cos(2k₀ * x) * cos(2l₀ * y)
 
