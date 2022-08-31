@@ -939,11 +939,11 @@ function energies(vars, params, grid, sol)
   LxLyH = grid.Lx * grid.Ly * sum(params.H)
 
   for j = 1:nlayers
-    @views KE[j] = 1 / (2 * LxLyH) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j]
+    @views KE[j] = 1 / (2 * LxLyH) * parsevalsum(view(abs²∇𝐮h, :, :, j), grid) * params.H[j]
   end
 
   for j = 1:nlayers-1
-    @views PE[j] = 1 / (2 * LxLyH) * params.f₀^2 / params.g′[j] * parsevalsum(abs2.(vars.ψh[:, :, j] .- vars.ψh[:, :, j+1]), grid)
+    @views PE[j] = 1 / (2 * LxLyH) * params.f₀^2 / params.g′[j] * parsevalsum(abs2.(view(vars.ψh, :, :, j) .- view(vars.ψh, :, :, j+1)), grid)
   end
 
   return KE, PE
