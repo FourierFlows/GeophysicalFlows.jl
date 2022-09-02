@@ -35,7 +35,7 @@ function test_sqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
   tf = 0.5  # SQG piles up energy at small scales so running for t ⪆ 0.5 brings instability
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   ψf = @.             sin(2x)*cos(2y) +            2sin(x)*cos(3y)
@@ -132,7 +132,7 @@ function test_sqg_deterministicforcing_buoyancy_variance_budget(dev::Device=CPU(
   dt, tf = 0.005, 10
   nt = round(Int, tf/dt)
 
-  grid  = TwoDGrid(dev, n, L)
+  grid  = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   # buoyancy forcing = 0.01cos(4x)cos(5y)cos(2t)
@@ -170,7 +170,7 @@ function test_sqg_stochasticforcing_buoyancy_variance_budget(dev::Device=CPU(); 
   kf, dkf = 12.0, 2.0
   εᵇ = 0.01
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   Kr = device_array(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])

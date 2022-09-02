@@ -3,7 +3,7 @@ Test the peakedisotropicspectrum function.
 """
 function testpeakedisotropicspectrum(dev::Device=CPU())
   n, L = 128, 2π
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   k0, E0 = 6, 0.5
   qi = peakedisotropicspectrum(grid, k0, E0; allones=true)
   ρ, qhρ = FourierFlows.radialspectrum(rfft(qi) .* grid.invKrsq, grid)

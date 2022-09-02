@@ -54,7 +54,7 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   # Forcing
@@ -113,7 +113,7 @@ function test_bqgql_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.0
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
   k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly
 
@@ -166,7 +166,7 @@ function test_bqgql_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1
   tf = 1.0
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   ψf = @.    cos(3y) +  sin(2x)*cos(2y) +  2sin(x)*cos(3y)

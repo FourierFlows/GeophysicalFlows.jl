@@ -73,7 +73,7 @@ q1 and q2. Similarly, that streamfunctionfrompv gives ψ1 and ψ2 from q1 and q2
 """
 function test_pvtofromstreamfunction_2layer(dev::Device=CPU())
   n, L = 128, 2π
-  gr = TwoDGrid(dev, n, L)
+  gr = TwoDGrid(dev; nx=n, Lx=L)
 
   nlayers = 2      # these choice of parameters give the
   f₀, g = 1, 1     # desired PV-streamfunction relations
@@ -116,7 +116,7 @@ q1, q2, and q3.
 """
 function test_pvtofromstreamfunction_3layer(dev::Device=CPU())
   n, L = 128, 2π
-  gr = TwoDGrid(dev, n, L)
+  gr = TwoDGrid(dev; nx=n, Lx=L)
 
   nlayers = 3            # these choice of parameters give the
   f₀, g = 1, 1           # desired PV-streamfunction relations

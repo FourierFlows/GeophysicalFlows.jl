@@ -29,7 +29,7 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
   kf, dkf = 12.0, 2.0
   ε = 0.1
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   Kr = device_array(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
@@ -81,7 +81,7 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
   kf, dkf = 12.0, 2.0
   εᶻ = 0.1
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   Kr = device_array(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
@@ -133,7 +133,7 @@ function test_twodnavierstokes_deterministicforcing_energybudget(dev::Device=CPU
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
@@ -174,7 +174,7 @@ function test_twodnavierstokes_deterministicforcing_enstrophybudget(dev::Device=
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
@@ -226,7 +226,7 @@ function test_twodnavierstokes_advection(dt, stepper, dev::Device=CPU(); n=128, 
   tf = 1.0
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   ψf = @.   sin(2x)*cos(2y) +  2sin(x)*cos(3y)
