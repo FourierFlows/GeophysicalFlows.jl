@@ -73,7 +73,7 @@ function test_1layerqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, 
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
-    eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
+    eta = device_array(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
     @. Fh = eta * sqrt(forcing_spectrum)
     
@@ -179,7 +179,7 @@ function test_1layerqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=25
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
-    eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
+    eta = device_array(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
     @. Fh = eta * sqrt(forcing_spectrum)
     
@@ -373,7 +373,7 @@ Tests the SingleLayerQG problem constructor for different DataType `T`.
 function test_1layerqg_problemtype(dev, T; deformation_radius=Inf)
   prob = SingleLayerQG.Problem(dev; T=T, deformation_radius=deformation_radius)
 
-  A = ArrayType(dev)
+  A = device_array(dev)
   
   return (typeof(prob.sol)<:A{Complex{T}, 2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T, 2})
 end

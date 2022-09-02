@@ -61,7 +61,7 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   kf, dkf = 12.0, 2.0
   ε = 0.1
   
-  Kr = CUDA.@allowscalar ArrayType(dev)([ grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
+  Kr = CUDA.@allowscalar device_array(dev)([ grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
   forcing_spectrum = zeros(dev, T, (grid.nkr, grid.nl))
   @. forcing_spectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
@@ -74,7 +74,7 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   Random.seed!(1234)
 
   function calcF!(F, sol, t, clock, vars, params, grid)
-    eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
+    eta = device_array(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
     @. F = eta * sqrt(forcing_spectrum)
     return nothing
@@ -230,7 +230,7 @@ end
 function test_bqgql_problemtype(dev, T)
   prob = BarotropicQGQL.Problem(dev; T=T)
   
-  A = ArrayType(dev)
+  A = device_array(dev)
   
   return (typeof(prob.sol)<:A{Complex{T}, 2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T, 2})
 end

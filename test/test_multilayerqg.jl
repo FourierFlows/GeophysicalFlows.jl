@@ -165,7 +165,7 @@ that a solution to the problem forced by this Ff is then qf.
 function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
                                      n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   
-  A = ArrayType(dev)
+  A = device_array(dev)
 
   tf = 0.5
   nt = round(Int, tf/dt)
@@ -256,7 +256,7 @@ is unstable.)
 function test_mqg_linearadvection(dt, stepper, dev::Device=CPU();
                                   n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   
-  A = ArrayType(dev)
+  A = device_array(dev)
   
   tf = 0.5
   nt = round(Int, tf/dt)
@@ -550,7 +550,7 @@ function test_mqg_problemtype(dev, T)
   prob1 = MultiLayerQG.Problem(1, dev; T)
   prob2 = MultiLayerQG.Problem(2, dev; T)
   
-  A = ArrayType(dev)
+  A = device_array(dev)
   
   return typeof(prob1.sol)<:A{Complex{T}, 3} &&
          typeof(prob1.grid.Lx)==T &&

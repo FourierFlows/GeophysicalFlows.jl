@@ -32,9 +32,9 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
   grid = TwoDGrid(dev, n, L)
   x, y = gridpoints(grid)
 
-  Kr = ArrayType(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
+  Kr = device_array(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
-  forcing_spectrum = ArrayType(dev)(zero(grid.Krsq))
+  forcing_spectrum = device_array(dev)(zero(grid.Krsq))
   @. forcing_spectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
   @. forcing_spectrum = ifelse(grid.Krsq < 2^2, 0, forcing_spectrum)
   @. forcing_spectrum = ifelse(grid.Krsq > 20^2, 0, forcing_spectrum)
@@ -45,7 +45,7 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
-    eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
+    eta = device_array(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
     @. Fh = eta * sqrt(forcing_spectrum)
     
@@ -84,9 +84,9 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
   grid = TwoDGrid(dev, n, L)
   x, y = gridpoints(grid)
 
-  Kr = ArrayType(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
+  Kr = device_array(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
-  forcing_spectrum = ArrayType(dev)(zero(grid.Krsq))
+  forcing_spectrum = device_array(dev)(zero(grid.Krsq))
   @. forcing_spectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
   @. forcing_spectrum = ifelse(grid.Krsq < 2^2, 0, forcing_spectrum)
   @. forcing_spectrum = ifelse(grid.Krsq > 20^2, 0, forcing_spectrum)
@@ -97,7 +97,7 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, cl, v, p, g)
-    eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(cl.dt))
+    eta = device_array(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(cl.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
     @. Fh = eta * sqrt(forcing_spectrum)
     
@@ -291,7 +291,7 @@ end
 function test_twodnavierstokes_problemtype(dev, T)
   prob = TwoDNavierStokes.Problem(dev; T=T)
 
-  A = ArrayType(dev)
+  A = device_array(dev)
 
   (typeof(prob.sol)<:A{Complex{T},2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T,2})
 end
