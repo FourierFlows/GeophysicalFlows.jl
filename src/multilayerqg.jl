@@ -27,36 +27,39 @@ using FourierFlows: parsevalsum, parsevalsum2, superzeros, plan_flows_rfft
 nothingfunction(args...) = nothing
 
 """
-    Problem(nlayers::Int,
-                dev = CPU();
-                 nx = 128,
-                 ny = nx,
-                 Lx = 2π,
-                 Ly = Lx,
-                 f₀ = 1.0,
-                  β = 0.0,
-                  g = 1.0,
-                  U = zeros(nlayers),
-                  H = 1/nlayers * ones(nlayers),
-                  ρ = Array{Float64}(1:nlayers),
-                eta = nothing,
-                  μ = 0,
-                  ν = 0,
-                 nν = 1,
-                 dt = 0.01,
-            stepper = "RK4",
-             calcFq = nothingfunction,
-         stochastic = false,
-             linear = false,
-   aliased_fraction = 1/3,
-                  T = Float64)
+    Problem(nlayers :: Int,
+                 dev = CPU();
+                  nx = 128,
+                  ny = nx,
+                  Lx = 2π,
+                  Ly = Lx,
+                  f₀ = 1.0,
+                   β = 0.0,
+                   g = 1.0,
+                   U = zeros(nlayers),
+                   H = 1/nlayers * ones(nlayers),
+                   ρ = Array{Float64}(1:nlayers),
+                 eta = nothing,
+                   μ = 0,
+                   ν = 0,
+                  nν = 1,
+                  dt = 0.01,
+             stepper = "RK4",
+              calcFq = nothingfunction,
+          stochastic = false,
+              linear = false,
+    aliased_fraction = 1/3,
+                   T = Float64)
 
-Construct a multi-layer quasi-geostrophic `problem` with `nlayers` fluid layers on device `dev`.
+Construct a multi-layer quasi-geostrophic problem with `nlayers` fluid layers on device `dev`.
+
+Arguments
+=========
+- `nlayers`: (required) Number of fluid layers.
+- `dev`: (required) `CPU()` (default) or `GPU()`; computer architecture used to time-step `problem`.
 
 Keyword arguments
 =================
-  - `nlayers`: (required) Number of fluid layers.
-  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
   - `nx`: Number of grid points in ``x``-domain.
   - `ny`: Number of grid points in ``y``-domain.
   - `Lx`: Extent of the ``x``-domain.
@@ -74,7 +77,8 @@ Keyword arguments
   - `dt`: Time-step.
   - `stepper`: Time-stepping method.
   - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
-  - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
+  - `stochastic`: `true` or `false` (default); boolean denoting whether `calcF` is temporally stochastic.
+  - `linear`: `true` or `false` (default); boolean denoting whether the linearized equations of motions are used.
   - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
   - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """

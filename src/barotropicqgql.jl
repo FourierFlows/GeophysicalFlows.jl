@@ -28,29 +28,31 @@ abstract type BarotropicQGQLVars <: AbstractVars end
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev::Device=CPU();
-                      nx = 256,
-                      ny = nx,
-                      Lx = 2π,
-                      Ly = Lx,
-                       β = 0.0,
-      deformation_radius = Inf,
-                     eta = nothing,
-                       ν = 0.0,
-                      nν = 1,
-                       μ = 0.0,
-                      dt = 0.01,
-                 stepper = "RK4",
-                   calcF = nothingfunction,
-              stochastic = false,
-        aliased_fraction = 1/3,
-                       T = Float64)
+    Problem(dev::Device = CPU();
+                     nx = 256,
+                     ny = nx,
+                     Lx = 2π,
+                     Ly = Lx,
+                      β = 0.0,
+                    eta = nothing,
+                      ν = 0.0,
+                     nν = 1,
+                      μ = 0.0,
+                     dt = 0.01,
+                stepper = "RK4",
+                  calcF = nothingfunction,
+             stochastic = false,
+       aliased_fraction = 1/3,
+                      T = Float64)
 
-Construct a quasi-linear barotropic quasi-geostrophic `problem` on device `dev`.
+Construct a quasi-linear barotropic quasi-geostrophic problem on device `dev`.
+
+Arguments
+=========
+  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
 
 Keyword arguments
 =================
-  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
   - `nx`: Number of grid points in ``x``-domain.
   - `ny`: Number of grid points in ``y``-domain.
   - `Lx`: Extent of the ``x``-domain.
@@ -90,7 +92,7 @@ function Problem(dev::Device=CPU();
                  T = Float64)
 
   # the grid
-  grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction=aliased_fraction, T)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
   x, y = gridpoints(grid)
 
   # topographic PV

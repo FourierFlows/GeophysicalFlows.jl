@@ -27,27 +27,30 @@ using FourierFlows: parsevalsum
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev::Device=CPU();
-                nx = 256,
-                ny = nx,
-                Lx = 2π,
-                Ly = Lx,
-                 ν = 0,
-                nν = 1,
-                 μ = 0,
-                nμ = 0,
-                dt = 0.01,
-           stepper = "RK4",
-             calcF = nothingfunction,
-        stochastic = false,
-  aliased_fraction = 1/3,
-                 T = Float64)
+    Problem(dev::Device = CPU();
+                     nx = 256,
+                     ny = nx,
+                     Lx = 2π,
+                     Ly = Lx,
+                      ν = 0,
+                     nν = 1,
+                      μ = 0,
+                     nμ = 0,
+                     dt = 0.01,
+                stepper = "RK4",
+                  calcF = nothingfunction,
+             stochastic = false,
+       aliased_fraction = 1/3,
+                      T = Float64)
 
-Construct a two-dimensional Navier-Stokes `problem` on device `dev`.
+Construct a two-dimensional Navier-Stokes problem on device `dev`.
+
+Arguments
+=========
+  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
 
 Keyword arguments
 =================
-  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
   - `nx`: Number of grid points in ``x``-domain.
   - `ny`: Number of grid points in ``y``-domain.
   - `Lx`: Extent of the ``x``-domain.

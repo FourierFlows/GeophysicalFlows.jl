@@ -25,25 +25,28 @@ using FourierFlows: parsevalsum
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev::Device=CPU();
-                 nx = 256,
-                 Lx = 2π,
-                 ny = nx,
-                 Ly = Lx,
-                  ν = 0,
-                 nν = 1,
-                 dt = 0.01,
-            stepper = "RK4",
-              calcF = nothingfunction,
-         stochastic = false,
-  aliased_fraction = 1/3,
-                  T = Float64)
+    Problem(dev::Device = CPU();
+                     nx = 256,
+                     Lx = 2π,
+                     ny = nx,
+                     Ly = Lx,
+                      ν = 0,
+                     nν = 1,
+                     dt = 0.01,
+                stepper = "RK4",
+                  calcF = nothingfunction,
+             stochastic = false,
+       aliased_fraction = 1/3,
+                      T = Float64)
 
-Construct a surface quasi-geostrophic `problem` on device `dev`.
+Construct a surface quasi-geostrophic problem on device `dev`.
+
+Arguments
+=========
+  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
 
 Keyword arguments
 =================
-  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
   - `nx`: Number of grid points in ``x``-domain.
   - `ny`: Number of grid points in ``y``-domain.
   - `Lx`: Extent of the ``x``-domain.
@@ -152,15 +155,15 @@ $(FIELDS)
 struct Vars{Aphys, Atrans, F, P} <: SurfaceQGVars
     "buoyancy"
         b :: Aphys
-    "x-component of velocity"
+    "``x``-component of velocity"
         u :: Aphys
-    "y-component of velocity"
+    "``y``-component of velocity"
         v :: Aphys
     "Fourier transform of buoyancy"
        bh :: Atrans
-    "Fourier transform of x-component of velocity"
+    "Fourier transform of ``x``-component of velocity"
        uh :: Atrans
-    "Fourier transform of y-component of velocity"
+    "Fourier transform of ``y``-component of velocity"
        vh :: Atrans
     "Fourier transform of forcing"
        Fh :: F
