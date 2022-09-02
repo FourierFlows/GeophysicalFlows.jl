@@ -93,7 +93,7 @@ function Problem(dev::Device=CPU();
                    T = Float64)
 
   # the grid
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T=T)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
   x, y = gridpoints(grid)
 
   # topographic PV
@@ -101,11 +101,11 @@ function Problem(dev::Device=CPU();
 
   params = deformation_radius == Inf ? BarotropicQGParams(grid, T(β), eta, T(μ), T(ν), nν, calcF) : EquivalentBarotropicQGParams(grid, T(β), T(deformation_radius), eta, T(μ), T(ν), nν, calcF)
 
-  vars = calcF == nothingfunction ? DecayingVars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
+  vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
   equation = Equation(params, grid)
 
-  return FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+  return FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 end
 
 
@@ -250,11 +250,12 @@ const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, Nothi
 const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
 
 """
-    DecayingVars(dev, grid)
+    DecayingVars(grid)
 
-Return the `vars` for unforced single-layer QG problem on device `dev` and with `grid`
+Return the `vars` for unforced single-layer QG problem on `grid`.
 """
-function DecayingVars(dev::Dev, grid::AbstractGrid) where Dev
+function DecayingVars(grid::AbstractGrid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
 
   @devzeros Dev T (grid.nx, grid.ny) q u v ψ
@@ -264,11 +265,12 @@ function DecayingVars(dev::Dev, grid::AbstractGrid) where Dev
 end
 
 """
-    ForcedVars(dev, grid)
+    ForcedVars(grid)
 
-Return the `vars` for forced single-layer QG problem on device dev and with `grid`.
+Return the `vars` for forced single-layer QG problem on `grid`.
 """
-function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function ForcedVars(grid::AbstractGrid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
 
   @devzeros Dev T (grid.nx, grid.ny) q u v ψ
@@ -278,12 +280,14 @@ function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
 end
 
 """
-    StochasticForcedVars(dev, grid)
+    StochasticForcedVars(grid)
 
-Return the vars for stochastically forced barotropic QG problem on device dev and with `grid`.
+Return the vars for stochastically forced barotropic QG problem on `grid`.
 """
-function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function StochasticForcedVars(grid::AbstractGrid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
+
   @devzeros Dev T (grid.nx, grid.ny) q u v ψ
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh Fh prevsol
 

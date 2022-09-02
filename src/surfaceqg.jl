@@ -75,15 +75,15 @@ function Problem(dev::Device=CPU();
   aliased_fraction = 1/3,
                  T = Float64)
 
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T=T)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
 
   params = Params{T}(ν, nν, calcF)
 
-  vars = calcF == nothingfunction ? DecayingVars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
+  vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
   equation = Equation(params, grid)
 
-  return FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+  return FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 end
 
 
@@ -173,12 +173,14 @@ const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, Nothi
 const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
 
 """
-    DecayingVars(dev, grid)
+    DecayingVars(grid)
 
-Return the `vars` for unforced surface QG dynamics on device `dev` and with `grid`.
+Return the `vars` for unforced surface QG dynamics on `grid`.
 """
-function DecayingVars(::Dev, grid::AbstractGrid) where Dev
+function DecayingVars(grid::AbstractGrid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
+
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh
   
@@ -186,12 +188,14 @@ function DecayingVars(::Dev, grid::AbstractGrid) where Dev
 end
 
 """
-    ForcedVars(dev, grid)
+    ForcedVars(grid)
 
-Return the vars for forced surface QG dynamics on device `dev` and with `grid`.
+Return the vars for forced surface QG dynamics on `grid`.
 """
-function ForcedVars(dev::Dev, grid) where Dev
+function ForcedVars(grid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
+
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh Fh
   
@@ -199,13 +203,14 @@ function ForcedVars(dev::Dev, grid) where Dev
 end
 
 """
-    StochasticForcedVars(dev, grid)
+    StochasticForcedVars(grid)
 
-Return the `vars` for stochastically forced surface QG dynamics on device `dev` and with `grid`.
+Return the `vars` for stochastically forced surface QG dynamics on `grid`.
 """
-function StochasticForcedVars(dev::Dev, grid) where Dev
+function StochasticForcedVars(grid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
-  
+
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh Fh prevsol
   

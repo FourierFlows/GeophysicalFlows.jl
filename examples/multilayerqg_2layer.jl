@@ -76,11 +76,11 @@ nothing # hide
 # Our initial condition is some small-amplitude random noise. We smooth our initial
 # condidtion using the `timestepper`'s high-wavenumber `filter`.
 #
-# `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
+# `device_array()` function returns the array type appropriate for the device, i.e., `Array` for
 # `dev = CPU()` and `CuArray` for `dev = GPU()`.
 
 seed!(1234) # reset of the random number generator for reproducibility
-q₀  = 1e-2 * ArrayType(dev)(randn((grid.nx, grid.ny, nlayers)))
+q₀  = 1e-2 * device_array(dev)(randn((grid.nx, grid.ny, nlayers)))
 q₀h = prob.timestepper.filter .* rfft(q₀, (1, 2)) # apply rfft  only in dims=1, 2
 q₀  = irfft(q₀h, grid.nx, (1, 2))                 # apply irfft only in dims=1, 2
 
