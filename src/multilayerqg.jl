@@ -135,7 +135,7 @@ end
 """
     struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
 
-The parameters for the MultiLayerQG problem.
+The parameters for the `MultiLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
@@ -184,7 +184,7 @@ end
 """
     struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
 
-The parameters for the a single-layer problem.
+The parameters for the a single-layer `MultiLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
@@ -215,9 +215,9 @@ struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
 end
 
 """
-    TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
+    struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
 
-The parameters for a two-layer problem.
+The parameters for the a two-layer `MultiLayerQG` problem.
 
 $(TYPEDFIELDS)
 """

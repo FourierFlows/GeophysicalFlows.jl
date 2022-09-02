@@ -223,7 +223,7 @@ end
 # -------
 
 """
-    calcN_advection(N, sol, t, clock, vars, params, grid)
+    calcN_advection!(N, sol, t, clock, vars, params, grid)
 
 Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, b)`` in conservative 
 form, i.e., ``- ∂_x[(∂_y ψ)b] - ∂_y[(∂_x ψ)b]`` and store it in `N`:
