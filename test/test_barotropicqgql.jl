@@ -204,7 +204,7 @@ Tests the energy and enstrophy function for a BarotropicQGQL problem.
 function test_bqgql_energyenstrophy(dev::Device=CPU())
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly)
   k₀, l₀ = 2π/Lx, 2π/Ly # fundamental wavenumbers
   x, y = gridpoints(grid)
 

@@ -309,7 +309,7 @@ Tests the energy and enstrophy function for a SingleLayerQG problem.
 function test_1layerqg_energyenstrophy_BarotropicQG(dev::Device=CPU())
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly)
   k₀, l₀ = 2π/Lx, 2π/Ly # fundamental wavenumbers
   x, y = gridpoints(grid)
 
@@ -340,7 +340,7 @@ Tests the kinetic and potential energy for an equivalent barotropic SingleLayerQ
 function test_1layerqg_energies_EquivalentBarotropicQG(dev; deformation_radius=1.23)
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly)
   k₀, l₀ = 2π/Lx, 2π/Ly # fundamental wavenumbers
   x, y = gridpoints(grid)
 

@@ -172,7 +172,7 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
 
   nx, ny = 64, 66
   Lx, Ly = 2π, 2π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev; nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -263,7 +263,7 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU();
 
   nx, ny = 64, 66
   Lx, Ly = 2π, 2π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev; nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -343,7 +343,7 @@ function test_mqg_energies(dev::Device=CPU();
                            dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 64, 66
   Lx, Ly = 2π, 2π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev; nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -379,7 +379,7 @@ function test_mqg_energysinglelayer(dev::Device=CPU();
                                     dt=0.001, stepper="ForwardEuler", nlayers=1, μ=0.0, ν=0.0, nν=1)
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev; nx, Lx, ny, Ly)
   
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -407,7 +407,7 @@ initializing it with a flow field whose fluxes are known.
 function test_mqg_fluxes(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 128, 126
   Lx, Ly = 2π, 2π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev; nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -447,7 +447,7 @@ function test_mqg_fluxessinglelayer(dev::Device=CPU(); dt=0.001, stepper="Forwar
   
   nx, ny = 128, 126
   Lx, Ly = 2π, 2π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev; nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -475,7 +475,7 @@ given `q` or `ψ` respectively.
 function test_mqg_setqsetψ(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 32, 34
   L = 2π
-  gr = TwoDGrid(dev, nx, L, ny, L)
+  gr = TwoDGrid(dev; nx, Lx=L, ny, Ly=L)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -521,7 +521,7 @@ Tests that `Params` constructor works with both mean flow `U` being a floats
 function test_mqg_paramsconstructor(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler")
   nx, ny = 32, 34
   L = 2π
-  gr = TwoDGrid(dev, nx, L, ny, L)
+  gr = TwoDGrid(dev; nx, Lx=L, ny, Ly=L)
 
   nlayers = 2       # these choice of parameters give the
   f₀, g = 1, 1      # desired PV-streamfunction relations

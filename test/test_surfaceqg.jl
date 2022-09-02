@@ -70,7 +70,7 @@ function test_sqg_kineticenergy_buoyancyvariance(dev::Device=CPU())
   nx, Lx  = 128, 2π
   ny, Ly  = 128, 3π
   
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly)
   x, y = gridpoints(grid)
 
   k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly # fundamental wavenumbers
