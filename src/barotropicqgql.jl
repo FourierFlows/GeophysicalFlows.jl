@@ -90,21 +90,21 @@ function Problem(dev::Device=CPU();
                  T = Float64)
 
   # the grid
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T=T)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction=aliased_fraction, T=T)
   x, y = gridpoints(grid)
 
   # topographic PV
   eta === nothing && ( eta = zeros(dev, T, (nx, ny)) )
 
-  params = !(typeof(eta)<:ArrayType(dev)) ?
+  params = !(typeof(eta)<:device_array(dev)) ?
            Params(grid, β, eta, μ, ν, nν, calcF) :
            Params(β, eta, rfft(eta), μ, ν, nν, calcF)
 
-  vars = calcF == nothingfunction ? DecayingVars(dev, grid) : stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid)
+  vars = calcF == nothingfunction ? DecayingVars(grid) : stochastic ? StochasticForcedVars(grid) : ForcedVars(grid)
 
   equation = BarotropicQGQL.Equation(params, grid)
   
-  FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+  FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 end
 
 
@@ -232,43 +232,44 @@ const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, Nothi
 const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
 
 """
-    DecayingVars(dev, grid)
+    DecayingVars(grid)
 
-Return the vars for unforced two-dimensional quasi-linear barotropic QG problem on device `dev` 
-and with `grid`.
+Return the vars for unforced two-dimensional quasi-linear barotropic QG problem on the `grid`.
 """
-function DecayingVars(dev::Dev, grid::AbstractGrid) where Dev
+function DecayingVars(grid::AbstractGrid)
+  dev = grid.device
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) u v U uzeta vzeta zeta Zeta psi Psi
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) N NZ uh vh Uh zetah Zetah psih Psih
+  @devzeros dev T (grid.nx, grid.ny) u v U uzeta vzeta zeta Zeta psi Psi
+  @devzeros dev Complex{T} (grid.nkr, grid.nl) N NZ uh vh Uh zetah Zetah psih Psih
   
   return Vars(u, v, U, uzeta, vzeta, zeta, Zeta, psi, Psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih, Psih, nothing, nothing)
 end
 
 """
-    ForcedVars(dev, grid)
+    ForcedVars(grid)
 
-Return the `vars` for forced two-dimensional quasi-linear barotropic QG problem on device 
-`dev` and with `grid`.
+Return the `vars` for forced two-dimensional quasi-linear barotropic QG problem on the `grid`.
 """
-function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function ForcedVars(grid::AbstractGrid)
+  dev = grid.device
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) u v U uzeta vzeta zeta Zeta psi Psi
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) N NZ uh vh Uh zetah Zetah psih Psih Fh
+  @devzeros dev T (grid.nx, grid.ny) u v U uzeta vzeta zeta Zeta psi Psi
+  @devzeros dev Complex{T} (grid.nkr, grid.nl) N NZ uh vh Uh zetah Zetah psih Psih Fh
   
   return Vars(u, v, U, uzeta, vzeta, zeta, Zeta, psi, Psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih, Psih, Fh, nothing)
 end
 
 """
-    StochasticForcedVars(dev, grid)
+    StochasticForcedVars(grid)
 
 Return the `vars` for stochastically forced two-dimensional quasi-linear barotropic QG problem 
-on device `dev` and with `grid`.
+on the `grid`.
 """
-function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function StochasticForcedVars(grid::AbstractGrid)
+  dev = grid.device
   T = eltype(grid)
-  @devzeros Dev T (grid.nx, grid.ny) u v U uzeta vzeta zeta Zeta psi Psi
-  @devzeros Dev Complex{T} (grid.nkr, grid.nl) N NZ uh vh Uh zetah Zetah psih Psih Fh prevsol
+  @devzeros dev T (grid.nx, grid.ny) u v U uzeta vzeta zeta Zeta psi Psi
+  @devzeros dev Complex{T} (grid.nkr, grid.nl) N NZ uh vh Uh zetah Zetah psih Psih Fh prevsol
   
   return Vars(u, v, U, uzeta, vzeta, zeta, Zeta, psi, Psi, N, NZ, uh, vh, Uh, zetah, Zetah, psih, Psih, Fh, prevsol)
 end
