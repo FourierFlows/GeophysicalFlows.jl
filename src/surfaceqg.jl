@@ -8,9 +8,7 @@ export
   kinetic_energy,
   buoyancy_variance,
   buoyancy_dissipation,
-  buoyancy_work,
-  buoyancy_advection,
-  kinetic_energy_advection
+  buoyancy_work
 
   using
     CUDA,

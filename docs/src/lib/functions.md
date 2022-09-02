@@ -111,8 +111,6 @@ GeophysicalFlows.SurfaceQG.kinetic_energy
 GeophysicalFlows.SurfaceQG.buoyancy_variance
 GeophysicalFlows.SurfaceQG.buoyancy_dissipation
 GeophysicalFlows.SurfaceQG.buoyancy_work
-GeophysicalFlows.SurfaceQG.buoyancy_advection
-GeophysicalFlows.SurfaceQG.kinetic_energy_advection
 ```
 
 ### Private functions
