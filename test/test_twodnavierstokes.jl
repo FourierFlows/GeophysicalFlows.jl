@@ -246,7 +246,7 @@ function test_twodnavierstokes_advection(dt, stepper, dev::Device=CPU(); n=128, 
     return nothing
   end
 
-  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper=stepper, calcF=calcF!, stochastic=false)
+  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν, nν, μ, nμ, dt, stepper, calcF=calcF!, stochastic=false)
   
   TwoDNavierStokes.set_ζ!(prob, ζf)
 
@@ -261,7 +261,7 @@ function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
   nx, Lx  = 128, 2π
   ny, Ly  = 126, 3π
   
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly)
   x, y = gridpoints(grid)
 
   k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly # fundamental wavenumbers
@@ -271,7 +271,7 @@ function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
   energy_calc = 29/9
   enstrophy_calc = 2701/162
 
-  prob = TwoDNavierStokes.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
+  prob = TwoDNavierStokes.Problem(dev; nx, Lx, ny, Ly, stepper="ForwardEuler")
 
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
 
