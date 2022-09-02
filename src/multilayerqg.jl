@@ -1054,16 +1054,22 @@ function fluxes(vars, params::TwoLayerParams, grid, sol)
 
   @. ∂u∂yh = im * grid.l * vars.uh
   invtransform!(∂u∂y, ∂u∂yh, params)
+  
+  lateralfluxⱼ = vars.q
 
-  lateralfluxes = (sum(@. params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
+  for j in 1:nlayers
+    @. lateralfluxⱼ = params.U * vars.v * ∂u∂y
+    view(lateralfluxes, j) .= sum(view(lateralfluxⱼ, :, :, j))
+  end
+
   @. lateralfluxes *= params.H
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   U₁, U₂ = view(params.U, :, :, 1), view(params.U, :, :, 2)
   ψ₁ = view(vars.ψ, :, :, 1)
   v₂ = view(vars.v, :, :, 2)
-  
-  verticalfluxes = sum(@views @. params.f₀^2 / params.g′ * (U₁ - U₂) * v₂ * ψ₁; dims=(1, 2))
+
+  verticalfluxes = sum(params.f₀^2 / params.g′ * (U₁ .- U₂) .* v₂ .* ψ₁)
   verticalfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   return lateralfluxes, verticalfluxes
@@ -1078,7 +1084,7 @@ function fluxes(vars, params::SingleLayerParams, grid, sol)
   @. ∂u∂yh = im * grid.l * vars.uh
   invtransform!(∂u∂y, ∂u∂yh, params)
 
-  lateralfluxes = (sum(@. params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
+  lateralfluxes = sum(@. params.U * vars.v * ∂u∂y)
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly)
 
   return lateralfluxes

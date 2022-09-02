@@ -431,9 +431,12 @@ function test_mqg_fluxes(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=
 
   ψ1 = @. cos(k₀*x) * cos(l₀*y) + sin(k₀*x)
   ψ2 = @. cos(k₀*x + π/10) * cos(l₀*y)
+  
   ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
-  CUDA.@allowscalar @views ψ[:, :, 1] .= ψ1
-  CUDA.@allowscalar @views ψ[:, :, 2] .= ψ2
+  
+  view(ψ, :, :, 1) .= ψ1
+  view(ψ, :, :, 2) .= ψ2
+
   MultiLayerQG.set_ψ!(prob, ψ)
   lateralfluxes, verticalfluxes = MultiLayerQG.fluxes(prob)
 
@@ -466,6 +469,7 @@ function test_mqg_fluxessinglelayer(dev::Device=CPU(); dt=0.001, stepper="Forwar
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ = @. cos(k₀*x) * cos(l₀*y) + sin(k₀*x)
+
   MultiLayerQG.set_ψ!(prob, ψ)
   lateralfluxes = MultiLayerQG.fluxes(prob)
 
@@ -497,11 +501,12 @@ function test_mqg_setqsetψ(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler",
 
   T = eltype(gr)
   
-  f1 = @. 2cos(k₀*x)*cos(l₀*y)
-  f2 = @.  cos(k₀*x+π/10)*cos(2l₀*y)
+  f1 = @. 2cos(k₀*x) * cos(l₀*y)
+  f2 = @.  cos(k₀*x+π/10) * cos(2l₀*y)
+
   f = zeros(dev, T, (gr.nx, gr.ny, nlayers))
-  f[:, :, 1] .= f1
-  f[:, :, 2] .= f2
+  view(f, :, :, 1) .= f1
+  view(f, :, :, 2) .= f2
 
   ψtest = zeros(dev, T, size(f))
   MultiLayerQG.set_ψ!(prob, f)
@@ -611,7 +616,6 @@ function test_numberoflayers(dev::Device=CPU())
 end
 
 function test_mqg_stochasticforcedproblemconstructor(dev::Device=CPU())
-  
   function calcFq!(Fqh, sol, t, clock, vars, params, grid)
     Fqh .= Ffh
     return nothing
