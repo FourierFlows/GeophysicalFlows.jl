@@ -54,14 +54,14 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   # Forcing
   kf, dkf = 12.0, 2.0
   ε = 0.1
   
-  Kr = CUDA.@allowscalar ArrayType(dev)([ grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
+  Kr = CUDA.@allowscalar device_array(dev)([ grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
   forcing_spectrum = zeros(dev, T, (grid.nkr, grid.nl))
   @. forcing_spectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
@@ -74,7 +74,7 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   Random.seed!(1234)
 
   function calcF!(F, sol, t, clock, vars, params, grid)
-    eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
+    eta = device_array(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
     @. F = eta * sqrt(forcing_spectrum)
     return nothing
@@ -113,7 +113,7 @@ function test_bqgql_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.0
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
   k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly
 
@@ -166,7 +166,7 @@ function test_bqgql_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1
   tf = 1.0
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   ψf = @.    cos(3y) +  sin(2x)*cos(2y) +  2sin(x)*cos(3y)
@@ -204,7 +204,7 @@ Tests the energy and enstrophy function for a BarotropicQGQL problem.
 function test_bqgql_energyenstrophy(dev::Device=CPU())
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly)
   k₀, l₀ = 2π/Lx, 2π/Ly # fundamental wavenumbers
   x, y = gridpoints(grid)
 
@@ -230,7 +230,7 @@ end
 function test_bqgql_problemtype(dev, T)
   prob = BarotropicQGQL.Problem(dev; T=T)
   
-  A = ArrayType(dev)
+  A = device_array(dev)
   
   return (typeof(prob.sol)<:A{Complex{T}, 2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T, 2})
 end

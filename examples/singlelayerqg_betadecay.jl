@@ -64,7 +64,7 @@ nothing # hide
 
 # Our initial condition consist of a flow that has power only at wavenumbers with
 # ``6 < \frac{L}{2\pi} \sqrt{k_x^2 + k_y^2} < 10`` and initial energy ``E_0``.
-# `ArrayType()` function returns the array type appropriate for the device, i.e., `Array` for
+# `device_array()` function returns the array type appropriate for the device, i.e., `Array` for
 # `dev = CPU()` and `CuArray` for `dev = GPU()`.
 
 E₀ = 0.08 # energy of initial condition
@@ -72,7 +72,7 @@ E₀ = 0.08 # energy of initial condition
 K = @. sqrt(grid.Krsq)                          # a 2D array with the total wavenumber
 
 Random.seed!(1234)
-q₀h = ArrayType(dev)(randn(Complex{eltype(grid)}, size(sol)))
+q₀h = device_array(dev)(randn(Complex{eltype(grid)}, size(sol)))
 @. q₀h = ifelse(K < 6  * 2π/L, 0, q₀h)
 @. q₀h = ifelse(K > 10 * 2π/L, 0, q₀h)
 @. q₀h[1, :] = 0    # remove any power from zonal wavenumber k=0

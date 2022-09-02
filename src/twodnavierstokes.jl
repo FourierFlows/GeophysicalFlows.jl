@@ -83,15 +83,15 @@ function Problem(dev::Device=CPU();
   aliased_fraction = 1/3,
                  T = Float64)
 
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
 
   params = Params(T(ν), nν, T(μ), nμ, calcF)
 
-  vars = calcF == nothingfunction ? DecayingVars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
+  vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
   equation = Equation(params, grid)
 
-  return FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+  return FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 end
 
 
@@ -188,12 +188,12 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     DecayingVars(dev, grid)
 
-Return the variables `vars` for unforced two-dimensional Navier-Stokes problem on device `dev` and 
-with `grid`.
+Return the variables `vars` for unforced two-dimensional Navier-Stokes problem on `grid`.
 """
-function DecayingVars(::Dev, grid::AbstractGrid) where Dev
+function DecayingVars(grid::AbstractGrid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
-  
+
   @devzeros Dev T (grid.nx, grid.ny) ζ u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) ζh uh vh
   
@@ -201,11 +201,12 @@ function DecayingVars(::Dev, grid::AbstractGrid) where Dev
 end
 
 """
-    ForcedVars(dev, grid)
+    ForcedVars(grid)
 
-Return the variables `vars` for forced two-dimensional Navier-Stokes on device `dev` and with `grid`.
+Return the variables `vars` for forced two-dimensional Navier-Stokes on `grid`.
 """
-function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function ForcedVars(grid::AbstractGrid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
   
   @devzeros Dev T (grid.nx, grid.ny) ζ u v
@@ -215,14 +216,14 @@ function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
 end
 
 """
-    StochasticForcedVars(dev, grid)
+    StochasticForcedVars(grid)
 
-Return the variables `vars` for stochastically forced two-dimensional Navier-Stokes on device `dev` and 
-with `grid`.
+Return the variables `vars` for stochastically forced two-dimensional Navier-Stokes on device `grid`.
 """
-function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function StochasticForcedVars(grid::AbstractGrid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
-  
+
   @devzeros Dev T (grid.nx, grid.ny) ζ u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) ζh uh vh Fh prevsol
   

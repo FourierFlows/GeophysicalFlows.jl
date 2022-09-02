@@ -63,7 +63,7 @@ forcing_wavenumber = 14.0 * 2π/L  # the forcing wavenumber, `k_f`, for a spectr
 forcing_bandwidth  = 1.5  * 2π/L  # the width of the forcing spectrum, `δ_f`
 ε = 0.001                         # energy input rate by the forcing
 
-grid = TwoDGrid(dev, n, L)
+grid = TwoDGrid(dev; nx=n, Lx=L)
 
 K = @. sqrt(grid.Krsq)            # a 2D array with the total wavenumber
 
@@ -132,7 +132,7 @@ fig
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
-SingleLayerQG.set_q!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
+SingleLayerQG.set_q!(prob, device_array(dev)(zeros(grid.nx, grid.ny)))
 
 
 # ## Diagnostics
@@ -232,6 +232,9 @@ x,  y  = file["grid/x"],  file["grid/y"]
 nx, ny = file["grid/nx"], file["grid/ny"]
 Lx, Ly = file["grid/Lx"], file["grid/Ly"]
 
+close(file)
+
+
 # We create a figure using Makie's [`Observable`](https://makie.juliaplots.org/stable/documentation/nodes/)s
 
 j = Observable(1)
@@ -315,3 +318,6 @@ end
 nothing # hide
 
 # ![](singlelayerqg_betaforced.mp4)
+
+## we delete the .jld2 file before deploying the docs (takes too much space) #hide
+rm(output.path) #hide

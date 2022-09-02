@@ -121,15 +121,15 @@ function Problem(nlayers::Int,                        # number of fluid layers
   # topographic PV
   eta === nothing && (eta = zeros(dev, T, (nx, ny)))
 
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
 
-  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq, dev)
+  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq)
 
-  vars = calcFq == nothingfunction ? DecayingVars(dev, grid, params) : (stochastic ? StochasticForcedVars(dev, grid, params) : ForcedVars(dev, grid, params))
+  vars = calcFq == nothingfunction ? DecayingVars(grid, params) : (stochastic ? StochasticForcedVars(grid, params) : ForcedVars(grid, params))
 
-  equation = linear ? LinearEquation(dev, params, grid) : Equation(dev, params, grid)
+  equation = linear ? LinearEquation(params, grid) : Equation(params, grid)
 
-  FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+  FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 end
 
 """
@@ -285,15 +285,16 @@ end
 
 function convert_U_to_U3D(dev, nlayers, grid, U::Number)
   T = eltype(grid)
-  A = ArrayType(dev)
+  A = device_array(dev)
   U_3D = reshape(repeat([T(U)], outer=(grid.ny, 1)), (1, grid.ny, nlayers))
 
   return A(U_3D)
 end
 
-function Params(nlayers::Int, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid::TwoDGrid; calcFq=nothingfunction, effort=FFTW.MEASURE, dev::Device=CPU())
+function Params(nlayers::Int, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid::TwoDGrid; calcFq=nothingfunction, effort=FFTW.MEASURE)
+  dev = grid.device
   T = eltype(grid)
-  A = ArrayType(dev)
+  A = device_array(dev)
 
    ny, nx = grid.ny , grid.nx
   nkr, nl = grid.nkr, grid.nl
@@ -362,7 +363,7 @@ numberoflayers(::TwoLayerParams) = 2
 # ---------
 
 """
-    hyperviscosity(dev, params, grid)
+    hyperviscosity(params, grid)
 
 Return the linear operator `L` that corresponds to (hyper)-viscosity of order ``n_ν`` with 
 coefficient ``ν`` for ``n`` fluid layers.
@@ -370,9 +371,11 @@ coefficient ``ν`` for ``n`` fluid layers.
 L_j = - ν |𝐤|^{2 n_ν}, \\ j = 1, ...,n .
 ```
 """
-function hyperviscosity(dev, params, grid)
+function hyperviscosity(params, grid)
+  dev = grid.device
   T = eltype(grid)
-  L = ArrayType(dev){T}(undef, (grid.nkr, grid.nl, numberoflayers(params)))
+
+  L = device_array(dev){T}(undef, (grid.nkr, grid.nl, numberoflayers(params)))
   @. L = - params.ν * grid.Krsq^params.nν
   @views @. L[1, 1, :] = 0
   
@@ -380,31 +383,31 @@ function hyperviscosity(dev, params, grid)
 end
 
 """
-    LinearEquation(dev, params, grid)
+    LinearEquation(params, grid)
 
 Return the equation for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
 The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via 
-`hyperviscosity(dev, params, grid)`.
+`hyperviscosity(params, grid)`.
 
 The nonlinear term is computed via function `calcNlinear!`.
 """
-function LinearEquation(dev, params, grid)
-  L = hyperviscosity(dev, params, grid)
+function LinearEquation(params, grid)
+  L = hyperviscosity(params, grid)
   
   return FourierFlows.Equation(L, calcNlinear!, grid)
 end
  
 """
-    Equation(dev, params, grid)
+    Equation(params, grid)
 
 Return the equation for a multi-layer quasi-geostrophic problem with `params` and `grid`. 
 The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via 
-`hyperviscosity(dev, params, grid)`.
+`hyperviscosity(params, grid)`.
 
 The nonlinear term is computed via function `calcN!`.
 """
-function Equation(dev, params, grid)
-  L = hyperviscosity(dev, params, grid)
+function Equation(params, grid)
+  L = hyperviscosity(params, grid)
   
   return FourierFlows.Equation(L, calcN!, grid)
 end
@@ -449,11 +452,12 @@ const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, Nothi
 const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
 
 """
-    DecayingVars(dev, grid, params)
+    DecayingVars(grid, params)
 
 Return the variables for an unforced multi-layer QG problem with `grid` and `params`.
 """
-function DecayingVars(dev::Dev, grid, params) where Dev
+function DecayingVars(grid, params)
+  Dev = typeof(grid.device)
   T = eltype(grid)
   nlayers = numberoflayers(params)
   
@@ -464,11 +468,12 @@ function DecayingVars(dev::Dev, grid, params) where Dev
 end
 
 """
-    ForcedVars(dev, grid, params)
+    ForcedVars(grid, params)
 
 Return the variables for a forced multi-layer QG problem with `grid` and `params`.
 """
-function ForcedVars(dev::Dev, grid, params) where Dev
+function ForcedVars(grid, params)
+  Dev = typeof(grid.device)
   T = eltype(grid)
   nlayers = numberoflayers(params)
   
@@ -479,11 +484,12 @@ function ForcedVars(dev::Dev, grid, params) where Dev
 end
 
 """
-    StochasticForcedVars(dev, rid, params)
+    StochasticForcedVars(rid, params)
 
 Return the variables for a forced multi-layer QG problem with `grid` and `params`.
 """
-function StochasticForcedVars(dev::Dev, grid, params) where Dev
+function StochasticForcedVars(grid, params)
+  Dev = typeof(grid.device)
   T = eltype(grid)
   nlayers = numberoflayers(params)
   
