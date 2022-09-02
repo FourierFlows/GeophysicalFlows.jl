@@ -123,7 +123,7 @@ function Problem(nlayers::Int,                        # number of fluid layers
    
   grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
    
-  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq)   
+  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq)
    
   vars = calcFq == nothingfunction ? DecayingVars(grid, params) : (stochastic ? StochasticForcedVars(grid, params) : ForcedVars(grid, params))
    
@@ -169,7 +169,7 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
   # derived params
     "array with the reduced gravity constants for each fluid interface"
         g′ :: Aphys1D
-    "array containing ``x``-gradient of PV due to eta in each fluid layer"
+    "array containing ``x``-gradient of PV due to topographic PV in each fluid layer"
         Qx :: Aphys3D
     "array containing ``y``-gradient of PV due to ``β``, ``U``, and topographic PV in each fluid layer"
         Qy :: Aphys3D
@@ -184,15 +184,15 @@ end
 """
     struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
 
-The parameters for the SingleLayerQG problem.
+The parameters for the a single-layer problem.
 
 $(TYPEDFIELDS)
 """
 struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
   # prescribed params
-    "planetary vorticity y-gradient"
+    "planetary vorticity ``y``-gradient"
          β :: T
-    "array with imposed constant zonal flow U(y)"
+    "array with imposed constant zonal flow ``U(y)``"
          U :: Aphys3D
     "array containing topographic PV"
        eta :: Aphys2D
@@ -206,9 +206,9 @@ struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
    calcFq! :: Function
 
   # derived params
-    "array containing x-gradient of PV due to eta"
+    "array containing ``x``-gradient of PV due to topographic PV"
         Qx :: Aphys3D
-    "array containing y-gradient of PV due to β, U, and eta"
+    "array containing ``y``-gradient of PV due to ``β``, ``U``, and topographic PV"
         Qy :: Aphys3D
     "rfft plan for FFTs"
   rfftplan :: Trfft
@@ -217,7 +217,7 @@ end
 """
     TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
 
-The parameters for the TwoLayerQG problem.
+The parameters for a two-layer problem.
 
 $(TYPEDFIELDS)
 """
@@ -227,13 +227,13 @@ struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
          g :: T
     "constant planetary vorticity"
         f₀ :: T
-    "planetary vorticity y-gradient"
+    "planetary vorticity ``y``-gradient"
          β :: T
     "array with density of each fluid layer"
          ρ :: Aphys3D
     "tuple with rest height of each fluid layer"
          H :: Tuple
-   "array with imposed constant zonal flow U(y) in each fluid layer"
+   "array with imposed constant zonal flow ``U(y)`` in each fluid layer"
          U :: Aphys3D
     "array containing topographic PV"
        eta :: Aphys2D
@@ -249,9 +249,9 @@ struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
   # derived params
     "the reduced gravity constants for the fluid interface"
         g′ :: T
-    "array containing x-gradient of PV due to eta in each fluid layer"
+    "array containing ``x``-gradient of PV due to topographic PV in each fluid layer"
         Qx :: Aphys3D
-    "array containing y-gradient of PV due to β, U, and eta in each fluid layer"
+    "array containing ``y``-gradient of PV due to ``β``, ``U``, and topographic PV in each fluid layer"
         Qy :: Aphys3D
     "rfft plan for FFTs"
   rfftplan :: Trfft
@@ -416,7 +416,7 @@ end
 """
     struct Vars{Aphys, Atrans, F, P} <: AbstractVars
 
-The variables for MultiLayer QG.
+The variables for multi-layer QG problem.
 
 $(FIELDS)
 """
