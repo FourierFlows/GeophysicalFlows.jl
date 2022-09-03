@@ -20,14 +20,14 @@ function lambdipole(U, R, grid::TwoDGrid{T, A}; center=(mean(grid.x), mean(grid.
 end
 
 """
-    peakedisotropicspectrum(grid, kpeak, E₀; mask=ones(size(grid.Krsq)), allones=false)
+    peakedisotropicspectrum(grid, kpeak, E₀; mask = ones(size(grid.Krsq)), allones = false)
 
 Generate a random two-dimensional relative vorticity field ``q(x, y)`` with Fourier spectrum 
 peaked around a central non-dimensional wavenumber `kpeak` and normalized so that its total 
 kinetic energy is `E₀`.
 """
 function peakedisotropicspectrum(grid::TwoDGrid{T, A}, kpeak::Real, E₀::Real;
-                                 mask=ones(size(grid.Krsq)), allones=false) where {T, A}
+                                 mask = ones(size(grid.Krsq)), allones = false) where {T, A}
 
   grid.Lx !== grid.Ly && error("the domain is not square")
   
@@ -42,7 +42,7 @@ function peakedisotropicspectrum(grid::TwoDGrid{T, A}, kpeak::Real, E₀::Real;
   phases = A(phases_real) + im * A(phases_imag)
   ψh = @. phases * modψ
   if allones; ψh = modψ; end
-  ψh = ψh .* A(mask)
+  ψh .*= A(mask)
   energy_initial = sum(grid.Krsq .* abs2.(ψh)) / (grid.nx * grid.ny)^2
   ψh *= sqrt(E₀ / energy_initial)
   

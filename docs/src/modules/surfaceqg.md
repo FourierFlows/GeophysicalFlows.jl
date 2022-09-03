@@ -86,8 +86,12 @@ GeophysicalFlows.SurfaceQG.set_b!
 
 ### Diagnostics
 
-Some useful diagnostics are [`energy`](@ref GeophysicalFlows.SurfaceQG.energy) and
-[`enstrophy`](@ref  GeophysicalFlows.SurfaceQG.enstrophy).
+Some useful diagnostics are kinetic energy and buoyancy variance.
+
+```@docs
+GeophysicalFlows.SurfaceQG.kinetic_energy
+GeophysicalFlows.SurfaceQG.buoyancy_variance
+```
 
 Other diagnostic include: [`buoyancy_dissipation`](@ref GeophysicalFlows.SurfaceQG.buoyancy_dissipation) and
 [`buoyancy_work`](@ref GeophysicalFlows.SurfaceQG.buoyancy_work).

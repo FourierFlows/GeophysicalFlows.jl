@@ -68,20 +68,14 @@ GeophysicalFlows.MultiLayerQG.fwdtransform!
 GeophysicalFlows.MultiLayerQG.invtransform!
 GeophysicalFlows.MultiLayerQG.streamfunctionfrompv!
 GeophysicalFlows.MultiLayerQG.pvfromstreamfunction!
-GeophysicalFlows.MultiLayerQG.set_q!
-GeophysicalFlows.MultiLayerQG.set_ψ!
-GeophysicalFlows.MultiLayerQG.energies
-GeophysicalFlows.MultiLayerQG.fluxes
 ```
 
 ### Private functions
 
 ```@docs
 GeophysicalFlows.MultiLayerQG.LinearEquation
-GeophysicalFlows.MultiLayerQG.Equation
 GeophysicalFlows.MultiLayerQG.calcS!
 GeophysicalFlows.MultiLayerQG.calcS⁻¹!
-GeophysicalFlows.MultiLayerQG.calcN!
 GeophysicalFlows.MultiLayerQG.calcNlinear!
 GeophysicalFlows.MultiLayerQG.calcN_advection!
 GeophysicalFlows.MultiLayerQG.calcN_linearadvection!
@@ -95,9 +89,6 @@ GeophysicalFlows.MultiLayerQG.addforcing!
 
 ```@docs
 GeophysicalFlows.SurfaceQG.Problem
-GeophysicalFlows.SurfaceQG.set_b!
-GeophysicalFlows.SurfaceQG.kinetic_energy
-GeophysicalFlows.SurfaceQG.buoyancy_variance
 GeophysicalFlows.SurfaceQG.buoyancy_dissipation
 GeophysicalFlows.SurfaceQG.buoyancy_work
 ```
@@ -105,8 +96,6 @@ GeophysicalFlows.SurfaceQG.buoyancy_work
 ### Private functions
 
 ```@docs
-GeophysicalFlows.SurfaceQG.Equation
-GeophysicalFlows.SurfaceQG.calcN!
 GeophysicalFlows.SurfaceQG.calcN_advection!
 GeophysicalFlows.SurfaceQG.addforcing!
 ```

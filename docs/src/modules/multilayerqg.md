@@ -130,14 +130,14 @@ GeophysicalFlows.MultiLayerQG.updatevars!
 ### Diagnostics
 
 The eddy kinetic energy in each layer and the eddy potential energy that corresponds to each 
-fluid interface is computed via `energies()`:
+fluid interface is computed via `energies`:
 
 ```@docs
 GeophysicalFlows.MultiLayerQG.energies
 ```
 
 The lateral eddy fluxes in each layer and the vertical fluxes across fluid interfaces are
-computed via `fluxes()`:
+computed via `fluxes`:
 
 ```@docs
 GeophysicalFlows.MultiLayerQG.fluxes
