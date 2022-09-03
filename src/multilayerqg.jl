@@ -437,9 +437,9 @@ struct Vars{Aphys, Atrans, F, P} <: AbstractVars
        qh :: Atrans
     "Fourier transform of streamfunction"
        ψh :: Atrans
-    "Fourier transform of x-component of velocity"
+    "Fourier transform of ``x``-component of velocity"
        uh :: Atrans
-    "Fourier transform of y-component of velocity"
+    "Fourier transform of ``y``-component of velocity"
        vh :: Atrans
     "Fourier transform of forcing"
       Fqh :: F
@@ -484,7 +484,7 @@ function ForcedVars(grid, params)
 end
 
 """
-    StochasticForcedVars(rid, params)
+    StochasticForcedVars(grid, params)
 
 Return the variables for a forced multi-layer QG problem with `grid` and `params`.
 """
@@ -600,11 +600,11 @@ Invert the PV to obtain the Fourier transform of the streamfunction `ψh` for th
 case of a two fluid layer configuration. In this case we have,
 
 ```math
-ψ̂₁ = - [k⁻² q̂₁ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
+ψ̂₁ = - [k² q̂₁ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
 ```
 
 ```math
-ψ̂₂ = - [k⁻² q̂₂ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
+ψ̂₂ = - [k² q̂₂ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
 ```
 
 where ``Δ = k² [k² + f₀² (H₁ + H₂) / (g′ H₁ H₂)]``.

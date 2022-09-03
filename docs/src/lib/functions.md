@@ -16,12 +16,9 @@ GeophysicalFlows.peakedisotropicspectrum
 
 ```@docs
 GeophysicalFlows.TwoDNavierStokes.Problem
-GeophysicalFlows.TwoDNavierStokes.set_ζ!
-GeophysicalFlows.TwoDNavierStokes.energy
 GeophysicalFlows.TwoDNavierStokes.energy_dissipation_hyperviscosity
 GeophysicalFlows.TwoDNavierStokes.energy_dissipation_hypoviscosity
 GeophysicalFlows.TwoDNavierStokes.energy_work
-GeophysicalFlows.TwoDNavierStokes.enstrophy
 GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation_hyperviscosity
 GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation_hypoviscosity
 GeophysicalFlows.TwoDNavierStokes.enstrophy_work
@@ -30,8 +27,6 @@ GeophysicalFlows.TwoDNavierStokes.enstrophy_work
 ### Private functions
 
 ```@docs
-GeophysicalFlows.TwoDNavierStokes.Equation
-GeophysicalFlows.TwoDNavierStokes.calcN!
 GeophysicalFlows.TwoDNavierStokes.calcN_advection!
 GeophysicalFlows.TwoDNavierStokes.addforcing!
 GeophysicalFlows.TwoDNavierStokes.energy_dissipation
@@ -45,11 +40,7 @@ GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation
 
 ```@docs
 GeophysicalFlows.SingleLayerQG.Problem
-GeophysicalFlows.SingleLayerQG.set_q!
 GeophysicalFlows.SingleLayerQG.streamfunctionfrompv!
-GeophysicalFlows.SingleLayerQG.energy
-GeophysicalFlows.SingleLayerQG.kinetic_energy
-GeophysicalFlows.SingleLayerQG.potential_energy
 GeophysicalFlows.SingleLayerQG.energy_dissipation
 GeophysicalFlows.SingleLayerQG.energy_work
 GeophysicalFlows.SingleLayerQG.energy_drag
@@ -62,8 +53,6 @@ GeophysicalFlows.SingleLayerQG.enstrophy_drag
 ### Private functions
 
 ```@docs
-GeophysicalFlows.SingleLayerQG.Equation
-GeophysicalFlows.SingleLayerQG.calcN!
 GeophysicalFlows.SingleLayerQG.calcN_advection!
 GeophysicalFlows.SingleLayerQG.addforcing!
 ```

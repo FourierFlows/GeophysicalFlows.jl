@@ -103,7 +103,7 @@ GeophysicalFlows.MultiLayerQG.calcN!
 which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.MultiLayerQG.calcN_advection!) 
 and [`addforcing!`](@ref GeophysicalFlows.MultiLayerQG.addforcing!).
 
-!!! tip "Linearized MultiLayerQG dynamics "
+!!! tip "Linearized MultiLayerQG dynamics"
     The `MultiLayerQG` module includes also a linearized version of the dynamics about a base
     flow ``U_j(y)``, ``j = 1, \dots, n``; see [`LinearEquation`](@ref GeophysicalFlows.MultiLayerQG.LinearEquation), 
     [`calcNlinear!`](@ref GeophysicalFlows.MultiLayerQG.calcNlinear!), and 
@@ -146,4 +146,5 @@ GeophysicalFlows.MultiLayerQG.fluxes
 
 ## Examples
 
- - [`examples/multilayerqg_2layer.jl`](@ref multilayerqg_2layer_example): Simulate the growth and equilibration of baroclinic eddy turbulence in the Phillips 2-layer model.
+ - [`examples/multilayerqg_2layer.jl`](@ref multilayerqg_2layer_example): Simulate the growth and equilibration of baroclinic
+   eddy turbulence in the Phillips 2-layer model.

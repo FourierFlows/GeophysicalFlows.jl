@@ -232,17 +232,17 @@ struct Vars{Aphys, Atrans, F, P} <: SingleLayerQGVars
         q :: Aphys
     "streamfunction"
         ψ :: Aphys
-    "x-component of velocity"
+    "``x``-component of velocity"
         u :: Aphys
-    "y-component of velocity"
+    "``y``-component of velocity"
         v :: Aphys
     "Fourier transform of relative vorticity (+ vortex stretching)"
        qh :: Atrans
     "Fourier transform of streamfunction"
        ψh :: Atrans
-    "Fourier transform of x-component of velocity"
+    "Fourier transform of ``x``-component of velocity"
        uh :: Atrans
-    "Fourier transform of y-component of velocity"
+    "Fourier transform of ``y``-component of velocity"
        vh :: Atrans
     "Fourier transform of forcing"
        Fh :: F
@@ -256,7 +256,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     DecayingVars(grid)
 
-Return the `vars` for unforced single-layer QG problem on `grid`.
+Return the variables for unforced single-layer QG problem on `grid`.
 """
 function DecayingVars(grid::AbstractGrid)
   Dev = typeof(grid.device)
@@ -271,7 +271,7 @@ end
 """
     ForcedVars(grid)
 
-Return the `vars` for forced single-layer QG problem on `grid`.
+Return the variables for forced single-layer QG problem on `grid`.
 """
 function ForcedVars(grid::AbstractGrid)
   Dev = typeof(grid.device)
@@ -286,7 +286,7 @@ end
 """
     StochasticForcedVars(grid)
 
-Return the vars for stochastically forced barotropic QG problem on `grid`.
+Return the variables for stochastically forced barotropic QG problem on `grid`.
 """
 function StochasticForcedVars(grid::AbstractGrid)
   Dev = typeof(grid.device)
@@ -310,7 +310,7 @@ Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, q+η)`` in c
 form, i.e., ``- ∂_x[(∂_y ψ)(q+η)] - ∂_y[(∂_x ψ)(q+η)]`` and store it in `N`:
 
 ```math
-N = - \\widehat{𝖩(ψ, q+η)} = - i k_x \\widehat{u (q+η)} - i k_y \\widehat{v (q+η)} .
+N = - \\widehat{𝖩(ψ, q + η)} = - i k_x \\widehat{u (q + η)} - i k_y \\widehat{v (q + η)} .
 ```
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
@@ -344,7 +344,7 @@ end
 Calculate the nonlinear term, that is the advection term and the forcing,
 
 ```math
-N = - \\widehat{𝖩(ψ, q+η)} + F̂ .
+N = - \\widehat{𝖩(ψ, q + η)} + F̂ .
 ```
 """
 function calcN!(N, sol, t, clock, vars, params, grid)

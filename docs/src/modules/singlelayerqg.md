@@ -68,8 +68,9 @@ and [`addforcing!`](@ref GeophysicalFlows.SingleLayerQG.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.SingleLayerQG.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.SingleLayerQG.Vars).
 
-For decaying case (no forcing, ``F=0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.SingleLayerQG.DecayingVars). 
-For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.SingleLayerQG.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.SingleLayerQG.StochasticForcedVars).
+For decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.SingleLayerQG.Vars).
+For the forced case (``F \ne 0``) variables are constructed with either [`ForcedVars`](@ref GeophysicalFlows.SingleLayerQG.ForcedVars)
+or [`StochasticForcedVars`](@ref GeophysicalFlows.SingleLayerQG.StochasticForcedVars).
 
 
 ### Helper functions
@@ -110,10 +111,15 @@ Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.SingleLay
 
 ## Examples
 
-- [`examples/singlelayerqg_betadecay.jl`](@ref singlelayerqg_betadecay_example): Simulate decaying quasi-geostrophic flow on a beta plane demonstrating zonation.
+- [`examples/singlelayerqg_betadecay.jl`](@ref singlelayerqg_betadecay_example): Simulate decaying quasi-geostrophic flow on
+  a beta plane demonstrating zonation.
 
-- [`examples/singlelayerqg_betaforced.jl`](@ref singlelayerqg_betaforced_example): Simulate forced-dissipative quasi-geostrophic flow on a beta plane demonstrating zonation. The forcing is temporally delta-correlated with isotropic spatial structure with power in a narrow annulus in wavenumber space with total wavenumber ``k_f``.
+- [`examples/singlelayerqg_betaforced.jl`](@ref singlelayerqg_betaforced_example): Simulate forced-dissipative quasi-geostrophic
+  flow on a beta plane demonstrating zonation. The forcing is temporally delta-correlated with isotropic spatial structure with
+  power in a narrow annulus in wavenumber space with total wavenumber ``k_f``.
 
-- [`examples/singlelayerqg_decay_topography.jl`](@ref singlelayerqg_decay_topography_example): Simulate two dimensional turbulence (barotropic quasi-geostrophic flow with ``\beta=0``) above topography.
+- [`examples/singlelayerqg_decay_topography.jl`](@ref singlelayerqg_decay_topography_example): Simulate two dimensional turbulence
+  (barotropic quasi-geostrophic flow with ``\beta=0``) above topography.
 
-- [`examples/singlelayerqg_decaying_barotropic_equivalentbarotropic.jl`](@ref singlelayerqg_decaying_barotropic_equivalentbarotropic_example): Simulate two dimensional turbulence (``\beta=0``) with both infinite and finite Rossby radius of deformation and compares the evolution of the two.
+- [`examples/singlelayerqg_decaying_barotropic_equivalentbarotropic.jl`](@ref singlelayerqg_decaying_barotropic_equivalentbarotropic_example):
+  Simulate two dimensional turbulence (``\beta=0``) with both infinite and finite Rossby radius of deformation and compares the evolution of the two.

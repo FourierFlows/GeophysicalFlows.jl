@@ -176,7 +176,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     DecayingVars(grid)
 
-Return the `vars` for unforced surface QG dynamics on `grid`.
+Return the variables for unforced surface QG dynamics on `grid`.
 """
 function DecayingVars(grid::AbstractGrid)
   Dev = typeof(grid.device)
@@ -184,14 +184,14 @@ function DecayingVars(grid::AbstractGrid)
 
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh
-  
+
   return Vars(b, u, v, bh, uh, vh, nothing, nothing)
 end
 
 """
     ForcedVars(grid)
 
-Return the vars for forced surface QG dynamics on `grid`.
+Return the variables for forced surface QG dynamics on `grid`.
 """
 function ForcedVars(grid)
   Dev = typeof(grid.device)
@@ -206,7 +206,7 @@ end
 """
     StochasticForcedVars(grid)
 
-Return the `vars` for stochastically forced surface QG dynamics on `grid`.
+Return the variables for stochastically forced surface QG dynamics on `grid`.
 """
 function StochasticForcedVars(grid)
   Dev = typeof(grid.device)
