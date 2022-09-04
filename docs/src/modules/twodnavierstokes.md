@@ -59,7 +59,7 @@ and [`addforcing!`](@ref GeophysicalFlows.TwoDNavierStokes.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.TwoDNavierStokes.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.TwoDNavierStokes.Vars).
 
-For decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.TwoDNavierStokes.Vars).
+For the decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.TwoDNavierStokes.Vars).
 For the forced case (``F \ne 0``) variables are constructed with either [`ForcedVars`](@ref GeophysicalFlows.TwoDNavierStokes.ForcedVars)
 or [`StochasticForcedVars`](@ref GeophysicalFlows.TwoDNavierStokes.StochasticForcedVars).
 

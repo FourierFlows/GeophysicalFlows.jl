@@ -119,7 +119,7 @@ and [`addforcing!`](@ref GeophysicalFlows.MultiLayerQG.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.MultiLayerQG.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.MultiLayerQG.Vars).
 
-For decaying case (no forcing, ``F=0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.MultiLayerQG.DecayingVars). 
+For the decaying case (no forcing, ``F=0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.MultiLayerQG.DecayingVars). 
 For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.MultiLayerQG.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.MultiLayerQG.StochasticForcedVars).
 
 

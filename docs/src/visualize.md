@@ -2,11 +2,11 @@
 
 In the examples we use [Makie.jl](https://makie.juliaplots.org/stable/) for plotting.
 
-Makie comes with few [backends](https://makie.juliaplots.org/stable/#makie_ecosystem). In the documented examples
+Makie comes with a few [backends](https://makie.juliaplots.org/stable/#makie_ecosystem). In the documented examples
 we use [CairoMakie](https://makie.juliaplots.org/stable/documentation/backends/cairomakie/) since this backend
 works well on headless devices, that is, devices without monitor. Since the documentation is automatically
-build via GitHub actions the CairoMakie backend is necessary. Users that run GeophysicalFlows.jl on
-devices with a monitor they might want to change to [GLMakie](https://makie.juliaplots.org/stable/documentation/backends/glmakie/)
+built via GitHub actions the CairoMakie backend is necessary. Users that run GeophysicalFlows.jl on
+devices with a monitor might want to change to [GLMakie](https://makie.juliaplots.org/stable/documentation/backends/glmakie/)
 that display figures in an interactive window.
 
 In GeophysicalFlows.jl simulations, we can either visualize the flow on-the-fly as the problem is stepped forward or

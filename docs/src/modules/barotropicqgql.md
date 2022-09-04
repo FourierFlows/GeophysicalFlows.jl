@@ -83,7 +83,7 @@ and [`addforcing!`](@ref GeophysicalFlows.BarotropicQGQL.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.BarotropicQGQL.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.BarotropicQGQL.Vars).
 
-For decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.BarotropicQGQL.Vars).
+For the decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.BarotropicQGQL.Vars).
 For the forced case (``F \ne 0``) variables are constructed with either [`ForcedVars`](@ref GeophysicalFlows.BarotropicQGQL.ForcedVars)
 or [`StochasticForcedVars`](@ref GeophysicalFlows.BarotropicQGQL.StochasticForcedVars).
 

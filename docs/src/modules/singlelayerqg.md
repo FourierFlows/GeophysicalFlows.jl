@@ -68,7 +68,7 @@ and [`addforcing!`](@ref GeophysicalFlows.SingleLayerQG.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.SingleLayerQG.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.SingleLayerQG.Vars).
 
-For decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.SingleLayerQG.Vars).
+For the decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.SingleLayerQG.Vars).
 For the forced case (``F \ne 0``) variables are constructed with either [`ForcedVars`](@ref GeophysicalFlows.SingleLayerQG.ForcedVars)
 or [`StochasticForcedVars`](@ref GeophysicalFlows.SingleLayerQG.StochasticForcedVars).
 
