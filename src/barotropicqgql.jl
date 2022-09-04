@@ -28,29 +28,31 @@ abstract type BarotropicQGQLVars <: AbstractVars end
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev::Device=CPU();
-                      nx = 256,
-                      ny = nx,
-                      Lx = 2π,
-                      Ly = Lx,
-                       β = 0.0,
-      deformation_radius = Inf,
-                     eta = nothing,
-                       ν = 0.0,
-                      nν = 1,
-                       μ = 0.0,
-                      dt = 0.01,
-                 stepper = "RK4",
-                   calcF = nothingfunction,
-              stochastic = false,
-        aliased_fraction = 1/3,
-                       T = Float64)
+    Problem(dev::Device = CPU();
+                     nx = 256,
+                     ny = nx,
+                     Lx = 2π,
+                     Ly = Lx,
+                      β = 0.0,
+                    eta = nothing,
+                      ν = 0.0,
+                     nν = 1,
+                      μ = 0.0,
+                     dt = 0.01,
+                stepper = "RK4",
+                  calcF = nothingfunction,
+             stochastic = false,
+       aliased_fraction = 1/3,
+                      T = Float64)
 
-Construct a quasi-linear barotropic quasi-geostrophic `problem` on device `dev`.
+Construct a quasi-linear barotropic quasi-geostrophic problem on device `dev`.
+
+Arguments
+=========
+  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
 
 Keyword arguments
 =================
-  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
   - `nx`: Number of grid points in ``x``-domain.
   - `ny`: Number of grid points in ``y``-domain.
   - `Lx`: Extent of the ``x``-domain.
@@ -90,7 +92,7 @@ function Problem(dev::Device=CPU();
                  T = Float64)
 
   # the grid
-  grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction=aliased_fraction, T)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
   x, y = gridpoints(grid)
 
   # topographic PV
@@ -185,33 +187,33 @@ The variables for barotropic QL QG:
 $(FIELDS)
 """
 mutable struct Vars{Aphys, Atrans, F, P} <: BarotropicQGQLVars
-    "x-component of small-scale velocity"
+    "``x``-component of small-scale velocity"
         u :: Aphys
-    "y-component of small-scale velocity"
+    "``y``-component of small-scale velocity"
         v :: Aphys
-    "x-component of large-scale velocity"
+    "``x``-component of large-scale velocity"
         U :: Aphys
-    "small-scale u′ζ′"
+    "small-scale ``u′ζ′``"
     uzeta :: Aphys
-    "small-scale v′ζ′"
+    "small-scale ``v′ζ′``"
     vzeta :: Aphys
     "small-scale relative vorticity"
      zeta :: Aphys
     "large-scale relative vorticity"
      Zeta :: Aphys
-    "small-scale relative vorticity"
+    "small-scale streamfunction"
       psi :: Aphys
-    "large-scale relative vorticity"
+    "large-scale streamfunction"
       Psi :: Aphys
     "small-scale nonlinear term"
        Nz :: Atrans
     "large-scale nonlinear term"
        NZ :: Atrans
-    "Fourier transform of x-component of small-scale velocity"
+    "Fourier transform of ``x``-component of small-scale velocity"
        uh :: Atrans
-    "Fourier transform of y-component of small-scale velocity"
+    "Fourier transform of ``y``-component of small-scale velocity"
        vh :: Atrans
-    "Fourier transform of x-component of large-scale velocity"
+    "Fourier transform of ``x``-component of large-scale velocity"
        Uh :: Atrans
     "Fourier transform of small-scale relative vorticity"
     zetah :: Atrans
@@ -234,7 +236,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     DecayingVars(grid)
 
-Return the vars for unforced two-dimensional quasi-linear barotropic QG problem on `grid`.
+Return the variables for unforced two-dimensional quasi-linear barotropic QG problem on `grid`.
 """
 function DecayingVars(grid::AbstractGrid)
   Dev = typeof(grid.device)
@@ -249,7 +251,7 @@ end
 """
     ForcedVars(grid)
 
-Return the `vars` for forced two-dimensional quasi-linear barotropic QG problem on `grid`.
+Return the variables for forced two-dimensional quasi-linear barotropic QG problem on `grid`.
 """
 function ForcedVars(grid::AbstractGrid)
   Dev = typeof(grid.device)
@@ -264,7 +266,7 @@ end
 """
     StochasticForcedVars(grid)
 
-Return the `vars` for stochastically forced two-dimensional quasi-linear barotropic QG problem 
+Return the variables for stochastically forced two-dimensional quasi-linear barotropic QG problem 
 on `grid`.
 """
 function StochasticForcedVars(grid::AbstractGrid)
@@ -367,6 +369,7 @@ function addforcing!(N, sol, t, clock, vars::StochasticForcedVars, params, grid)
     @. vars.prevsol = sol # sol at previous time-step is needed to compute budgets for stochastic forcing
     params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
   end
+  
   @. N += vars.Fh
   
   return nothing

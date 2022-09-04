@@ -27,36 +27,39 @@ using FourierFlows: parsevalsum, parsevalsum2, superzeros, plan_flows_rfft
 nothingfunction(args...) = nothing
 
 """
-    Problem(nlayers::Int,
-                dev = CPU();
-                 nx = 128,
-                 ny = nx,
-                 Lx = 2π,
-                 Ly = Lx,
-                 f₀ = 1.0,
-                  β = 0.0,
-                  g = 1.0,
-                  U = zeros(nlayers),
-                  H = 1/nlayers * ones(nlayers),
-                  ρ = Array{Float64}(1:nlayers),
-                eta = nothing,
-                  μ = 0,
-                  ν = 0,
-                 nν = 1,
-                 dt = 0.01,
-            stepper = "RK4",
-             calcFq = nothingfunction,
-         stochastic = false,
-             linear = false,
-   aliased_fraction = 1/3,
-                  T = Float64)
+    Problem(nlayers :: Int,
+                 dev = CPU();
+                  nx = 128,
+                  ny = nx,
+                  Lx = 2π,
+                  Ly = Lx,
+                  f₀ = 1.0,
+                   β = 0.0,
+                   g = 1.0,
+                   U = zeros(nlayers),
+                   H = 1/nlayers * ones(nlayers),
+                   ρ = Array{Float64}(1:nlayers),
+                 eta = nothing,
+                   μ = 0,
+                   ν = 0,
+                  nν = 1,
+                  dt = 0.01,
+             stepper = "RK4",
+              calcFq = nothingfunction,
+          stochastic = false,
+              linear = false,
+    aliased_fraction = 1/3,
+                   T = Float64)
 
-Construct a multi-layer quasi-geostrophic `problem` with `nlayers` fluid layers on device `dev`.
+Construct a multi-layer quasi-geostrophic problem with `nlayers` fluid layers on device `dev`.
+
+Arguments
+=========
+- `nlayers`: (required) Number of fluid layers.
+- `dev`: (required) `CPU()` (default) or `GPU()`; computer architecture used to time-step `problem`.
 
 Keyword arguments
 =================
-  - `nlayers`: (required) Number of fluid layers.
-  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
   - `nx`: Number of grid points in ``x``-domain.
   - `ny`: Number of grid points in ``y``-domain.
   - `Lx`: Extent of the ``x``-domain.
@@ -74,7 +77,8 @@ Keyword arguments
   - `dt`: Time-step.
   - `stepper`: Time-stepping method.
   - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
-  - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
+  - `stochastic`: `true` or `false` (default); boolean denoting whether `calcF` is temporally stochastic.
+  - `linear`: `true` or `false` (default); boolean denoting whether the linearized equations of motions are used.
   - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
   - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
@@ -123,7 +127,7 @@ function Problem(nlayers::Int,                        # number of fluid layers
    
   grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
    
-  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid, calcFq=calcFq)   
+  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq)
    
   vars = calcFq == nothingfunction ? DecayingVars(grid, params) : (stochastic ? StochasticForcedVars(grid, params) : ForcedVars(grid, params))
    
@@ -135,7 +139,7 @@ end
 """
     struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
 
-The parameters for the MultiLayerQG problem.
+The parameters for the `MultiLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
@@ -169,7 +173,7 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
   # derived params
     "array with the reduced gravity constants for each fluid interface"
         g′ :: Aphys1D
-    "array containing ``x``-gradient of PV due to eta in each fluid layer"
+    "array containing ``x``-gradient of PV due to topographic PV in each fluid layer"
         Qx :: Aphys3D
     "array containing ``y``-gradient of PV due to ``β``, ``U``, and topographic PV in each fluid layer"
         Qy :: Aphys3D
@@ -184,15 +188,15 @@ end
 """
     struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
 
-The parameters for the SingleLayerQG problem.
+The parameters for the a single-layer `MultiLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
 struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
   # prescribed params
-    "planetary vorticity y-gradient"
+    "planetary vorticity ``y``-gradient"
          β :: T
-    "array with imposed constant zonal flow U(y)"
+    "array with imposed constant zonal flow ``U(y)``"
          U :: Aphys3D
     "array containing topographic PV"
        eta :: Aphys2D
@@ -206,18 +210,18 @@ struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
    calcFq! :: Function
 
   # derived params
-    "array containing x-gradient of PV due to eta"
+    "array containing ``x``-gradient of PV due to topographic PV"
         Qx :: Aphys3D
-    "array containing y-gradient of PV due to β, U, and eta"
+    "array containing ``y``-gradient of PV due to ``β``, ``U``, and topographic PV"
         Qy :: Aphys3D
     "rfft plan for FFTs"
   rfftplan :: Trfft
 end
 
 """
-    TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
+    struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
 
-The parameters for the TwoLayerQG problem.
+The parameters for the a two-layer `MultiLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
@@ -227,13 +231,13 @@ struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
          g :: T
     "constant planetary vorticity"
         f₀ :: T
-    "planetary vorticity y-gradient"
+    "planetary vorticity ``y``-gradient"
          β :: T
     "array with density of each fluid layer"
          ρ :: Aphys3D
     "tuple with rest height of each fluid layer"
          H :: Tuple
-   "array with imposed constant zonal flow U(y) in each fluid layer"
+   "array with imposed constant zonal flow ``U(y)`` in each fluid layer"
          U :: Aphys3D
     "array containing topographic PV"
        eta :: Aphys2D
@@ -249,9 +253,9 @@ struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
   # derived params
     "the reduced gravity constants for the fluid interface"
         g′ :: T
-    "array containing x-gradient of PV due to eta in each fluid layer"
+    "array containing ``x``-gradient of PV due to topographic PV in each fluid layer"
         Qx :: Aphys3D
-    "array containing y-gradient of PV due to β, U, and eta in each fluid layer"
+    "array containing ``y``-gradient of PV due to ``β``, ``U``, and topographic PV in each fluid layer"
         Qy :: Aphys3D
     "rfft plan for FFTs"
   rfftplan :: Trfft
@@ -416,7 +420,7 @@ end
 """
     struct Vars{Aphys, Atrans, F, P} <: AbstractVars
 
-The variables for MultiLayer QG.
+The variables for multi-layer QG problem.
 
 $(FIELDS)
 """
@@ -433,9 +437,9 @@ struct Vars{Aphys, Atrans, F, P} <: AbstractVars
        qh :: Atrans
     "Fourier transform of streamfunction"
        ψh :: Atrans
-    "Fourier transform of x-component of velocity"
+    "Fourier transform of ``x``-component of velocity"
        uh :: Atrans
-    "Fourier transform of y-component of velocity"
+    "Fourier transform of ``y``-component of velocity"
        vh :: Atrans
     "Fourier transform of forcing"
       Fqh :: F
@@ -480,7 +484,7 @@ function ForcedVars(grid, params)
 end
 
 """
-    StochasticForcedVars(rid, params)
+    StochasticForcedVars(grid, params)
 
 Return the variables for a forced multi-layer QG problem with `grid` and `params`.
 """
@@ -596,11 +600,11 @@ Invert the PV to obtain the Fourier transform of the streamfunction `ψh` for th
 case of a two fluid layer configuration. In this case we have,
 
 ```math
-ψ̂₁ = - [k⁻² q̂₁ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
+ψ̂₁ = - [k² q̂₁ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
 ```
 
 ```math
-ψ̂₂ = - [k⁻² q̂₂ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
+ψ̂₂ = - [k² q̂₂ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
 ```
 
 where ``Δ = k² [k² + f₀² (H₁ + H₂) / (g′ H₁ H₂)]``.

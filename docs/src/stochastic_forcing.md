@@ -53,7 +53,7 @@ with ``W_t`` a Brownian motion or Wiener process, can be written in an integral 
     2. Stationarity. The statistical distribution of the increment ``W_{t+s} − W_s`` does not depend on  ``s`` (and so is identical in distribution to ``W_t``).
     3. Gaussianity. ``W_t`` is a Gaussian process with mean ``\langle W_t \rangle = 0`` and covariance ``\langle W_t W_s \rangle = \min(t, s)``.
 
-!!! tip "Notation, e.g., ``x_t``"
+!!! tip "Notation"
     It's common to use notation ``x_t`` to denote explicit ``t``-dependence of variable ``x``. Not to be confused with the other common usage of subscripts for denoting partial differentiation.
 
 The last integral in the integral representation of a SDE expression above is a stochastic integral 
@@ -260,12 +260,11 @@ Figure below compares the energy evolution as predicted by:
 - time-integration of (4) using Euler--Heun.
 
 ```@setup 1
-using Plots
-Plots.default(lw=2)
+using CairoMakie
 ```
 
 ```@example 1
-using Plots
+using CairoMakie
 using Statistics: mean
 using Random: randn, seed!
 seed!(1234) # for reproducing the same plots
@@ -307,16 +306,22 @@ end
 @. E_numerical = 0.5 * x^2
 
 # compare the three E(t) solutions
-plot(μ * t, [E_numerical[:, 1] E_ito[:, 1] E_str[:, 1]],
-          linewidth = [3 2 1],
-              label = ["½ xₜ²" "Eₜ (Ito)" "Eₜ (Stratonovich)"],
-          linestyle = [:solid :dash :dashdot],
-             xlabel = "μ t",
-             ylabel = "E",
-             legend = :topleft,
-              title = "comparison of E(t) for single realization")
+fig = Figure()
+ax = Axis(fig[1, 1];
+          xlabel = "μ t",
+          ylabel = "E",
+          title = "comparison of E(t) for single realization")
 
-savefig("assets/energy_comparison.svg"); nothing # hide
+hl1 = lines!(ax, μ * t, E_numerical[:, 1];
+             linewidth = 3, linestyle = :solid)
+hl2 = lines!(ax, μ * t, E_ito[:, 1];
+             linewidth = 2, linestyle = :dash)
+hl3 = lines!(ax, μ * t, E_str[:, 1];
+             linewidth = 1, linestyle = :dashdot)
+
+Legend(fig[1, 2], [hl1, hl2, hl3], ["½ xₜ²", "Eₜ (Ito)", "Eₜ (Stratonovich)"])
+
+save("assets/energy_comparison.svg", fig); nothing # hide
 ```
 
 ![energy_comparison](assets/energy_comparison.svg)
@@ -338,28 +343,42 @@ dEdt_ito = mean(E_ito[2:nsteps, :] .- E_ito[1:nsteps-1, :], dims=2) / dt
 
 # compute the work and dissipation
 work_ito = mean(sqrt(σ) * ΔW[1:nsteps-1, :] / dt .* x[1:nsteps-1, :] .+ σ/2, dims=2)
-diss_ito = 2*μ * (mean(E_ito[1:nsteps-1, :], dims=2))
+diss_ito = 2μ * (mean(E_ito[1:nsteps-1, :], dims=2))
 
 # Ensemble mean energy budgets from the Itô integration
 
-plot_E = plot(μ * t, [E_theory mean(E_ito[:, 1:some_realizations], dims=2) mean(E_ito, dims=2)],
-                linewidth = [3 2],
-	                  label = ["theoretical ⟨E⟩" "⟨E⟩ from $some_realizations ensemble members" "⟨E⟩ from $n_realizations ensemble members"],
-	                 xlabel = "μ t",
-	                 ylabel = "E",
-	                 legend = :bottomright,
-	                  title = "Ito: 𝖽Eₜ = (-2μ Eₜ + ½σ) 𝖽t + xₜ √σ 𝖽Wₜ")
+fig = Figure()
 
-plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_ito work_ito.-diss_ito dEdt_theory[1:nsteps-1]],
-                linestyle = [:dash :dashdot :solid],
-                linewidth = [2 1 3],
-                    label = ["numerical 𝖽⟨E⟩/𝖽t" "⟨work - dissipation⟩" "theoretical 𝖽⟨E⟩/𝖽t"],
-                   legend = :topright,
-                   xlabel = "μ t")
+ax1 = Axis(fig[1, 1];
+           xlabel = "μ t",
+           ylabel = "E",
+           title = "Ito: 𝖽Eₜ = (-2μ Eₜ + ½σ) 𝖽t + xₜ √σ 𝖽Wₜ")
 
-plot(plot_E, plot_Ebudget, layout=grid(2, 1, heights=[0.65 ,0.35]), size=(600, 525))
+hl1 = lines!(ax1, μ * t, E_theory;
+             linewidth = 3)
+hl2 = lines!(ax1, μ * t, vec(mean(E_ito[:, 1:some_realizations], dims=2));
+             linewidth = 2)
+hl3 = lines!(ax1, μ * t, vec(mean(E_ito, dims=2)),
+             linewidth = 1)
 
-savefig("assets/energy_budgets_Ito.svg"); nothing # hide
+Legend(fig[1, 2], [hl1, hl2, hl3],
+                  ["theoretical ⟨E⟩", "⟨E⟩ from $some_realizations ensemble members", "⟨E⟩ from $n_realizations ensemble members"])
+
+ax2 = Axis(fig[2, 1];
+           xlabel = "μ t",
+           ylabel = "dE/dt")
+
+hl1 = lines!(ax2, μ * t[1:nsteps-1], vec(dEdt_ito);
+             linewidth = 2, linestyle = :dash)
+hl2 = lines!(ax2, μ * t[1:nsteps-1], vec(work_ito .- diss_ito);
+             linewidth = 1, linestyle = :dashdot)
+hl3 = lines!(ax2, μ * t[1:nsteps-1], dEdt_theory[1:nsteps-1];
+             linewidth = 3, linestyle = :solid)
+
+Legend(fig[2, 2], [hl1, hl2, hl3],
+                  ["numerical 𝖽⟨E⟩/𝖽t", "⟨work - dissipation⟩", "theoretical 𝖽⟨E⟩/𝖽t"])
+
+save("assets/energy_budgets_Ito.svg", fig); nothing # hide
 ```
 
 ![energy_budgets_Ito](assets/energy_budgets_Ito.svg)
@@ -371,26 +390,40 @@ dEdt_str = mean(E_str[2:nsteps, :] .- E_str[1:nsteps-1, :], dims=2) / dt
 
 # compute the work and dissipation
 work_str = mean(sqrt(σ) * ΔW[1:nsteps-1, :] / dt .* (x[1:nsteps-1, :] .+ x[2:nsteps, :])/2, dims=2)
-diss_str = 2*μ * (mean(E_str[1:nsteps-1, :], dims=2))
+diss_str = 2μ * (mean(E_str[1:nsteps-1, :], dims=2))
 
-plot_E = plot(μ * t, [E_theory mean(E_str[:, 1:some_realizations], dims=2) mean(E_str, dims=2)],
-                linewidth = [3 2],
-                    label = ["theoretical ⟨E⟩" "⟨E⟩ from $some_realizations ensemble members" "⟨E⟩ from $n_realizations ensemble members"],
-                   xlabel = "μ t",
-                   ylabel = "E",
-                   legend = :bottomright,
-                    title = "Stratonovich: 𝖽Eₜ = -2μ Eₜ 𝖽t + xₜ ∘ √σ 𝖽Wₜ")
+fig = Figure()
 
-plot_Ebudget = plot(μ * t[1:nsteps-1], [dEdt_str[1:nsteps-1] work_str[1:nsteps-1].-diss_str[1:nsteps-1] dEdt_theory[1:nsteps-1]],
-                linestyle = [:dash :dashdot :solid],
-                linewidth = [2 1 3],
-                    label = ["numerical 𝖽⟨E⟩/𝖽t" "⟨work - dissipation⟩" "theoretical 𝖽⟨E⟩/𝖽t"],
-                   legend = :bottomleft,
-                   xlabel = "μ t")
+ax1 = Axis(fig[1, 1];
+           xlabel = "μ t",
+           ylabel = "E",
+           title = "Stratonovich: 𝖽Eₜ = -2μ Eₜ 𝖽t + xₜ ∘ √σ 𝖽Wₜ")
 
-plot(plot_E, plot_Ebudget, layout=grid(2, 1, heights=[0.65 ,0.35]), size=(600, 525))
+hl1 = lines!(ax1, μ * t, E_theory;
+             linewidth = 3)
+hl2 = lines!(ax1, μ * t, vec(mean(E_str[:, 1:some_realizations], dims=2));
+             linewidth = 2)
+hl3 = lines!(ax1, μ * t, vec(mean(E_str, dims=2)),
+             linewidth = 1)
 
-savefig("assets/energy_budgets_Stratonovich.svg"); nothing # hide
+Legend(fig[1, 2], [hl1, hl2, hl3],
+                  ["theoretical ⟨E⟩", "⟨E⟩ from $some_realizations ensemble members", "⟨E⟩ from $n_realizations ensemble members"])
+
+ax2 = Axis(fig[2, 1];
+           xlabel = "μ t",
+           ylabel = "dE/dt")
+
+hl1 = lines!(ax2, μ * t[1:nsteps-1], vec(dEdt_str);
+             linewidth = 2, linestyle = :dash)
+hl2 = lines!(ax2, μ * t[1:nsteps-1], vec(work_str .- diss_str);
+             linewidth = 1, linestyle = :dashdot)
+hl3 = lines!(ax2, μ * t[1:nsteps-1], dEdt_theory[1:nsteps-1];
+             linewidth = 3, linestyle = :solid)
+
+Legend(fig[2, 2], [hl1, hl2, hl3],
+                  ["numerical 𝖽⟨E⟩/𝖽t", "⟨work - dissipation⟩", "theoretical 𝖽⟨E⟩/𝖽t"])
+
+save("assets/energy_budgets_Stratonovich.svg", fig); nothing # hide
 ```
 
 ![energy_budgets_Stratonovich](assets/energy_budgets_Stratonovich.svg)
@@ -537,5 +570,5 @@ When multiplied with ``\xi(\bm{x}, t)`` the last term vanishes since its only no
 contribution comes from the point ``s = t``, which is of measure zero (in the integrated sense). 
 
 A demonstration of how the energy budgets can be computed when we have stochastic forcing is 
-illustrated in an [example of the TwoDNavierStokes](../literated/twodnavierstokes_stochasticforcing_budgets/) 
+illustrated in an [example of the TwoDNavierStokes](@ref twodnavierstokes_stochasticforcing_budgets_example) 
 module.

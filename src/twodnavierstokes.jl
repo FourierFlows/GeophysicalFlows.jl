@@ -6,10 +6,12 @@ export
   updatevars!,
 
   energy,
+  energy_dissipation,
   energy_dissipation_hyperviscosity,
   energy_dissipation_hypoviscosity,
   energy_work,
   enstrophy,
+  enstrophy_dissipation,
   enstrophy_dissipation_hyperviscosity,
   enstrophy_dissipation_hypoviscosity,
   enstrophy_work
@@ -27,27 +29,30 @@ using FourierFlows: parsevalsum
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev::Device=CPU();
-                nx = 256,
-                ny = nx,
-                Lx = 2π,
-                Ly = Lx,
-                 ν = 0,
-                nν = 1,
-                 μ = 0,
-                nμ = 0,
-                dt = 0.01,
-           stepper = "RK4",
-             calcF = nothingfunction,
-        stochastic = false,
-  aliased_fraction = 1/3,
-                 T = Float64)
+    Problem(dev::Device = CPU();
+                     nx = 256,
+                     ny = nx,
+                     Lx = 2π,
+                     Ly = Lx,
+                      ν = 0,
+                     nν = 1,
+                      μ = 0,
+                     nμ = 0,
+                     dt = 0.01,
+                stepper = "RK4",
+                  calcF = nothingfunction,
+             stochastic = false,
+       aliased_fraction = 1/3,
+                      T = Float64)
 
-Construct a two-dimensional Navier-Stokes `problem` on device `dev`.
+Construct a two-dimensional Navier-Stokes problem on device `dev`.
+
+Arguments
+=========
+  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
 
 Keyword arguments
 =================
-  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
   - `nx`: Number of grid points in ``x``-domain.
   - `ny`: Number of grid points in ``y``-domain.
   - `Lx`: Extent of the ``x``-domain.
@@ -171,9 +176,9 @@ struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
         v :: Aphys
     "Fourier transform of relative vorticity"
        ζh :: Atrans
-    "Fourier transform of x-component of velocity"
+    "Fourier transform of ``x``-component of velocity"
        uh :: Atrans
-    "Fourier transform of y-component of velocity"
+    "Fourier transform of ``y``-component of velocity"
        vh :: Atrans
     "Fourier transform of forcing"
        Fh :: F
@@ -188,7 +193,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     DecayingVars(dev, grid)
 
-Return the variables `vars` for unforced two-dimensional Navier-Stokes problem on `grid`.
+Return the variables for unforced two-dimensional Navier-Stokes problem on `grid`.
 """
 function DecayingVars(grid::AbstractGrid)
   Dev = typeof(grid.device)
@@ -203,7 +208,7 @@ end
 """
     ForcedVars(grid)
 
-Return the variables `vars` for forced two-dimensional Navier-Stokes on `grid`.
+Return the variables for forced two-dimensional Navier-Stokes on `grid`.
 """
 function ForcedVars(grid::AbstractGrid)
   Dev = typeof(grid.device)
@@ -218,7 +223,7 @@ end
 """
     StochasticForcedVars(grid)
 
-Return the variables `vars` for stochastically forced two-dimensional Navier-Stokes on device `grid`.
+Return the variables for stochastically forced two-dimensional Navier-Stokes on `grid`.
 """
 function StochasticForcedVars(grid::AbstractGrid)
   Dev = typeof(grid.device)

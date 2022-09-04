@@ -71,8 +71,9 @@ and [`addforcing!`](@ref GeophysicalFlows.SurfaceQG.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.SurfaceQG.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.SurfaceQG.Vars).
 
-For decaying case (no forcing, ``F = 0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.SurfaceQG.DecayingVars). 
-For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.SurfaceQG.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.SurfaceQG.StochasticForcedVars).
+For the decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.SurfaceQG.Vars).
+For the forced case (``F \ne 0``) variables are constructed with either [`ForcedVars`](@ref GeophysicalFlows.SurfaceQG.ForcedVars)
+or [`StochasticForcedVars`](@ref GeophysicalFlows.SurfaceQG.StochasticForcedVars).
 
 
 ### Helper functions
@@ -85,6 +86,8 @@ GeophysicalFlows.SurfaceQG.set_b!
 
 ### Diagnostics
 
+Some useful diagnostics are kinetic energy and buoyancy variance.
+
 ```@docs
 GeophysicalFlows.SurfaceQG.kinetic_energy
 GeophysicalFlows.SurfaceQG.buoyancy_variance
@@ -96,6 +99,7 @@ Other diagnostic include: [`buoyancy_dissipation`](@ref GeophysicalFlows.Surface
 
 ## Examples
 
-- [`examples/surfaceqg_decaying.jl`](@ref surfaceqg_decaying_example): Simulate decaying surface quasi-geostrophic flow with a prescribed initial buoyancy field.
+- [`examples/surfaceqg_decaying.jl`](@ref surfaceqg_decaying_example): Simulate decaying surface quasi-geostrophic flow 
+  with a prescribed initial buoyancy field.
 
   > Capet, X. et al., (2008). Surface kinetic energy transfer in surface quasi-geostrophic flows. *J. Fluid Mech.*, **604**, 165-174.
