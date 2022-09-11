@@ -83,8 +83,9 @@ and [`addforcing!`](@ref GeophysicalFlows.BarotropicQGQL.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.BarotropicQGQL.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.BarotropicQGQL.Vars).
 
-For decaying case (no forcing, ``F = 0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.BarotropicQGQL.DecayingVars). 
-For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.BarotropicQGQL.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.BarotropicQGQL.StochasticForcedVars).
+For the decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.BarotropicQGQL.Vars).
+For the forced case (``F \ne 0``) variables are constructed with either [`ForcedVars`](@ref GeophysicalFlows.BarotropicQGQL.ForcedVars)
+or [`StochasticForcedVars`](@ref GeophysicalFlows.BarotropicQGQL.StochasticForcedVars).
 
 
 ### Helper functions
@@ -115,4 +116,7 @@ Other diagnostic include: [`dissipation`](@ref GeophysicalFlows.BarotropicQGQL.d
 
 ## Examples
 
-- [`examples/barotropicqgql_betaforced.jl`](@ref barotropicqgql_betaforced_example): Simulate forced-dissipative quasi-linear quasi-geostrophic flow on a beta plane demonstrating zonation. The forcing is temporally delta-correlated and its spatial structure is isotropic with power in a narrow annulus of total radius ``k_f`` in wavenumber space. This example demonstrates that the anisotropic inverse energy cascade is not required for zonation.
+- [`examples/barotropicqgql_betaforced.jl`](@ref barotropicqgql_betaforced_example): Simulate forced-dissipative quasi-linear
+  quasi-geostrophic flow on a beta plane demonstrating zonation. The forcing is temporally delta-correlated and its spatial
+  structure is isotropic with power in a narrow annulus of total radius ``k_f`` in wavenumber space. This example demonstrates
+  that the anisotropic inverse energy cascade is not required for zonation.

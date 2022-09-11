@@ -8,9 +8,7 @@ export
   kinetic_energy,
   buoyancy_variance,
   buoyancy_dissipation,
-  buoyancy_work,
-  buoyancy_advection,
-  kinetic_energy_advection
+  buoyancy_work
 
   using
     CUDA,
@@ -25,25 +23,28 @@ using FourierFlows: parsevalsum
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev::Device=CPU();
-                 nx = 256,
-                 Lx = 2π,
-                 ny = nx,
-                 Ly = Lx,
-                  ν = 0,
-                 nν = 1,
-                 dt = 0.01,
-            stepper = "RK4",
-              calcF = nothingfunction,
-         stochastic = false,
-  aliased_fraction = 1/3,
-                  T = Float64)
+    Problem(dev::Device = CPU();
+                     nx = 256,
+                     Lx = 2π,
+                     ny = nx,
+                     Ly = Lx,
+                      ν = 0,
+                     nν = 1,
+                     dt = 0.01,
+                stepper = "RK4",
+                  calcF = nothingfunction,
+             stochastic = false,
+       aliased_fraction = 1/3,
+                      T = Float64)
 
-Construct a surface quasi-geostrophic `problem` on device `dev`.
+Construct a surface quasi-geostrophic problem on device `dev`.
+
+Arguments
+=========
+  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
 
 Keyword arguments
 =================
-  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
   - `nx`: Number of grid points in ``x``-domain.
   - `ny`: Number of grid points in ``y``-domain.
   - `Lx`: Extent of the ``x``-domain.
@@ -152,15 +153,15 @@ $(FIELDS)
 struct Vars{Aphys, Atrans, F, P} <: SurfaceQGVars
     "buoyancy"
         b :: Aphys
-    "x-component of velocity"
+    "``x``-component of velocity"
         u :: Aphys
-    "y-component of velocity"
+    "``y``-component of velocity"
         v :: Aphys
     "Fourier transform of buoyancy"
        bh :: Atrans
-    "Fourier transform of x-component of velocity"
+    "Fourier transform of ``x``-component of velocity"
        uh :: Atrans
-    "Fourier transform of y-component of velocity"
+    "Fourier transform of ``y``-component of velocity"
        vh :: Atrans
     "Fourier transform of forcing"
        Fh :: F
@@ -175,7 +176,7 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     DecayingVars(grid)
 
-Return the `vars` for unforced surface QG dynamics on `grid`.
+Return the variables for unforced surface QG dynamics on `grid`.
 """
 function DecayingVars(grid::AbstractGrid)
   Dev = typeof(grid.device)
@@ -183,14 +184,14 @@ function DecayingVars(grid::AbstractGrid)
 
   @devzeros Dev T (grid.nx, grid.ny) b u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) bh uh vh
-  
+
   return Vars(b, u, v, bh, uh, vh, nothing, nothing)
 end
 
 """
     ForcedVars(grid)
 
-Return the vars for forced surface QG dynamics on `grid`.
+Return the variables for forced surface QG dynamics on `grid`.
 """
 function ForcedVars(grid)
   Dev = typeof(grid.device)
@@ -205,7 +206,7 @@ end
 """
     StochasticForcedVars(grid)
 
-Return the `vars` for stochastically forced surface QG dynamics on `grid`.
+Return the variables for stochastically forced surface QG dynamics on `grid`.
 """
 function StochasticForcedVars(grid)
   Dev = typeof(grid.device)
@@ -223,7 +224,7 @@ end
 # -------
 
 """
-    calcN_advection(N, sol, t, clock, vars, params, grid)
+    calcN_advection!(N, sol, t, clock, vars, params, grid)
 
 Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, b)`` in conservative 
 form, i.e., ``- ∂_x[(∂_y ψ)b] - ∂_y[(∂_x ψ)b]`` and store it in `N`:

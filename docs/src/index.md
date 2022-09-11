@@ -50,9 +50,12 @@ Examples aim to demonstrate the main functionalities of each module. Have a look
 
 ## Developers
 
-The development of GeophysicalFlows.jl started by [Navid C. Constantinou](http://www.navidconstantinou.com) and [Gregory L. Wagner](https://glwagner.github.io) during the 21st AOFD Meeting 2017. During the 
-course of time various people have contributed to GeophysicalFlows.jl, including 
-[Lia Siegelman](https://scholar.google.com/citations?user=BQJtj6sAAAAJ), [Brodie Pearson](https://brodiepearson.github.io), and [André Palóczy](https://scholar.google.com/citations?user=o4tYEH8AAAAJ) (see the [example in FourierFlows.jl](https://fourierflows.github.io/FourierFlowsDocumentation/stable/literated/OneDShallowWaterGeostrophicAdjustment/)).
+The development of GeophysicalFlows.jl started during the 21st AOFD Meeting 2017 by [Navid C. Constantinou](http://www.navidconstantinou.com)
+and [Gregory L. Wagner](https://glwagner.github.io). Since then various people have contributed, including
+[Lia Siegelman](https://scholar.google.com/citations?user=BQJtj6sAAAAJ), [Brodie Pearson](https://brodiepearson.github.io),
+[André Palóczy](https://scholar.google.com/citations?user=o4tYEH8AAAAJ) (see the
+[example in FourierFlows.jl](https://fourierflows.github.io/FourierFlowsDocumentation/stable/literated/OneDShallowWaterGeostrophicAdjustment/)),
+and [others](https://github.com/FourierFlows/GeophysicalFlows.jl/graphs/contributors).
 
 
 ## Citing
