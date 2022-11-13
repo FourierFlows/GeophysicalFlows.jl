@@ -48,7 +48,7 @@ function constructtestfields_3layer(gr)
   ψ1 = @. 1e-3 * ( 1/4*cos(2k₀*x)*cos(5l₀*y) + 1/3*cos(3k₀*x)*cos(3l₀*y) )
   ψ2 = @. 1e-3 * (     cos(3k₀*x)*cos(4l₀*y) + 1/2*cos(4k₀*x)*cos(2l₀*y) )
   ψ3 = @. 1e-3 * (     cos(1k₀*x)*cos(3l₀*y) + 1/2*cos(2k₀*x)*cos(2l₀*y) )
-  
+
   Δψ1 = @. -1e-3 * ( 1/4*((2k₀)^2+(5l₀)^2)*cos(2k₀*x)*cos(5l₀*y) + 1/3*((3k₀)^2+(3l₀)^2)*cos(3k₀*x)*cos(3l₀*y) )
   Δψ2 = @. -1e-3 * (     ((3k₀)^2+(4l₀)^2)*cos(3k₀*x)*cos(4l₀*y) + 1/2*((4k₀)^2+(2l₀)^2)*cos(4k₀*x)*cos(2l₀*y) )
   Δψ3 = @. -1e-3 * (     ((1k₀)^2+(3l₀)^2)*cos(1k₀*x)*cos(3l₀*y) + 1/2*((2k₀)^2+(2l₀)^2)*cos(2k₀*x)*cos(2l₀*y) )
@@ -111,7 +111,7 @@ Tests the pvfromstreamfunction function that gives qh from ψh. To do so, it
 constructs a 3-layer problem with parameters such that
   q1 = Δψ1 + 20ψ2 - 20ψ1, q2 = Δψ2 + 20ψ1 - 44ψ2 + 24ψ3, q3 = Δψ3 + 12ψ2 - 12ψ3.
 Then given ψ1, ψ2, and ψ2 it tests if pvfromstreamfunction gives the expected
-q1, q2, and q3. Similarly, that streamfunctionfrompv gives ψ1, ψ2, and ψ2 from 
+q1, q2, and q3. Similarly, that streamfunctionfrompv gives ψ1, ψ2, and ψ2 from
 q1, q2, and q3.
 """
 function test_pvtofromstreamfunction_3layer(dev::Device=CPU())
@@ -164,7 +164,7 @@ that a solution to the problem forced by this Ff is then qf.
 """
 function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
                                      n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
-  
+
   A = device_array(dev)
 
   tf = 0.5
@@ -181,9 +181,9 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
   f₀, g = 1, 1      # desired PV-streamfunction relations
   H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
   ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
-  
+
   β = 0.35
-  
+
   U1, U2 = 0.1, 0.05
   u1 = @. 0.5sech(gr.y/(Ly/15))^2; u1 = A(reshape(u1, (1, gr.ny)))
   u2 = @. 0.02cos(3l₀*gr.y);       u2 = A(reshape(u2, (1, gr.ny)))
@@ -234,12 +234,12 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
   @views ψf[:, :, 2] = ψ2
 
   MultiLayerQG.set_q!(prob, qf)
-  
+
   stepforward!(prob, nt)
   MultiLayerQG.updatevars!(prob)
-  
+
   return isapprox(vs.q, qf, rtol=rtol_multilayerqg) &&
-         isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)		
+         isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)
 end
 
 """
@@ -255,9 +255,9 @@ is unstable.)
 """
 function test_mqg_linearadvection(dt, stepper, dev::Device=CPU();
                                   n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
-  
+
   A = device_array(dev)
-  
+
   tf = 0.5
   nt = round(Int, tf/dt)
 
@@ -295,9 +295,9 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU();
 
   Ff1 = (β .- uyy1 .- 25*(U2.+u2.-U1.-u1) ).*ψ1x + (U1.+u1).*q1x - ν*Δq1
   Ff2 = FourierFlows.jacobian(ψ2, η, gr) + (β .- uyy2 .- 25/4*(U1.+u1.-U2.-u2) ).*ψ2x + (U2.+u2).*(q2x + ηx) + μ*Δψ2 - ν*Δq2
-  
+
   T = eltype(gr)
-  
+
   Ff = zeros(dev, T, (gr.nx, gr.ny, nlayers))
   @views Ff[:, :, 1] = Ff1
   @views Ff[:, :, 2] = Ff2
@@ -313,7 +313,7 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU();
 
   prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ, U,
                               eta=η, β, μ, ν, nν, calcFq=calcFq!, stepper, dt, linear=true)
-  
+
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   qf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
@@ -348,16 +348,16 @@ function test_mqg_energies(dev::Device=CPU();
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
   nlayers = 2
-  
+
   f₀, g = 1, 1
   H = [2.5, 7.5] # sum(params.H) = 10
   ρ = [1.0, 2.0] # Make g′ = 1/2
-  
+
   prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
-  
+
   CUDA.@allowscalar @views @. ψ[:, :, 1] =       cos(2k₀ * x) * cos(2l₀ * y)
   CUDA.@allowscalar @views @. ψ[:, :, 2] = 1/2 * cos(2k₀ * x) * cos(2l₀ * y)
 
@@ -372,7 +372,7 @@ function test_mqg_energies(dev::Device=CPU();
   return isapprox(KE[1], KE1_calc, rtol=rtol_multilayerqg) &&
          isapprox(KE[2], KE2_calc, rtol=rtol_multilayerqg) &&
          isapprox(PE[1], PE_calc, rtol=rtol_multilayerqg) &&
-         MultiLayerQG.addforcing!(prob.timestepper.RHS₁, sol, cl.t, cl, vs, pr, gr)==nothing
+         isnothing(MultiLayerQG.addforcing!(prob.timestepper.RHS₁, sol, cl.t, cl, vs, pr, gr))
 end
 
 function test_mqg_energysinglelayer(dev::Device=CPU();
@@ -380,10 +380,10 @@ function test_mqg_energysinglelayer(dev::Device=CPU();
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
   gr = TwoDGrid(dev; nx, Lx, ny, Ly)
-  
+
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
-  
+
   energy_calc = 29/9
 
   ψ0 = @. sin(2k₀*x)*cos(2l₀*y) + 2sin(k₀*x)*cos(3l₀*y)
@@ -439,12 +439,12 @@ end
 """
     test_mqg_fluxessinglelayer(dt, stepper; kwargs...)
 
-Tests the lateral eddy fluxes by constructing a 1-layer problem and initializing 
+Tests the lateral eddy fluxes by constructing a 1-layer problem and initializing
 it with a flow field whose fluxes are known.
 """
-function test_mqg_fluxessinglelayer(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=128, L=2π, μ=0.0, ν=0.0, nν=1) 
+function test_mqg_fluxessinglelayer(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=128, L=2π, μ=0.0, ν=0.0, nν=1)
   nlayers = 1
-  
+
   nx, ny = 128, 126
   Lx, Ly = 2π, 2π
   gr = TwoDGrid(dev; nx, Lx, ny, Ly)
@@ -486,11 +486,11 @@ function test_mqg_setqsetψ(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler",
   ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
   prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx=L, f₀, g, H, ρ)
-  
+
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   T = eltype(gr)
-  
+
   f1 = @. 2cos(k₀*x)*cos(l₀*y)
   f2 = @.  cos(k₀*x+π/10)*cos(2l₀*y)
   f = zeros(dev, T, (gr.nx, gr.ny, nlayers))
@@ -527,11 +527,11 @@ function test_mqg_paramsconstructor(dev::Device=CPU(); dt=0.001, stepper="Forwar
   f₀, g = 1, 1      # desired PV-streamfunction relations
   H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
   ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
-  
+
   U1, U2 = 0.1, 0.05
 
   T = eltype(gr)
-  
+
   Uvectors = zeros(dev, T, (ny, nlayers))
   Uvectors[:, 1] .= U1
   Uvectors[:, 2] .= U2
@@ -549,9 +549,9 @@ end
 function test_mqg_problemtype(dev, T)
   prob1 = MultiLayerQG.Problem(1, dev; T)
   prob2 = MultiLayerQG.Problem(2, dev; T)
-  
+
   A = device_array(dev)
-  
+
   return typeof(prob1.sol)<:A{Complex{T}, 3} &&
          typeof(prob1.grid.Lx)==T &&
          typeof(prob1.vars.u)<:A{T, 3} &&
@@ -562,7 +562,7 @@ end
 """
     test_mqg_rossbywave(; kwargs...)
 
-Evolves a Rossby wave on a beta plane with an imposed zonal flow U and compares 
+Evolves a Rossby wave on a beta plane with an imposed zonal flow U and compares
 with the analytic solution.
 """
 function test_mqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU())
@@ -599,19 +599,19 @@ end
 function test_numberoflayers(dev::Device=CPU())
   prob_nlayers1 = MultiLayerQG.Problem(1, dev)
   prob_nlayers2 = MultiLayerQG.Problem(2, dev)
-  
+
   return MultiLayerQG.numberoflayers(prob_nlayers1)==1 &&
          MultiLayerQG.numberoflayers(prob_nlayers2)==2
 end
 
 function test_mqg_stochasticforcedproblemconstructor(dev::Device=CPU())
-  
+
   function calcFq!(Fqh, sol, t, clock, vars, params, grid)
     Fqh .= Ffh
     return nothing
   end
-       
+
   prob = MultiLayerQG.Problem(2, dev; calcFq=calcFq!, stochastic=true)
-  
+
   return typeof(prob.vars.prevsol)==typeof(prob.sol)
 end

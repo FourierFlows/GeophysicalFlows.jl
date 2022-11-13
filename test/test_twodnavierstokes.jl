@@ -9,11 +9,11 @@ function test_twodnavierstokes_lambdipole(n, dt, dev::Device=CPU(); L=2π, Ue=1,
 
   xζ = zeros(nm)    # centroid of abs(ζ)
   Ue_m = zeros(nm)  # measured dipole speed
-  
+
   for i = 1:nm # step forward
     stepforward!(prob, nt)
     TwoDNavierStokes.updatevars!(prob)
-    
+
     xζ[i] = mean(@. abs(ζ) * x) / mean(abs.(ζ))
     if i > 1
       Ue_m[i] = (xζ[i] - xζ[i-1]) / ((nt-1)*dt)
@@ -48,7 +48,7 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
     eta = device_array(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
     @. Fh = eta * sqrt(forcing_spectrum)
-    
+
     return nothing
   end
 
@@ -56,7 +56,7 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
    stepper="RK4", calcF=calcF!, stochastic=true)
 
   TwoDNavierStokes.set_ζ!(prob, 0*x)
-  
+
   E = Diagnostic(TwoDNavierStokes.energy,                            prob, nsteps=nt)
   D = Diagnostic(TwoDNavierStokes.energy_dissipation_hyperviscosity, prob, nsteps=nt)
   R = Diagnostic(TwoDNavierStokes.energy_dissipation_hypoviscosity,  prob, nsteps=nt)
@@ -64,7 +64,7 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
   diags = [E, D, W, R]
 
   stepforward!(prob, diags, nt)
-  
+
   TwoDNavierStokes.updatevars!(prob)
 
   dEdt_numerical = (E[2:E.i] - E[1:E.i-1]) / prob.clock.dt
@@ -93,14 +93,14 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
   @. forcing_spectrum = ifelse(Kr < 2π/L, 0, forcing_spectrum)
   εᶻ0 = parsevalsum(forcing_spectrum / 2, grid) / (grid.Lx * grid.Ly)
   forcing_spectrum .= εᶻ / εᶻ0 * forcing_spectrum
-  
+
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, cl, v, p, g)
     eta = device_array(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(cl.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
     @. Fh = eta * sqrt(forcing_spectrum)
-    
+
     nothing
   end
 
@@ -108,7 +108,7 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
    stepper="RK4", calcF=calcF!, stochastic=true)
 
   TwoDNavierStokes.set_ζ!(prob, 0*x)
-  
+
   Z = Diagnostic(TwoDNavierStokes.enstrophy,                            prob, nsteps=nt)
   D = Diagnostic(TwoDNavierStokes.enstrophy_dissipation_hyperviscosity, prob, nsteps=nt)
   R = Diagnostic(TwoDNavierStokes.enstrophy_dissipation_hypoviscosity,  prob, nsteps=nt)
@@ -139,10 +139,10 @@ function test_twodnavierstokes_deterministicforcing_energybudget(dev::Device=CPU
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
   f = @. 0.01cos(4x) * cos(5y)
   fh = rfft(f)
-  
+
   function calcF!(Fh, sol, t, clock, vars, params, grid)
     @. Fh = fh * cos(2t)
-    
+
     return nothing
   end
 
@@ -158,7 +158,7 @@ function test_twodnavierstokes_deterministicforcing_energybudget(dev::Device=CPU
   diags = [E, D, W, R]
 
   stepforward!(prob, diags, nt)
-  
+
   TwoDNavierStokes.updatevars!(prob)
 
   dEdt_numerical = (E[3:E.i] - E[1:E.i-2]) / (2 * prob.clock.dt)
@@ -180,10 +180,10 @@ function test_twodnavierstokes_deterministicforcing_enstrophybudget(dev::Device=
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
   f = @. 0.01cos(4x) * cos(5y)
   fh = rfft(f)
-  
+
   function calcF!(Fh, sol, t, clock, vars, params, grid)
     @. Fh = fh * cos(2t)
-    
+
     return nothing
   end
 
@@ -199,7 +199,7 @@ function test_twodnavierstokes_deterministicforcing_enstrophybudget(dev::Device=
   diags = [Z, D, W, R]
 
   stepforward!(prob, diags, nt)
-  
+
   TwoDNavierStokes.updatevars!(prob)
 
   dZdt_numerical = (Z[3:Z.i] - Z[1:Z.i-2]) / (2 * prob.clock.dt)
@@ -242,16 +242,16 @@ function test_twodnavierstokes_advection(dt, stepper, dev::Device=CPU(); n=128, 
   # Forcing
   function calcF!(Fh, sol, t, clock, vars, params, grid)
     Fh .= Ffh
-    
+
     return nothing
   end
 
   prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν, nν, μ, nμ, dt, stepper, calcF=calcF!, stochastic=false)
-  
+
   TwoDNavierStokes.set_ζ!(prob, ζf)
 
   stepforward!(prob, nt)
-  
+
   TwoDNavierStokes.updatevars!(prob)
 
   isapprox(prob.vars.ζ, ζf, rtol=rtol_twodnavierstokes)
@@ -260,7 +260,7 @@ end
 function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
   nx, Lx  = 128, 2π
   ny, Ly  = 126, 3π
-  
+
   grid = TwoDGrid(dev; nx, Lx, ny, Ly)
   x, y = gridpoints(grid)
 
@@ -285,7 +285,7 @@ function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
 
   (isapprox(energyζ₀, energy_calc, rtol=rtol_twodnavierstokes) &&
    isapprox(enstrophyζ₀, enstrophy_calc, rtol=rtol_twodnavierstokes) &&
-   TwoDNavierStokes.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
+   isnothing(TwoDNavierStokes.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)) && p == params)
 end
 
 function test_twodnavierstokes_problemtype(dev, T)

@@ -58,11 +58,11 @@ function test_1layerqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, 
   grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
   K  = @. sqrt(grid.Krsq)                      # a 2D array with the total wavenumber
-  
+
   # Forcing with spectrum ~ exp(-(k-kf)²/(2 dkf²))
   kf, dkf = 12.0, 2.0
   ε = 0.1
-  
+
   forcing_spectrum = zeros(dev, T, (grid.nkr, grid.nl))
   @. forcing_spectrum = exp(-(K - kf)^2 / (2 * dkf^2))
   @. forcing_spectrum = ifelse(grid.Krsq < 2^2,  0, forcing_spectrum)   # no power at low wavenumbers
@@ -76,7 +76,7 @@ function test_1layerqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, 
     eta = device_array(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
     @. Fh = eta * sqrt(forcing_spectrum)
-    
+
     return nothing
   end
 
@@ -84,7 +84,7 @@ function test_1layerqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, 
    stepper="RK4", calcF=calcF!, stochastic=true)
 
   SingleLayerQG.set_q!(prob, 0*x)
-  
+
   E = Diagnostic(SingleLayerQG.kinetic_energy,     prob, nsteps=nt)
   D = Diagnostic(SingleLayerQG.energy_dissipation, prob, nsteps=nt)
   R = Diagnostic(SingleLayerQG.energy_drag,        prob, nsteps=nt)
@@ -121,10 +121,10 @@ function test_1layerqg_deterministicforcing_energybudget(dev::Device=CPU(); n=25
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
   f = @. 0.01 * cos(4k₀*x) * cos(5l₀*y)
   fh = rfft(f)
-  
+
   function calcF!(Fh, sol, t, clock, vars, params, grid)
     @. Fh = fh * cos(2t)
-    
+
     return nothing
   end
 
@@ -132,7 +132,7 @@ function test_1layerqg_deterministicforcing_energybudget(dev::Device=CPU(); n=25
    stepper="RK4", calcF=calcF!, stochastic=false)
 
   SingleLayerQG.set_q!(prob, 0*x)
-  
+
   E = Diagnostic(SingleLayerQG.kinetic_energy,     prob, nsteps=nt)
   D = Diagnostic(SingleLayerQG.energy_dissipation, prob, nsteps=nt)
   R = Diagnostic(SingleLayerQG.energy_drag,        prob, nsteps=nt)
@@ -145,7 +145,7 @@ function test_1layerqg_deterministicforcing_energybudget(dev::Device=CPU(); n=25
 
   dEdt_numerical = (E[3:E.i] - E[1:E.i-2]) / (2 * prob.clock.dt)
   dEdt_computed  = W[2:E.i-1] - D[2:E.i-1] - R[2:E.i-1]
-  
+
   return isapprox(dEdt_numerical, dEdt_computed, rtol=1e-4)
 end
 
@@ -168,7 +168,7 @@ function test_1layerqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=25
   # Forcing with spectrum ~ exp(-(k-kf)²/(2 dkf²))
   kf, dkf = 12.0, 2.0
   εᶻ = 0.1
-  
+
   forcing_spectrum = zeros(dev, T, (grid.nkr, grid.nl))
   @. forcing_spectrum = exp(-(K - kf)^2 / (2 * dkf^2))
   @. forcing_spectrum = ifelse(grid.Krsq < 2^2,  0, forcing_spectrum)   # no power at low wavenumbers
@@ -182,7 +182,7 @@ function test_1layerqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=25
     eta = device_array(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
     @. Fh = eta * sqrt(forcing_spectrum)
-    
+
     return nothing
   end
 
@@ -190,7 +190,7 @@ function test_1layerqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=25
    stepper="RK4", calcF=calcF!, stochastic=true)
 
   SingleLayerQG.set_q!(prob, 0*x)
-  
+
   Z = Diagnostic(SingleLayerQG.enstrophy,             prob, nsteps=nt)
   D = Diagnostic(SingleLayerQG.enstrophy_dissipation, prob, nsteps=nt)
   R = Diagnostic(SingleLayerQG.enstrophy_drag,        prob, nsteps=nt)
@@ -227,7 +227,7 @@ function test_1layerqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
   f = @. 0.01 * cos(4k₀ * x) * cos(5l₀ * y)
   fh = rfft(f)
-  
+
   function calcF!(Fh, sol, t, clock, vars, params, grid)
     @. Fh = fh * cos(2t)
     return nothing
@@ -237,7 +237,7 @@ function test_1layerqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n
    stepper="RK4", calcF=calcF!, stochastic=false)
 
   SingleLayerQG.set_q!(prob, 0*x)
-  
+
   Z = Diagnostic(SingleLayerQG.enstrophy,             prob, nsteps=nt)
   D = Diagnostic(SingleLayerQG.enstrophy_dissipation, prob, nsteps=nt)
   R = Diagnostic(SingleLayerQG.enstrophy_drag,        prob, nsteps=nt)
@@ -250,7 +250,7 @@ function test_1layerqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n
 
   dZdt_numerical = (Z[3:Z.i] - Z[1:Z.i-2]) / (2 * prob.clock.dt)
   dZdt_computed  = W[2:Z.i-1] - D[2:Z.i-1] - R[2:Z.i-1]
-  
+
   return isapprox(dZdt_numerical, dZdt_computed, rtol=1e-4)
 end
 
@@ -297,7 +297,7 @@ function test_1layerqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, �
   stepforward!(prob, round(Int, nt))
 
   SingleLayerQG.updatevars!(prob)
-  
+
   return isapprox(prob.vars.q, qf, rtol=rtol_singlelayerqg)
 end
 
@@ -329,7 +329,7 @@ function test_1layerqg_energyenstrophy_BarotropicQG(dev::Device=CPU())
   enstrophyq₀ = SingleLayerQG.enstrophy(prob)
 
   return isapprox(energyq₀, energy_calc, rtol=rtol_singlelayerqg) && isapprox(enstrophyq₀, enstrophy_calc, rtol=rtol_singlelayerqg) && SingleLayerQG.potential_energy(prob)==0 &&
-  SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid) == nothing
+  isnothing(SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid))
 end
 
 """
@@ -347,7 +347,7 @@ function test_1layerqg_energies_EquivalentBarotropicQG(dev; deformation_radius=1
   kinetic_energy_calc = 29/9
   potential_energy_calc = 5/(8*deformation_radius^2)
   energy_calc = kinetic_energy_calc + potential_energy_calc
-  
+
   η  = @. cos(10k₀ * x) * cos(10l₀ * y)
   ψ₀ = @. sin(2k₀ * x) * cos(2l₀ * y) + 2sin(k₀ * x) * cos(3l₀ * y)
   q₀ = @. - ((2k₀)^2 + (2l₀)^2) * sin(2k₀ * x) * cos(2l₀ * y) - (k₀^2 + (3l₀)^2) * 2sin(k₀ * x) * cos(3l₀*y) - 1/deformation_radius^2 * ψ₀
@@ -362,7 +362,7 @@ function test_1layerqg_energies_EquivalentBarotropicQG(dev; deformation_radius=1
   energyq₀ = SingleLayerQG.energy(prob)
 
   return isapprox(kinetic_energyq₀, kinetic_energy_calc, rtol=rtol_singlelayerqg) && isapprox(potential_energyq₀, potential_energy_calc, rtol=rtol_singlelayerqg) && isapprox(energyq₀, energy_calc, rtol=rtol_singlelayerqg) &&
-  SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid) == nothing
+  isnothing(SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid))
 end
 
 """
@@ -374,30 +374,30 @@ function test_1layerqg_problemtype(dev, T; deformation_radius=Inf)
   prob = SingleLayerQG.Problem(dev; T=T, deformation_radius=deformation_radius)
 
   A = device_array(dev)
-  
+
   return (typeof(prob.sol)<:A{Complex{T}, 2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T, 2})
 end
 
 function test_streamfunctionfrompv(dev; deformation_radius=1.23)
   prob_barotropicQG = SingleLayerQG.Problem(dev; nx=64, deformation_radius=Inf)
   prob_equivalentbarotropicQG = SingleLayerQG.Problem(dev; nx=64, deformation_radius=deformation_radius)
-  
+
   grid = prob_barotropicQG.grid
   k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly # fundamental wavenumbers
   x, y = gridpoints(grid)
-  
+
   ψ = @. sin(2k₀ * x) * cos(3l₀ * y) + 0*sin(3k₀ * x)
-     
+
   q_barotropic = @. -((2k₀)^2 + (3l₀)^2) * sin(2k₀ * x) * cos(3l₀ * y) - 0*(3k₀)^2 * sin(3k₀ * x)
   q_equivalentbarotropic = @. -((2k₀)^2 + (3l₀)^2 + 1/deformation_radius^2) * sin(2k₀ * x) * cos(3l₀ * y) - 0*((3k₀)^2+ 1/deformation_radius^2) * sin(3k₀ * x)
-  
+
   SingleLayerQG.set_q!(prob_barotropicQG, q_barotropic)
   SingleLayerQG.set_q!(prob_equivalentbarotropicQG, q_equivalentbarotropic)
-  
+
   SingleLayerQG.streamfunctionfrompv!(prob_barotropicQG.vars.ψh, prob_barotropicQG.vars.qh, prob_barotropicQG.params, prob_barotropicQG.grid)
-  
+
   SingleLayerQG.streamfunctionfrompv!(prob_equivalentbarotropicQG.vars.ψh, prob_equivalentbarotropicQG.vars.qh, prob_equivalentbarotropicQG.params, prob_equivalentbarotropicQG.grid)
-  
+
   return (prob_barotropicQG.vars.ψ ≈ ψ && prob_equivalentbarotropicQG.vars.ψ ≈ ψ)
 end
 

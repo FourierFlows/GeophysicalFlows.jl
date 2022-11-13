@@ -60,7 +60,7 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   # Forcing
   kf, dkf = 12.0, 2.0
   ε = 0.1
-  
+
   Kr = CUDA.@allowscalar device_array(dev)([ grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
   forcing_spectrum = zeros(dev, T, (grid.nkr, grid.nl))
@@ -93,7 +93,7 @@ function test_bqgql_stochasticforcingbudgets(dev::Device=CPU(); n=256, dt=0.01, 
   stepforward!(prob, diags, round(Int, nt))
 
   BarotropicQGQL.updatevars!(prob)
-  
+
   dEdt_numerical = (E[2:E.i] - E[1:E.i-1]) / prob.clock.dt
 
   dEdt_computed = W[2:E.i] - D[1:E.i-1] - R[1:E.i-1]
@@ -130,7 +130,7 @@ function test_bqgql_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.0
    stepper="RK4", calcF=calcF!, stochastic=false)
 
   BarotropicQGQL.set_zeta!(prob, 0*x)
-  
+
   E = Diagnostic(BarotropicQGQL.energy,      prob, nsteps=nt)
   D = Diagnostic(BarotropicQGQL.dissipation, prob, nsteps=nt)
   R = Diagnostic(BarotropicQGQL.drag,        prob, nsteps=nt)
@@ -143,7 +143,7 @@ function test_bqgql_deterministicforcingbudgets(dev::Device=CPU(); n=256, dt=0.0
 
   dEdt_numerical = (E[3:E.i] - E[1:E.i-2]) / (2 * prob.clock.dt)
   dEdt_computed  = W[2:E.i-1] - D[2:E.i-1] - R[2:E.i-1]
-  
+
   residual = dEdt_numerical - dEdt_computed
 
   return isapprox(dEdt_numerical, dEdt_computed, atol=1e-10)
@@ -152,7 +152,7 @@ end
 """
     test_bqgql_nonlinearadvection(dt, stepper, dev; kwargs...)
 
-Tests the advection term by timestepping a test problem with timestep `dt` and timestepper 
+Tests the advection term by timestepping a test problem with timestep `dt` and timestepper
 `stepper`. The test problem is derived by picking a solution ζf (with associated
 streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
 forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - νΔζf. One solution
@@ -186,13 +186,13 @@ function test_bqgql_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1
   end
 
   prob = BarotropicQGQL.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
-  
+
   BarotropicQGQL.set_zeta!(prob, qf)
 
   stepforward!(prob, round(Int, nt))
-  
+
   BarotropicQGQL.updatevars!(prob)
-  
+
   return isapprox(prob.vars.zeta + prob.vars.Zeta, qf, rtol = 1e-13)
 end
 
@@ -217,20 +217,20 @@ function test_bqgql_energyenstrophy(dev::Device=CPU())
 
   prob = BarotropicQGQL.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta=eta, stepper="ForwardEuler")
   sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-  
+
   BarotropicQGQL.set_zeta!(prob, ζ₀)
   BarotropicQGQL.updatevars!(prob)
 
   energyζ₀ = BarotropicQGQL.energy(prob)
   enstrophyζ₀ = BarotropicQGQL.enstrophy(prob)
 
-  return isapprox(energyζ₀, energy_calc, rtol=1e-13) && isapprox(enstrophyζ₀, enstrophy_calc, rtol=1e-13) && BarotropicQGQL.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid)==nothing
+  return isapprox(energyζ₀, energy_calc, rtol=1e-13) && isapprox(enstrophyζ₀, enstrophy_calc, rtol=1e-13) && isnothing(BarotropicQGQL.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid))
 end
 
 function test_bqgql_problemtype(dev, T)
   prob = BarotropicQGQL.Problem(dev; T=T)
-  
+
   A = device_array(dev)
-  
+
   return (typeof(prob.sol)<:A{Complex{T}, 2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T, 2})
 end
