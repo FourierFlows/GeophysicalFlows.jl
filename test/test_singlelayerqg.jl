@@ -329,7 +329,7 @@ function test_1layerqg_energyenstrophy_BarotropicQG(dev::Device=CPU())
   enstrophyq₀ = SingleLayerQG.enstrophy(prob)
 
   return isapprox(energyq₀, energy_calc, rtol=rtol_singlelayerqg) && isapprox(enstrophyq₀, enstrophy_calc, rtol=rtol_singlelayerqg) && SingleLayerQG.potential_energy(prob)==0 &&
-  isnothing(SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid))
+  SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid)==nothing
 end
 
 """
@@ -362,7 +362,7 @@ function test_1layerqg_energies_EquivalentBarotropicQG(dev; deformation_radius=1
   energyq₀ = SingleLayerQG.energy(prob)
 
   return isapprox(kinetic_energyq₀, kinetic_energy_calc, rtol=rtol_singlelayerqg) && isapprox(potential_energyq₀, potential_energy_calc, rtol=rtol_singlelayerqg) && isapprox(energyq₀, energy_calc, rtol=rtol_singlelayerqg) &&
-  isnothing(SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid))
+  SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid)==nothing
 end
 
 """

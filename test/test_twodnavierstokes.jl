@@ -285,7 +285,7 @@ function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
 
   (isapprox(energyζ₀, energy_calc, rtol=rtol_twodnavierstokes) &&
    isapprox(enstrophyζ₀, enstrophy_calc, rtol=rtol_twodnavierstokes) &&
-   isnothing(TwoDNavierStokes.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)) && p == params)
+   TwoDNavierStokes.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
 end
 
 function test_twodnavierstokes_problemtype(dev, T)

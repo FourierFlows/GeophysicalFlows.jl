@@ -372,7 +372,7 @@ function test_mqg_energies(dev::Device=CPU();
   return isapprox(KE[1], KE1_calc, rtol=rtol_multilayerqg) &&
          isapprox(KE[2], KE2_calc, rtol=rtol_multilayerqg) &&
          isapprox(PE[1], PE_calc, rtol=rtol_multilayerqg) &&
-         isnothing(MultiLayerQG.addforcing!(prob.timestepper.RHS₁, sol, cl.t, cl, vs, pr, gr))
+         MultiLayerQG.addforcing!(prob.timestepper.RHS₁, sol, cl.t, cl, vs, pr, gr)==nothing
 end
 
 function test_mqg_energysinglelayer(dev::Device=CPU();

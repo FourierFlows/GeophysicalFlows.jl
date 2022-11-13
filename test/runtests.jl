@@ -48,7 +48,7 @@ for dev in devices
     @test test_twodnavierstokes_stochasticforcing_enstrophybudget(dev)
     @test test_twodnavierstokes_energyenstrophy(dev)
     @test test_twodnavierstokes_problemtype(dev, Float32)
-    @test isnothing(TwoDNavierStokes.nothingfunction())
+    @test TwoDNavierStokes.nothingfunction() == nothing
   end
 
   @testset "SingleLayerQG" begin
@@ -73,7 +73,7 @@ for dev in devices
     @test test_1layerqg_stochasticforcing_energybudget(dev)
     @test test_1layerqg_deterministicforcing_enstrophybudget(dev)
     @test test_1layerqg_stochasticforcing_enstrophybudget(dev)
-    @test isnothing(SingleLayerQG.nothingfunction())
+    @test SingleLayerQG.nothingfunction() == nothing
     @test_throws ErrorException("not implemented for finite deformation radius") test_1layerqg_energy_dissipation(dev; deformation_radius=2.23)
     @test_throws ErrorException("not implemented for finite deformation radius") test_1layerqg_enstrophy_dissipation(dev; deformation_radius=2.23)
     @test_throws ErrorException("not implemented for finite deformation radius") test_1layerqg_energy_work(dev; deformation_radius=2.23)
@@ -112,7 +112,7 @@ for dev in devices
     @test test_sqg_problemtype(dev, Float32)
     @test test_sqg_paramsconstructor(dev)
     @test test_sqg_noforcing(dev)
-    @test isnothing(SurfaceQG.nothingfunction())
+    @test SurfaceQG.nothingfunction() == nothing
   end
 
   @testset "MultiLayerQG" begin
@@ -131,7 +131,7 @@ for dev in devices
     @test test_mqg_paramsconstructor(dev)
     @test test_mqg_stochasticforcedproblemconstructor(dev)
     @test test_mqg_problemtype(dev, Float32)
-    @test isnothing(MultiLayerQG.nothingfunction())
+    @test MultiLayerQG.nothingfunction() == nothing
   end
 end
 end # time
