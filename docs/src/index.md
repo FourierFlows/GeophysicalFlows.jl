@@ -79,4 +79,4 @@ The bibtex entry for the paper is:
 
 ## Papers and preprints using `GeophysicalFlows.jl`
 
-1. Bisits, J. I., Stanley G. J., Zika, J. D. Can we accurately quantify a lateral diffusivity using a single tracer release? _Journal of Physical Oceanography_, Early Online Release, DOI: 10.1175/JPO-D-22-0145.1
+1. Bisits, J. I., Stanley G. J., and Zika, J. D. (2022). Can we accurately quantify a lateral diffusivity using a single tracer release? _Journal of Physical Oceanography_, Early Online Release, doi:[10.1175/JPO-D-22-0145.1](https://doi.org/10.1175/JPO-D-22-0145.1)
