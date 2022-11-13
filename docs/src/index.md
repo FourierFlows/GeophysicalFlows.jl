@@ -6,11 +6,9 @@
 [FourierFlows.jl](https://github.com/FourierFlows/FourierFlows.jl) framework to provide
 solvers for problems in Geophysical Fluid Dynamics, on periodic domains using Fourier-based pseudospectral methods.
 
-
 ## Examples
 
 Examples aim to demonstrate the main functionalities of each module. Have a look at our Examples collection!
-
 
 !!! note "Fourier transforms normalization"
 
@@ -37,7 +35,6 @@ Examples aim to demonstrate the main functionalities of each module. Have a look
     Read more in the FourierFlows.jl Documentation; see
     [Grids](https://fourierflows.github.io/FourierFlowsDocumentation/stable/grids/) section.
 
-
 !!! info "Unicode"
     Oftentimes unicode symbols are used in modules for certain variables or parameters. For
     example, `ψ` is commonly used to denote the  streamfunction of the flow, or `∂` is used
@@ -47,7 +44,6 @@ Examples aim to demonstrate the main functionalities of each module. Have a look
     Read more about Unicode symbols in the
     [Julia Documentation](https://docs.julialang.org/en/v1/manual/unicode-input/).
 
-
 ## Developers
 
 The development of GeophysicalFlows.jl started during the 21st AOFD Meeting 2017 by [Navid C. Constantinou](http://www.navidconstantinou.com)
@@ -56,7 +52,6 @@ and [Gregory L. Wagner](https://glwagner.github.io). Since then various people h
 [André Palóczy](https://scholar.google.com/citations?user=o4tYEH8AAAAJ) (see the
 [example in FourierFlows.jl](https://fourierflows.github.io/FourierFlowsDocumentation/stable/literated/OneDShallowWaterGeostrophicAdjustment/)),
 and [others](https://github.com/FourierFlows/GeophysicalFlows.jl/graphs/contributors).
-
 
 ## Citing
 
