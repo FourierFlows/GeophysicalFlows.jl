@@ -55,7 +55,7 @@ function test_1layerqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, 
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
   K  = @. sqrt(grid.Krsq)                      # a 2D array with the total wavenumber
   
@@ -73,7 +73,7 @@ function test_1layerqg_stochasticforcing_energybudget(dev::Device=CPU(); n=256, 
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
-    eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
+    eta = device_array(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
     @. Fh = eta * sqrt(forcing_spectrum)
     
@@ -114,7 +114,7 @@ function test_1layerqg_deterministicforcing_energybudget(dev::Device=CPU(); n=25
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
   k₀, l₀ = 2π / grid.Lx, 2π/grid.Ly
 
@@ -161,7 +161,7 @@ function test_1layerqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=25
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
   K  = @. sqrt(grid.Krsq)                      # a 2D array with the total wavenumber
 
@@ -179,7 +179,7 @@ function test_1layerqg_stochasticforcing_enstrophybudget(dev::Device=CPU(); n=25
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
-    eta = ArrayType(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
+    eta = device_array(dev)(exp.(2π * im * rand(T, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0
     @. Fh = eta * sqrt(forcing_spectrum)
     
@@ -220,7 +220,7 @@ function test_1layerqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
   k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly
 
@@ -272,7 +272,7 @@ function test_1layerqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, �
   tf = 1.0
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   ψf = @. sin(2x) * cos(2y) + 2sin(x) * cos(3y)
@@ -309,7 +309,7 @@ Tests the energy and enstrophy function for a SingleLayerQG problem.
 function test_1layerqg_energyenstrophy_BarotropicQG(dev::Device=CPU())
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly)
   k₀, l₀ = 2π/Lx, 2π/Ly # fundamental wavenumbers
   x, y = gridpoints(grid)
 
@@ -340,7 +340,7 @@ Tests the kinetic and potential energy for an equivalent barotropic SingleLayerQ
 function test_1layerqg_energies_EquivalentBarotropicQG(dev; deformation_radius=1.23)
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly)
   k₀, l₀ = 2π/Lx, 2π/Ly # fundamental wavenumbers
   x, y = gridpoints(grid)
 
@@ -373,7 +373,7 @@ Tests the SingleLayerQG problem constructor for different DataType `T`.
 function test_1layerqg_problemtype(dev, T; deformation_radius=Inf)
   prob = SingleLayerQG.Problem(dev; T=T, deformation_radius=deformation_radius)
 
-  A = ArrayType(dev)
+  A = device_array(dev)
   
   return (typeof(prob.sol)<:A{Complex{T}, 2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T, 2})
 end

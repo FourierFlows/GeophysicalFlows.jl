@@ -74,6 +74,8 @@ GeophysicalFlows.MultiLayerQG.pvfromstreamfunction!
 
 ```@docs
 GeophysicalFlows.MultiLayerQG.LinearEquation
+GeophysicalFlows.MultiLayerQG.calcS!
+GeophysicalFlows.MultiLayerQG.calcS⁻¹!
 GeophysicalFlows.MultiLayerQG.calcNlinear!
 GeophysicalFlows.MultiLayerQG.calcN_advection!
 GeophysicalFlows.MultiLayerQG.calcN_linearadvection!

@@ -6,10 +6,12 @@ export
   updatevars!,
 
   energy,
+  energy_dissipation,
   energy_dissipation_hyperviscosity,
   energy_dissipation_hypoviscosity,
   energy_work,
   enstrophy,
+  enstrophy_dissipation,
   enstrophy_dissipation_hyperviscosity,
   enstrophy_dissipation_hypoviscosity,
   enstrophy_work
@@ -27,27 +29,30 @@ using FourierFlows: parsevalsum
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev::Device=CPU();
-                nx = 256,
-                ny = nx,
-                Lx = 2π,
-                Ly = Lx,
-                 ν = 0,
-                nν = 1,
-                 μ = 0,
-                nμ = 0,
-                dt = 0.01,
-           stepper = "RK4",
-             calcF = nothingfunction,
-        stochastic = false,
-  aliased_fraction = 1/3,
-                 T = Float64)
+    Problem(dev::Device = CPU();
+                     nx = 256,
+                     ny = nx,
+                     Lx = 2π,
+                     Ly = Lx,
+                      ν = 0,
+                     nν = 1,
+                      μ = 0,
+                     nμ = 0,
+                     dt = 0.01,
+                stepper = "RK4",
+                  calcF = nothingfunction,
+             stochastic = false,
+       aliased_fraction = 1/3,
+                      T = Float64)
 
-Construct a two-dimensional Navier-Stokes `problem` on device `dev`.
+Construct a two-dimensional Navier-Stokes problem on device `dev`.
+
+Arguments
+=========
+  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
 
 Keyword arguments
 =================
-  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
   - `nx`: Number of grid points in ``x``-domain.
   - `ny`: Number of grid points in ``y``-domain.
   - `Lx`: Extent of the ``x``-domain.
@@ -83,15 +88,15 @@ function Problem(dev::Device=CPU();
   aliased_fraction = 1/3,
                  T = Float64)
 
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
 
   params = Params(T(ν), nν, T(μ), nμ, calcF)
 
-  vars = calcF == nothingfunction ? DecayingVars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
+  vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
   equation = Equation(params, grid)
 
-  return FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+  return FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 end
 
 
@@ -171,9 +176,9 @@ struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
         v :: Aphys
     "Fourier transform of relative vorticity"
        ζh :: Atrans
-    "Fourier transform of x-component of velocity"
+    "Fourier transform of ``x``-component of velocity"
        uh :: Atrans
-    "Fourier transform of y-component of velocity"
+    "Fourier transform of ``y``-component of velocity"
        vh :: Atrans
     "Fourier transform of forcing"
        Fh :: F
@@ -188,12 +193,12 @@ const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractAr
 """
     DecayingVars(dev, grid)
 
-Return the variables `vars` for unforced two-dimensional Navier-Stokes problem on device `dev` and 
-with `grid`.
+Return the variables for unforced two-dimensional Navier-Stokes problem on `grid`.
 """
-function DecayingVars(::Dev, grid::AbstractGrid) where Dev
+function DecayingVars(grid::AbstractGrid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
-  
+
   @devzeros Dev T (grid.nx, grid.ny) ζ u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) ζh uh vh
   
@@ -201,11 +206,12 @@ function DecayingVars(::Dev, grid::AbstractGrid) where Dev
 end
 
 """
-    ForcedVars(dev, grid)
+    ForcedVars(grid)
 
-Return the variables `vars` for forced two-dimensional Navier-Stokes on device `dev` and with `grid`.
+Return the variables for forced two-dimensional Navier-Stokes on `grid`.
 """
-function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function ForcedVars(grid::AbstractGrid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
   
   @devzeros Dev T (grid.nx, grid.ny) ζ u v
@@ -215,14 +221,14 @@ function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
 end
 
 """
-    StochasticForcedVars(dev, grid)
+    StochasticForcedVars(grid)
 
-Return the variables `vars` for stochastically forced two-dimensional Navier-Stokes on device `dev` and 
-with `grid`.
+Return the variables for stochastically forced two-dimensional Navier-Stokes on `grid`.
 """
-function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function StochasticForcedVars(grid::AbstractGrid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
-  
+
   @devzeros Dev T (grid.nx, grid.ny) ζ u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) ζh uh vh Fh prevsol
   

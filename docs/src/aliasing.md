@@ -11,7 +11,7 @@ in Fourier space before transforming to physical space to compute nonlinear term
     Users can construct a `grid` with different `aliased_fraction` via
     
     ```julia
-    julia> grid = OneDGrid(64, 2π, aliased_fraction=1/2)
+    julia> grid = OneDGrid(; nx=64, Lx=2π, aliased_fraction=1/2)
     
     julia> OneDimensionalGrid
              ├─────────── Device: CPU

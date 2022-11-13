@@ -44,7 +44,7 @@ The linear operator is constructed in `Equation`
 GeophysicalFlows.TwoDNavierStokes.Equation
 ```
 
-The nonlinear terms are computed via
+The nonlinear terms are computed via `calcN!`,
 
 ```@docs
 GeophysicalFlows.TwoDNavierStokes.calcN!
@@ -59,8 +59,9 @@ and [`addforcing!`](@ref GeophysicalFlows.TwoDNavierStokes.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.TwoDNavierStokes.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.TwoDNavierStokes.Vars).
 
-For decaying case (no forcing, ``F=0``), `vars` can be constructed with [`Vars`](@ref GeophysicalFlows.TwoDNavierStokes.Vars). 
-For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.TwoDNavierStokes.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.TwoDNavierStokes.StochasticForcedVars).
+For the decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.TwoDNavierStokes.Vars).
+For the forced case (``F \ne 0``) variables are constructed with either [`ForcedVars`](@ref GeophysicalFlows.TwoDNavierStokes.ForcedVars)
+or [`StochasticForcedVars`](@ref GeophysicalFlows.TwoDNavierStokes.StochasticForcedVars).
 
 
 ### Helper functions
@@ -90,10 +91,13 @@ Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.TwoDNavie
 
 ## Examples
 
-- [`examples/twodnavierstokes_decaying.jl`](@ref twodnavierstokes_decaying_example): Simulates decaying two-dimensional turbulence reproducing the results by:
+- [`examples/twodnavierstokes_decaying.jl`](@ref twodnavierstokes_decaying_example): Simulates decaying two-dimensional
+  turbulence reproducing the results by:
 
   > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43.
 
-- [`examples/twodnavierstokes_stochasticforcing.jl`](@ref twodnavierstokes_stochasticforcing_example): Simulate forced-dissipative two-dimensional turbulence with isotropic temporally delta-correlated stochastic forcing.
+- [`examples/twodnavierstokes_stochasticforcing.jl`](@ref twodnavierstokes_stochasticforcing_example): Simulate forced-dissipative
+  two-dimensional turbulence with isotropic temporally delta-correlated stochastic forcing.
 
-- [`examples/twodnavierstokes_stochasticforcing_budgets.jl`](@ref twodnavierstokes_stochasticforcing_budgets_example): Simulate forced-dissipative two-dimensional turbulence demonstrating how we can compute the energy and enstrophy budgets.
+- [`examples/twodnavierstokes_stochasticforcing_budgets.jl`](@ref twodnavierstokes_stochasticforcing_budgets_example): Simulate
+  forced-dissipative two-dimensional turbulence demonstrating how we can compute the energy and enstrophy budgets.

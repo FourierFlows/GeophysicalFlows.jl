@@ -73,7 +73,7 @@ q1 and q2. Similarly, that streamfunctionfrompv gives ψ1 and ψ2 from q1 and q2
 """
 function test_pvtofromstreamfunction_2layer(dev::Device=CPU())
   n, L = 128, 2π
-  gr = TwoDGrid(dev, n, L)
+  gr = TwoDGrid(dev; nx=n, Lx=L)
 
   nlayers = 2      # these choice of parameters give the
   f₀, g = 1, 1     # desired PV-streamfunction relations
@@ -116,7 +116,7 @@ q1, q2, and q3.
 """
 function test_pvtofromstreamfunction_3layer(dev::Device=CPU())
   n, L = 128, 2π
-  gr = TwoDGrid(dev, n, L)
+  gr = TwoDGrid(dev; nx=n, Lx=L)
 
   nlayers = 3            # these choice of parameters give the
   f₀, g = 1, 1           # desired PV-streamfunction relations
@@ -165,14 +165,14 @@ that a solution to the problem forced by this Ff is then qf.
 function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
                                      n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   
-  A = ArrayType(dev)
+  A = device_array(dev)
 
   tf = 0.5
   nt = round(Int, tf/dt)
 
   nx, ny = 64, 66
   Lx, Ly = 2π, 2π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev; nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -256,14 +256,14 @@ is unstable.)
 function test_mqg_linearadvection(dt, stepper, dev::Device=CPU();
                                   n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   
-  A = ArrayType(dev)
+  A = device_array(dev)
   
   tf = 0.5
   nt = round(Int, tf/dt)
 
   nx, ny = 64, 66
   Lx, Ly = 2π, 2π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev; nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -343,7 +343,7 @@ function test_mqg_energies(dev::Device=CPU();
                            dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 64, 66
   Lx, Ly = 2π, 2π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev; nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -379,7 +379,7 @@ function test_mqg_energysinglelayer(dev::Device=CPU();
                                     dt=0.001, stepper="ForwardEuler", nlayers=1, μ=0.0, ν=0.0, nν=1)
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev; nx, Lx, ny, Ly)
   
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -407,7 +407,7 @@ initializing it with a flow field whose fluxes are known.
 function test_mqg_fluxes(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 128, 126
   Lx, Ly = 2π, 2π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev; nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -447,7 +447,7 @@ function test_mqg_fluxessinglelayer(dev::Device=CPU(); dt=0.001, stepper="Forwar
   
   nx, ny = 128, 126
   Lx, Ly = 2π, 2π
-  gr = TwoDGrid(dev, nx, Lx, ny, Ly)
+  gr = TwoDGrid(dev; nx, Lx, ny, Ly)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -475,7 +475,7 @@ given `q` or `ψ` respectively.
 function test_mqg_setqsetψ(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 32, 34
   L = 2π
-  gr = TwoDGrid(dev, nx, L, ny, L)
+  gr = TwoDGrid(dev; nx, Lx=L, ny, Ly=L)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
@@ -521,7 +521,7 @@ Tests that `Params` constructor works with both mean flow `U` being a floats
 function test_mqg_paramsconstructor(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler")
   nx, ny = 32, 34
   L = 2π
-  gr = TwoDGrid(dev, nx, L, ny, L)
+  gr = TwoDGrid(dev; nx, Lx=L, ny, Ly=L)
 
   nlayers = 2       # these choice of parameters give the
   f₀, g = 1, 1      # desired PV-streamfunction relations
@@ -550,7 +550,7 @@ function test_mqg_problemtype(dev, T)
   prob1 = MultiLayerQG.Problem(1, dev; T)
   prob2 = MultiLayerQG.Problem(2, dev; T)
   
-  A = ArrayType(dev)
+  A = device_array(dev)
   
   return typeof(prob1.sol)<:A{Complex{T}, 3} &&
          typeof(prob1.grid.Lx)==T &&

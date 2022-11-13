@@ -1,7 +1,7 @@
 function test_sqg_problemtype(dev, T)
   prob = SurfaceQG.Problem(dev; T=T)
 
-  A = ArrayType(dev)
+  A = device_array(dev)
 
   (typeof(prob.sol)<:A{Complex{T},2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T,2})
 end
@@ -35,7 +35,7 @@ function test_sqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
   tf = 0.5  # SQG piles up energy at small scales so running for t ⪆ 0.5 brings instability
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   ψf = @.             sin(2x)*cos(2y) +            2sin(x)*cos(3y)
@@ -70,7 +70,7 @@ function test_sqg_kineticenergy_buoyancyvariance(dev::Device=CPU())
   nx, Lx  = 128, 2π
   ny, Ly  = 128, 3π
   
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly)
   x, y = gridpoints(grid)
 
   k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly # fundamental wavenumbers
@@ -115,7 +115,7 @@ function test_sqg_noforcing(dev::Device=CPU())
   SurfaceQG.addforcing!(prob_unforced.timestepper.N, prob_unforced.sol, prob_unforced.clock.t, prob_unforced.clock, prob_unforced.vars, prob_unforced.params, prob_unforced.grid)
     
   function calcF!(Fh, sol, t, clock, vars, params, grid)
-    Fh .= 2 * ArrayType(dev)(ones(size(sol)))
+    Fh .= 2 * device_array(dev)(ones(size(sol)))
     return nothing
   end
   
@@ -123,7 +123,7 @@ function test_sqg_noforcing(dev::Device=CPU())
 
   SurfaceQG.addforcing!(prob_forced.timestepper.N, prob_forced.sol, prob_forced.clock.t, prob_forced.clock, prob_forced.vars, prob_forced.params, prob_forced.grid)
   
-  return prob_unforced.timestepper.N == Complex.(ArrayType(dev)(zeros(size(prob_unforced.sol)))) && prob_forced.timestepper.N == Complex.(2*ArrayType(dev)(ones(size(prob_unforced.sol))))
+  return prob_unforced.timestepper.N == Complex.(device_array(dev)(zeros(size(prob_unforced.sol)))) && prob_forced.timestepper.N == Complex.(2*device_array(dev)(ones(size(prob_unforced.sol))))
 end
 
 function test_sqg_deterministicforcing_buoyancy_variance_budget(dev::Device=CPU(); n=256, dt=0.01, L=2π, ν=1e-7, nν=2, tf=10.0)
@@ -132,7 +132,7 @@ function test_sqg_deterministicforcing_buoyancy_variance_budget(dev::Device=CPU(
   dt, tf = 0.005, 10
   nt = round(Int, tf/dt)
 
-  grid  = TwoDGrid(dev, n, L)
+  grid  = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   # buoyancy forcing = 0.01cos(4x)cos(5y)cos(2t)
@@ -170,12 +170,12 @@ function test_sqg_stochasticforcing_buoyancy_variance_budget(dev::Device=CPU(); 
   kf, dkf = 12.0, 2.0
   εᵇ = 0.01
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
-  Kr = ArrayType(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
+  Kr = device_array(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
-  forcing_spectrum = ArrayType(dev)(zero(grid.Krsq))
+  forcing_spectrum = device_array(dev)(zero(grid.Krsq))
   @. forcing_spectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
   @. forcing_spectrum = ifelse(grid.Krsq < 2^2, 0, forcing_spectrum)
   @. forcing_spectrum = ifelse(grid.Krsq > 20^2, 0, forcing_spectrum)
@@ -186,7 +186,7 @@ function test_sqg_stochasticforcing_buoyancy_variance_budget(dev::Device=CPU(); 
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
-    eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
+    eta = device_array(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
     @. Fh = eta * sqrt(forcing_spectrum)
     nothing

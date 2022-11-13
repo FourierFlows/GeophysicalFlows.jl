@@ -17,9 +17,11 @@ where ``q_j`` incorporates the relative vorticity in each layer ``\nabla^2 \psi_
 vortex stretching terms:
 
 ```math
-q_1 = \nabla^2 \psi_1 + F_{3/2, 1} (\psi_2 - \psi_1) ,\\
-q_j = \nabla^2 \psi_j + F_{j-1/2, j} (\psi_{j-1} - \psi_j) + F_{j+1/2, j} (\psi_{j+1} - \psi_j) , \quad j = 2, \dots, n-1 ,\\
-q_n = \nabla^2 \psi_n + F_{n-1/2, n} (\psi_{n-1} - \psi_n) .
+\begin{aligned}
+q_1 &= \nabla^2 \psi_1 + F_{3/2, 1} (\psi_2 - \psi_1) ,\\
+q_j &= \nabla^2 \psi_j + F_{j-1/2, j} (\psi_{j-1} - \psi_j) + F_{j+1/2, j} (\psi_{j+1} - \psi_j) , \quad j = 2, \dots, n-1 ,\\
+q_n &= \nabla^2 \psi_n + F_{n-1/2, n} (\psi_{n-1} - \psi_n) .
+\end{aligned}
 ```
 
 with
@@ -59,8 +61,10 @@ Including an imposed zonal flow ``U_j(y)`` in each layer, the equations of motio
 with
 
 ```math
-\partial_y Q_j \equiv \beta - \partial_y^2 U_j - (1-\delta_{j,1}) F_{j-1/2, j} (U_{j-1} - U_j) - (1 - \delta_{j,n}) F_{j+1/2, j} (U_{j+1} - U_j) + \delta_{j,n} \partial_y \eta , \\
-\partial_x Q_j \equiv \delta_{j, n} \partial_x \eta .
+\begin{aligned}
+\partial_y Q_j &\equiv \beta - \partial_y^2 U_j - (1-\delta_{j,1}) F_{j-1/2, j} (U_{j-1} - U_j) - (1 - \delta_{j,n}) F_{j+1/2, j} (U_{j+1} - U_j) + \delta_{j,n} \partial_y \eta , \\
+\partial_x Q_j &\equiv \delta_{j, n} \partial_x \eta .
+\end{aligned}
 ```
 
 
@@ -103,7 +107,7 @@ GeophysicalFlows.MultiLayerQG.calcN!
 which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.MultiLayerQG.calcN_advection!) 
 and [`addforcing!`](@ref GeophysicalFlows.MultiLayerQG.addforcing!).
 
-!!! tip "Linearized MultiLayerQG dynamics "
+!!! tip "Linearized MultiLayerQG dynamics"
     The `MultiLayerQG` module includes also a linearized version of the dynamics about a base
     flow ``U_j(y)``, ``j = 1, \dots, n``; see [`LinearEquation`](@ref GeophysicalFlows.MultiLayerQG.LinearEquation), 
     [`calcNlinear!`](@ref GeophysicalFlows.MultiLayerQG.calcNlinear!), and 
@@ -115,7 +119,7 @@ and [`addforcing!`](@ref GeophysicalFlows.MultiLayerQG.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.MultiLayerQG.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.MultiLayerQG.Vars).
 
-For decaying case (no forcing, ``F=0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.MultiLayerQG.DecayingVars). 
+For the decaying case (no forcing, ``F=0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.MultiLayerQG.DecayingVars). 
 For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.MultiLayerQG.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.MultiLayerQG.StochasticForcedVars).
 
 
@@ -130,14 +134,14 @@ GeophysicalFlows.MultiLayerQG.updatevars!
 ### Diagnostics
 
 The eddy kinetic energy in each layer and the eddy potential energy that corresponds to each 
-fluid interface is computed via `energies()`:
+fluid interface is computed via `energies`:
 
 ```@docs
 GeophysicalFlows.MultiLayerQG.energies
 ```
 
 The lateral eddy fluxes in each layer and the vertical fluxes across fluid interfaces are
-computed via `fluxes()`:
+computed via `fluxes`:
 
 ```@docs
 GeophysicalFlows.MultiLayerQG.fluxes
@@ -146,4 +150,5 @@ GeophysicalFlows.MultiLayerQG.fluxes
 
 ## Examples
 
- - [`examples/multilayerqg_2layer.jl`](@ref multilayerqg_2layer_example): Simulate the growth and equilibration of baroclinic eddy turbulence in the Phillips 2-layer model.
+ - [`examples/multilayerqg_2layer.jl`](@ref multilayerqg_2layer_example): Simulate the growth and equilibration of baroclinic
+   eddy turbulence in the Phillips 2-layer model.

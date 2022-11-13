@@ -2,6 +2,7 @@ module SingleLayerQG
 
 export
   Problem,
+  streamfunctionfrompv!,
   set_q!,
   updatevars!,
 
@@ -29,29 +30,32 @@ using FourierFlows: parsevalsum, parsevalsum2
 nothingfunction(args...) = nothing
 
 """
-    Problem(dev::Device=CPU();
-                      nx = 256,
-                      ny = nx,
-                      Lx = 2π,
-                      Ly = Lx,
-                       β = 0.0,
-      deformation_radius = Inf,
-                     eta = nothing,
-                       ν = 0.0,
-                      nν = 1,
-                       μ = 0.0,
-                      dt = 0.01,
-                 stepper = "RK4",
-                   calcF = nothingfunction,
-              stochastic = false,
-        aliased_fraction = 1/3,
-                       T = Float64)
+    Problem(dev::Device = CPU();
+                     nx = 256,
+                     ny = nx,
+                     Lx = 2π,
+                     Ly = Lx,
+                      β = 0.0,
+     deformation_radius = Inf,
+                    eta = nothing,
+                      ν = 0.0,
+                     nν = 1,
+                      μ = 0.0,
+                     dt = 0.01,
+                stepper = "RK4",
+                  calcF = nothingfunction,
+             stochastic = false,
+       aliased_fraction = 1/3,
+                      T = Float64)
 
-Construct a single-layer quasi-geostrophic `problem` on device `dev`.
+Construct a single-layer quasi-geostrophic problem on device `dev`.
+
+Arguments
+=========
+  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
 
 Keyword arguments
 =================
-  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
   - `nx`: Number of grid points in ``x``-domain.
   - `ny`: Number of grid points in ``y``-domain.
   - `Lx`: Extent of the ``x``-domain.
@@ -93,7 +97,7 @@ function Problem(dev::Device=CPU();
                    T = Float64)
 
   # the grid
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly; aliased_fraction=aliased_fraction, T=T)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
   x, y = gridpoints(grid)
 
   # topographic PV
@@ -101,11 +105,11 @@ function Problem(dev::Device=CPU();
 
   params = deformation_radius == Inf ? BarotropicQGParams(grid, T(β), eta, T(μ), T(ν), nν, calcF) : EquivalentBarotropicQGParams(grid, T(β), T(deformation_radius), eta, T(μ), T(ν), nν, calcF)
 
-  vars = calcF == nothingfunction ? DecayingVars(dev, grid) : (stochastic ? StochasticForcedVars(dev, grid) : ForcedVars(dev, grid))
+  vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
   equation = Equation(params, grid)
 
-  return FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+  return FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 end
 
 
@@ -228,17 +232,17 @@ struct Vars{Aphys, Atrans, F, P} <: SingleLayerQGVars
         q :: Aphys
     "streamfunction"
         ψ :: Aphys
-    "x-component of velocity"
+    "``x``-component of velocity"
         u :: Aphys
-    "y-component of velocity"
+    "``y``-component of velocity"
         v :: Aphys
     "Fourier transform of relative vorticity (+ vortex stretching)"
        qh :: Atrans
     "Fourier transform of streamfunction"
        ψh :: Atrans
-    "Fourier transform of x-component of velocity"
+    "Fourier transform of ``x``-component of velocity"
        uh :: Atrans
-    "Fourier transform of y-component of velocity"
+    "Fourier transform of ``y``-component of velocity"
        vh :: Atrans
     "Fourier transform of forcing"
        Fh :: F
@@ -250,11 +254,12 @@ const ForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, Nothi
 const StochasticForcedVars = Vars{<:AbstractArray, <:AbstractArray, <:AbstractArray, <:AbstractArray}
 
 """
-    DecayingVars(dev, grid)
+    DecayingVars(grid)
 
-Return the `vars` for unforced single-layer QG problem on device `dev` and with `grid`
+Return the variables for unforced single-layer QG problem on `grid`.
 """
-function DecayingVars(dev::Dev, grid::AbstractGrid) where Dev
+function DecayingVars(grid::AbstractGrid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
 
   @devzeros Dev T (grid.nx, grid.ny) q u v ψ
@@ -264,11 +269,12 @@ function DecayingVars(dev::Dev, grid::AbstractGrid) where Dev
 end
 
 """
-    ForcedVars(dev, grid)
+    ForcedVars(grid)
 
-Return the `vars` for forced single-layer QG problem on device dev and with `grid`.
+Return the variables for forced single-layer QG problem on `grid`.
 """
-function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function ForcedVars(grid::AbstractGrid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
 
   @devzeros Dev T (grid.nx, grid.ny) q u v ψ
@@ -278,12 +284,14 @@ function ForcedVars(dev::Dev, grid::AbstractGrid) where Dev
 end
 
 """
-    StochasticForcedVars(dev, grid)
+    StochasticForcedVars(grid)
 
-Return the vars for stochastically forced barotropic QG problem on device dev and with `grid`.
+Return the variables for stochastically forced barotropic QG problem on `grid`.
 """
-function StochasticForcedVars(dev::Dev, grid::AbstractGrid) where Dev
+function StochasticForcedVars(grid::AbstractGrid)
+  Dev = typeof(grid.device)
   T = eltype(grid)
+
   @devzeros Dev T (grid.nx, grid.ny) q u v ψ
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) qh uh vh ψh Fh prevsol
 
@@ -302,7 +310,7 @@ Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, q+η)`` in c
 form, i.e., ``- ∂_x[(∂_y ψ)(q+η)] - ∂_y[(∂_x ψ)(q+η)]`` and store it in `N`:
 
 ```math
-N = - \\widehat{𝖩(ψ, q+η)} = - i k_x \\widehat{u (q+η)} - i k_y \\widehat{v (q+η)} .
+N = - \\widehat{𝖩(ψ, q + η)} = - i k_x \\widehat{u (q + η)} - i k_y \\widehat{v (q + η)} .
 ```
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
@@ -336,7 +344,7 @@ end
 Calculate the nonlinear term, that is the advection term and the forcing,
 
 ```math
-N = - \\widehat{𝖩(ψ, q+η)} + F̂ .
+N = - \\widehat{𝖩(ψ, q + η)} + F̂ .
 ```
 """
 function calcN!(N, sol, t, clock, vars, params, grid)

@@ -61,6 +61,7 @@ sitename = "GeophysicalFlows.jl",
             "Installation instructions" => "installation_instructions.md",
             "Aliasing" => "aliasing.md",
             "GPU" => "gpu.md",
+            "Visualize output" => "visualize.md",
             "Examples" => [
               "TwoDNavierStokes" => Any[
                 "literated/twodnavierstokes_decaying.md",
@@ -90,7 +91,7 @@ sitename = "GeophysicalFlows.jl",
               "modules/multilayerqg.md",
               "modules/surfaceqg.md"
             ],
-            "Stochastic Forcing" => "stochastic_forcing.md",
+            "Stochastic forcing" => "stochastic_forcing.md",
             "Contributor's guide" => "contributing.md",
             "Library" => Any[
               "lib/types.md",
