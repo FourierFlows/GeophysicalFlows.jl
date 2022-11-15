@@ -10,7 +10,8 @@ import # use 'import' rather than 'using' for submodules to keep namespace clean
   GeophysicalFlows.SingleLayerQG,
   GeophysicalFlows.BarotropicQGQL,
   GeophysicalFlows.MultiLayerQG,
-  GeophysicalFlows.SurfaceQG
+  GeophysicalFlows.SurfaceQG,
+  GeophysicalFlows.ShallowWater
 
 using FourierFlows: parsevalsum
 using GeophysicalFlows: lambdipole, peakedisotropicspectrum
@@ -29,6 +30,13 @@ testtime = @elapsed begin
 for dev in devices
   
   @info "testing on " * string(typeof(dev))
+  
+  @testset "ShallowWater" begin
+    include("test_shallowwater.jl")
+      
+    @test test_swe_problemtype(dev, Float32)
+    @test ShallowWater.nothingfunction() == nothing
+  end
   
   @testset "Utils" begin
     include("test_utils.jl")

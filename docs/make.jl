@@ -89,7 +89,8 @@ sitename = "GeophysicalFlows.jl",
               "modules/singlelayerqg.md",
               "modules/barotropicqgql.md",
               "modules/multilayerqg.md",
-              "modules/surfaceqg.md"
+              "modules/surfaceqg.md",
+              "modules/shallowwater.md"
             ],
             "Stochastic forcing" => "stochastic_forcing.md",
             "Contributor's guide" => "contributing.md",
