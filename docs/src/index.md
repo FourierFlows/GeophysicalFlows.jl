@@ -28,7 +28,7 @@ Examples aim to demonstrate the main functionalities of each module. Have a look
     FFT algorithm uses, `uh` _is not_ exactly the same as ``\hat{u}`` above. Instead,
     
     ```math
-    \hat{u}(k_x) = \frac{𝚞𝚑}{n_x e^{- i k_x x_0}} ,
+    \hat{u}(k_x) = \frac{𝚞𝚑}{n_x e^{i k_x x_0}} ,
     ```
     
     where ``n_x`` is the total number of grid points in ``x`` and ``x_0`` is the left-most 
