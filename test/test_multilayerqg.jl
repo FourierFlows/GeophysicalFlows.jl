@@ -540,44 +540,45 @@ function test_mqg_setηxsetηy_nonperiodic(dev::Device=CPU(); dt=0.001, stepper=
   sx = 1e-2
   sy = 1e-1
 
-  hnonperiodic = zeros(nx, ny)
-  hperiodic = zeros(nx, ny)
-  @. hnonperiodic += sx*x + sy*y         # Non-periodic part of topography (slope).
-  @. hperiodic += h₀*cos(k₀*x)*cos(l₀*y) # Periodic part of topography (bumps).
-  ηnonperiodic = f₀*hnonperiodic/H[2]
-  ηperiodic = f₀*hperiodic/H[2]
+  hnonperiodic = zeros(dev, T, nx, ny)
+     hperiodic = zeros(dev, T, nx, ny)
+
+  @. hnonperiodic += sx * x + sy * y             # Non-periodic part of topography (slope).
+  @.    hperiodic += h₀ * cos(k₀*x) * cos(l₀*y)  # Periodic part of topography (bumps).
+  
+  ηnonperiodic = f₀ * hnonperiodic / H[2]
+     ηperiodic = f₀ * hperiodic / H[2]
 
   # Non-periodic part of topographic PV gradients (slope).
-  ηxnonperiodic = zeros(nx, ny)
-  ηynonperiodic = zeros(nx, ny)
-  @. ηxnonperiodic += f₀*sx/H[2]
-  @. ηynonperiodic += f₀*sy/H[2]
+  ηxnonperiodic = zeros(dev, T, nx, ny)
+  ηynonperiodic = zeros(dev, T, nx, ny)
+  @. ηxnonperiodic += f₀ * sx / H[2]
+  @. ηynonperiodic += f₀ * sy / H[2]
 
   prob = MultiLayerQG.Problem(nlayers, dev;
-                              nx=nx, ny=ny, Lx=L, Ly=L,
-                              f₀=f₀, g=g, H=H, ρ=ρ, U=U, μ=μ, β=0,
+                              nx, ny, Lx=L, Ly=L, f₀, g, H, ρ, U, μ, β=0,
                               eta=ηperiodic,
                               etax_nonperiodic=ηxnonperiodic,
                               etay_nonperiodic=ηynonperiodic,
                               linear=false,
-                              dt=dt, stepper=stepper, aliased_fraction=0)
+                              dt, stepper, aliased_fraction=0)
   params = prob.params
 
   # Test to see if the internally-computed total bottom Qx and Qy are correct.
-  Q2y_ana = zeros(nx, ny)
-  Q2x_ana = zeros(nx, ny)
-  gp = g*(ρ[2] - ρ[1])/ρ[2]
-  F1 = f₀^2/(H[2]*gp)
-  Psi1y, Psi2y = - U[1], - U[2]
-  @. Q2y_ana += - f₀*h₀*l₀*cos(k₀*x)*sin(l₀*y)/H[2] + F1*(Psi1y - Psi2y)
-  @. Q2x_ana += - f₀*h₀*k₀*sin(k₀*x)*cos(l₀*y)/H[2]
+  Q2y_analytic = zeros(dev, T, nx, ny)
+  Q2x_analytic = zeros(dev, T, nx, ny)
+  g′ = g * (ρ[2] - ρ[1]) / ρ[2]
+  F1 = f₀^2 / (H[2] * g′)
+  Psi1y, Psi2y = -U[1], -U[2]
+  @. Q2y_analytic += - f₀ * h₀ * l₀ * cos(k₀*x) * sin(l₀*y) / H[2] + F1 * (Psi1y - Psi2y)
+  @. Q2x_analytic += - f₀ * h₀ * k₀ * sin(k₀*x) * cos(l₀*y) / H[2]
 
-  Q2x_ana += ηxnonperiodic
-  Q2y_ana += ηynonperiodic
+  Q2x_analytic += ηxnonperiodic
+  Q2y_analytic += ηynonperiodic
   nxh, nyh = Int(nx/2), Int(ny/2)
 
-return isapprox(params.Qx[:, nxh, 2], Q2x_ana[:, nxh], rtol=rtol_multilayerqg) &&
-       isapprox(params.Qy[nyh, :, 2], Q2y_ana[nyh, :], rtol=rtol_multilayerqg)
+return isapprox(params.Qx[:, nxh, 2], Q2x_analytic[:, nxh], rtol=rtol_multilayerqg) &&
+       isapprox(params.Qy[nyh, :, 2], Q2y_analytic[nyh, :], rtol=rtol_multilayerqg)
 end
 
 """
