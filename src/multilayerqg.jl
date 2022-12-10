@@ -73,8 +73,8 @@ Keyword arguments
   - `H`: Rest height of each fluid layer.
   - `ρ`: Density of each fluid layer.
   - `eta`: Periodic component of the topographic potential vorticity.
-  - `etax_nonperiodic`: x-gradient of the non-periodic component of the topographic potential vorticity.
-  - `etay_nonperiodic`: y-gradient of the non-periodic component of the topographic potential vorticity.
+  - `etax_nonperiodic`: ``x``-gradient of the non-periodic component of the topographic potential vorticity.
+  - `etay_nonperiodic`: ``y``-gradient of the non-periodic component of the topographic potential vorticity.
   - `μ`: Linear bottom drag coefficient.
   - `ν`: Small-scale (hyper)-viscosity coefficient.
   - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
@@ -101,8 +101,8 @@ function Problem(nlayers::Int,                        # number of fluid layers
                        H = 1/nlayers * ones(nlayers), # rest fluid height of each layer
                        ρ = Array{Float64}(1:nlayers), # density of each layer
                      eta = nothing,                   # periodic component of the topographic PV
-        etax_nonperiodic = nothing,                   # x-gradient of the non-periodic component of the topographic PV
-        etay_nonperiodic = nothing,                   # y-gradient of the non-periodic component of the topographic PV
+        etax_nonperiodic = nothing,                   # ``x``-gradient of the non-periodic component of the topographic PV
+        etay_nonperiodic = nothing,                   # ``y``-gradient of the non-periodic component of the topographic PV
               # Bottom Drag and/or (hyper)-viscosity
                        μ = 0,
                        ν = 0,
@@ -214,7 +214,7 @@ struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
          β :: T
     "array with imposed constant zonal flow ``U(y)``"
          U :: Aphys3D
-     "array containing periodic component of the topographic PV"
+     "array containing the periodic component of the topographic PV"
        eta :: Aphys2D
      "array containing ``x``-gradient of non-periodic component of the topographic PV"
        etax_nonperiodic :: Aphys2D
