@@ -527,33 +527,32 @@ function test_mqg_setηxsetηy_nonperiodic(dev::Device=CPU(); dt=0.001, stepper=
   gr = TwoDGrid(dev; nx, Lx=L, ny, Ly=L)
 
   x, y = gridpoints(gr)
-  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly    # fundamental wavenumbers
 
-  nlayers = 2        # these choice of parameters give the
-  f₀, g = 1, 1       # desired PV-streamfunction relations
-  H = [0.2, 0.8]     # q1 = Δψ1 + 25*(ψ2-ψ1), and
-  ρ = [4.0, 5.0]     # q2 = Δψ2 + 25/4*(ψ1-ψ2).
-  U = zeros(nlayers) # the imposed mean zonal flow in each layer
+  nlayers = 2                    # these choice of parameters give the
+  f₀, g = 1, 1                   # desired PV-streamfunction relations
+  H = [0.2, 0.8]                 # q1 = Δψ1 + 25   * (ψ2 - ψ1), and
+  ρ = [4.0, 5.0]                 # q2 = Δψ2 + 25/4 * (ψ1 - ψ2).
+  U = zeros(nlayers)             # the imposed mean zonal flow in each layer
   U[1] = 1.0
   U[2] = 0.0
-  h₀ = 0.1
-  sx = 1e-2
-  sy = 1e-1
+  h₀ = 0.1                       # topographic amplituce
+  slope_x, slope_y = 1e-2, 1e-1  # large-scale topographic gradients
 
   hnonperiodic = zeros(dev, T, nx, ny)
      hperiodic = zeros(dev, T, nx, ny)
 
-  @. hnonperiodic += sx * x + sy * y             # Non-periodic part of topography (slope).
+  @. hnonperiodic += slope_x * x + slope_y * y   # Non-periodic part of topography (slope).
   @.    hperiodic += h₀ * cos(k₀*x) * cos(l₀*y)  # Periodic part of topography (bumps).
-  
+
   ηnonperiodic = f₀ * hnonperiodic / H[2]
      ηperiodic = f₀ * hperiodic / H[2]
 
   # Non-periodic part of topographic PV gradients (slope).
   ηxnonperiodic = zeros(dev, T, nx, ny)
   ηynonperiodic = zeros(dev, T, nx, ny)
-  @. ηxnonperiodic += f₀ * sx / H[2]
-  @. ηynonperiodic += f₀ * sy / H[2]
+  @. ηxnonperiodic += f₀ * slope_x / H[2]
+  @. ηynonperiodic += f₀ * slope_y / H[2]
 
   prob = MultiLayerQG.Problem(nlayers, dev;
                               nx, ny, Lx=L, Ly=L, f₀, g, H, ρ, U, μ, β=0,
@@ -567,9 +566,11 @@ function test_mqg_setηxsetηy_nonperiodic(dev::Device=CPU(); dt=0.001, stepper=
   # Test to see if the internally-computed total bottom Qx and Qy are correct.
   Q2y_analytic = zeros(dev, T, nx, ny)
   Q2x_analytic = zeros(dev, T, nx, ny)
+
   g′ = g * (ρ[2] - ρ[1]) / ρ[2]
   F1 = f₀^2 / (H[2] * g′)
   Psi1y, Psi2y = -U[1], -U[2]
+
   @. Q2y_analytic += - f₀ * h₀ * l₀ * cos(k₀*x) * sin(l₀*y) / H[2] + F1 * (Psi1y - Psi2y)
   @. Q2x_analytic += - f₀ * h₀ * k₀ * sin(k₀*x) * cos(l₀*y) / H[2]
 
