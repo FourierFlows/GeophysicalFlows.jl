@@ -525,6 +525,7 @@ function test_mqg_setηxsetηy_nonperiodic(dev::Device=CPU(); dt=0.001, stepper=
   nx, ny = 32, 34
   L = 2π
   gr = TwoDGrid(dev; nx, Lx=L, ny, Ly=L)
+  T = eltype(gr)
 
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly    # fundamental wavenumbers
@@ -555,7 +556,7 @@ function test_mqg_setηxsetηy_nonperiodic(dev::Device=CPU(); dt=0.001, stepper=
   @. ηynonperiodic += f₀ * slope_y / H[2]
 
   prob = MultiLayerQG.Problem(nlayers, dev;
-                              nx, ny, Lx=L, Ly=L, f₀, g, H, ρ, U, μ, β=0,
+                              nx, ny, Lx=L, Ly=L, f₀, g, H, ρ, U, μ, β=0, T,
                               eta=ηperiodic,
                               etax_nonperiodic=ηxnonperiodic,
                               etay_nonperiodic=ηynonperiodic,
