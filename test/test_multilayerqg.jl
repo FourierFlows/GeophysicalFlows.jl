@@ -540,18 +540,17 @@ function test_mqg_setηxsetηy_nonperiodic(dev::Device=CPU(); dt=0.001, stepper=
   h₀ = 0.1                       # topographic amplituce
   slope_x, slope_y = 1e-2, 1e-1  # large-scale topographic gradients
 
-  hnonperiodic = zeros(dev, T, nx, ny)
-     hperiodic = zeros(dev, T, nx, ny)
+  hnonperiodic = zeros(dev, T, (nx, ny))
+     hperiodic = zeros(dev, T, (nx, ny))
 
-  @. hnonperiodic += slope_x * x + slope_y * y   # Non-periodic part of topography (slope).
-  @.    hperiodic += h₀ * cos(k₀*x) * cos(l₀*y)  # Periodic part of topography (bumps).
+  @. hnonperiodic += slope_x * x + slope_y * y   # non-periodic part of topography (slope)
+  @.    hperiodic += h₀ * cos(k₀*x) * cos(l₀*y)  # periodic part of topography (bumps)
 
-  ηnonperiodic = f₀ * hnonperiodic / H[2]
      ηperiodic = f₀ * hperiodic / H[2]
 
-  # Non-periodic part of topographic PV gradients (slope).
-  ηxnonperiodic = zeros(dev, T, nx, ny)
-  ηynonperiodic = zeros(dev, T, nx, ny)
+  # Non-periodic part of topographic PV gradients (slope)
+  ηxnonperiodic = zeros(dev, T, (nx, ny))
+  ηynonperiodic = zeros(dev, T, (nx, ny))
   @. ηxnonperiodic += f₀ * slope_x / H[2]
   @. ηynonperiodic += f₀ * slope_y / H[2]
 
@@ -560,13 +559,12 @@ function test_mqg_setηxsetηy_nonperiodic(dev::Device=CPU(); dt=0.001, stepper=
                               eta=ηperiodic,
                               etax_nonperiodic=ηxnonperiodic,
                               etay_nonperiodic=ηynonperiodic,
-                              linear=false,
                               dt, stepper, aliased_fraction=0)
   params = prob.params
 
-  # Test to see if the internally-computed total bottom Qx and Qy are correct.
-  Q2y_analytic = zeros(dev, T, nx, ny)
-  Q2x_analytic = zeros(dev, T, nx, ny)
+  # Test to see if the internally-computed total bottom Qx and Qy are correct
+  Q2y_analytic = zeros(dev, T, (nx, ny))
+  Q2x_analytic = zeros(dev, T, (nx, ny))
 
   g′ = g * (ρ[2] - ρ[1]) / ρ[2]
   F1 = f₀^2 / (H[2] * g′)
@@ -577,10 +575,9 @@ function test_mqg_setηxsetηy_nonperiodic(dev::Device=CPU(); dt=0.001, stepper=
 
   Q2x_analytic += ηxnonperiodic
   Q2y_analytic += ηynonperiodic
-  nxh, nyh = Int(nx/2), Int(ny/2)
 
-return isapprox(params.Qx[:, nxh, 2], Q2x_analytic[:, nxh], rtol=rtol_multilayerqg) &&
-       isapprox(params.Qy[nyh, :, 2], Q2y_analytic[nyh, :], rtol=rtol_multilayerqg)
+return isapprox(params.Qx[:, :, 2], Q2x_analytic, rtol=rtol_multilayerqg) &&
+       isapprox(params.Qy[:, :, 2], Q2y_analytic, rtol=rtol_multilayerqg)
 end
 
 """
