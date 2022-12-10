@@ -314,7 +314,7 @@ function convert_U_to_U3D(dev, nlayers, grid, U::Number)
   return A(U_3D)
 end
 
-function Params(nlayers, g, f₀, β, ρ, H, U, eta, etax_nonperiodic, etay_nonperiodic, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE) where TU
+function Params(nlayers, g, f₀, β, ρ, H, U, eta, etax_nonperiodic, etay_nonperiodic, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE)
   dev = grid.device
   T = eltype(grid)
   A = device_array(dev)
