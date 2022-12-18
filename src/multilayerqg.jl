@@ -72,9 +72,9 @@ Keyword arguments
   - `U`: The imposed constant zonal flow ``U(y)`` in each fluid layer.
   - `H`: Rest height of each fluid layer.
   - `ρ`: Density of each fluid layer.
-  - `eta`: Periodic component of the topographic potential vorticity.
-  - `etax_nonperiodic`: ``x``-gradient of the non-periodic component of the topographic potential vorticity.
-  - `etay_nonperiodic`: ``y``-gradient of the non-periodic component of the topographic potential vorticity.
+  - `eta`: Periodic component of the topographic potential vorticity. Default: `nothing`.
+  - `etax_nonperiodic`: ``x``-gradient of the non-periodic component of the topographic potential vorticity. Default: `nothing`.
+  - `etay_nonperiodic`: ``y``-gradient of the non-periodic component of the topographic potential vorticity. Default: `nothing`.
   - `μ`: Linear bottom drag coefficient.
   - `ν`: Small-scale (hyper)-viscosity coefficient.
   - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
@@ -85,6 +85,12 @@ Keyword arguments
   - `linear`: `true` or `false` (default); boolean denoting whether the linearized equations of motions are used.
   - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
   - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
+
+!!! note "Prescribing topographic potential vorticity"
+    Only the topographic potential vorticity gradients come into play into time-stepping forward the `MultiLayerQG`
+    system. The derivatives of the `eta` compoent are computed spectrally and, therefore, `eta` is expected to
+    be periodic. Any non-periodic topographic potential vorticity gradients can be prescribed via the `etax_nonperiodic`
+    and `etax_nonperiodic` keyword arguments.
 """
 function Problem(nlayers::Int,                        # number of fluid layers
                      dev = CPU();
