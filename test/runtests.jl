@@ -18,11 +18,11 @@ using GeophysicalFlows: lambdipole, peakedisotropicspectrum
 # the devices on which tests will run
 devices = CUDA.functional() ? (CPU(), GPU()) : (CPU(),)
 
-const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
+const rtol_lambdipole = 1e-2        # tolerance for lamb dipole tests
 const rtol_twodnavierstokes = 1e-13 # tolerance for twodnavierstokes forcing tests
-const rtol_singlelayerqg = 1e-13 # tolerance for singlelayerqg forcing tests
-const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
-const rtol_surfaceqg = 1e-13 # tolerance for surfaceqg forcing tests
+const rtol_singlelayerqg = 1e-13    # tolerance for singlelayerqg forcing tests
+const rtol_multilayerqg = 1e-13     # tolerance for multilayerqg forcing tests
+const rtol_surfaceqg = 1e-13        # tolerance for surfaceqg forcing tests
 
 # Run tests
 testtime = @elapsed begin
@@ -128,7 +128,7 @@ for dev in devices
     @test test_mqg_fluxes(dev)
     @test test_mqg_fluxessinglelayer(dev)
     @test test_mqg_setqsetψ(dev)
-    @test test_mqg_setηxsetηy_nonperiodic(dev)
+    @test test_mqg_set_topographicPV_largescale_gradient(dev)
     @test test_mqg_paramsconstructor(dev)
     @test test_mqg_stochasticforcedproblemconstructor(dev)
     @test test_mqg_problemtype(dev, Float32)

@@ -513,15 +513,11 @@ function test_mqg_setqsetψ(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler",
 end
 
 """
-    test_setηxsetηy_nonperiodic(dt, stepper; kwargs...)
+    test_mqg_set_topographicPV_largescale_gradient(dt, stepper; kwargs...)
 
-Ensures that the error of setting a topographic PV field η that has both periodic
-and non-perodic components is small. The PV gradients associated with the periodic
-part are calculated spectrally from the topographic PV field `eta`, while the
-PV gradients associated with the non-periodic part are specified separately as
-`etax_nonperiodic` and `etay_nonperiodic`.
+Ensures that the error of setting a topographic PV large-scale gradient is small.
 """
-function test_mqg_setηxsetηy_nonperiodic(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+function test_mqg_set_topographicPV_largescale_gradient(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=64, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
   nx, ny = 32, 34
   L = 2π
   gr = TwoDGrid(dev; nx, Lx=L, ny, Ly=L)
@@ -537,47 +533,36 @@ function test_mqg_setηxsetηy_nonperiodic(dev::Device=CPU(); dt=0.001, stepper=
   U = zeros(nlayers)             # the imposed mean zonal flow in each layer
   U[1] = 1.0
   U[2] = 0.0
-  h₀ = 0.1                       # topographic amplituce
-  slope_x, slope_y = 1e-2, 1e-1  # large-scale topographic gradients
 
-  hnonperiodic = zeros(dev, T, (nx, ny))
-     hperiodic = zeros(dev, T, (nx, ny))
+  # topographic amplitude
+  h₀ = 0.1
+  
+  # topographic amplitude
+  topographic_slope_x, topographic_slope_y = 1e-2, 1e-1
 
-  @. hnonperiodic += slope_x * x + slope_y * y   # non-periodic part of topography (slope)
-  @.    hperiodic += h₀ * cos(k₀*x) * cos(l₀*y)  # periodic part of topography (bumps)
-
-     ηperiodic = f₀ * hperiodic / H[2]
-
-  # Non-periodic part of topographic PV gradients (slope)
-  ηxnonperiodic = zeros(dev, T, (nx, ny))
-  ηynonperiodic = zeros(dev, T, (nx, ny))
-  @. ηxnonperiodic += f₀ * slope_x / H[2]
-  @. ηynonperiodic += f₀ * slope_y / H[2]
+  # topography (bumps)
+  h = @. h₀ * cos(k₀*x) * cos(l₀*y)
+  
+  # topographic PV
+  eta = f₀ * h / H[2]
 
   prob = MultiLayerQG.Problem(nlayers, dev;
-                              nx, ny, Lx=L, Ly=L, f₀, g, H, ρ, U, μ, β=0, T,
-                              eta=ηperiodic,
-                              etax_nonperiodic=ηxnonperiodic,
-                              etay_nonperiodic=ηynonperiodic,
+                              nx, ny, Lx=L, Ly=L, f₀, g, H, ρ, U, μ, β=0, T, eta,
+                              topographic_pv_gradient = f₀ / H[2] .* (topographic_slope_x, topographic_slope_y),
                               dt, stepper, aliased_fraction=0)
-  params = prob.params
 
   # Test to see if the internally-computed total bottom Qx and Qy are correct
-  Q2y_analytic = zeros(dev, T, (nx, ny))
-  Q2x_analytic = zeros(dev, T, (nx, ny))
 
   g′ = g * (ρ[2] - ρ[1]) / ρ[2]
   F1 = f₀^2 / (H[2] * g′)
   Psi1y, Psi2y = -U[1], -U[2]
 
-  @. Q2y_analytic += - f₀ * h₀ * l₀ * cos(k₀*x) * sin(l₀*y) / H[2] + F1 * (Psi1y - Psi2y)
-  @. Q2x_analytic += - f₀ * h₀ * k₀ * sin(k₀*x) * cos(l₀*y) / H[2]
-
-  Q2x_analytic += ηxnonperiodic
-  Q2y_analytic += ηynonperiodic
-
-return isapprox(params.Qx[:, :, 2], Q2x_analytic, rtol=rtol_multilayerqg) &&
-       isapprox(params.Qy[:, :, 2], Q2y_analytic, rtol=rtol_multilayerqg)
+  Q2x_analytic = @. f₀ * (topographic_slope_x - h₀ * k₀ * sin(k₀*x) * cos(l₀*y)) / H[2]
+  Q2y_analytic = @. f₀ * (topographic_slope_y - h₀ * l₀ * cos(k₀*x) * sin(l₀*y)) / H[2] + F1 * (Psi1y - Psi2y)
+  
+  return prob.params.topographic_pv_gradient == f₀ / H[2] .* (topographic_slope_x, topographic_slope_y) &&
+         isapprox(prob.params.Qx[:, :, 2], Q2x_analytic, rtol=rtol_multilayerqg) &&
+         isapprox(prob.params.Qy[:, :, 2], Q2y_analytic, rtol=rtol_multilayerqg)
 end
 
 """
