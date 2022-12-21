@@ -28,30 +28,29 @@ nothingfunction(args...) = nothing
 
 """
     Problem(nlayers :: Int,
-                 dev = CPU();
-                  nx = 128,
-                  ny = nx,
-                  Lx = 2π,
-                  Ly = Lx,
-                  f₀ = 1.0,
-                   β = 0.0,
-                   g = 1.0,
-                   U = zeros(nlayers),
-                   H = 1/nlayers * ones(nlayers),
-                   ρ = Array{Float64}(1:nlayers),
-                 eta = nothing,
-    etax_nonperiodic = nothing,
-    etay_nonperiodic = nothing,
-                   μ = 0,
-                   ν = 0,
-                  nν = 1,
-                  dt = 0.01,
-             stepper = "RK4",
-              calcFq = nothingfunction,
-          stochastic = false,
-              linear = false,
-    aliased_fraction = 1/3,
-                   T = Float64)
+                        dev = CPU();
+                         nx = 128,
+                         ny = nx,
+                         Lx = 2π,
+                         Ly = Lx,
+                         f₀ = 1.0,
+                          β = 0.0,
+                          g = 1.0,
+                          U = zeros(nlayers),
+                          H = 1/nlayers * ones(nlayers),
+                          ρ = Array{Float64}(1:nlayers),
+                        eta = nothing,
+    topographic_pv_gradient = (0, 0),
+                          μ = 0,
+                          ν = 0,
+                         nν = 1,
+                         dt = 0.01,
+                    stepper = "RK4",
+                     calcFq = nothingfunction,
+                 stochastic = false,
+                     linear = false,
+           aliased_fraction = 1/3,
+                          T = Float64)
 
 Construct a multi-layer quasi-geostrophic problem with `nlayers` fluid layers on device `dev`.
 
@@ -72,9 +71,8 @@ Keyword arguments
   - `U`: The imposed constant zonal flow ``U(y)`` in each fluid layer.
   - `H`: Rest height of each fluid layer.
   - `ρ`: Density of each fluid layer.
-  - `eta`: Periodic component of the topographic potential vorticity. Default: `nothing`.
-  - `etax_nonperiodic`: ``x``-gradient of the non-periodic component of the topographic potential vorticity. Default: `nothing`.
-  - `etay_nonperiodic`: ``y``-gradient of the non-periodic component of the topographic potential vorticity. Default: `nothing`.
+  - `eta`: Periodic component of the topographic potential vorticity.
+  - `topographic_pv_gradient`: The ``(x, y)`` components of the topographic PV large-scale gradient.
   - `μ`: Linear bottom drag coefficient.
   - `ν`: Small-scale (hyper)-viscosity coefficient.
   - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
@@ -85,43 +83,36 @@ Keyword arguments
   - `linear`: `true` or `false` (default); boolean denoting whether the linearized equations of motions are used.
   - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
   - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
-
-!!! note "Prescribing topographic potential vorticity"
-    Only the topographic potential vorticity gradients come into play into time-stepping forward the `MultiLayerQG`
-    system. The derivatives of the `eta` compoent are computed spectrally and, therefore, `eta` is expected to
-    be periodic. Any non-periodic topographic potential vorticity gradients can be prescribed via the `etax_nonperiodic`
-    and `etax_nonperiodic` keyword arguments.
 """
-function Problem(nlayers::Int,                        # number of fluid layers
-                     dev = CPU();
+function Problem(nlayers::Int,                             # number of fluid layers
+                          dev = CPU();
               # Numerical parameters
-                      nx = 128,
-                      ny = nx,
-                      Lx = 2π,
-                      Ly = Lx,
+                           nx = 128,
+                           ny = nx,
+                           Lx = 2π,
+                           Ly = Lx,
               # Physical parameters
-                      f₀ = 1.0,                       # Coriolis parameter
-                       β = 0.0,                       # y-gradient of Coriolis parameter
-                       g = 1.0,                       # gravitational constant
-                       U = zeros(nlayers),            # imposed zonal flow U(y) in each layer
-                       H = 1/nlayers * ones(nlayers), # rest fluid height of each layer
-                       ρ = Array{Float64}(1:nlayers), # density of each layer
-                     eta = nothing,                   # periodic component of the topographic PV
-        etax_nonperiodic = nothing,                   # ``x``-gradient of the non-periodic component of the topographic PV
-        etay_nonperiodic = nothing,                   # ``y``-gradient of the non-periodic component of the topographic PV
+                           f₀ = 1.0,                       # Coriolis parameter
+                            β = 0.0,                       # y-gradient of Coriolis parameter
+                            g = 1.0,                       # gravitational constant
+                            U = zeros(nlayers),            # imposed zonal flow U(y) in each layer
+                            H = 1/nlayers * ones(nlayers), # rest fluid height of each layer
+                            ρ = Array{Float64}(1:nlayers), # density of each layer
+                          eta = nothing,                   # periodic component of the topographic PV
+      topographic_pv_gradient = (0, 0),                    # tuple with the ``(x, y)`` components of topographic PV large-scale gradient
               # Bottom Drag and/or (hyper)-viscosity
-                       μ = 0,
-                       ν = 0,
-                      nν = 1,
+                            μ = 0,
+                            ν = 0,
+                           nν = 1,
               # Timestepper and equation options
-                      dt = 0.01,
-                 stepper = "RK4",
-                  calcFq = nothingfunction,
-              stochastic = false,
-                  linear = false,
+                           dt = 0.01,
+                      stepper = "RK4",
+                       calcFq = nothingfunction,
+                   stochastic = false,
+                       linear = false,
               # Float type and dealiasing
-        aliased_fraction = 1/3,
-                       T = Float64)
+             aliased_fraction = 1/3,
+                            T = Float64)
 
   if dev == GPU() && nlayers > 2
     @warn """MultiLayerQG module is not optimized on the GPU yet for configurations with
@@ -137,15 +128,9 @@ function Problem(nlayers::Int,                        # number of fluid layers
   # periodic component of the topographic PV
   eta === nothing && (eta = zeros(dev, T, (nx, ny)))
 
-  # x-gradient of the non-periodic component of the topographic PV
-  etax_nonperiodic === nothing && (etax_nonperiodic = zeros(dev, T, (nx, ny)))
-
-  # y-gradient of the non-periodic component of the topographic PV
-  etay_nonperiodic === nothing && (etay_nonperiodic = zeros(dev, T, (nx, ny)))
-
   grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
 
-  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, etax_nonperiodic, etay_nonperiodic, μ, ν, nν, grid; calcFq)
+  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, topographic_pv_gradient, μ, ν, nν, grid; calcFq)
 
   vars = calcFq == nothingfunction ? DecayingVars(grid, params) : (stochastic ? StochasticForcedVars(grid, params) : ForcedVars(grid, params))
 
@@ -177,12 +162,10 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
          H :: Aphys3D
     "array with imposed constant zonal flow ``U(y)`` in each fluid layer"
          U :: Aphys3D
-    "array containing periodic component of the topographic PV"
+    "array containing the topographic PV"
        eta :: Aphys2D
-    "array containing ``x``-gradient of non-periodic component of the topographic PV"
-       etax_nonperiodic :: Aphys2D
-    "array containing ``y``-gradient of non-periodic component of the topographic PV"
-       etay_nonperiodic :: Aphys2D
+    "tuple containing the ``(x, y)`` components of topographic PV large-scale gradient"
+    topographic_pv_gradient :: Tuple{T, T}
     "linear bottom drag coefficient"
          μ :: T
     "small-scale (hyper)-viscosity coefficient"
@@ -222,10 +205,8 @@ struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
          U :: Aphys3D
      "array containing the periodic component of the topographic PV"
        eta :: Aphys2D
-     "array containing ``x``-gradient of non-periodic component of the topographic PV"
-       etax_nonperiodic :: Aphys2D
-     "array containing ``y``-gradient of non-periodic component of the topographic PV"
-       etay_nonperiodic :: Aphys2D
+    "tuple containing the ``(x, y)`` components of topographic PV large-scale gradient"
+    topographic_pv_gradient :: Tuple{T, T}
     "linear drag coefficient"
          μ :: T
     "small-scale (hyper)-viscosity coefficient"
@@ -267,10 +248,8 @@ struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
          U :: Aphys3D
    "array containing periodic component of the topographic PV"
        eta :: Aphys2D
-   "array containing ``x``-gradient of non-periodic component of the topographic PV"
-       etax_nonperiodic :: Aphys2D
-   "array containing ``y``-gradient of non-periodic component of the topographic PV"
-       etay_nonperiodic :: Aphys2D
+    "tuple containing the ``(x, y)`` components of topographic PV large-scale gradient"
+    topographic_pv_gradient :: Tuple{T, T}
     "linear bottom drag coefficient"
          μ :: T
     "small-scale (hyper)-viscosity coefficient"
@@ -320,7 +299,7 @@ function convert_U_to_U3D(dev, nlayers, grid, U::Number)
   return A(U_3D)
 end
 
-function Params(nlayers, g, f₀, β, ρ, H, U, eta, etax_nonperiodic, etay_nonperiodic, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE)
+function Params(nlayers, g, f₀, β, ρ, H, U, eta, topographic_pv_gradient, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE)
   dev = grid.device
   T = eltype(grid)
   A = device_array(dev)
@@ -336,12 +315,13 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, etax_nonperiodic, etay_nonp
 
   # Calculate periodic components of the topographic PV gradients.
   etah = rfft(A(eta))
-  etax = irfft(im * kr .* etah, nx)
-  etay = irfft(im * l  .* etah, nx)
+  etax = irfft(im * kr .* etah, nx)   # ∂η/∂x
+  etay = irfft(im * l  .* etah, nx)   # ∂η/∂y
 
-  # Add non-periodic components of the topographic PV gradients.
-  etax += etax_nonperiodic
-  etay += etay_nonperiodic
+  # Add topographic PV large-scale gradient
+  topographic_pv_gradient = T.(topographic_pv_gradient) 
+  @. etax += topographic_pv_gradient[1]
+  @. etay += topographic_pv_gradient[2]
 
   Qx = zeros(dev, T, (nx, ny, nlayers))
   @views @. Qx[:, :, nlayers] += etax
@@ -353,7 +333,7 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, etax_nonperiodic, etay_nonp
   rfftplanlayered = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
 
   if nlayers==1
-    return SingleLayerParams(T(β), U, eta, etax_nonperiodic, etay_nonperiodic, T(μ), T(ν), nν, calcFq, Qx, Qy, rfftplanlayered)
+    return SingleLayerParams(T(β), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, Qx, Qy, rfftplanlayered)
 
   else # if nlayers≥2
 
@@ -382,9 +362,9 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, etax_nonperiodic, etay_nonp
     CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
     if nlayers==2
-      return TwoLayerParams(T(g), T(f₀), T(β), A(ρ), (T(H[1]), T(H[2])), U, eta, etax_nonperiodic, etay_nonperiodic, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
+      return TwoLayerParams(T(g), T(f₀), T(β), A(ρ), (T(H[1]), T(H[2])), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
     else # if nlayers>2
-      return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, etax_nonperiodic, etay_nonperiodic, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
+      return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
     end
   end
 end
