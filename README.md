@@ -42,7 +42,7 @@ Geophysical Fluid Dynamics on periodic domains using Fourier-based pseudospectra
 To install, use Julia's  built-in package manager (accessed by pressing `]` in the Julia REPL command prompt) to add the package and also to instantiate/build all the required dependencies
 
 ```julia
-julia>]
+julia> ]
 (v1.6) pkg> add GeophysicalFlows
 (v1.6) pkg> instantiate
 ```
@@ -126,7 +126,7 @@ The bibtex entry for the paper is:
   number = {60},
   pages = {3053},
   author = {Navid C. Constantinou and Gregory LeClaire Wagner and Lia Siegelman and Brodie C. Pearson and André Palóczy},
-  title = {GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs \& GPUs},
+  title = {{GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs \& GPUs}},
   journal = {Journal of Open Source Software}
 }
 ```
