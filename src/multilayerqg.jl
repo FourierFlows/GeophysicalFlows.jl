@@ -82,7 +82,7 @@ Keyword arguments
   - `stochastic`: `true` or `false` (default); boolean denoting whether `calcF` is temporally stochastic.
   - `linear`: `true` or `false` (default); boolean denoting whether the linearized equations of motions are used.
   - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
-  - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
+  - `T`: `Float32` or `Float64` (default); floating point type used for `problem` data.
 """
 function Problem(nlayers::Int,                             # number of fluid layers
                           dev = CPU();
@@ -125,7 +125,14 @@ function Problem(nlayers::Int,                             # number of fluid lay
     on CPU."""
   end
 
-  # periodic component of the topographic PV
+  if nlayers == 1
+    @warn """MultiLayerQG module does work for single-layer configuration but may not be as 
+    optimized. We suggest using SingleLayerQG module for single-layer QG simulation unless
+    you have reasons to use MultiLayerQG in a single-layer configuration, e.g., you want to
+    compare solutions with varying number of fluid layers."""
+  end
+
+  # topographic PV
   eta === nothing && (eta = zeros(dev, T, (nx, ny)))
 
   grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
@@ -340,7 +347,7 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, topographic_pv_gradient, μ
     ρ = reshape(T.(ρ), (1,  1, nlayers))
     H = reshape(T.(H), (1,  1, nlayers))
 
-    g′ = T(g) * (ρ[2:nlayers] - ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface
+    g′ = T(g) * (ρ[2:nlayers] -   ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface
 
     Fm = @. T(f₀^2 / (g′ * H[2:nlayers]))
     Fp = @. T(f₀^2 / (g′ * H[1:nlayers-1]))
@@ -1021,7 +1028,7 @@ The lateral eddy fluxes within the ``j``-th fluid layer are
 \\frac{𝖽x 𝖽y}{L_x L_y} , \\  j = 1, ..., n ,
 ```
 
-while the vertical eddy fluxes at the ``j+1/2``-th fluid interface  (i.e., interface between
+while the vertical eddy fluxes at the ``j+1/2``-th fluid interface (i.e., interface between
 the ``j``-th and ``(j+1)``-th fluid layer) are
 
 ```math
