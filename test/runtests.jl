@@ -18,25 +18,25 @@ using GeophysicalFlows: lambdipole, peakedisotropicspectrum
 # the devices on which tests will run
 devices = CUDA.functional() ? (CPU(), GPU()) : (CPU(),)
 
-const rtol_lambdipole = 1e-2 # tolerance for lamb dipole tests
+const rtol_lambdipole = 1e-2        # tolerance for lamb dipole tests
 const rtol_twodnavierstokes = 1e-13 # tolerance for twodnavierstokes forcing tests
-const rtol_singlelayerqg = 1e-13 # tolerance for singlelayerqg forcing tests
-const rtol_multilayerqg = 1e-13 # tolerance for multilayerqg forcing tests
-const rtol_surfaceqg = 1e-13 # tolerance for surfaceqg forcing tests
+const rtol_singlelayerqg = 1e-13    # tolerance for singlelayerqg forcing tests
+const rtol_multilayerqg = 1e-13     # tolerance for multilayerqg forcing tests
+const rtol_surfaceqg = 1e-13        # tolerance for surfaceqg forcing tests
 
 # Run tests
 testtime = @elapsed begin
 for dev in devices
-  
+
   @info "testing on " * string(typeof(dev))
-  
+
   @testset "Utils" begin
     include("test_utils.jl")
 
     @test testpeakedisotropicspectrum(dev)
     @test_throws ErrorException("the domain is not square") testpeakedisotropicspectrum_rectangledomain()
   end
-  
+
   @testset "TwoDNavierStokes" begin
     include("test_twodnavierstokes.jl")
 
@@ -50,10 +50,10 @@ for dev in devices
     @test test_twodnavierstokes_problemtype(dev, Float32)
     @test TwoDNavierStokes.nothingfunction() == nothing
   end
-  
+
   @testset "SingleLayerQG" begin
     include("test_singlelayerqg.jl")
-    
+
     for deformation_radius in [Inf, 1.23]
       @test test_1layerqg_rossbywave("ETDRK4", 1e-2, 20, dev, deformation_radius=deformation_radius)
       @test test_1layerqg_rossbywave("FilteredETDRK4", 1e-2, 20, dev, deformation_radius=deformation_radius)
@@ -81,7 +81,7 @@ for dev in devices
     @test_throws ErrorException("not implemented for finite deformation radius") test_1layerqg_energy_drag(dev; deformation_radius=2.23)
     @test_throws ErrorException("not implemented for finite deformation radius") test_1layerqg_enstrophy_drag(dev; deformation_radius=2.23)
   end
-  
+
   @testset "BarotropicQGQL" begin
     include("test_barotropicqgql.jl")
 
@@ -100,10 +100,10 @@ for dev in devices
     @test test_bqgql_problemtype(dev, Float32)
     @test BarotropicQGQL.nothingfunction() == nothing
   end
-  
+
   @testset "SurfaceQG" begin
     include("test_surfaceqg.jl")
-      
+
     @test test_sqg_kineticenergy_buoyancyvariance(dev)
     @test test_sqg_advection(0.0005, "ForwardEuler", dev)
     @test test_sqg_deterministicforcing_buoyancy_variance_budget(dev)
@@ -114,10 +114,10 @@ for dev in devices
     @test test_sqg_noforcing(dev)
     @test SurfaceQG.nothingfunction() == nothing
   end
-  
+
   @testset "MultiLayerQG" begin
     include("test_multilayerqg.jl")
-    
+
     @test test_pvtofromstreamfunction_2layer(dev)
     @test test_pvtofromstreamfunction_3layer(dev)
     @test test_mqg_rossbywave("RK4", 1e-2, 20, dev)
@@ -128,6 +128,7 @@ for dev in devices
     @test test_mqg_fluxes(dev)
     @test test_mqg_fluxessinglelayer(dev)
     @test test_mqg_setqsetψ(dev)
+    @test test_mqg_set_topographicPV_largescale_gradient(dev)
     @test test_mqg_paramsconstructor(dev)
     @test test_mqg_stochasticforcedproblemconstructor(dev)
     @test test_mqg_problemtype(dev, Float32)

@@ -28,28 +28,29 @@ nothingfunction(args...) = nothing
 
 """
     Problem(nlayers :: Int,
-                 dev = CPU();
-                  nx = 128,
-                  ny = nx,
-                  Lx = 2π,
-                  Ly = Lx,
-                  f₀ = 1.0,
-                   β = 0.0,
-                   g = 1.0,
-                   U = zeros(nlayers),
-                   H = 1/nlayers * ones(nlayers),
-                   ρ = Array{Float64}(1:nlayers),
-                 eta = nothing,
-                   μ = 0,
-                   ν = 0,
-                  nν = 1,
-                  dt = 0.01,
-             stepper = "RK4",
-              calcFq = nothingfunction,
-          stochastic = false,
-              linear = false,
-    aliased_fraction = 1/3,
-                   T = Float64)
+                        dev = CPU();
+                         nx = 128,
+                         ny = nx,
+                         Lx = 2π,
+                         Ly = Lx,
+                         f₀ = 1.0,
+                          β = 0.0,
+                          g = 1.0,
+                          U = zeros(nlayers),
+                          H = 1/nlayers * ones(nlayers),
+                          ρ = Array{Float64}(1:nlayers),
+                        eta = nothing,
+    topographic_pv_gradient = (0, 0),
+                          μ = 0,
+                          ν = 0,
+                         nν = 1,
+                         dt = 0.01,
+                    stepper = "RK4",
+                     calcFq = nothingfunction,
+                 stochastic = false,
+                     linear = false,
+           aliased_fraction = 1/3,
+                          T = Float64)
 
 Construct a multi-layer quasi-geostrophic problem with `nlayers` fluid layers on device `dev`.
 
@@ -70,7 +71,8 @@ Keyword arguments
   - `U`: The imposed constant zonal flow ``U(y)`` in each fluid layer.
   - `H`: Rest height of each fluid layer.
   - `ρ`: Density of each fluid layer.
-  - `eta`: Topographic potential vorticity.
+  - `eta`: Periodic component of the topographic potential vorticity.
+  - `topographic_pv_gradient`: The ``(x, y)`` components of the topographic PV large-scale gradient.
   - `μ`: Linear bottom drag coefficient.
   - `ν`: Small-scale (hyper)-viscosity coefficient.
   - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
@@ -80,44 +82,45 @@ Keyword arguments
   - `stochastic`: `true` or `false` (default); boolean denoting whether `calcF` is temporally stochastic.
   - `linear`: `true` or `false` (default); boolean denoting whether the linearized equations of motions are used.
   - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
-  - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
+  - `T`: `Float32` or `Float64` (default); floating point type used for `problem` data.
 """
-function Problem(nlayers::Int,                        # number of fluid layers
-                     dev = CPU();
+function Problem(nlayers::Int,                             # number of fluid layers
+                          dev = CPU();
               # Numerical parameters
-                      nx = 128,
-                      ny = nx,
-                      Lx = 2π,
-                      Ly = Lx,
+                           nx = 128,
+                           ny = nx,
+                           Lx = 2π,
+                           Ly = Lx,
               # Physical parameters
-                      f₀ = 1.0,                       # Coriolis parameter
-                       β = 0.0,                       # y-gradient of Coriolis parameter
-                       g = 1.0,                       # gravitational constant
-                       U = zeros(nlayers),            # imposed zonal flow U(y) in each layer
-                       H = 1/nlayers * ones(nlayers), # rest fluid height of each layer
-                       ρ = Array{Float64}(1:nlayers), # density of each layer
-                     eta = nothing,                   # topographic PV
+                           f₀ = 1.0,                       # Coriolis parameter
+                            β = 0.0,                       # y-gradient of Coriolis parameter
+                            g = 1.0,                       # gravitational constant
+                            U = zeros(nlayers),            # imposed zonal flow U(y) in each layer
+                            H = 1/nlayers * ones(nlayers), # rest fluid height of each layer
+                            ρ = Array{Float64}(1:nlayers), # density of each layer
+                          eta = nothing,                   # periodic component of the topographic PV
+      topographic_pv_gradient = (0, 0),                    # tuple with the ``(x, y)`` components of topographic PV large-scale gradient
               # Bottom Drag and/or (hyper)-viscosity
-                       μ = 0,
-                       ν = 0,
-                      nν = 1,
+                            μ = 0,
+                            ν = 0,
+                           nν = 1,
               # Timestepper and equation options
-                      dt = 0.01,
-                 stepper = "RK4",
-                  calcFq = nothingfunction,
-              stochastic = false,
-                  linear = false,
+                           dt = 0.01,
+                      stepper = "RK4",
+                       calcFq = nothingfunction,
+                   stochastic = false,
+                       linear = false,
               # Float type and dealiasing
-        aliased_fraction = 1/3,
-                       T = Float64)
+             aliased_fraction = 1/3,
+                            T = Float64)
 
   if dev == GPU() && nlayers > 2
     @warn """MultiLayerQG module is not optimized on the GPU yet for configurations with
     3 fluid layers or more!
-    
+
     See issues on Github at https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112
     and https://github.com/FourierFlows/GeophysicalFlows.jl/issues/267.
-    
+
     To use MultiLayerQG with 3 fluid layers or more we suggest, for now, to restrict running
     on CPU."""
   end
@@ -134,7 +137,7 @@ function Problem(nlayers::Int,                        # number of fluid layers
 
   grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
 
-  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq)
+  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, topographic_pv_gradient, μ, ν, nν, grid; calcFq)
 
   vars = calcFq == nothingfunction ? DecayingVars(grid, params) : (stochastic ? StochasticForcedVars(grid, params) : ForcedVars(grid, params))
 
@@ -168,6 +171,8 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
          U :: Aphys3D
     "array containing the topographic PV"
        eta :: Aphys2D
+    "tuple containing the ``(x, y)`` components of topographic PV large-scale gradient"
+    topographic_pv_gradient :: Tuple{T, T}
     "linear bottom drag coefficient"
          μ :: T
     "small-scale (hyper)-viscosity coefficient"
@@ -205,8 +210,10 @@ struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
          β :: T
     "array with imposed constant zonal flow ``U(y)``"
          U :: Aphys3D
-    "array containing topographic PV"
+     "array containing the periodic component of the topographic PV"
        eta :: Aphys2D
+    "tuple containing the ``(x, y)`` components of topographic PV large-scale gradient"
+    topographic_pv_gradient :: Tuple{T, T}
     "linear drag coefficient"
          μ :: T
     "small-scale (hyper)-viscosity coefficient"
@@ -246,8 +253,10 @@ struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
          H :: Tuple
    "array with imposed constant zonal flow ``U(y)`` in each fluid layer"
          U :: Aphys3D
-    "array containing topographic PV"
+   "array containing periodic component of the topographic PV"
        eta :: Aphys2D
+    "tuple containing the ``(x, y)`` components of topographic PV large-scale gradient"
+    topographic_pv_gradient :: Tuple{T, T}
     "linear bottom drag coefficient"
          μ :: T
     "small-scale (hyper)-viscosity coefficient"
@@ -297,7 +306,7 @@ function convert_U_to_U3D(dev, nlayers, grid, U::Number)
   return A(U_3D)
 end
 
-function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE)
+function Params(nlayers, g, f₀, β, ρ, H, U, eta, topographic_pv_gradient, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE)
   dev = grid.device
   T = eltype(grid)
   A = device_array(dev)
@@ -311,9 +320,15 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
   Uyy = real.(ifft(-l.^2 .* fft(U)))
   Uyy = CUDA.@allowscalar repeat(Uyy, outer=(nx, 1, 1))
 
+  # Calculate periodic components of the topographic PV gradients.
   etah = rfft(A(eta))
-  etax = irfft(im * kr .* etah, nx)
-  etay = irfft(im * l  .* etah, nx)
+  etax = irfft(im * kr .* etah, nx)   # ∂η/∂x
+  etay = irfft(im * l  .* etah, nx)   # ∂η/∂y
+
+  # Add topographic PV large-scale gradient
+  topographic_pv_gradient = T.(topographic_pv_gradient) 
+  @. etax += topographic_pv_gradient[1]
+  @. etay += topographic_pv_gradient[2]
 
   Qx = zeros(dev, T, (nx, ny, nlayers))
   @views @. Qx[:, :, nlayers] += etax
@@ -325,7 +340,7 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
   rfftplanlayered = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
 
   if nlayers==1
-    return SingleLayerParams(T(β), U, eta, T(μ), T(ν), nν, calcFq, Qx, Qy, rfftplanlayered)
+    return SingleLayerParams(T(β), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, Qx, Qy, rfftplanlayered)
 
   else # if nlayers≥2
 
@@ -354,9 +369,9 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, μ, ν, nν, grid; calcFq=n
     CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
     if nlayers==2
-      return TwoLayerParams(T(g), T(f₀), T(β), A(ρ), (T(H[1]), T(H[2])), U, eta, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
+      return TwoLayerParams(T(g), T(f₀), T(β), A(ρ), (T(H[1]), T(H[2])), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
     else # if nlayers>2
-      return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
+      return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
     end
   end
 end
@@ -615,7 +630,7 @@ case of a two fluid layer configuration. In this case we have,
 ```
 
 where ``Δ = k² [k² + f₀² (H₁ + H₂) / (g′ H₁ H₂)]``.
-  
+
 (Here, the PV-streamfunction relationship is hard-coded to avoid scalar operations
 on the GPU.)
 """
@@ -680,7 +695,7 @@ end
 
 """
     calcN!(N, sol, t, clock, vars, params, grid)
-    
+
 Compute the nonlinear term, that is the advection term, the bottom drag, and the forcing:
 
 ```math
@@ -704,7 +719,7 @@ end
 
 """
     calcNlinear!(N, sol, t, clock, vars, params, grid)
-    
+
 Compute the nonlinear term of the linearized equations:
 
 ```math
@@ -846,7 +861,7 @@ Update all problem variables using `sol`.
 """
 function updatevars!(vars, params, grid, sol)
   dealias!(sol, grid)
-  
+
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
   @. vars.uh = -im * grid.l  * vars.ψh
@@ -895,7 +910,7 @@ set_q!(prob, q) = set_q!(prob.sol, prob.params, prob.vars, prob.grid, q)
     set_ψ!(params, vars, grid, sol, ψ)
     set_ψ!(prob, ψ)
 
-Set the solution `prob.sol` to the transform `qh` that corresponds to streamfunction `ψ` 
+Set the solution `prob.sol` to the transform `qh` that corresponds to streamfunction `ψ`
 and update variables.
 """
 function set_ψ!(sol, params, vars, grid, ψ)
@@ -936,7 +951,7 @@ The kinetic energy at the ``j``-th fluid layer is
 𝖪𝖤_j = \\frac{H_j}{H} \\int \\frac1{2} |{\\bf ∇} ψ_j|^2 \\frac{𝖽x 𝖽y}{L_x L_y} = \\frac1{2} \\frac{H_j}{H} \\sum_{𝐤} |𝐤|² |ψ̂_j|², \\ j = 1, ..., n ,
 ```
 
-while the potential energy that corresponds to the interface ``j+1/2`` (i.e., the interface 
+while the potential energy that corresponds to the interface ``j+1/2`` (i.e., the interface
 between the ``j``-th and ``(j+1)``-th fluid layer) is
 
 ```math
@@ -949,7 +964,7 @@ function energies(vars, params, grid, sol)
 
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
-  
+
   abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
   @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
 
@@ -1002,7 +1017,7 @@ energies(prob) = energies(prob.vars, prob.params, prob.grid, prob.sol)
     fluxes(prob)
 
 Return the lateral eddy fluxes within each fluid layer, lateralfluxes``_1,...,``lateralfluxes``_n``
-and also the vertical eddy fluxes at each fluid interface, 
+and also the vertical eddy fluxes at each fluid interface,
 verticalfluxes``_{3/2},...,``verticalfluxes``_{n-1/2}``, where ``n`` is the total number of layers in the fluid.
 (When ``n=1``, only the lateral fluxes are returned.)
 
@@ -1017,7 +1032,7 @@ while the vertical eddy fluxes at the ``j+1/2``-th fluid interface (i.e., interf
 the ``j``-th and ``(j+1)``-th fluid layer) are
 
 ```math
-\\textrm{verticalfluxes}_{j+1/2} = \\int \\frac{f₀²}{g'_{j+1/2} H} (U_j - U_{j+1}) \\, 
+\\textrm{verticalfluxes}_{j+1/2} = \\int \\frac{f₀²}{g'_{j+1/2} H} (U_j - U_{j+1}) \\,
 v_{j+1} ψ_{j} \\frac{𝖽x 𝖽y}{L_x L_y} , \\ j = 1, ..., n-1.
 ```
 """
@@ -1047,7 +1062,7 @@ end
 
 function fluxes(vars, params::TwoLayerParams, grid, sol)
   nlayers = numberoflayers(params)
-  
+
   lateralfluxes, verticalfluxes = zeros(nlayers), zeros(nlayers-1)
 
   updatevars!(vars, params, grid, sol)
