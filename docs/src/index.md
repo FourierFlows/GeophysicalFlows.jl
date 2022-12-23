@@ -28,7 +28,7 @@ Examples aim to demonstrate the main functionalities of each module. Have a look
     FFT algorithm uses, `uh` _is not_ exactly the same as ``\hat{u}`` above. Instead,
     
     ```math
-    \hat{u}(k_x) = \frac{𝚞𝚑}{n_x e^{- i k_x x_0}} ,
+    \hat{u}(k_x) = \frac{𝚞𝚑}{n_x e^{i k_x x_0}} ,
     ```
     
     where ``n_x`` is the total number of grid points in ``x`` and ``x_0`` is the left-most 
@@ -81,3 +81,17 @@ The bibtex entry for the paper is:
   journal = {Journal of Open Source Software}
 }
 ```
+
+## Papers using `GeophysicalFlows.jl`
+
+1. Bisits, J. I., Stanley G. J., and Zika, J. D. (2022). Can we accurately quantify a lateral diffusivity using a single tracer release? _Journal of Physical Oceanography_, Early Online Release. doi:[10.1175/JPO-D-22-0145.1](https://doi.org/10.1175/JPO-D-22-0145.1).
+ 
+1. Siegelman, L., Young, W. R., and Ingersoll, A. P. (2022). Polar vortex crystals: Emergence and structure _Proceedings of the National Academy of Sciences_, **119(17)**, e2120486119. doi:[10.1073/pnas.2120486119](https://doi.org/10.1073/pnas.2120486119).
+
+1. Dolce, M. and Drivas, T. D. (2022). On maximally mixed equilibria of two-dimensional perfect fluids. _Archive for Rational Mechanics and Analysis_, 2022, doi:[10.1007/s00205-022-01825-w](https://doi.org/10.1007/s00205-022-01825-w).
+
+1. Drivas, T. D. and Elgindi, T. M. (2022). Singularity formation in the incompressible Euler equation in finite and infinite time. arXiv preprint arXiv:2203.17221, doi:[10.48550/arXiv.2203.17221](https://doi.org/10.48550/arXiv.2203.17221).
+
+1. Palóczy, A., and LaCasce, J. H. (2022). Instability of a surface jet over rough topography. _Journal of Physical Oceanography_, **52(11)**, 2725-2740, doi:[10.1175/JPO-D-22-0079.1](https://doi.org/10.1175/JPO-D-22-0079.1).
+
+1. Karrasch, D., and Schilling, N. (2020). Fast and robust computation of coherent Lagrangian vortices on very large two-dimensional domains. _The SMAI Journal of Computational Mathematics_, **6**, 101-124, doi:[10.5802/smai-jcm.63](https://doi.org/10.5802/smai-jcm.63).
