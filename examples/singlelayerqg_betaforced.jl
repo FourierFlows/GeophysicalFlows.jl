@@ -23,7 +23,8 @@ using Statistics: mean
 using LinearAlgebra: ldiv!
 
 parsevalsum = FourierFlows.parsevalsum
-record = CairoMakie.record
+record = CairoMakie.record                # disambiguate between CairoMakie.record and CUDA.record
+nothing # hide
 
 # ## Choosing a device: CPU or GPU
 
