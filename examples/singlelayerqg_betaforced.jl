@@ -87,7 +87,8 @@ nothing # hide
 random_uniform = dev==CPU() ? rand : CUDA.rand
 
 function calcF!(Fh, sol, t, clock, vars, params, grid)
-  @. Fh = sqrt(forcing_spectrum) * cis(2π * random_uniform(eltype(grid))) / sqrt(clock.dt)
+  T = eltype(grid)
+  @. Fh = sqrt(forcing_spectrum) * cis(2π * random_uniform(T)) / sqrt(clock.dt)
 
   return nothing
 end
