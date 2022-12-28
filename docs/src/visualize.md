@@ -10,7 +10,9 @@ devices with a monitor might want to change to [GLMakie](https://docs.makie.org/
 that displays figures in an interactive window.
 
 In GeophysicalFlows.jl simulations, we can either visualize the fields on-the-fly as the problem is stepped forward or
-we can save output onto a `.jld2` fileand after simulation is done load the output and visualize it. Most examples do
+we can save output onto a `.jld2` file and after simulation is done load the output and visualize it. Most examples do
 the former. For a demonstration for how one can save output and load later to process and visualize it have a look at the
-[`SingeLayerQG` beta-plane forced-dissipative example](@ref singlelayerqg_betaforced_example). Regarding saving output to `.jld2` files, the [Output section](https://fourierflows.github.io/FourierFlowsDocumentation/stable/output/) in FourierFlows.jl
-Documentation might be useful.
+[`SingeLayerQG` beta-plane forced-dissipative example](@ref singlelayerqg_betaforced_example). For more information about
+saving output to `.jld2` files, files see the
+[Output section](https://fourierflows.github.io/FourierFlowsDocumentation/stable/output/) in FourierFlows.jl Documentation
+might be useful.
