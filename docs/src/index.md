@@ -84,7 +84,7 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
-1. Bisits, J. I., Stanley G. J., and Zika, J. D. (2022). Can we accurately quantify a lateral diffusivity using a single tracer release? _Journal of Physical Oceanography_, Early Online Release. doi:[10.1175/JPO-D-22-0145.1](https://doi.org/10.1175/JPO-D-22-0145.1).
+1. Bisits, J. I., Stanley G. J., and Zika, J. D. (2023). Can we accurately quantify a lateral diffusivity using a single tracer release? _Journal of Physical Oceanography_, **53(2)**, 647–659, doi:[10.1175/JPO-D-22-0145.1](https://doi.org/10.1175/JPO-D-22-0145.1).
 
 1. Siegelman, L., Young, W. R., and Ingersoll, A. P. (2022). Polar vortex crystals: Emergence and structure _Proceedings of the National Academy of Sciences_, **119(17)**, e2120486119. doi:[10.1073/pnas.2120486119](https://doi.org/10.1073/pnas.2120486119).
 
