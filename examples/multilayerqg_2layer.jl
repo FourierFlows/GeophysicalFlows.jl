@@ -1,4 +1,4 @@
-# # [Phillips model of Baroclinic Instability](@ref multilayerqg_2layer_example)
+# # [Phillips model of Baroclinic Instability](@id multilayerqg_2layer_example)
 #
 #md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/multilayerqg_2layer.ipynb).
 #
