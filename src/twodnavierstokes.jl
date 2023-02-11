@@ -382,7 +382,7 @@ end
 """
     enstrophy(prob)
 
-Returns the problem's (`prob`) domain-averaged enstrophy,
+Return the problem's (`prob`) domain-averaged enstrophy,
 
 ```math
 \\int \\frac1{2} ζ² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |ζ̂|² ,
@@ -395,7 +395,7 @@ where ``ζ`` is the relative vorticity.
 """
     palinstrophy(prob)
 
-Returns the problem's (`prob`) domain-averaged palinstrophy,
+Return the problem's (`prob`) domain-averaged palinstrophy,
 
 ```math
 \\int \\frac1{2} |{\\bf ∇} ζ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ζ̂|² ,
