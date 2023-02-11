@@ -257,7 +257,7 @@ function test_twodnavierstokes_advection(dt, stepper, dev::Device=CPU(); n=128, 
   isapprox(prob.vars.ζ, ζf, rtol=rtol_twodnavierstokes)
 end
 
-function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
+function test_twodnavierstokes_energyenstrophypalinstrophy(dev::Device=CPU())
   nx, Lx  = 128, 2π
   ny, Ly  = 126, 3π
   
@@ -265,11 +265,38 @@ function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
   x, y = gridpoints(grid)
 
   k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly # fundamental wavenumbers
-  ψ₀ = @. sin(2k₀*x)*cos(2l₀*y) + 2sin(k₀*x)*cos(3l₀*y)
-  ζ₀ = @. -((2k₀)^2+(2l₀)^2)*sin(2k₀*x)*cos(2l₀*y) - (k₀^2+(3l₀)^2)*2sin(k₀*x)*cos(3l₀*y)
+  ψ₀ = @.                        sin(2k₀ * x) * cos(2l₀ * y) +  2sin(k₀ * x) * cos(3l₀ * y)
+  ζ₀ = @. -((2k₀)^2 + (2l₀)^2) * sin(2k₀ * x) * cos(2l₀ * y) - (k₀^2 + (3l₀)^2) * 2sin(k₀ * x) * cos(3l₀ * y)
 
-  energy_calc = 29/9
-  enstrophy_calc = 2701/162
+  #=
+
+  We can analytically compute the energy, enstrophy, and palinstrophy
+  that corresponds to the above initial condition using Mathematica
+
+    k0 = 2 Pi/Lx; l0 = 2 Pi/Ly;
+
+    psi[x_, y_] = Sin[2 k0 x] Cos[2 l0 y] + 2 Sin[k0 x] Cos[3 l0 y];
+    u[x, y]     = -D[psi[x, y], y];
+    v[x, y]     =  D[psi[x, y], x];
+    zeta[x, y]  =  D[v[x, y], x] - D[u[x, y], y];
+
+    E0 = Integrate[
+        1/2 (u[x, y]^2 + v[x, y]^2), {x, 0, Lx}, {y, 0, Ly}] / (Lx Ly);
+    E0 /. {Lx -> 2 Pi, Ly -> 3 Pi}
+
+    Z0 = Integrate[1/2 zeta[x, y]^2, {x, 0, Lx}, {y, 0, Ly}] / (Lx Ly);
+    Z0 /. {Lx -> 2 Pi, Ly -> 3 Pi}
+
+    P0 = Integrate[
+        1/2 (D[zeta[x, y], x]^2 + D[zeta[x, y], y]^2), {x, 0, Lx}, {y, 0, 
+        Ly}] / (Lx Ly);
+    P0 /. {Lx -> 2 Pi, Ly -> 3 Pi}
+
+  =#
+
+  energy_analytic       = 29/9
+  enstrophy_analytic    = 2701/162
+  palinstrophy_analytic = 126277/1458
 
   prob = TwoDNavierStokes.Problem(dev; nx, Lx, ny, Ly, stepper="ForwardEuler")
 
@@ -278,14 +305,16 @@ function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
   TwoDNavierStokes.set_ζ!(prob, ζ₀)
   TwoDNavierStokes.updatevars!(prob)
 
-  energyζ₀ = TwoDNavierStokes.energy(prob)
-  enstrophyζ₀ = TwoDNavierStokes.enstrophy(prob)
+  energy₀       = TwoDNavierStokes.energy(prob)
+  enstrophy₀    = TwoDNavierStokes.enstrophy(prob)
+  palinstrophy₀ = TwoDNavierStokes.palinstrophy(prob)
 
   params = TwoDNavierStokes.Params(p.ν, p.nν)
 
-  (isapprox(energyζ₀, energy_calc, rtol=rtol_twodnavierstokes) &&
-   isapprox(enstrophyζ₀, enstrophy_calc, rtol=rtol_twodnavierstokes) &&
-   TwoDNavierStokes.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
+  return (isapprox(energy₀, energy_analytic, rtol=rtol_twodnavierstokes) &&
+          isapprox(enstrophy₀, enstrophy_analytic, rtol=rtol_twodnavierstokes) &&
+          isapprox(palinstrophy₀, palinstrophy_analytic, rtol=rtol_twodnavierstokes) &&
+          TwoDNavierStokes.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
 end
 
 function test_twodnavierstokes_problemtype(dev, T)
