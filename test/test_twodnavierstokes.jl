@@ -265,8 +265,8 @@ function test_twodnavierstokes_energyenstrophypalinstrophy(dev::Device=CPU())
   x, y = gridpoints(grid)
 
   k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly # fundamental wavenumbers
-  ψ₀ = @.                        sin(2k₀*x)*cos(2l₀*y) +                    2sin(k₀*x)*cos(3l₀*y)
-  ζ₀ = @. -((2k₀)^2 + (2l₀)^2) * sin(2k₀*x)*cos(2l₀*y) - (k₀^2 + (3l₀)^2) * 2sin(k₀*x)*cos(3l₀*y)
+  ψ₀ = @.                        sin(2k₀ * x) * cos(2l₀ * y) +  2sin(k₀ * x) * cos(3l₀ * y)
+  ζ₀ = @. -((2k₀)^2 + (2l₀)^2) * sin(2k₀ * x) * cos(2l₀ * y) - (k₀^2 + (3l₀)^2) * 2sin(k₀ * x) * cos(3l₀ * y)
 
   #=
 
@@ -294,9 +294,9 @@ function test_twodnavierstokes_energyenstrophypalinstrophy(dev::Device=CPU())
 
   =#
 
-  energy_calc = 29/9
-  enstrophy_calc = 2701/162
-  palinstrophy_calc = 126277/1458
+  energy_analytic       = 29/9
+  enstrophy_analytic    = 2701/162
+  palinstrophy_analytic = 126277/1458
 
   prob = TwoDNavierStokes.Problem(dev; nx, Lx, ny, Ly, stepper="ForwardEuler")
 
@@ -305,15 +305,15 @@ function test_twodnavierstokes_energyenstrophypalinstrophy(dev::Device=CPU())
   TwoDNavierStokes.set_ζ!(prob, ζ₀)
   TwoDNavierStokes.updatevars!(prob)
 
-  energy₀ = TwoDNavierStokes.energy(prob)
-  enstrophy₀ = TwoDNavierStokes.enstrophy(prob)
+  energy₀       = TwoDNavierStokes.energy(prob)
+  enstrophy₀    = TwoDNavierStokes.enstrophy(prob)
   palinstrophy₀ = TwoDNavierStokes.palinstrophy(prob)
 
   params = TwoDNavierStokes.Params(p.ν, p.nν)
 
-  return (isapprox(energy₀, energy_calc, rtol=rtol_twodnavierstokes) &&
-          isapprox(enstrophy₀, enstrophy_calc, rtol=rtol_twodnavierstokes) &&
-          isapprox(palinstrophy₀, palinstrophy_calc, rtol=rtol_twodnavierstokes) &&
+  return (isapprox(energy₀, energy_analytic, rtol=rtol_twodnavierstokes) &&
+          isapprox(enstrophy₀, enstrophy_analytic, rtol=rtol_twodnavierstokes) &&
+          isapprox(palinstrophy₀, palinstrophy_analytic, rtol=rtol_twodnavierstokes) &&
           TwoDNavierStokes.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
 end
 
