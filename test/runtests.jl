@@ -46,7 +46,7 @@ for dev in devices
     @test test_twodnavierstokes_stochasticforcing_energybudget(dev)
     @test test_twodnavierstokes_deterministicforcing_enstrophybudget(dev)
     @test test_twodnavierstokes_stochasticforcing_enstrophybudget(dev)
-    @test test_twodnavierstokes_energyenstrophy(dev)
+    @test test_twodnavierstokes_energyenstrophypalinstrophy(dev)
     @test test_twodnavierstokes_problemtype(dev, Float32)
     @test TwoDNavierStokes.nothingfunction() == nothing
   end
