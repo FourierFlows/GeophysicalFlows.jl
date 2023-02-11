@@ -393,6 +393,25 @@ where ``ζ`` is the relative vorticity.
 @inline enstrophy(prob) = 1 / (2 * prob.grid.Lx * prob.grid.Ly) * parsevalsum(abs2.(prob.sol), prob.grid)
 
 """
+    palinstrophy(prob)
+
+Returns the problem's (`prob`) domain-averaged palinstrophy,
+
+```math
+\\int \\frac1{2} |{\\bf ∇} ζ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ζ̂|² ,
+```
+
+where ``ζ`` is the relative vorticity.
+"""
+@inline function palinstrophy(prob)
+  sol, vars, grid = prob.sol, prob.vars, prob.grid
+  palinstrophyh = vars.uh # use vars.uh as scratch variable
+
+  @. palinstrophyh = 1 / 2 * grid.Krsq * abs2(sol)
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(palinstrophyh, grid)
+end
+
+"""
     energy_dissipation(prob, ξ, νξ)
 
 Return the domain-averaged energy dissipation rate done by the viscous term,
