@@ -56,6 +56,7 @@ checkdocs = :all,
   format = format,
  authors = "Navid C. Constantinou and Gregory L. Wagner",
 sitename = "GeophysicalFlows.jl",
+   draft = false,
    pages = Any[
             "Home"    => "index.md",
             "Installation instructions" => "installation_instructions.md",
@@ -121,12 +122,9 @@ for file in files
     rm(file)
 end
 
-withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
-  deploydocs(       repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
-                versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
-            push_preview = true,
-           repo_previews = "github.com/FourierFlows/GeophysicalFlowsDocumentationPreviews.git",
-               forcepush = true,
-               devbranch = "main"
-            )
-end
+deploydocs(       repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
+              versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
+          push_preview = true,
+              forcepush = true,
+              devbranch = "main"
+          )
