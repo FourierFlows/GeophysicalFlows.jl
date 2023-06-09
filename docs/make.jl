@@ -127,7 +127,6 @@ withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
             push_preview = true,
            repo_previews = "github.com/FourierFlows/GeophysicalFlowsDocumentationPreviews.git",
                forcepush = true,
-               devbranch = "main",
-               draft = true
+               devbranch = "main"
             )
 end
