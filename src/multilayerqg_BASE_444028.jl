@@ -347,11 +347,7 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, topographic_pv_gradient, μ
     ρ = reshape(T.(ρ), (1,  1, nlayers))
     H = reshape(T.(H), (1,  1, nlayers))
 
-<<<<<<< HEAD
-    g′ = T(g) * (ρ[2:nlayers] -   ρ[1:nlayers-1]) ./ ρ[1] # reduced gravity at each interface
-=======
-    g′ = T(g) * (ρ[2:nlayers] -   ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface
->>>>>>> matts_dev
+    g′ = T(g) * (ρ[2:nlayers] -   ρ[1:nlayers-1]) ./ ρ[1:nlayers-1] # reduced gravity at each interface
 
     Fm = @. T(f₀^2 / (g′ * H[2:nlayers]))
     Fp = @. T(f₀^2 / (g′ * H[1:nlayers-1]))
