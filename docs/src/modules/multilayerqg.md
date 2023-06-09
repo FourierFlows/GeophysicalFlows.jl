@@ -23,7 +23,8 @@ The dynamics are determined from the quasi-geostrophic potential vorticity (QGPV
 \end{aligned}
 ```
 
-where ``N^2 = - \rho_0^{-1} g \, \mathrm{d} \rho / \mathrm{d}z`` is the square of the Brunt-Väisälä frequency.
+where ``N^2 = - \rho_0^{-1} g \, \mathrm{d} \rho / \mathrm{d}z`` is the square of the Brunt-Väisälä frequency,
+where ``\rho_0`` is a reference density and ``g`` the gravitational constant.
 
 To go from the continuous (in ``z``) dynamics above to a discrete dynamics we can integrate all
 quantities over the height of each fluid layer.
@@ -41,14 +42,17 @@ fluid interface, e.g., ``b_{5/2}`` is the buoyancy that corresponds to the inter
 the buoyancies at each interface as
 
 ```math
-b_{j+1/2} = f_0 \frac{\psi_j - \psi_{j+1}}{(H_j+H_{j+1})/2} ,
+b_{j+1/2} = f_0 \frac{\psi_j - \psi_{j+1}}{(H_j + H_{j+1})/2} .
 ```
 
-Similarly, the Brunt-Väisälä frequency, being proportional to the ``z``-derivative of the mean density, also
-corresponds to the fluid interfaces, i.e.,
+Above we divided the difference of streamfunction at the two layers with the distance between the
+center of the two layers, ``(H_j + H_{j+1})/2``.
+
+Similarly, since the Brunt-Väisälä frequency is proportional to the ``z``-derivative of the density,
+it also corresponds to the fluid interfaces, i.e.,
 
 ```math
-N^2_{j+1/2} = - \frac{g}{\rho_0} \frac{\rho_j - \rho_{j+1}}{(H_j+H_{j+1})/2} .
+N^2_{j+1/2} = - \frac{g}{\rho_0} \frac{\rho_j - \rho_{j+1}}{(H_j + H_{j+1})/2} .
 ```
 
 Combining the above we have that the vortex stretching term for the ``j``-th layer is
