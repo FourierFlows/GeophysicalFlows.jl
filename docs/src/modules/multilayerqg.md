@@ -23,8 +23,9 @@ The dynamics are determined from the quasi-geostrophic potential vorticity (QGPV
 \end{aligned}
 ```
 
-where ``N^2 = - \rho_0^{-1} g \, \mathrm{d} \rho / \mathrm{d}z`` is the square of the Brunt-Väisälä frequency,
-where ``\rho_0`` is a reference density and ``g`` the gravitational constant.
+where ``N^2 = - \rho_0^{-1} g \, \mathrm{d} \rho / \mathrm{d}z`` is the square of the Brunt-Väisälä
+frequency for a Boussinesq fluid, where ``\rho_0`` is a reference density and ``g`` the gravitational
+constant.
 
 To go from the continuous (in ``z``) dynamics above to a discrete dynamics we can integrate all
 quantities over the height of each fluid layer.
@@ -42,7 +43,7 @@ fluid interface, e.g., ``b_{5/2}`` is the buoyancy that corresponds to the inter
 the buoyancies at each interface as
 
 ```math
-b_{j+1/2} = f_0 \frac{\psi_j - \psi_{j+1}}{(H_j + H_{j+1})/2} .
+  b_{j+1/2} = f_0 \frac{\psi_j - \psi_{j+1}}{(H_j + H_{j+1})/2} .
 ```
 
 Above we divided the difference of streamfunction at the two layers with the distance between the
@@ -52,17 +53,17 @@ Similarly, since the Brunt-Väisälä frequency is proportional to the ``z``-der
 it also corresponds to the fluid interfaces, i.e.,
 
 ```math
-N^2_{j+1/2} = - \frac{g}{\rho_0} \frac{\rho_j - \rho_{j+1}}{(H_j + H_{j+1})/2} .
+  N^2_{j+1/2} = - \frac{g}{\rho_0} \frac{\rho_j - \rho_{j+1}}{(H_j + H_{j+1})/2} .
 ```
 
 Combining the above we have that the vortex stretching term for the ``j``-th layer is
 
 ```math
 \begin{aligned}
-\left . \partial_z \left( \frac{f_0}{N^2} b \right) \right |_{j} & = \frac{1}{H_j} \left( \frac{f_0}{N^2_{j-1/2}} b_{j-1/2} - \frac{f_0}{N^2_{j+1/2}} b_{j+1/2} \right ) \\
-& = \frac{1}{H_j} \left[ \dfrac{f_0}{- \frac{g}{\rho_0} \frac{\rho_{j-1} - \rho_{j}}{(H_{j-1}+H_{j})/2}} f_0 \frac{\psi_{j-1} - \psi_{j}}{(H_{j-1}+H_{j})/2}  - \dfrac{f_0}{- \frac{g}{\rho_0} \frac{\rho_j - \rho_{j+1}}{(H_j+H_{j+1})/2}}  f_0 \frac{\psi_j - \psi_{j+1}}{(H_j+H_{j+1})/2} \right ] \\
-& = \frac{1}{H_j} \left[\dfrac{f_0^2}{g \frac{\rho_j - \rho_{j-1} }{\rho_0}} (\psi_{j-1} - \psi_j) - \dfrac{f_0^2}{g \frac{\rho_{j+1} - \rho_j}{\rho_0}} (\psi_j - \psi_{j+1})  \right ] \\
-& = \dfrac{f_0^2}{g'_{j-1/2} H_j} (\psi_{j-1} - \psi_j) - \dfrac{f_0^2}{g'_{j+1/2} H_j} (\psi_j - \psi_{j+1})  ,
+  \left . \partial_z \left( \frac{f_0}{N^2} b \right) \right |_{j} & = \frac{1}{H_j} \left( \frac{f_0}{N^2_{j-1/2}} b_{j-1/2} - \frac{f_0}{N^2_{j+1/2}} b_{j+1/2} \right ) \\
+  & = \frac{1}{H_j} \left[ \dfrac{f_0}{- \frac{g}{\rho_0} \frac{\rho_{j-1} - \rho_{j}}{(H_{j-1}+H_{j})/2}} f_0 \frac{\psi_{j-1} - \psi_{j}}{(H_{j-1}+H_{j})/2}  - \dfrac{f_0}{- \frac{g}{\rho_0} \frac{\rho_j - \rho_{j+1}}{(H_j+H_{j+1})/2}}  f_0 \frac{\psi_j - \psi_{j+1}}{(H_j+H_{j+1})/2} \right ] \\
+  & = \frac{1}{H_j} \left[\dfrac{f_0^2}{g \frac{\rho_j - \rho_{j-1} }{\rho_0}} (\psi_{j-1} - \psi_j) - \dfrac{f_0^2}{g \frac{\rho_{j+1} - \rho_j}{\rho_0}} (\psi_j - \psi_{j+1})  \right ] \\
+  & = \dfrac{f_0^2}{g'_{j-1/2} H_j} (\psi_{j-1} - \psi_j) - \dfrac{f_0^2}{g'_{j+1/2} H_j} (\psi_j - \psi_{j+1})  ,
 \end{aligned}
 ```
 
@@ -72,11 +73,12 @@ where above we defined the reduced gravity that corresponds to the ``j+1/2`` int
   g'_{j+1/2} = g \frac{\rho_{j+1} - \rho_j}{\rho_0} .
 ```
 
-So the reduced gravity has the reference density ``\rho_0`` in the denominator. One can use
-the mean density as the reference density, e.g.,
+Τhe the reference density ``\rho_0`` appears in the denominator of the reduced gravity.
+One can use the mean density as the reference density, e.g.,
 
 ```math
-\rho_0 = \sum_{j} \rho_j H_j \big / \sum_j H_j
+  \rho_0 = \dfrac{\sum_j \rho_j H_j}{\sum_j H_j} .
+```
 
 ### Basic Equations
 
@@ -88,7 +90,7 @@ is the number of fluid layers.
 The QGPV in each layer is
 
 ```math
-\mathrm{QGPV}_j = q_j + \underbrace{f_0 + \beta y}_{\textrm{planetary PV}} + \delta_{j, n} \underbrace{\frac{f_0 h}{H_n}}_{\textrm{topographic PV}}, \quad j = 1, \dots, n .
+  \mathrm{QGPV}_j = q_j + \underbrace{f_0 + \beta y}_{\textrm{planetary PV}} + \delta_{j, n} \underbrace{\frac{f_0 h}{H_n}}_{\textrm{topographic PV}}, \quad j = 1, \dots, n .
 ```
 
 where ``q_j`` incorporates the relative vorticity in each layer ``\nabla^2 \psi_j`` and the vortex stretching terms:
@@ -96,7 +98,7 @@ where ``q_j`` incorporates the relative vorticity in each layer ``\nabla^2 \psi_
 ```math
 \begin{aligned}
   q_1 &= \nabla^2 \psi_1 + F_{3/2, 1} (\psi_2 - \psi_1), \\
-  q_j &= \nabla^2 \psi_j + F_{j-1/2, j} (\psi_{j-1} - \psi_j) + F_{j+1/2, j} (\psi_{j+1} - \psi_j) , \quad j = 2, \dots, n-1, \\
+   sq_j &= \nabla^2 \psi_j + F_{j-1/2, j} (\psi_{j-1} - \psi_j) + F_{j+1/2, j} (\psi_{j+1} - \psi_j) , \quad j = 2, \dots, n-1, \\
   q_n &= \nabla^2 \psi_n + F_{n-1/2, n} (\psi_{n-1} - \psi_n).
 \end{aligned}
 ```
