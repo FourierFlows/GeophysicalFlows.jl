@@ -29,8 +29,6 @@ for example in examples
     withenv("JULIA_DEBUG" => "Literate") do
       Literate.markdown(example_filepath, OUTPUT_DIR;
                         flavor = Literate.DocumenterFlavor(), execute = true)
-      Literate.notebook(example_filepath, OUTPUT_DIR, execute = false)
-      Literate.script(example_filepath, OUTPUT_DIR)
     end
   end
 end

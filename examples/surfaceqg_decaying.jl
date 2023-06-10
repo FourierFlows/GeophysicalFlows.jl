@@ -1,8 +1,5 @@
 # # [Decaying Surface QG turbulence](@id surfaceqg_decaying_example)
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/literated/surfaceqg_decaying.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/surfaceqg_decaying.ipynb).
-#
 # A simulation of decaying surface quasi-geostrophic turbulence.
 # We reproduce here the initial value problem for an elliptical 
 # vortex as done by Held et al. 1995, _J. Fluid Mech_.

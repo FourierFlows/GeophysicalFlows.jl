@@ -1,7 +1,5 @@
 # # [Forced-dissipative barotropic QG beta-plane turbulence](@id singlelayerqg_betaforced_example)
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/singlelayerqg_betaforced.ipynb).
-#
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane. The dynamics include linear drag and stochastic excitation.
 #
