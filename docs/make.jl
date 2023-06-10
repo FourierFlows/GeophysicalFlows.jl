@@ -1,7 +1,4 @@
-using Documenter, Literate
-
-using CairoMakie # to avoid capturing precompilation output by Literate
-CairoMakie.activate!(type = "svg")
+using Documenter, Literate, CairoMakie
 
 using GeophysicalFlows
 
