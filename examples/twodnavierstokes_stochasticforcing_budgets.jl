@@ -228,14 +228,14 @@ hRᵋ = lines!(ax1E, t, Rᵋ[1:E.i-1]; linestyle = :solid)
 
 Legend(fig[2, 1],
        [hWᵋ, hε, hDᵋ, hRᵋ],
-       ["energy work, Wᵋ" "ensemble mean energy work, <Wᵋ>" "dissipation, Dᵋ" "drag, Rᵋ = - 2μE"])
+       ["energy work, Wᵋ", "ensemble mean energy work, <Wᵋ>", "dissipation, Dᵋ", "drag, Rᵋ = - 2μE"])
 
 hc = lines!(ax2E, t, dEdt_computed; linestyle = :solid)
 hn = lines!(ax2E, t, dEdt_numerical; linestyle = :dash)
 
 Legend(fig[4, 1],
        [hc, hn],
-       ["computed Wᵋ-Dᵋ" "numerical dE/dt"])
+       ["computed Wᵋ-Dᵋ", "numerical dE/dt"])
 
 hr = lines!(ax3E, t, residual_E)
 
@@ -250,14 +250,14 @@ hRᶻ = lines!(ax1Z, t, Rᶻ[1:Z.i-1]; linestyle = :solid)
 
 Legend(fig[2, 2],
        [hWᶻ, hεᶻ, hDᶻ, hRᶻ],
-       ["enstrophy work, Wᶻ" "ensemble mean enstophy work, <Wᶻ>" "dissipation, Dᶻ" "drag, Rᶻ = - 2μZ"])
+       ["enstrophy work, Wᶻ", "ensemble mean enstophy work, <Wᶻ>", "dissipation, Dᶻ", "drag, Rᶻ = - 2μZ"])
 
 hcᶻ = lines!(ax2Z, t, dZdt_computed; linestyle = :solid)
 hnᶻ = lines!(ax2Z, t, dZdt_numerical; linestyle = :dash)
 
 Legend(fig[4, 2],
        [hcᶻ, hnᶻ],
-       ["computed Wᶻ-Dᶻ" "numerical dZ/dt"])
+       ["computed Wᶻ-Dᶻ", "numerical dZ/dt"])
 
 hrᶻ = lines!(ax3Z, t, residual_Z)
 

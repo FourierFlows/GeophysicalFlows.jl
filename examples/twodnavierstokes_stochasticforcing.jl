@@ -169,7 +169,7 @@ heatmap!(axζ, x, y, ζ;
 
 hE = lines!(ax2, energy; linewidth = 3)
 hZ = lines!(ax2, enstrophy; linewidth = 3, color = :red)
-Legend(fig[1, 3], [hE, hZ], ["energy E(t)" "enstrophy Z(t) / k_f²"])
+Legend(fig[1, 3], [hE, hZ], ["energy E(t)", "enstrophy Z(t) / k_f²"])
 
 fig
 
