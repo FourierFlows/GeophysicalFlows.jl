@@ -223,7 +223,7 @@ function test_mqg_nonlinearadvection_2layers(dt, stepper, dev::Device=CPU())
   tf = 200dt
   nt = round(Int, tf/dt)
 
-  nx, ny = 128, 126
+  nx, ny = 64, 66
   Lx, Ly = 2π, 2π
   gr = TwoDGrid(dev; nx, Lx, ny, Ly)
 
@@ -257,8 +257,8 @@ function test_mqg_nonlinearadvection_2layers(dt, stepper, dev::Device=CPU())
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
-  Ff1 = FourierFlows.jacobian(ψ1, q1, gr) + @. (β - uyy1 -   25 * ((U2+u2) - (U1+u1)) ) * ψ1x + (U1+u1) * q1x - ν * Δq1
-  Ff2 = FourierFlows.jacobian(ψ2, q2, gr) + @. (β - uyy2 - 25/4 * ((U1+u1) - (U2+u2)) ) * ψ2x + (U2+u2) * q2x - ν * Δq2
+  Ff1 = FourierFlows.jacobian(ψ1, q1, gr) + @. (β - uyy1 -   25 * ((U2+u2) - (U1+u1))) * ψ1x + (U1+u1) * q1x - ν * Δq1
+  Ff2 = FourierFlows.jacobian(ψ2, q2, gr) + @. (β - uyy2 - 25/4 * ((U1+u1) - (U2+u2))) * ψ2x + (U2+u2) * q2x - ν * Δq2
   Ff2 .+= FourierFlows.jacobian(ψ2, η, gr) + @. (U2+u2) * ηx + μ * Δψ2
 
   T = eltype(gr)
@@ -310,7 +310,7 @@ function test_mqg_nonlinearadvection_3layers(dt, stepper, dev::Device=CPU())
   tf = 200*dt
   nt = round(Int, tf/dt)
 
-  nx, ny = 128, 126
+  nx, ny = 64, 66
   Lx, Ly = 2π, 5π
   gr = TwoDGrid(dev; nx, Lx, ny, Ly)
 
