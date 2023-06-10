@@ -24,12 +24,12 @@ using GeophysicalFlows, CUDA, Random, Printf, CairoMakie
 
 parsevalsum = FourierFlows.parsevalsum
 record = CairoMakie.record                # disambiguate between CairoMakie.record and CUDA.record
-nothing # hide
+nothing #hide
 
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
+nothing #hide
 
 
 # ## Numerical, domain, and simulation parameters
@@ -42,7 +42,7 @@ nothing # hide
 dt, tf = 0.005, 0.2 / μ       # timestep and final time
     nt = round(Int, tf / dt)  # total timesteps
     ns = 4                    # how many intermediate times we want to plot
-nothing # hide
+nothing #hide
 
 
 # ## Forcing
@@ -67,12 +67,12 @@ forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2
 
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0        # normalize forcing to inject energy at rate ε
-nothing # hide
+nothing #hide
 
 
 # We reset of the random number generator for reproducibility
 if dev==CPU(); Random.seed!(1234); else; CUDA.seed!(1234); end
-nothing # hide
+nothing #hide
 
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
@@ -86,7 +86,7 @@ function calcF!(Fh, sol, t, clock, vars, params, grid)
 
   return nothing
 end
-nothing # hide
+nothing #hide
 
 
 # ## Problem setup
@@ -94,14 +94,14 @@ nothing # hide
 # `stepper` keyword defines the time-stepper to be used.
 prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν, nν, μ, nμ, dt, stepper="ETDRK4",
                                 calcF=calcF!, stochastic=true)
-nothing # hide
+nothing #hide
 
 # Define some shortcuts for convenience.
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
 x,  y  = grid.x,  grid.y
 Lx, Ly = grid.Lx, grid.Ly
-nothing # hide
+nothing #hide
 
 
 # First let's see how a forcing realization looks like. Function `calcF!()` computes 
@@ -145,7 +145,7 @@ Rᶻ = Diagnostic(TwoDNavierStokes.enstrophy_dissipation_hypoviscosity,  prob, n
 Dᶻ = Diagnostic(TwoDNavierStokes.enstrophy_dissipation_hyperviscosity, prob, nsteps=nt) # enstrophy dissipation by drag μ
 Wᶻ = Diagnostic(TwoDNavierStokes.enstrophy_work,                       prob, nsteps=nt) # enstrophy work input by forcing
 diags = [E, Dᵋ, Wᵋ, Rᵋ, Z, Dᶻ, Wᶻ, Rᶻ] # a list of Diagnostics passed to `stepforward!` will  be updated every timestep.
-nothing # hide
+nothing #hide
 
 # ## Time-stepping the `Problem` forward
 

@@ -24,7 +24,7 @@ using Statistics: mean
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
+nothing #hide
 
 
 # ## Numerical parameters and time-stepping parameters
@@ -34,19 +34,19 @@ stepper = "FilteredRK4"  # timestepper
      dt = 0.05           # timestep
  nsteps = 2000           # total number of time-steps
  nsubs  = 10             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
-nothing # hide
+nothing #hide
 
 
 # ## Physical parameters
 
 L = 2π        # domain size
-nothing # hide
+nothing #hide
 
 # Define the topographic potential vorticity, ``\eta = f_0 h(x, y)/H``. The topography here is 
 # an elliptical mount at ``(x, y) = (1, 1)``, and an elliptical depression at ``(x, y) = (-1, -1)``.
 σx, σy = 0.4, 0.8
 topographicPV(x, y) = 3exp(-(x - 1)^2 / 2σx^2 - (y - 1)^2 / 2σy^2) - 2exp(- (x + 1)^2 / 2σx^2 - (y + 1)^2 / 2σy^2)
-nothing # hide
+nothing #hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments.
@@ -58,13 +58,13 @@ nothing # hide
 # The topophic PV is prescribed via keyword argument `eta`.
 prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, eta=topographicPV,
                              dt, stepper, aliased_fraction=0)
-nothing # hide
+nothing #hide
 
 # and define some shortcuts
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 x,  y  = grid.x,  grid.y
 Lx, Ly = grid.Lx, grid.Ly
-nothing # hide
+nothing #hide
 
 # and let's plot the topographic PV. Note that when plotting, we decorate the variable to be 
 # plotted with `Array()` to make sure it is brought back on the CPU when the variable lives 
@@ -103,7 +103,7 @@ qih *= sqrt(E₀ / SingleLayerQG.energy(qih, vars, params, grid))  # normalize q
 qi = irfft(qih, grid.nx)
 
 SingleLayerQG.set_q!(prob, qi)
-nothing # hide
+nothing #hide
 
 # Let's plot the initial vorticity and streamfunction.
 
@@ -147,7 +147,7 @@ fig
 E = Diagnostic(SingleLayerQG.energy, prob; nsteps)
 Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-nothing # hide
+nothing #hide
 
 
 # ## Output
@@ -155,16 +155,16 @@ nothing # hide
 # We choose folder for outputing `.jld2` files.
 filepath = "."
 filename = joinpath(filepath, "decayingbetaturb.jld2")
-nothing # hide
+nothing #hide
 
 # Do some basic file management,
 if isfile(filename); rm(filename); end
-nothing # hide
+nothing #hide
 
 # and then create Output.
 get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
 out = Output(prob, filename, (:sol, get_sol))
-nothing # hide
+nothing #hide
 
 
 # ## Visualizing the simulation
@@ -181,7 +181,7 @@ contour!(axq, x, y, η;
 title_q[] = "vorticity, t=" * @sprintf("%.2f", clock.t)
 title_ψ[] = "streamfunction ψ"
 
-nothing # hide
+nothing #hide
 
 
 # ## Time-stepping the `Problem` forward
@@ -209,6 +209,6 @@ record(fig, "singlelayerqg_decaying_topography.mp4", 0:round(Int, nsteps/nsubs),
   stepforward!(prob, diags, nsubs)
   SingleLayerQG.updatevars!(prob)
 end
-nothing # hide
+nothing #hide
 
 # ![](singlelayerqg_decaying_topography.mp4)

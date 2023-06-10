@@ -30,7 +30,7 @@ using Random: seed!
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
+nothing #hide
 
 
 # ## Numerical parameters and time-stepping parameters
@@ -41,7 +41,7 @@ stepper = "FilteredETDRK4"          # timestepper
      tf = 60                        # length of time for simulation
  nsteps = Int(tf / dt)              # total number of time-steps
  nsubs  = round(Int, nsteps/100)    # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
-nothing # hide
+nothing #hide
 
 
 # ## Physical parameters
@@ -49,7 +49,7 @@ nothing # hide
  L = 2π        # domain size
  ν = 1e-19     # hyper-viscosity coefficient
 nν = 4         # hyper-viscosity order
-nothing # hide
+nothing #hide
 
 
 # ## Problem setup
@@ -59,13 +59,13 @@ nothing # hide
 # stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
 
 prob = SurfaceQG.Problem(dev; nx=n, Lx=L, dt, stepper, ν, nν)
-nothing # hide
+nothing #hide
 
 # Let's define some shortcuts.
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 x,  y  = grid.x,  grid.y
 Lx, Ly = grid.Lx, grid.Ly
-#md nothing # hide
+#md nothing #hide
 
 
 # ## Setting initial conditions
@@ -75,7 +75,7 @@ X, Y = gridpoints(grid)
 b₀ = @. exp(-(X^2 + 4Y^2))
 
 SurfaceQG.set_b!(prob, b₀)
-nothing # hide
+nothing #hide
 
 # Let's plot the initial condition. Note that when plotting, we decorate the variable to be 
 # plotted with `Array()` to make sure it is brought back on the CPU when `vars` live on the GPU.
@@ -105,7 +105,7 @@ B  = Diagnostic(SurfaceQG.buoyancy_variance, prob; nsteps)
 KE = Diagnostic(SurfaceQG.kinetic_energy, prob; nsteps)
 Dᵇ = Diagnostic(SurfaceQG.buoyancy_dissipation, prob; nsteps)
 diags = [B, KE, Dᵇ] # A list of Diagnostics types passed to `stepforward!`. Diagnostics are updated every timestep.
-nothing # hidenothing # hide
+nothing #hidenothing #hide
 
 
 # ## Output
@@ -119,19 +119,19 @@ plotpath = "./"
 
 dataname = joinpath(datapath, base_filename)
 plotname = joinpath(plotpath, base_filename)
-nothing # hide
+nothing #hide
 
 # Do some basic file management,
 if !isdir(plotpath); mkdir(plotpath); end
 if !isdir(datapath); mkdir(datapath); end
-nothing # hide
+nothing #hide
 
 # and then create Output.
 get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im * prob.grid.l .* sqrt.(prob.grid.invKrsq) .* prob.sol, prob.grid.nx)
 
 out = Output(prob, dataname, (:sol, get_sol), (:u, get_u))
-nothing # hide
+nothing #hide
 
 
 # ## Visualizing the simulation
@@ -199,7 +199,7 @@ record(fig, "sqg_ellipticalvortex.mp4", 0:round(Int, nsteps/nsubs), framerate = 
   stepforward!(prob, diags, nsubs)
   SurfaceQG.updatevars!(prob)
 end
-nothing # hide
+nothing #hide
 
 # ![](sqg_ellipticalvortex.mp4)
 

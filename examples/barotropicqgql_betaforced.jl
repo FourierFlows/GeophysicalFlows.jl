@@ -24,12 +24,12 @@ using Statistics: mean
 
 parsevalsum = FourierFlows.parsevalsum
 record = CairoMakie.record                # disambiguate between CairoMakie.record and CUDA.record
-nothing # hide
+nothing #hide
 
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
+nothing #hide
 
 
 # ## Numerical parameters and time-stepping parameters
@@ -39,7 +39,7 @@ stepper = "FilteredRK4"  # timestepper
      dt = 0.05           # timestep
  nsteps = 8000           # total number of time-steps
  nsubs  = 10             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
-nothing # hide
+nothing #hide
 
 
 # ## Physical parameters
@@ -47,7 +47,7 @@ nothing # hide
 L = 2π        # domain size
 β = 10.0      # planetary PV gradient
 μ = 0.01      # bottom drag
-nothing # hide
+nothing #hide
  
 
 # ## Forcing
@@ -72,12 +72,12 @@ forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2
 
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0       # normalize forcing to inject energy at rate ε
-nothing # hide
+nothing #hide
 
 
 # We reset of the random number generator for reproducibility
 if dev==CPU(); Random.seed!(1234); else; CUDA.seed!(1234); end
-nothing # hide
+nothing #hide
 
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
@@ -91,7 +91,7 @@ function calcF!(Fh, sol, t, clock, vars, params, grid)
 
   return nothing
 end
-nothing # hide
+nothing #hide
 
 
 # ## Problem setup
@@ -102,13 +102,13 @@ nothing # hide
 # Thus, we choose not to do any dealiasing by providing `aliased_fraction=0`.
 prob = BarotropicQGQL.Problem(dev; nx=n, Lx=L, β, μ, dt, stepper, 
                               calcF=calcF!, stochastic=true, aliased_fraction=0)
-nothing # hide
+nothing #hide
 
 # and define some shortcuts.
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 x,  y  = grid.x, grid.y
 Lx, Ly = grid.Lx, grid.Ly
-nothing # hide
+nothing #hide
 
 
 # First let's see how a forcing realization looks like. Note that when plotting, we decorate 
@@ -136,24 +136,24 @@ fig
 
 # Our initial condition is simply fluid at rest.
 BarotropicQGQL.set_zeta!(prob, device_array(dev)(zeros(grid.nx, grid.ny)))
-nothing # hide
+nothing #hide
 
 # ## Diagnostics
 
 # Create Diagnostics -- `energy` and `enstrophy` are functions imported at the top.
 E = Diagnostic(BarotropicQGQL.energy, prob; nsteps)
 Z = Diagnostic(BarotropicQGQL.enstrophy, prob; nsteps)
-nothing # hide
+nothing #hide
 
 # We can also define our custom diagnostics via functions.
 zetaMean(prob) = prob.sol[1, :]
 
 zMean = Diagnostic(zetaMean, prob; nsteps, freq=10)  # the zonal-mean vorticity
-nothing # hide
+nothing #hide
 
 # We combile all diags in a list.
 diags = [E, Z, zMean] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-nothing # hide
+nothing #hide
 
 
 # ## Output
@@ -163,12 +163,12 @@ filepath = "."
 plotpath = "./plots_forcedbetaQLturb"
 plotname = "snapshots"
 filename = joinpath(filepath, "forcedbetaQLturb.jld2")
-nothing # hide
+nothing #hide
 
 # Do some basic file management,
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
-nothing # hide
+nothing #hide
 
 # and then create Output.
 get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
@@ -255,7 +255,7 @@ lines!(axū, 0y, y; linewidth = 1, linestyle=:dash)
 lines!(axE, μt, energy; linewidth = 3)
 lines!(axZ, μt, enstrophy; linewidth = 3, color = :red)
 
-nothing # hide
+nothing #hide
 
 
 # ## Time-stepping the `Problem` forward
@@ -291,7 +291,7 @@ record(fig, "barotropicqgql_betaforced.mp4", frames, framerate = 18) do j
   stepforward!(prob, diags, nsubs)
   BarotropicQGQL.updatevars!(prob)
 end
-nothing # hide
+nothing #hide
 
 # ![](barotropicqgql_betaforced.mp4)
 
