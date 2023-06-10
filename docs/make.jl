@@ -22,12 +22,14 @@ examples = [
   "surfaceqg_decaying.jl",
 ]
 
+
 for example in examples
   withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
     example_filepath = joinpath(EXAMPLES_DIR, example)
-    Literate.markdown(example_filepath, OUTPUT_DIR; flavor = Literate.DocumenterFlavor())
-    Literate.notebook(example_filepath, OUTPUT_DIR)
-    Literate.script(example_filepath, OUTPUT_DIR)
+    withenv("JULIA_DEBUG" => "Literate") do
+        Literate.markdown(example_filepath, OUTPUT_DIR;
+                          flavor = Literate.DocumenterFlavor(), execute = true)
+    end
   end
 end
 
