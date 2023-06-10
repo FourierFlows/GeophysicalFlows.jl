@@ -1,9 +1,9 @@
-using
-  Documenter,
-  Literate,
-  CairoMakie,   # to not capture precompilation output
-  GeophysicalFlows,
-  Glob
+using Documenter, Literate
+
+using CairoMakie # to avoid capturing precompilation output by Literate
+CairoMakie.activate!(type = "svg")
+
+using GeophysicalFlows
 
 #####
 ##### Generate literated examples
@@ -38,10 +38,6 @@ end
 ##### Build and deploy docs
 #####
 
-# Set up a timer to print a space ' ' every 240 seconds. This is to avoid CI machines
-# timing out when building demanding Literate.jl examples.
-Timer(t -> println(" "), 0, interval=240)
-
 format = Documenter.HTML(
   collapselevel = 2,
      prettyurls = get(ENV, "CI", nothing) == "true",
@@ -50,11 +46,11 @@ format = Documenter.HTML(
 
 makedocs(
  modules = [GeophysicalFlows],
- doctest = false,
+ doctest = true,
    clean = true,
 checkdocs = :all,
   format = format,
- authors = "Navid C. Constantinou and Gregory L. Wagner",
+ authors = "Navid C. Constantinou, Gregory L. Wagner, and contributors",
 sitename = "GeophysicalFlows.jl",
    pages = Any[
             "Home"    => "index.md",
