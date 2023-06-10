@@ -27,8 +27,10 @@ for example in examples
   withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
     example_filepath = joinpath(EXAMPLES_DIR, example)
     withenv("JULIA_DEBUG" => "Literate") do
-        Literate.markdown(example_filepath, OUTPUT_DIR;
-                          flavor = Literate.DocumenterFlavor(), execute = true)
+      Literate.markdown(example_filepath, OUTPUT_DIR;
+                        flavor = Literate.DocumenterFlavor(), execute = true)
+      Literate.notebook(example_filepath, OUTPUT_DIR, execute = false)
+      Literate.script(example_filepath, OUTPUT_DIR)
     end
   end
 end
