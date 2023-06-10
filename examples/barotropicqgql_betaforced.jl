@@ -23,7 +23,8 @@ using GeophysicalFlows, CUDA, Random, Printf, CairoMakie
 using Statistics: mean
 
 parsevalsum = FourierFlows.parsevalsum
-record = CairoMakie.record
+record = CairoMakie.record                # disambiguate between CairoMakie.record and CUDA.record
+nothing # hide
 
 # ## Choosing a device: CPU or GPU
 
@@ -84,8 +85,9 @@ nothing # hide
 # numbers uniformly distributed between 0 and 1.
 random_uniform = dev==CPU() ? rand : CUDA.rand
 
-function calcF!(Fh, sol, t, clock, vars, params, grid) 
-  Fh .= sqrt.(forcing_spectrum) .* exp.(2π * im * random_uniform(eltype(grid), size(sol))) ./ sqrt(clock.dt)
+function calcF!(Fh, sol, t, clock, vars, params, grid)
+  T = eltype(grid)
+  @. Fh = sqrt(forcing_spectrum) * cis(2π * random_uniform(T)) / sqrt(clock.dt)
 
   return nothing
 end
