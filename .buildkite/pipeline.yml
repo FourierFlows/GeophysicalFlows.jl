@@ -3,7 +3,7 @@ env:
   SECRET_CODECOV_TOKEN: "Ak2mVTxXnhkPNc096ImDdp7bOc4zGNTqFEEDaGMwAgYPr28g5dyMbslh8B/ad4NQHXVL1MXQ3zrUfGgMBRq+mmqRaAe13FI4Go9uCas6bzdZXE23ExiLzBmqVRNRf8GqEcpGL7BBreohC0cnfI0SVMiIJDCJXX9YsXJtlcpk1glQFMEFI5V6cpFe9K2l5xoUNQ4179ZYoJUMAy/aylQx/UdQuw527FjHQUsi5/dFtWzMqeys0secNa9alLvJCQdIX9OqPjmBYvuIIVXCR7vlZoH8PgXwEj7wbdp8/V31+wlLQI9WePcsJxoOybtLTOlwwfw4jWLAttDZYqnqiLVp3Q==;U2FsdGVkX18sNLCManU1B/jI5kh4LhSi69MFXljHSp9yWrN7u5d196K/XrELwb8ksbamyKeHjIvDIopwD55dbw=="
 
 steps:
-  - label: "🍆 Julia 1.6"
+  - label: "🥝 Julia 1.6"
     plugins:
       - JuliaCI/julia#v1:
           version: 1.6
@@ -20,6 +20,17 @@ steps:
     plugins:
       - JuliaCI/julia#v1:
           version: 1.8
+      - JuliaCI/julia-test#v1: ~
+    agents:
+      queue: "juliagpu"
+      cuda: "*"
+    if: build.message !~ /\[skip tests\]/
+    timeout_in_minutes: 60
+
+  - label: "🥑 Julia 1.9"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: 1.9
       - JuliaCI/julia-test#v1: ~
     agents:
       queue: "juliagpu"
