@@ -215,17 +215,17 @@ axu = Axis(fig[1, 2]; title = "uₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")",
 axv = Axis(fig[1, 3]; title = "vₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")", axis_kwargs...)
 
 hb = heatmap!(axb, x, y, Array(vars.b);
-             colormap = :deep, colorrange = (0, 1))
+              colormap = :deep, colorrange = (0, 1))
 
 Colorbar(fig[2, 1], hb, vertical = false)
 
 hu = heatmap!(axu, x, y, Array(vars.u);
-             colormap = :balance, colorrange = (-maximum(abs.(vars.u)), maximum(abs.(vars.u))))
+              colormap = :balance, colorrange = (-maximum(abs.(vars.u)), maximum(abs.(vars.u))))
 
 Colorbar(fig[2, 2], hu, vertical = false)
 
 hv = heatmap!(axv, x, y, Array(vars.v);
-             colormap = :balance, colorrange = (-maximum(abs.(vars.v)), maximum(abs.(vars.v))))
+              colormap = :balance, colorrange = (-maximum(abs.(vars.v)), maximum(abs.(vars.v))))
 
 Colorbar(fig[2, 3], hv, vertical = false)
 

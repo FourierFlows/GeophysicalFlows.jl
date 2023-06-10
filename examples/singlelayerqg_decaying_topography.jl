@@ -122,15 +122,15 @@ title_ψ = Observable("initial streamfunction ψ")
 axψ = Axis(fig[1, 3]; title = title_ψ, axis_kwargs...)
 
 hm = heatmap!(axq, x, y, q;
-         colormap = :balance, colorrange = (-8, 8))
+              colormap = :balance, colorrange = (-8, 8))
 
 Colorbar(fig[1, 2], hm)
 
 levels = collect(range(-0.28, stop=0.28, length=11))
 
 hc = contourf!(axψ, x, y, ψ;
-          levels, colormap = :viridis, colorrange = (-0.28, 0.28),
-          extendlow = :auto, extendhigh = :auto)
+               levels, colormap = :viridis, colorrange = (-0.28, 0.28),
+               extendlow = :auto, extendhigh = :auto)
 contour!(axψ, x, y, ψ;
          levels, color = :black)
 
