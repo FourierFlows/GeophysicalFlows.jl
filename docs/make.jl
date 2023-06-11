@@ -1,4 +1,7 @@
-using Documenter, Literate, CairoMakie
+using Documenter, Literate
+
+using CairoMakie
+CairoMakie.activate!(type = "svg")
 
 using GeophysicalFlows
 
@@ -26,11 +29,9 @@ examples = [
 for example in examples
   withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
     example_filepath = joinpath(EXAMPLES_DIR, example)
-    withenv("JULIA_DEBUG" => "Literate") do
-      Literate.markdown(example_filepath, OUTPUT_DIR;
-                        flavor = Literate.DocumenterFlavor(), execute = true)
-    end
-  end
+    @time Literate.markdown(example_filepath, OUTPUT_DIR;
+    flavor = Literate.DocumenterFlavor(), execute = true)
+end
 end
 
 #####
@@ -52,7 +53,7 @@ checkdocs = :all,
  authors = "Navid C. Constantinou, Gregory L. Wagner, and contributors",
 sitename = "GeophysicalFlows.jl",
    pages = Any[
-            "Home"    => "index.md",
+            "Home" => "index.md",
             "Installation instructions" => "installation_instructions.md",
             "Aliasing" => "aliasing.md",
             "GPU" => "gpu.md",
@@ -95,9 +96,24 @@ sitename = "GeophysicalFlows.jl",
            ]
 )
 
-@info "Cleaning up temporary .jld2 and .nc files created by doctests..."
+@info "Clean up temporary .jld2 and .nc output created by doctests or literated examples..."
 
-for file in vcat(glob("docs/*.jld2"), glob("docs/*.nc"))
+"""
+    recursive_find(directory, pattern)
+
+Return list of filepaths within `directory` that contains the `pattern::Regex`.
+"""
+recursive_find(directory, pattern) =
+    mapreduce(vcat, walkdir(directory)) do (root, dirs, files)
+        joinpath.(root, filter(contains(pattern), files))
+    end
+
+files = []
+for pattern in [r"\.jld2", r"\.nc"]
+    global files = vcat(files, recursive_find(@__DIR__, pattern))
+end
+
+for file in files
     rm(file)
 end
 
