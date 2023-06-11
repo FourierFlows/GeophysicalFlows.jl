@@ -10,27 +10,45 @@ function constructtestfields_2layer(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   # a set of streafunctions ψ1 and ψ2, ...
-  ψ1 = @. 1e-3 * ( 1/4*cos(2k₀*x)*cos(5l₀*y) + 1/3*cos(3k₀*x)*cos(3l₀*y) )
-  ψ2 = @. 1e-3 * (     cos(3k₀*x)*cos(4l₀*y) + 1/2*cos(4k₀*x)*cos(2l₀*y) )
+  ψ1 = @. 1e-3 * ( 1/4 * cos(2k₀*x) * cos(5l₀*y) +
+                   1/3 * cos(3k₀*x) * cos(3l₀*y) )
+  ψ2 = @. 1e-3 * (       cos(3k₀*x) * cos(4l₀*y) +
+                   1/2 * cos(4k₀*x) * cos(2l₀*y) )
+
+  Δψ1 = @. 1e-3 * ( - 1/4 * ((2k₀)^2 + (5l₀)^2) * cos(2k₀*x) * cos(5l₀*y) +
+                    - 1/3 * ((3k₀)^2 + (3l₀)^2) * cos(3k₀*x) * cos(3l₀*y) )
+  Δψ2 = @. 1e-3 * (       - ((3k₀)^2 + (4l₀)^2) * cos(3k₀*x) * cos(4l₀*y) +
+                    - 1/2 * ((4k₀)^2 + (2l₀)^2) * cos(4k₀*x) * cos(2l₀*y) )
+
+  Δ²ψ1 = @. 1e-3 * ( + 1/4 * ((2k₀)^2 + (5l₀)^2)^2 * cos(2k₀*x) * cos(5l₀*y) +
+                     + 1/3 * ((3k₀)^2 + (3l₀)^2)^2 * cos(3k₀*x) * cos(3l₀*y) )
+  Δ²ψ2 = @. 1e-3 * (       + ((3k₀)^2 + (4l₀)^2)^2 * cos(3k₀*x) * cos(4l₀*y) +
+                     + 1/2 * ((4k₀)^2 + (2l₀)^2)^2 * cos(4k₀*x) * cos(2l₀*y) )
 
   # ... their corresponding PVs q1, q2,
-  q1 = @. 1e-3 * ( 1/6 *(   75cos(4k₀*x)*cos(2l₀*y) +   2cos(3k₀*x)*( -43cos(3l₀*y) + 75cos(4l₀*y) ) - 81cos(2k₀*x)*cos(5l₀*y) ) )
-  q2 = @. 1e-3 * ( 1/48*( -630cos(4k₀*x)*cos(2l₀*y) + 100cos(3k₀*x)*(    cos(3l₀*y) - 15cos(4l₀*y) ) + 75cos(2k₀*x)*cos(5l₀*y) ) )
+  q1 = @. Δψ1 +   25 * ψ2 -   25 * ψ1
+  q2 = @. Δψ2 + 25/4 * ψ1 - 25/4 * ψ2
 
-  # ... and various derived fields, e.g., ∂ψ1/∂x,
-  ψ1x = @. 1e-3 * (     -k₀/2*sin(2k₀*x)*cos(5l₀*y) -       k₀*sin(3k₀*x)*cos(3l₀*y) )
-  ψ2x = @. 1e-3 * (      -3k₀*sin(3k₀*x)*cos(4l₀*y) -      2k₀*sin(4k₀*x)*cos(2l₀*y) )
-  Δψ2 = @. 1e-3 * ( -25*k₀*l₀*cos(3k₀*x)*cos(4l₀*y) - 10*k₀*l₀*cos(4k₀*x)*cos(2l₀*y) )
+  # ... and various derived fields, e.g., ∂ψ1/∂x,s
+  ψ1x = @. 1e-3 * ( - 1/4 * 2k₀ * sin(2k₀*x) * cos(5l₀*y) +
+                    - 1/3 * 3k₀ * sin(3k₀*x) * cos(3l₀*y) )
+  ψ2x = @. 1e-3 * (       - 3k₀ * sin(3k₀*x) * cos(4l₀*y) +
+                    - 1/2 * 4k₀ * sin(4k₀*x) * cos(2l₀*y) )
 
-  q1x = @. 1e-3 * ( 1/6 *( -4k₀*75sin(4k₀*x)*cos(2l₀*y) - 3k₀*2sin(3k₀*x)*( -43cos(3l₀*y) + 75cos(4l₀*y) ) + 2k₀*81sin(2k₀*x)*cos(5l₀*y) ) )
-  q2x = @. 1e-3 * ( 1/48*( 4k₀*630sin(4k₀*x)*cos(2l₀*y) - 3k₀*100sin(3k₀*x)*(    cos(3l₀*y) - 15cos(4l₀*y) ) - 2k₀*75sin(2k₀*x)*cos(5l₀*y) ) )
+  Δψ1x = @. 1e-3 * ( + 1/4 * 2k₀ * ((2k₀)^2 + (5l₀)^2) * sin(2k₀*x) * cos(5l₀*y) +
+                     + 1/3 * 3k₀ * ((3k₀)^2 + (3l₀)^2) * sin(3k₀*x) * cos(3l₀*y) )
+  Δψ2x = @. 1e-3 * (       + 3k₀ * ((3k₀)^2 + (4l₀)^2) * sin(3k₀*x) * cos(4l₀*y) +
+                     + 1/2 * 4k₀ * ((4k₀)^2 + (2l₀)^2) * sin(4k₀*x) * cos(2l₀*y) )
 
-  Δq1 = @. 1e-3 * (k₀*l₀)*( 1/6 *( -20* 75cos(4k₀*x)*cos(2l₀*y) +   2cos(3k₀*x)*( +18*43cos(3l₀*y) - 25*75cos(4l₀*y) ) +29*81cos(2k₀*x)*cos(5l₀*y) ) )
-  Δq2 = @. 1e-3 * (k₀*l₀)*( 1/48*( +20*630cos(4k₀*x)*cos(2l₀*y) + 100cos(3k₀*x)*(    -18cos(3l₀*y) + 25*15cos(4l₀*y) ) -29*75cos(2k₀*x)*cos(5l₀*y) ) )
+  # ... their corresponding PVs q1, q2, q3,
+  Δq1 = @. Δ²ψ1 +   25 * Δψ2 -   25 * Δψ1
+  Δq2 = @. Δ²ψ2 + 25/4 * Δψ1 - 25/4 * Δψ2
+
+  q1x = @. Δψ1x +   25 * ψ2x -   25 * ψ1x
+  q2x = @. Δψ2x + 25/4 * ψ1x - 25/4 * ψ2x
 
   return ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2
 end
-
 
 """
     constructtestfields_3layer(gr)
@@ -38,27 +56,63 @@ end
 Constructs flow fields for a 3-layer problem with parameters such that
     q1 = Δψ1 + 20ψ2 - 20ψ1,
     q2 = Δψ2 + 20ψ1 - 44ψ2 + 24ψ3,
-    q2 = Δψ2 + 12ψ2 - 12ψ3.
+    q3 = Δψ3 + 12ψ2 - 12ψ3.
 """
 function constructtestfields_3layer(gr)
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   # a set of streafunctions ψ1, ψ2, ψ3, ...
-  ψ1 = @. 1e-3 * ( 1/4*cos(2k₀*x)*cos(5l₀*y) + 1/3*cos(3k₀*x)*cos(3l₀*y) )
-  ψ2 = @. 1e-3 * (     cos(3k₀*x)*cos(4l₀*y) + 1/2*cos(4k₀*x)*cos(2l₀*y) )
-  ψ3 = @. 1e-3 * (     cos(1k₀*x)*cos(3l₀*y) + 1/2*cos(2k₀*x)*cos(2l₀*y) )
+  ψ1 = @. 1e-3 * ( 1/4 * cos(2k₀*x) * cos(5l₀*y) +
+                   1/3 * cos(3k₀*x) * cos(3l₀*y) )
+  ψ2 = @. 1e-3 * (       cos(3k₀*x) * cos(4l₀*y) +
+                   1/2 * cos(4k₀*x) * cos(2l₀*y) )
+  ψ3 = @. 1e-3 * (       cos(1k₀*x) * cos(3l₀*y) +
+                   1/2 * cos(2k₀*x) * cos(2l₀*y) )
+ 
+  Δψ1 = @. 1e-3 * ( - 1/4 * ((2k₀)^2 + (5l₀)^2) * cos(2k₀*x) * cos(5l₀*y) +
+                    - 1/3 * ((3k₀)^2 + (3l₀)^2) * cos(3k₀*x) * cos(3l₀*y) )
+  Δψ2 = @. 1e-3 * (       - ((3k₀)^2 + (4l₀)^2) * cos(3k₀*x) * cos(4l₀*y) +
+                    - 1/2 * ((4k₀)^2 + (2l₀)^2) * cos(4k₀*x) * cos(2l₀*y) )
+  Δψ3 = @. 1e-3 * (       - ((1k₀)^2 + (3l₀)^2) * cos(1k₀*x) * cos(3l₀*y) +
+                    - 1/2 * ((2k₀)^2 + (2l₀)^2) * cos(2k₀*x) * cos(2l₀*y) )
 
-  Δψ1 = @. -1e-3 * ( 1/4*((2k₀)^2+(5l₀)^2)*cos(2k₀*x)*cos(5l₀*y) + 1/3*((3k₀)^2+(3l₀)^2)*cos(3k₀*x)*cos(3l₀*y) )
-  Δψ2 = @. -1e-3 * (     ((3k₀)^2+(4l₀)^2)*cos(3k₀*x)*cos(4l₀*y) + 1/2*((4k₀)^2+(2l₀)^2)*cos(4k₀*x)*cos(2l₀*y) )
-  Δψ3 = @. -1e-3 * (     ((1k₀)^2+(3l₀)^2)*cos(1k₀*x)*cos(3l₀*y) + 1/2*((2k₀)^2+(2l₀)^2)*cos(2k₀*x)*cos(2l₀*y) )
+  Δ²ψ1 = @. 1e-3 * ( + 1/4 * ((2k₀)^2 + (5l₀)^2)^2 * cos(2k₀*x) * cos(5l₀*y) +
+                     + 1/3 * ((3k₀)^2 + (3l₀)^2)^2 * cos(3k₀*x) * cos(3l₀*y) )
+  Δ²ψ2 = @. 1e-3 * (       + ((3k₀)^2 + (4l₀)^2)^2 * cos(3k₀*x) * cos(4l₀*y) +
+                     + 1/2 * ((4k₀)^2 + (2l₀)^2)^2 * cos(4k₀*x) * cos(2l₀*y) )
+  Δ²ψ3 = @. 1e-3 * (       + ((1k₀)^2 + (3l₀)^2)^2 * cos(1k₀*x) * cos(3l₀*y) +
+                     + 1/2 * ((2k₀)^2 + (2l₀)^2)^2 * cos(2k₀*x) * cos(2l₀*y) )
 
   # ... their corresponding PVs q1, q2, q3,
-  q1 = @. Δψ1 + 20ψ2 - 20ψ1
-  q2 = @. Δψ2 + 20ψ1 - 44ψ2 + 24ψ3
-  q3 = @. Δψ3        + 12ψ2 - 12ψ3
+  q1 = @. Δψ1  + 20ψ2  - 20ψ1
+  q2 = @. Δψ2  + 20ψ1  - 44ψ2  + 24ψ3
+  q3 = @. Δψ3          + 12ψ2  - 12ψ3
 
-  return ψ1, ψ2, ψ3, q1, q2, q3
+  # ... and various derived fields, e.g., ∂ψ1/∂x,
+  ψ1x = @. 1e-3 * ( - 1/4 * 2k₀ * sin(2k₀*x) * cos(5l₀*y) +
+                    - 1/3 * 3k₀ * sin(3k₀*x) * cos(3l₀*y) )
+  ψ2x = @. 1e-3 * (       - 3k₀ * sin(3k₀*x) * cos(4l₀*y) +
+                    - 1/2 * 4k₀ * sin(4k₀*x) * cos(2l₀*y) )
+  ψ3x = @. 1e-3 * (       - 1k₀ * sin(1k₀*x) * cos(3l₀*y) +
+                    - 1/2 * 2k₀ * sin(2k₀*x) * cos(2l₀*y) )
+
+  Δψ1x = @. 1e-3 * ( + 1/4 * 2k₀ * ((2k₀)^2 + (5l₀)^2) * sin(2k₀*x) * cos(5l₀*y) +
+                     + 1/3 * 3k₀ * ((3k₀)^2 + (3l₀)^2) * sin(3k₀*x) * cos(3l₀*y) )
+  Δψ2x = @. 1e-3 * (       + 3k₀ * ((3k₀)^2 + (4l₀)^2) * sin(3k₀*x) * cos(4l₀*y) +
+                     + 1/2 * 4k₀ * ((4k₀)^2 + (2l₀)^2) * sin(4k₀*x) * cos(2l₀*y) )
+  Δψ3x = @. 1e-3 * (       + 1k₀ * ((1k₀)^2 + (3l₀)^2) * sin(1k₀*x) * cos(3l₀*y) +
+                     + 1/2 * 2k₀ * ((2k₀)^2 + (2l₀)^2) * sin(2k₀*x) * cos(2l₀*y) )
+
+  q1x = @. Δψ1x + 20ψ2x - 20ψ1x
+  q2x = @. Δψ2x + 20ψ1x - 44ψ2x + 24ψ3x
+  q3x = @. Δψ3x         + 12ψ2x - 12ψ3x
+
+  Δq1 = @. Δ²ψ1 + 20Δψ2 - 20Δψ1
+  Δq2 = @. Δ²ψ2 + 20Δψ1 - 44Δψ2 + 24Δψ3
+  Δq3 = @. Δ²ψ3         + 12Δψ2 - 12Δψ3
+
+  return ψ1, ψ2, ψ3, q1, q2, q3, ψ1x, ψ2x, ψ3x, q1x, q2x, q3x, Δq1, Δq2, Δq3, Δψ3
 end
 
 
@@ -127,7 +181,7 @@ function test_pvtofromstreamfunction_3layer(dev::Device=CPU())
   prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
-  ψ1, ψ2, ψ3, q1, q2, q3 = constructtestfields_3layer(gr)
+  ψ1, ψ2, ψ3, q1, q2, q3, ψ1x, ψ2x, ψ3x, q1x, q2x, q3x, Δq1, Δq2, Δq3, Δψ3 = constructtestfields_3layer(gr)
 
   vs.ψh[:, :, 1] .= rfft(ψ1)
   vs.ψh[:, :, 2] .= rfft(ψ2)
@@ -159,7 +213,7 @@ end
 
 
 """
-    test_mqg_nonlinearadvection(dt, stepper, dev; kwargs...)
+    test_mqg_nonlinearadvection_2layers(dt, stepper, dev::Device=CPU())
 
 Tests the advection term by timestepping a test problem with timestep dt and
 timestepper identified by the string stepper. The test 2-layer problem is
@@ -168,12 +222,11 @@ the advection terms J(ψn, qn) are non-zero. Next, a forcing Ff is derived such
 that a solution to the problem forced by this Ff is then qf.
 (This solution may not be realized, at least at long times, if it is unstable.)
 """
-function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
-                                     n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+function test_mqg_nonlinearadvection_2layers(dt, stepper, dev::Device=CPU())
 
   A = device_array(dev)
 
-  tf = 0.5
+  tf = 200dt
   nt = round(Int, tf/dt)
 
   nx, ny = 64, 66
@@ -190,9 +243,11 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
 
   β = 0.35
 
-  U1, U2 = 0.1, 0.05
-  u1 = @. 0.5sech(gr.y/(Ly/15))^2; u1 = A(reshape(u1, (1, gr.ny)))
-  u2 = @. 0.02cos(3l₀*gr.y);       u2 = A(reshape(u2, (1, gr.ny)))
+  U1, U2 = 0.02, 0.025
+
+  u1 = @. 0.05sech(gr.y / (Ly/15))^2; u1 = A(reshape(u1, (1, gr.ny)))
+  u2 = @. 0.02cos(3l₀*gr.y);          u2 = A(reshape(u2, (1, gr.ny)))
+
   uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
   uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
 
@@ -203,13 +258,14 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
   μ, ν, nν = 0.1, 0.05, 1
 
   η0, σx, σy = 1.0, Lx/25, Ly/20
-   η = @. η0 * exp( - (x + Lx/8)^2/2σx^2 - (y - Ly/8)^2/2σy^2)
-  ηx = @. -(x + Lx/8)/σx^2 * η
+   η = @. η0 * exp( -(x + Lx/8)^2 / 2σx^2 - (y - Ly/8)^2 / 2σy^2)
+  ηx = @. - (x + Lx/8) / σx^2 * η
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
-  Ff1 = FourierFlows.jacobian(ψ1, q1, gr)     + @. (β - uyy1 -   25*(U2+u2-U1-u1) )*ψ1x + (U1+u1)*q1x - ν*Δq1
-  Ff2 = FourierFlows.jacobian(ψ2, q2 + η, gr) + @. (β - uyy2 - 25/4*(U1+u1-U2-u2) )*ψ2x + (U2+u2)*(q2x + ηx) + μ*Δψ2 - ν*Δq2
+  Ff1 = FourierFlows.jacobian(ψ1, q1, gr) + @. (β - uyy1 -   25 * ((U2+u2) - (U1+u1))) * ψ1x + (U1+u1) * q1x - ν * Δq1
+  Ff2 = FourierFlows.jacobian(ψ2, q2, gr) + @. (β - uyy2 - 25/4 * ((U1+u1) - (U2+u2))) * ψ2x + (U2+u2) * q2x - ν * Δq2
+  Ff2 .+= FourierFlows.jacobian(ψ2, η, gr) + @. (U2+u2) * ηx + μ * Δψ2
 
   T = eltype(gr)
 
@@ -223,7 +279,7 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
 
   function calcFq!(Fqh, sol, t, cl, v, p, g)
     Fqh .= Ffh
-    nothing
+    return nothing
   end
 
   prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ, U,
@@ -238,6 +294,101 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
   ψf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
   @views ψf[:, :, 1] = ψ1
   @views ψf[:, :, 2] = ψ2
+
+  MultiLayerQG.set_q!(prob, qf)
+
+  stepforward!(prob, nt)
+  MultiLayerQG.updatevars!(prob)
+
+  return isapprox(vs.q, qf, rtol=rtol_multilayerqg) &&
+         isapprox(vs.ψ, ψf, rtol=rtol_multilayerqg)
+end
+
+"""
+    test_mqg_nonlinearadvection_3layers(dt, stepper, dev::Device=CPU()
+
+Same as `test_mqg_nonlinearadvection_2layers` but for 3 layers.
+"""
+function test_mqg_nonlinearadvection_3layers(dt, stepper, dev::Device=CPU())
+
+  A = device_array(dev)
+
+  tf = 200*dt
+  nt = round(Int, tf/dt)
+
+  nx, ny = 64, 66
+  Lx, Ly = 2π, 5π
+  gr = TwoDGrid(dev; nx, Lx, ny, Ly)
+
+  x, y = gridpoints(gr)
+  k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
+
+  nlayers = 3            # these choice of parameters give the
+  f₀, g = 1, 1           # desired PV-streamfunction relations
+  H = [0.25, 0.25, 0.5]  # q1 = Δψ1 + 20ψ2 - 20ψ1,
+  ρ = [4.0,  5.0,  6.0]  # q2 = Δψ2 + 20ψ1 - 44ψ2 + 24ψ3,
+                         # q3 = Δψ3 + 12ψ2 - 12ψ3.
+
+  β = 0.35
+
+  U1, U2, U3 = 0.02, 0.025, 0.01
+  u1 = @. 0.05sech(gr.y / (Ly/15))^2; u1 = A(reshape(u1, (1, gr.ny)))
+  u2 = @. 0.02cos(3l₀ * gr.y);        u2 = A(reshape(u2, (1, gr.ny)))
+  u3 = @. 0.01cos(3l₀ * gr.y);        u3 = A(reshape(u3, (1, gr.ny)))
+
+  uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
+  uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
+  uyy3 = real.(ifft( -gr.l.^2 .* fft(u3) ))
+
+  U = zeros(ny, nlayers)
+  CUDA.@allowscalar U[:, 1] = u1 .+ U1
+  CUDA.@allowscalar U[:, 2] = u2 .+ U2
+  CUDA.@allowscalar U[:, 3] = u3 .+ U3
+
+  μ, ν, nν = 0.1, 0.05, 1
+
+  η0, σx, σy = 1.0, Lx/25, Ly/20
+   η = @. η0 * exp( -(x + Lx/8)^2 / 2σx^2 - (y - Ly/8)^2 / 2σy^2)
+  ηx = @. - (x + Lx/8) / σx^2 * η
+
+  ψ1, ψ2, ψ3, q1, q2, q3, ψ1x, ψ2x, ψ3x, q1x, q2x, q3x, Δq1, Δq2, Δq3, Δψ3 = constructtestfields_3layer(gr)
+
+  Ff1 = FourierFlows.jacobian(ψ1, q1, gr) + @. (β - uyy1                            - 20 * ((U2+u2) - (U1+u1))) * ψ1x + (U1+u1) * q1x - ν * Δq1
+  Ff2 = FourierFlows.jacobian(ψ2, q2, gr) + @. (β - uyy2 - 20 * ((U1+u1) - (U2+u2)) - 24 * ((U3+u3) - (U2+u2))) * ψ2x + (U2+u2) * q2x - ν * Δq2
+  Ff3 = FourierFlows.jacobian(ψ3, q3, gr) + @. (β - uyy3 - 12 * ((U2+u2) - (U3+u3))                           ) * ψ3x + (U3+u3) * q3x - ν * Δq3
+  Ff3 .+= FourierFlows.jacobian(ψ3, η, gr) + @. (U3+u3) * ηx + μ * Δψ3
+
+  T = eltype(gr)
+
+  Ff = zeros(dev, T, (gr.nx, gr.ny, nlayers))
+  @views Ff[:, :, 1] = Ff1
+  @views Ff[:, :, 2] = Ff2
+  @views Ff[:, :, 3] = Ff3
+
+  Ffh = zeros(dev, Complex{T}, (gr.nkr, gr.nl, nlayers))
+  @views Ffh[:, :, 1] = rfft(Ff1)
+  @views Ffh[:, :, 2] = rfft(Ff2)
+  @views Ffh[:, :, 3] = rfft(Ff3)
+
+  function calcFq!(Fqh, sol, t, cl, v, p, g)
+    Fqh .= Ffh
+    return nothing
+  end
+
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ, U,
+                              eta=η, β, μ, ν, nν, calcFq=calcFq!, stepper, dt)
+
+  sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
+
+  qf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
+  @views qf[:, :, 1] = q1
+  @views qf[:, :, 2] = q2
+  @views qf[:, :, 3] = q3
+
+  ψf = zeros(dev, T, (gr.nx, gr.ny, nlayers))
+  @views ψf[:, :, 1] = ψ1
+  @views ψf[:, :, 2] = ψ2
+  @views ψf[:, :, 3] = ψ3
 
   MultiLayerQG.set_q!(prob, qf)
 
@@ -282,8 +433,10 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU();
   β = 0.35
 
   U1, U2 = 0.1, 0.05
-  u1 = @. 0.5sech(gr.y/(Ly/15))^2; u1 = A(reshape(u1, (1, gr.ny)))
-  u2 = @. 0.02cos(3l₀*gr.y);       u2 = A(reshape(u2, (1, gr.ny)))
+  
+  u1 = @. 0.5sech(gr.y / (Ly/15))^2; u1 = A(reshape(u1, (1, gr.ny)))
+  u2 = @. 0.02cos(3l₀ * gr.y);       u2 = A(reshape(u2, (1, gr.ny)))
+
   uyy1 = real.(ifft( -gr.l.^2 .* fft(u1) ))
   uyy2 = real.(ifft( -gr.l.^2 .* fft(u2) ))
 
@@ -294,13 +447,14 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU();
   μ, ν, nν = 0.1, 0.05, 1
 
   η0, σx, σy = 1.0, Lx/25, Ly/20
-  η = @. η0*exp( -(x + Lx/8)^2/(2σx^2) -(y-Ly/8)^2/(2σy^2) )
-  ηx = @. -(x + Lx/8)/(σx^2) * η
+  η = @. η0 * exp( - (x + Lx/8)^2 / 2σx^2 - (y - Ly/8)^2 / 2σy^2)
+  ηx = @. -(x + Lx/8) / σx^2 * η
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
-  Ff1 = (β .- uyy1 .- 25*(U2.+u2.-U1.-u1) ).*ψ1x + (U1.+u1).*q1x - ν*Δq1
-  Ff2 = FourierFlows.jacobian(ψ2, η, gr) + (β .- uyy2 .- 25/4*(U1.+u1.-U2.-u2) ).*ψ2x + (U2.+u2).*(q2x + ηx) + μ*Δψ2 - ν*Δq2
+  Ff1 = @. (β - uyy1 -   25 * ((U2+u2) - (U1+u1)) ) * ψ1x + (U1+u1) * q1x - ν * Δq1
+  Ff2 = @. (β - uyy2 - 25/4 * ((U1+u1) - (U2+u2)) ) * ψ2x + (U2+u2) * q2x - ν * Δq2
+  Ff2 .+= FourierFlows.jacobian(ψ2, η, gr) + @. (U2+u2) * ηx + μ * Δψ2
 
   T = eltype(gr)
 
@@ -314,7 +468,7 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU();
 
   function calcFq!(Fqh, sol, t, cl, v, p, g)
     Fqh .= Ffh
-    nothing
+    return nothing
   end
 
   prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ, U,
