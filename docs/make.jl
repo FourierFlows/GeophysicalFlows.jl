@@ -1,7 +1,7 @@
 using Documenter, Literate
 
 using CairoMakie
-CairoMakie.activate!(type = "svg")
+# CairoMakie.activate!(type = "svg")
 
 using GeophysicalFlows
 
