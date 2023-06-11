@@ -32,11 +32,11 @@ nothing #hide
 
 # ## Numerical parameters and time-stepping parameters
 
-      n = 128*4            # 2D resolution: n² grid points
+      n = 128            # 2D resolution: n² grid points
 stepper = "FilteredRK4"  # timestepper
-     dt = 0.05/4           # timestep
- nsteps = 8000*4          # total number of timesteps
- save_substeps = 10*2      # number of timesteps after which output is saved
+     dt = 0.05           # timestep
+ nsteps = 8000          # total number of timesteps
+ save_substeps = 10      # number of timesteps after which output is saved
  
 nothing #hide
 
@@ -239,14 +239,14 @@ close(file)
 
 n = Observable(1)
 
-qₙ = @lift irfft(qh[$j], nx)
-ψₙ = @lift irfft(- Array(grid.invKrsq) .* qh[$j], nx)
-q̄ₙ = @lift real(ifft(qh[$j][1, :] / ny))
-ūₙ = @lift vec(mean(u[$j], dims=1))
+qₙ = @lift irfft(qh[$n], nx)
+ψₙ = @lift irfft(- Array(grid.invKrsq) .* qh[$n], nx)
+q̄ₙ = @lift real(ifft(qh[$n][1, :] / ny))
+ūₙ = @lift vec(mean(u[$n], dims=1))
 
-title_q = @lift @sprintf("vorticity, μt = %.2f", μ * t[$j])
+title_q = @lift @sprintf("vorticity, μt = %.2f", μ * t[$n])
 
-energy = Observable([Point2f(E_t[1], E_data[1])])
+energy    = Observable([Point2f(E_t[1], E_data[1])])
 enstrophy = Observable([Point2f(Z_t[1], Z_data[1])])
 
 fig = Figure(resolution=(1000, 600))
@@ -284,20 +284,20 @@ axZ = Axis(fig[2, 3],
            aspect = 1,
            limits = ((-0.1, 4.1), (0, 3.1)))
 
-heatmap!(axq, x, y, q;
+heatmap!(axq, x, y, qₙ;
          colormap = :balance, colorrange = (-8, 8))
 
 levels = collect(-0.32:0.04:0.32)
 
-contourf!(axψ, x, y, ψ;
+contourf!(axψ, x, y, ψₙ;
           levels, colormap = :viridis, colorrange = (-0.22, 0.22))
-contour!(axψ, x, y, ψ;
+contour!(axψ, x, y, ψₙ;
          levels, color = :black)
 
-lines!(axq̄, q̄, y; linewidth = 3)
+lines!(axq̄, q̄ₙ, y; linewidth = 3)
 lines!(axq̄, 0y, y; linewidth = 1, linestyle=:dash)
 
-lines!(axū, ū, y; linewidth = 3)
+lines!(axū, ūₙ, y; linewidth = 3)
 lines!(axū, 0y, y; linewidth = 1, linestyle=:dash)
 
 lines!(axE, energy; linewidth = 3)
@@ -309,10 +309,10 @@ fig
 # We are now ready to animate all saved output.
 
 frames = 1:length(t)
-record(fig, "singlelayerqg_betaforced.mp4", frames, framerate = 24) do i
+record(fig, "singlelayerqg_betaforced.mp4", frames, framerate = 16) do i
   n[] = i
 
-  energy[] = push!(energy[], Point2f(μ * E_t[i], E_data[i]))
+  energy[]    = push!(energy[],    Point2f(μ * E_t[i], E_data[i]))
   enstrophy[] = push!(enstrophy[], Point2f(μ * Z_t[i], Z_data[i]))
 end
 nothing #hide
