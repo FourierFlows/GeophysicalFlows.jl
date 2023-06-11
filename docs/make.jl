@@ -29,10 +29,13 @@ examples = [
 for example in examples
   withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
     example_filepath = joinpath(EXAMPLES_DIR, example)
-    @time Literate.markdown(example_filepath, OUTPUT_DIR;
-    flavor = Literate.DocumenterFlavor(), execute = true)
+    withenv("JULIA_DEBUG" => "Literate") do
+      Literate.markdown(example_filepath, OUTPUT_DIR;
+                        flavor = Literate.DocumenterFlavor(), execute = true)
+    end
+  end
 end
-end
+
 
 #####
 ##### Build and deploy docs
