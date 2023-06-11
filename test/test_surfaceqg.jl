@@ -189,7 +189,7 @@ function test_sqg_stochasticforcing_buoyancy_variance_budget(dev::Device=CPU(); 
     eta = device_array(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
     @. Fh = eta * sqrt(forcing_spectrum)
-    nothing
+    return nothing
   end
 
   prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, dt=dt, stepper="RK4",

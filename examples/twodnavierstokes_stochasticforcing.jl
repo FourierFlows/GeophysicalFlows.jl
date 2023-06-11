@@ -1,7 +1,5 @@
 # # [2D forced-dissipative turbulence](@id twodnavierstokes_stochasticforcing_example)
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/twodnavierstokes_stochasticforcing.ipynb).
-#
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
 # the form of linear drag and hyperviscosity. 
@@ -22,12 +20,12 @@ using GeophysicalFlows, CUDA, Random, Printf, CairoMakie
 
 parsevalsum = FourierFlows.parsevalsum
 record = CairoMakie.record                # disambiguate between CairoMakie.record and CUDA.record
-nothing # hide
+nothing #hide
 
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
+nothing #hide
 
 
 # ## Numerical, domain, and simulation parameters
@@ -40,7 +38,7 @@ nothing # hide
     dt = 0.005               # timestep
 nsteps = 4000                # total number of steps
  nsubs = 20                  # number of steps between each plot
-nothing # hide
+nothing #hide
 
 
 # ## Forcing
@@ -65,12 +63,12 @@ forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2
 
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0        # normalize forcing to inject energy at rate ε
-nothing # hide
+nothing #hide
 
 
 # We reset of the random number generator for reproducibility
 if dev==CPU(); Random.seed!(1234); else; CUDA.seed!(1234); end
-nothing # hide
+nothing #hide
 
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
@@ -84,7 +82,7 @@ function calcF!(Fh, sol, t, clock, vars, params, grid)
   
   return nothing
 end
-nothing # hide
+nothing #hide
 
 
 # ## Problem setup
@@ -92,13 +90,13 @@ nothing # hide
 # `stepper` keyword defines the time-stepper to be used.
 prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν, nν, μ, nμ, dt, stepper="ETDRK4",
                                 calcF=calcF!, stochastic=true)
-nothing # hide
+nothing #hide
 
 # Define some shortcuts for convenience.
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
 x, y = grid.x, grid.y
-nothing # hide
+nothing #hide
 
 
 # First let's see how a forcing realization looks like. Function `calcF!()` computes 
@@ -136,7 +134,7 @@ TwoDNavierStokes.set_ζ!(prob, device_array(dev)(zeros(grid.nx, grid.ny)))
 E  = Diagnostic(TwoDNavierStokes.energy,    prob; nsteps) # energy
 Z  = Diagnostic(TwoDNavierStokes.enstrophy, prob; nsteps) # enstrophy
 diags = [E, Z] # a list of Diagnostics passed to `stepforward!` will  be updated every timestep.
-nothing # hide
+nothing #hide
 
 
 # ## Visualizing the simulation
@@ -169,7 +167,7 @@ heatmap!(axζ, x, y, ζ;
 
 hE = lines!(ax2, energy; linewidth = 3)
 hZ = lines!(ax2, enstrophy; linewidth = 3, color = :red)
-Legend(fig[1, 3], [hE, hZ], ["energy E(t)" "enstrophy Z(t) / k_f²"])
+Legend(fig[1, 3], [hE, hZ], ["energy E(t)", "enstrophy Z(t) / k_f²"])
 
 fig
 
@@ -199,6 +197,6 @@ record(fig, "twodturb_forced.mp4", 0:round(Int, nsteps / nsubs), framerate = 18)
   stepforward!(prob, diags, nsubs)
   TwoDNavierStokes.updatevars!(prob)  
 end
-nothing # hide
+nothing #hide
 
 # ![](twodturb_forced.mp4)

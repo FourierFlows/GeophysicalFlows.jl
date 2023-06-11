@@ -1,8 +1,5 @@
 # # [Decaying Surface QG turbulence](@id surfaceqg_decaying_example)
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/literated/surfaceqg_decaying.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/surfaceqg_decaying.ipynb).
-#
 # A simulation of decaying surface quasi-geostrophic turbulence.
 # We reproduce here the initial value problem for an elliptical 
 # vortex as done by Held et al. 1995, _J. Fluid Mech_.
@@ -30,7 +27,7 @@ using Random: seed!
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
+nothing #hide
 
 
 # ## Numerical parameters and time-stepping parameters
@@ -41,7 +38,7 @@ stepper = "FilteredETDRK4"          # timestepper
      tf = 60                        # length of time for simulation
  nsteps = Int(tf / dt)              # total number of time-steps
  nsubs  = round(Int, nsteps/100)    # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
-nothing # hide
+nothing #hide
 
 
 # ## Physical parameters
@@ -49,7 +46,7 @@ nothing # hide
  L = 2π        # domain size
  ν = 1e-19     # hyper-viscosity coefficient
 nν = 4         # hyper-viscosity order
-nothing # hide
+nothing #hide
 
 
 # ## Problem setup
@@ -59,13 +56,13 @@ nothing # hide
 # stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
 
 prob = SurfaceQG.Problem(dev; nx=n, Lx=L, dt, stepper, ν, nν)
-nothing # hide
+nothing #hide
 
 # Let's define some shortcuts.
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 x,  y  = grid.x,  grid.y
 Lx, Ly = grid.Lx, grid.Ly
-#md nothing # hide
+#md nothing #hide
 
 
 # ## Setting initial conditions
@@ -75,7 +72,7 @@ X, Y = gridpoints(grid)
 b₀ = @. exp(-(X^2 + 4Y^2))
 
 SurfaceQG.set_b!(prob, b₀)
-nothing # hide
+nothing #hide
 
 # Let's plot the initial condition. Note that when plotting, we decorate the variable to be 
 # plotted with `Array()` to make sure it is brought back on the CPU when `vars` live on the GPU.
@@ -105,7 +102,7 @@ B  = Diagnostic(SurfaceQG.buoyancy_variance, prob; nsteps)
 KE = Diagnostic(SurfaceQG.kinetic_energy, prob; nsteps)
 Dᵇ = Diagnostic(SurfaceQG.buoyancy_dissipation, prob; nsteps)
 diags = [B, KE, Dᵇ] # A list of Diagnostics types passed to `stepforward!`. Diagnostics are updated every timestep.
-nothing # hidenothing # hide
+nothing #hidenothing #hide
 
 
 # ## Output
@@ -119,19 +116,19 @@ plotpath = "./"
 
 dataname = joinpath(datapath, base_filename)
 plotname = joinpath(plotpath, base_filename)
-nothing # hide
+nothing #hide
 
 # Do some basic file management,
 if !isdir(plotpath); mkdir(plotpath); end
 if !isdir(datapath); mkdir(datapath); end
-nothing # hide
+nothing #hide
 
 # and then create Output.
 get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im * prob.grid.l .* sqrt.(prob.grid.invKrsq) .* prob.sol, prob.grid.nx)
 
 out = Output(prob, dataname, (:sol, get_sol), (:u, get_u))
-nothing # hide
+nothing #hide
 
 
 # ## Visualizing the simulation
@@ -199,7 +196,7 @@ record(fig, "sqg_ellipticalvortex.mp4", 0:round(Int, nsteps/nsubs), framerate = 
   stepforward!(prob, diags, nsubs)
   SurfaceQG.updatevars!(prob)
 end
-nothing # hide
+nothing #hide
 
 # ![](sqg_ellipticalvortex.mp4)
 
@@ -218,17 +215,17 @@ axu = Axis(fig[1, 2]; title = "uₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")",
 axv = Axis(fig[1, 3]; title = "vₛ(x, y, t=" * @sprintf("%.2f", clock.t) * ")", axis_kwargs...)
 
 hb = heatmap!(axb, x, y, Array(vars.b);
-             colormap = :deep, colorrange = (0, 1))
+              colormap = :deep, colorrange = (0, 1))
 
 Colorbar(fig[2, 1], hb, vertical = false)
 
 hu = heatmap!(axu, x, y, Array(vars.u);
-             colormap = :balance, colorrange = (-maximum(abs.(vars.u)), maximum(abs.(vars.u))))
+              colormap = :balance, colorrange = (-maximum(abs.(vars.u)), maximum(abs.(vars.u))))
 
 Colorbar(fig[2, 2], hu, vertical = false)
 
 hv = heatmap!(axv, x, y, Array(vars.v);
-             colormap = :balance, colorrange = (-maximum(abs.(vars.v)), maximum(abs.(vars.v))))
+              colormap = :balance, colorrange = (-maximum(abs.(vars.v)), maximum(abs.(vars.v))))
 
 Colorbar(fig[2, 3], hv, vertical = false)
 

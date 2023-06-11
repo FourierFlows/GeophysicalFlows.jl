@@ -1,9 +1,9 @@
-using
-  Documenter,
-  Literate,
-  CairoMakie,   # to not capture precompilation output
-  GeophysicalFlows,
-  Glob
+using Documenter, Literate
+
+using CairoMakie
+# CairoMakie.activate!(type = "svg")
+
+using GeophysicalFlows
 
 #####
 ##### Generate literated examples
@@ -25,22 +25,21 @@ examples = [
   "surfaceqg_decaying.jl",
 ]
 
+
 for example in examples
   withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
     example_filepath = joinpath(EXAMPLES_DIR, example)
-    Literate.markdown(example_filepath, OUTPUT_DIR; flavor = Literate.DocumenterFlavor())
-    Literate.notebook(example_filepath, OUTPUT_DIR)
-    Literate.script(example_filepath, OUTPUT_DIR)
+    withenv("JULIA_DEBUG" => "Literate") do
+      Literate.markdown(example_filepath, OUTPUT_DIR;
+                        flavor = Literate.DocumenterFlavor(), execute = true)
+    end
   end
 end
+
 
 #####
 ##### Build and deploy docs
 #####
-
-# Set up a timer to print a space ' ' every 240 seconds. This is to avoid CI machines
-# timing out when building demanding Literate.jl examples.
-Timer(t -> println(" "), 0, interval=240)
 
 format = Documenter.HTML(
   collapselevel = 2,
@@ -50,14 +49,14 @@ format = Documenter.HTML(
 
 makedocs(
  modules = [GeophysicalFlows],
- doctest = false,
+ doctest = true,
    clean = true,
 checkdocs = :all,
   format = format,
- authors = "Navid C. Constantinou and Gregory L. Wagner",
+ authors = "Navid C. Constantinou, Gregory L. Wagner, and contributors",
 sitename = "GeophysicalFlows.jl",
    pages = Any[
-            "Home"    => "index.md",
+            "Home" => "index.md",
             "Installation instructions" => "installation_instructions.md",
             "Aliasing" => "aliasing.md",
             "GPU" => "gpu.md",
@@ -100,9 +99,24 @@ sitename = "GeophysicalFlows.jl",
            ]
 )
 
-@info "Cleaning up temporary .jld2 and .nc files created by doctests..."
+@info "Clean up temporary .jld2 and .nc output created by doctests or literated examples..."
 
-for file in vcat(glob("docs/*.jld2"), glob("docs/*.nc"))
+"""
+    recursive_find(directory, pattern)
+
+Return list of filepaths within `directory` that contains the `pattern::Regex`.
+"""
+recursive_find(directory, pattern) =
+    mapreduce(vcat, walkdir(directory)) do (root, dirs, files)
+        joinpath.(root, filter(contains(pattern), files))
+    end
+
+files = []
+for pattern in [r"\.jld2", r"\.nc"]
+    global files = vcat(files, recursive_find(@__DIR__, pattern))
+end
+
+for file in files
     rm(file)
 end
 
