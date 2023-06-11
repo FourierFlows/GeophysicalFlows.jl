@@ -1,7 +1,5 @@
 # # [2D forced-dissipative turbulence budgets](@id twodnavierstokes_stochasticforcing_budgets_example)
 #
-#md # This example can viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/twodnavierstokes_stochasticforcing_budgets.ipynb).
-#
 # A simulation of forced-dissipative two-dimensional turbulence. We solve the
 # two-dimensional vorticity equation with stochastic excitation and dissipation in
 # the form of linear drag and hyperviscosity. As a demonstration, we compute how
@@ -24,12 +22,12 @@ using GeophysicalFlows, CUDA, Random, Printf, CairoMakie
 
 parsevalsum = FourierFlows.parsevalsum
 record = CairoMakie.record                # disambiguate between CairoMakie.record and CUDA.record
-nothing # hide
+nothing #hide
 
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
+nothing #hide
 
 
 # ## Numerical, domain, and simulation parameters
@@ -42,7 +40,7 @@ nothing # hide
 dt, tf = 0.005, 0.2 / μ       # timestep and final time
     nt = round(Int, tf / dt)  # total timesteps
     ns = 4                    # how many intermediate times we want to plot
-nothing # hide
+nothing #hide
 
 
 # ## Forcing
@@ -67,12 +65,12 @@ forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2
 
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0        # normalize forcing to inject energy at rate ε
-nothing # hide
+nothing #hide
 
 
 # We reset of the random number generator for reproducibility
 if dev==CPU(); Random.seed!(1234); else; CUDA.seed!(1234); end
-nothing # hide
+nothing #hide
 
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
@@ -86,7 +84,7 @@ function calcF!(Fh, sol, t, clock, vars, params, grid)
 
   return nothing
 end
-nothing # hide
+nothing #hide
 
 
 # ## Problem setup
@@ -94,14 +92,14 @@ nothing # hide
 # `stepper` keyword defines the time-stepper to be used.
 prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν, nν, μ, nμ, dt, stepper="ETDRK4",
                                 calcF=calcF!, stochastic=true)
-nothing # hide
+nothing #hide
 
 # Define some shortcuts for convenience.
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
 x,  y  = grid.x,  grid.y
 Lx, Ly = grid.Lx, grid.Ly
-nothing # hide
+nothing #hide
 
 
 # First let's see how a forcing realization looks like. Function `calcF!()` computes 
@@ -145,7 +143,7 @@ Rᶻ = Diagnostic(TwoDNavierStokes.enstrophy_dissipation_hypoviscosity,  prob, n
 Dᶻ = Diagnostic(TwoDNavierStokes.enstrophy_dissipation_hyperviscosity, prob, nsteps=nt) # enstrophy dissipation by drag μ
 Wᶻ = Diagnostic(TwoDNavierStokes.enstrophy_work,                       prob, nsteps=nt) # enstrophy work input by forcing
 diags = [E, Dᵋ, Wᵋ, Rᵋ, Z, Dᶻ, Wᶻ, Rᶻ] # a list of Diagnostics passed to `stepforward!` will  be updated every timestep.
-nothing # hide
+nothing #hide
 
 # ## Time-stepping the `Problem` forward
 
@@ -228,14 +226,14 @@ hRᵋ = lines!(ax1E, t, Rᵋ[1:E.i-1]; linestyle = :solid)
 
 Legend(fig[2, 1],
        [hWᵋ, hε, hDᵋ, hRᵋ],
-       ["energy work, Wᵋ" "ensemble mean energy work, <Wᵋ>" "dissipation, Dᵋ" "drag, Rᵋ = - 2μE"])
+       ["energy work, Wᵋ", "ensemble mean energy work, <Wᵋ>", "dissipation, Dᵋ", "drag, Rᵋ = - 2μE"])
 
 hc = lines!(ax2E, t, dEdt_computed; linestyle = :solid)
 hn = lines!(ax2E, t, dEdt_numerical; linestyle = :dash)
 
 Legend(fig[4, 1],
        [hc, hn],
-       ["computed Wᵋ-Dᵋ" "numerical dE/dt"])
+       ["computed Wᵋ-Dᵋ", "numerical dE/dt"])
 
 hr = lines!(ax3E, t, residual_E)
 
@@ -250,14 +248,14 @@ hRᶻ = lines!(ax1Z, t, Rᶻ[1:Z.i-1]; linestyle = :solid)
 
 Legend(fig[2, 2],
        [hWᶻ, hεᶻ, hDᶻ, hRᶻ],
-       ["enstrophy work, Wᶻ" "ensemble mean enstophy work, <Wᶻ>" "dissipation, Dᶻ" "drag, Rᶻ = - 2μZ"])
+       ["enstrophy work, Wᶻ", "ensemble mean enstophy work, <Wᶻ>", "dissipation, Dᶻ", "drag, Rᶻ = - 2μZ"])
 
 hcᶻ = lines!(ax2Z, t, dZdt_computed; linestyle = :solid)
 hnᶻ = lines!(ax2Z, t, dZdt_numerical; linestyle = :dash)
 
 Legend(fig[4, 2],
        [hcᶻ, hnᶻ],
-       ["computed Wᶻ-Dᶻ" "numerical dZ/dt"])
+       ["computed Wᶻ-Dᶻ", "numerical dZ/dt"])
 
 hrᶻ = lines!(ax3Z, t, residual_Z)
 

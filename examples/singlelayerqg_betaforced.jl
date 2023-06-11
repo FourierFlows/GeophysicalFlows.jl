@@ -1,7 +1,5 @@
 # # [Forced-dissipative barotropic QG beta-plane turbulence](@id singlelayerqg_betaforced_example)
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/singlelayerqg_betaforced.ipynb).
-#
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane. The dynamics include linear drag and stochastic excitation.
 #
@@ -24,12 +22,12 @@ using LinearAlgebra: ldiv!
 
 parsevalsum = FourierFlows.parsevalsum
 record = CairoMakie.record                # disambiguate between CairoMakie.record and CUDA.record
-nothing # hide
+nothing #hide
 
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
+nothing #hide
 
 
 # ## Numerical parameters and time-stepping parameters
@@ -37,10 +35,10 @@ nothing # hide
       n = 128            # 2D resolution: n² grid points
 stepper = "FilteredRK4"  # timestepper
      dt = 0.05           # timestep
- nsteps = 8000           # total number of timesteps
+ nsteps = 8000          # total number of timesteps
  save_substeps = 10      # number of timesteps after which output is saved
  
-nothing # hide
+nothing #hide
 
 
 # ## Physical parameters
@@ -48,7 +46,7 @@ nothing # hide
 L = 2π        # domain size
 β = 10.0      # planetary PV gradient
 μ = 0.01      # bottom drag
-nothing # hide
+nothing #hide
 
 
 # ## Forcing
@@ -73,12 +71,12 @@ forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2
 
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0       # normalize forcing to inject energy at rate ε
-nothing # hide
+nothing #hide
 
 
 # We reset of the random number generator for reproducibility
 if dev==CPU(); Random.seed!(1234); else; CUDA.seed!(1234); end
-nothing # hide
+nothing #hide
 
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
@@ -92,7 +90,7 @@ function calcF!(Fh, sol, t, clock, vars, params, grid)
 
   return nothing
 end
-nothing # hide
+nothing #hide
 
 
 # ## Problem setup
@@ -102,13 +100,13 @@ nothing # hide
 # stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
 prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β, μ, dt, stepper,
                              calcF=calcF!, stochastic=true)
-nothing # hide
+nothing #hide
 
 # Let's define some shortcuts.
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 x,  y  = grid.x,  grid.y
 Lx, Ly = grid.Lx, grid.Ly
-nothing # hide
+nothing #hide
 
 
 # First let's see how a forcing realization looks like. Note that when plotting, we decorate 
@@ -143,7 +141,7 @@ SingleLayerQG.set_q!(prob, device_array(dev)(zeros(grid.nx, grid.ny)))
 E = Diagnostic(SingleLayerQG.energy, prob; nsteps, freq=save_substeps)
 Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps, freq=save_substeps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-nothing # hide
+nothing #hide
 
 
 # ## Output
@@ -153,12 +151,12 @@ filepath = "."
 plotpath = "./plots_forcedbetaturb"
 plotname = "snapshots"
 filename = joinpath(filepath, "singlelayerqg_forcedbeta.jld2")
-nothing # hide
+nothing #hide
 
 # Do some basic file management,
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
-nothing # hide
+nothing #hide
 
 # and then create Output.
 get_sol(prob) = Array(prob.sol) # extracts the Fourier-transformed solution
@@ -176,7 +174,7 @@ function get_u(prob)
 end
 
 output = Output(prob, filename, (:qh, get_sol), (:u, get_u))
-nothing # hide
+nothing #hide
 
 # We first save the problem's grid and other parameters so we can use them later.
 saveproblem(output)
@@ -225,8 +223,8 @@ t = [file["snapshots/t/$i"] for i ∈ iterations]
 qh = [file["snapshots/qh/$i"] for i ∈ iterations]
 u  = [file["snapshots/u/$i"] for i ∈ iterations]
 
-E_t  = file["diagnostics/energy/t"]
-Z_t  = file["diagnostics/enstrophy/t"]
+E_t = file["diagnostics/energy/t"]
+Z_t = file["diagnostics/enstrophy/t"]
 E_data = file["diagnostics/energy/data"]
 Z_data = file["diagnostics/enstrophy/data"]
 
@@ -239,16 +237,16 @@ close(file)
 
 # We create a figure using Makie's [`Observable`](https://makie.juliaplots.org/stable/documentation/nodes/)s
 
-j = Observable(1)
+n = Observable(1)
 
-q = @lift irfft(qh[$j], nx)
-ψ = @lift irfft(- Array(grid.invKrsq) .* qh[$j], nx)
-q̄ = @lift real(ifft(qh[$j][1, :] / ny))
-ū = @lift vec(mean(u[$j], dims=1))
+qₙ = @lift irfft(qh[$n], nx)
+ψₙ = @lift irfft(- Array(grid.invKrsq) .* qh[$n], nx)
+q̄ₙ = @lift real(ifft(qh[$n][1, :] / ny))
+ūₙ = @lift vec(mean(u[$n], dims=1))
 
-title_q = @lift @sprintf("vorticity, μt = %.2f", μ * t[$j])
+title_q = @lift @sprintf("vorticity, μt = %.2f", μ * t[$n])
 
-energy = Observable([Point2f(E_t[1], E_data[1])])
+energy    = Observable([Point2f(E_t[1], E_data[1])])
 enstrophy = Observable([Point2f(Z_t[1], Z_data[1])])
 
 fig = Figure(resolution=(1000, 600))
@@ -286,20 +284,20 @@ axZ = Axis(fig[2, 3],
            aspect = 1,
            limits = ((-0.1, 4.1), (0, 3.1)))
 
-heatmap!(axq, x, y, q;
+heatmap!(axq, x, y, qₙ;
          colormap = :balance, colorrange = (-8, 8))
 
 levels = collect(-0.32:0.04:0.32)
 
-contourf!(axψ, x, y, ψ;
+contourf!(axψ, x, y, ψₙ;
           levels, colormap = :viridis, colorrange = (-0.22, 0.22))
-contour!(axψ, x, y, ψ;
+contour!(axψ, x, y, ψₙ;
          levels, color = :black)
 
-lines!(axq̄, q̄, y; linewidth = 3)
+lines!(axq̄, q̄ₙ, y; linewidth = 3)
 lines!(axq̄, 0y, y; linewidth = 1, linestyle=:dash)
 
-lines!(axū, ū, y; linewidth = 3)
+lines!(axū, ūₙ, y; linewidth = 3)
 lines!(axū, 0y, y; linewidth = 1, linestyle=:dash)
 
 lines!(axE, energy; linewidth = 3)
@@ -311,13 +309,13 @@ fig
 # We are now ready to animate all saved output.
 
 frames = 1:length(t)
-record(fig, "singlelayerqg_betaforced.mp4", frames, framerate = 18) do i
-  j[] = i
+record(fig, "singlelayerqg_betaforced.mp4", frames, framerate = 16) do i
+  n[] = i
 
-  energy[] = push!(energy[], Point2f(μ * E_t[i], E_data[i]))
+  energy[]    = push!(energy[],    Point2f(μ * E_t[i], E_data[i]))
   enstrophy[] = push!(enstrophy[], Point2f(μ * Z_t[i], Z_data[i]))
 end
-nothing # hide
+nothing #hide
 
 # ![](singlelayerqg_betaforced.mp4)
 

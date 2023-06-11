@@ -100,8 +100,7 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
     eta = device_array(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(cl.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
     @. Fh = eta * sqrt(forcing_spectrum)
-    
-    nothing
+    return nothing
   end
 
   prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,

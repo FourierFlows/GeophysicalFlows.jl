@@ -1,7 +1,5 @@
 # # [Phillips model of Baroclinic Instability](@id multilayerqg_2layer_example)
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/multilayerqg_2layer.ipynb).
-#
 # A simulation of the growth of barolinic instability in the Phillips 2-layer model
 # when we impose a vertical mean flow shear as a difference ``\Delta U`` in the
 # imposed, domain-averaged, zonal flow at each layer.
@@ -26,7 +24,7 @@ using Random: seed!
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
+nothing #hide
 
 
 # ## Numerical parameters and time-stepping parameters
@@ -36,7 +34,7 @@ stepper = "FilteredRK4"  # timestepper
      dt = 2.5e-3         # timestep
  nsteps = 20000          # total number of time-steps
  nsubs  = 50             # number of time-steps for plotting (nsteps must be multiple of nsubs)
-nothing # hide
+nothing #hide
 
 
 # ## Physical parameters
@@ -52,7 +50,7 @@ H = [0.2, 0.8]           # the rest depths of each layer
 U = zeros(nlayers)       # the imposed mean zonal flow in each layer
 U[1] = 1.0
 U[2] = 0.0
-nothing # hide
+nothing #hide
 
 
 # ## Problem setup
@@ -63,12 +61,12 @@ nothing # hide
 
 prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ, U, μ, β,
                             dt, stepper, aliased_fraction=0)
-nothing # hide
+nothing #hide
 
 # and define some shortcuts.
 sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 x, y = grid.x, grid.y
-nothing # hide
+nothing #hide
 
 
 # ## Setting initial conditions
@@ -85,7 +83,7 @@ q₀h = prob.timestepper.filter .* rfft(q₀, (1, 2)) # apply rfft  only in dims
 q₀  = irfft(q₀h, grid.nx, (1, 2))                 # apply irfft only in dims=1, 2
 
 MultiLayerQG.set_q!(prob, q₀)
-nothing # hide
+nothing #hide
 
 
 # ## Diagnostics
@@ -93,7 +91,7 @@ nothing # hide
 # Create Diagnostics -- `energies` function is imported at the top.
 E = Diagnostic(MultiLayerQG.energies, prob; nsteps)
 diags = [E] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-nothing # hide
+nothing #hide
 
 
 # ## Output
@@ -103,12 +101,12 @@ filepath = "."
 plotpath = "./plots_2layer"
 plotname = "snapshots"
 filename = joinpath(filepath, "2layer.jld2")
-nothing # hide
+nothing #hide
 
 # Do some basic file management
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
-nothing # hide
+nothing #hide
 
 # And then create Output
 
@@ -126,7 +124,7 @@ function get_u(prob)
 end
 
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
-nothing # hide
+nothing #hide
 
 
 # ## Visualizing the simulation
@@ -258,7 +256,7 @@ record(fig, "multilayerqg_2layer.mp4", frames, framerate = 18) do j
   stepforward!(prob, diags, nsubs)
   MultiLayerQG.updatevars!(prob)
 end
-nothing # hide
+nothing #hide
 
 # ![](multilayerqg_2layer.mp4)
 
