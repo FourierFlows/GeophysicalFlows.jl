@@ -143,12 +143,18 @@ function test_pvtofromstreamfunction_3layer(dev::Device=CPU())
   MultiLayerQG.streamfunctionfrompv!(vs.ψh, vs.qh, pr, gr)
   MultiLayerQG.invtransform!(vs.ψ, vs.ψh, pr)
 
+  MultiLayerQG.set_q!(prob, vs.q)
+
+  KE, PE = MultiLayerQG.energies(prob)
+
   return isapprox(q1, vs.q[:, :, 1], rtol=rtol_multilayerqg) &&
          isapprox(q2, vs.q[:, :, 2], rtol=rtol_multilayerqg) &&
          isapprox(q3, vs.q[:, :, 3], rtol=rtol_multilayerqg) &&
          isapprox(ψ1, vs.ψ[:, :, 1], rtol=rtol_multilayerqg) &&
          isapprox(ψ2, vs.ψ[:, :, 2], rtol=rtol_multilayerqg) &&
-         isapprox(ψ3, vs.ψ[:, :, 3], rtol=rtol_multilayerqg)
+         isapprox(ψ3, vs.ψ[:, :, 3], rtol=rtol_multilayerqg) &&
+         KE isa Vector{Float64} && length(KE) == nlayers &&
+         PE isa Vector{Float64} && length(PE) == nlayers-1
 end
 
 
@@ -197,8 +203,8 @@ function test_mqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
   μ, ν, nν = 0.1, 0.05, 1
 
   η0, σx, σy = 1.0, Lx/25, Ly/20
-   η = @. η0*exp( -(x+Lx/8)^2/(2σx^2) - (y-Ly/8)^2/(2σy^2) )
-  ηx = @. -(x + Lx/8)/(σx^2) * η
+   η = @. η0 * exp( - (x + Lx/8)^2/2σx^2 - (y - Ly/8)^2/2σy^2)
+  ηx = @. -(x + Lx/8)/σx^2 * η
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
 
@@ -425,9 +431,12 @@ function test_mqg_fluxes(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=
 
   ψ1 = @. cos(k₀*x) * cos(l₀*y) + sin(k₀*x)
   ψ2 = @. cos(k₀*x + π/10) * cos(l₀*y)
+  
   ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
-  CUDA.@allowscalar @views ψ[:, :, 1] .= ψ1
-  CUDA.@allowscalar @views ψ[:, :, 2] .= ψ2
+  
+  view(ψ, :, :, 1) .= ψ1
+  view(ψ, :, :, 2) .= ψ2
+
   MultiLayerQG.set_ψ!(prob, ψ)
   lateralfluxes, verticalfluxes = MultiLayerQG.fluxes(prob)
 
@@ -460,6 +469,7 @@ function test_mqg_fluxessinglelayer(dev::Device=CPU(); dt=0.001, stepper="Forwar
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ = @. cos(k₀*x) * cos(l₀*y) + sin(k₀*x)
+
   MultiLayerQG.set_ψ!(prob, ψ)
   lateralfluxes = MultiLayerQG.fluxes(prob)
 
@@ -490,12 +500,13 @@ function test_mqg_setqsetψ(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler",
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   T = eltype(gr)
+  
+  f1 = @. 2cos(k₀*x) * cos(l₀*y)
+  f2 = @.  cos(k₀*x+π/10) * cos(2l₀*y)
 
-  f1 = @. 2cos(k₀*x)*cos(l₀*y)
-  f2 = @.  cos(k₀*x+π/10)*cos(2l₀*y)
   f = zeros(dev, T, (gr.nx, gr.ny, nlayers))
-  f[:, :, 1] .= f1
-  f[:, :, 2] .= f2
+  view(f, :, :, 1) .= f1
+  view(f, :, :, 2) .= f2
 
   ψtest = zeros(dev, T, size(f))
   MultiLayerQG.set_ψ!(prob, f)
@@ -659,7 +670,7 @@ end
 
 function test_mqg_stochasticforcedproblemconstructor(dev::Device=CPU())
 
-  function calcFq!(Fqh, sol, t, clock, vars, params, grid)
+function calcFq!(Fqh, sol, t, clock, vars, params, grid)
     Fqh .= Ffh
     return nothing
   end
