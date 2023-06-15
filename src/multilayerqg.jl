@@ -364,7 +364,7 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, topographic_pv_gradient, μ
 
     CUDA.@allowscalar @views Qy[:, :, 1] = @. Qy[:, :, 1] - Fp[1] * (U[:, :, 2] - U[:, :, 1])
     for j = 2:nlayers-1
-      CUDA.@allowscalar @views Qy[:, :, j] = @. Qy[:, :, j] + Fp[j] * (U[:, :, j+1] - U[:, :, j]) + Fm[j-1] * (U[:, :, j-1] - U[:, :, j])
+      CUDA.@allowscalar @views Qy[:, :, j] = @. Qy[:, :, j] - Fp[j] * (U[:, :, j+1] - U[:, :, j]) - Fm[j-1] * (U[:, :, j-1] - U[:, :, j])
     end
     CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
