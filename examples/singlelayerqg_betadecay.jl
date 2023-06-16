@@ -1,7 +1,5 @@
 # # [Decaying barotropic QG beta-plane turbulence](@id singlelayerqg_betadecay_example)
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/singlelayerqg_betadecay.ipynb).
-# 
 # An example of decaying barotropic quasi-geostrophic turbulence on a beta plane.
 #
 # ## Install dependencies
@@ -24,7 +22,7 @@ using Statistics: mean
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
+nothing #hide
 
 
 # ## Numerical parameters and time-stepping parameters
@@ -34,7 +32,7 @@ stepper = "FilteredRK4"  # timestepper
      dt = 0.04           # timestep
  nsteps = 2000           # total number of time-steps
  nsubs  = 20             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
-nothing # hide
+nothing #hide
 
 
 # ## Physical parameters
@@ -42,7 +40,7 @@ nothing # hide
 L = 2π        # domain size
 β = 10.0      # planetary PV gradient
 μ = 0.0       # bottom drag
-nothing # hide
+nothing #hide
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments.
@@ -52,12 +50,12 @@ nothing # hide
 # Thus, we choose not to do any dealiasing by providing `aliased_fraction=0`.
 
 prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β, μ, dt, stepper, aliased_fraction=0)
-nothing # hide
+nothing #hide
 
 # and define some shortcuts
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 x, y = grid.x, grid.y
-nothing # hide
+nothing #hide
 
 
 # ## Setting initial conditions
@@ -80,7 +78,7 @@ q₀h *= sqrt(E₀ / SingleLayerQG.energy(q₀h, vars, params, grid)) # normaliz
 q₀ = irfft(q₀h, grid.nx)
 
 SingleLayerQG.set_q!(prob, q₀)
-nothing # hide
+nothing #hide
 
 # Let's plot the initial vorticity and streamfunction. Note that when plotting, we decorate 
 # the variable to be plotted with `Array()` to make sure it is brought back on the CPU when 
@@ -116,7 +114,7 @@ fig
 E = Diagnostic(SingleLayerQG.energy, prob; nsteps)
 Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-nothing # hide
+nothing #hide
 
 
 # ## Output
@@ -126,17 +124,17 @@ filepath = "."
 plotpath = "./plots_decayingbetaturb"
 plotname = "snapshots"
 filename = joinpath(filepath, "decayingbetaturb.jld2")
-nothing # hide
+nothing #hide
 
 # Do some basic file management,
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
-nothing # hide
+nothing #hide
 
 # and then create Output.
 get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
 out = Output(prob, filename, (:sol, get_sol))
-nothing # hide
+nothing #hide
 
 
 # ## Visualizing the simulation
@@ -223,7 +221,7 @@ record(fig, "singlelayerqg_betadecay.mp4", frames, framerate = 8) do j
   stepforward!(prob, diags, nsubs)
   SingleLayerQG.updatevars!(prob)
 end
-nothing # hide
+nothing #hide
 
 # ![](singlelayerqg_betadecay.mp4)
 

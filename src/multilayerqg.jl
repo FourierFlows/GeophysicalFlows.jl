@@ -147,13 +147,13 @@ function Problem(nlayers::Int,                             # number of fluid lay
 end
 
 """
-    struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
+    struct Params{T, Aphys3D, Aphys2D, Atrans4D, Trfft} <: AbstractParams
 
 The parameters for the `MultiLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
-struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
+struct Params{T, Aphys3D, Aphys2D, Atrans4D, Trfft} <: AbstractParams
   # prescribed params
     "number of fluid layers"
    nlayers :: Int
@@ -164,9 +164,9 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
     "planetary vorticity ``y``-gradient"
          β :: T
     "array with density of each fluid layer"
-         ρ :: Aphys3D
+         ρ :: Tuple
     "array with rest height of each fluid layer"
-         H :: Aphys3D
+         H :: Tuple
     "array with imposed constant zonal flow ``U(y)`` in each fluid layer"
          U :: Aphys3D
     "array containing the topographic PV"
@@ -184,8 +184,8 @@ struct Params{T, Aphys3D, Aphys2D, Aphys1D, Atrans4D, Trfft} <: AbstractParams
 
   # derived params
     "array with the reduced gravity constants for each fluid interface"
-        g′ :: Aphys1D
-    "array containing ``x``-gradient of PV due to topographic PV in each fluid layer"
+        g′ :: Tuple
+    "array containing ``x``-gradient of PV due to eta in each fluid layer"
         Qx :: Aphys3D
     "array containing ``y``-gradient of PV due to ``β``, ``U``, and topographic PV in each fluid layer"
         Qy :: Aphys3D
@@ -248,7 +248,7 @@ struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
     "planetary vorticity ``y``-gradient"
          β :: T
     "array with density of each fluid layer"
-         ρ :: Aphys3D
+         ρ :: Tuple
     "tuple with rest height of each fluid layer"
          H :: Tuple
    "array with imposed constant zonal flow ``U(y)`` in each fluid layer"
@@ -279,6 +279,7 @@ end
 
 function convert_U_to_U3D(dev, nlayers, grid, U::AbstractArray{TU, 1}) where TU
   T = eltype(grid)
+
   if length(U) == nlayers
     U_2D = zeros(dev, T, (1, nlayers))
     U_2D[:] = U
@@ -287,8 +288,10 @@ function convert_U_to_U3D(dev, nlayers, grid, U::AbstractArray{TU, 1}) where TU
     U_2D = zeros(dev, T, (grid.ny, 1))
     U_2D[:] = U
   end
+
   U_3D = zeros(dev, T, (1, grid.ny, nlayers))
   @views U_3D[1, :, :] = U_2D
+
   return U_3D
 end
 
@@ -296,6 +299,7 @@ function convert_U_to_U3D(dev, nlayers, grid, U::AbstractArray{TU, 2}) where TU
   T = eltype(grid)
   U_3D = zeros(dev, T, (1, grid.ny, nlayers))
   @views U_3D[1, :, :] = U
+
   return U_3D
 end
 
@@ -303,10 +307,11 @@ function convert_U_to_U3D(dev, nlayers, grid, U::Number)
   T = eltype(grid)
   A = device_array(dev)
   U_3D = reshape(repeat([T(U)], outer=(grid.ny, 1)), (1, grid.ny, nlayers))
+
   return A(U_3D)
 end
 
-function Params(nlayers, g, f₀, β, ρ, H, U, eta, topographic_pv_gradient, μ, ν, nν, grid; calcFq=nothingfunction, effort=FFTW.MEASURE)
+function Params(nlayers::Int, g, f₀, β, ρ, H, U, eta, topographic_pv_gradient, μ, ν, nν, grid::TwoDGrid; calcFq=nothingfunction, effort=FFTW.MEASURE)
   dev = grid.device
   T = eltype(grid)
   A = device_array(dev)
@@ -345,14 +350,14 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, topographic_pv_gradient, μ
   else # if nlayers≥2
 
     ρ = reshape(T.(ρ), (1,  1, nlayers))
-    H = reshape(T.(H), (1,  1, nlayers))
+    H = Tuple(T.(H))
 
     g′ = T(g) * (ρ[2:nlayers] -   ρ[1:nlayers-1]) ./ ρ[1] # reduced gravity at each interface
 
     Fm = @. T(f₀^2 / (g′ * H[2:nlayers]))
     Fp = @. T(f₀^2 / (g′ * H[1:nlayers-1]))
 
-    typeofSkl = SArray{Tuple{nlayers, nlayers}, T, 2, nlayers^2} # StaticArrays of type T and dims = (nlayers x nlayers)
+    typeofSkl = SArray{Tuple{nlayers, nlayers}, T, 2, nlayers^2} # StaticArrays of type T and dims = (nlayers, nlayers)
 
     S = Array{typeofSkl, 2}(undef, (nkr, nl))
     calcS!(S, Fp, Fm, nlayers, grid)
@@ -369,9 +374,9 @@ function Params(nlayers, g, f₀, β, ρ, H, U, eta, topographic_pv_gradient, μ
     CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
     if nlayers==2
-      return TwoLayerParams(T(g), T(f₀), T(β), A(ρ), (T(H[1]), T(H[2])), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
+      return TwoLayerParams(T(g), T(f₀), T(β), Tuple(T.(ρ)), Tuple(T.(H)), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
     else # if nlayers>2
-      return Params(nlayers, T(g), T(f₀), T(β), A(ρ), A(H), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, A(g′), Qx, Qy, S, S⁻¹, rfftplanlayered)
+      return Params(nlayers, T(g), T(f₀), T(β), Tuple(T.(ρ)), T.(H), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, Tuple(T.(g′)), Qx, Qy, S, S⁻¹, rfftplanlayered)
     end
   end
 end
@@ -568,11 +573,11 @@ Obtain the Fourier transform of the PV from the streamfunction `ψh` for the spe
 case of a two fluid layer configuration. In this case we have,
 
 ```math
-q̂₁ = - k² ψ̂₁ + f₀² / (g′ H₁) * (ψ̂₂ - ψ̂₁) ,
+q̂₁ = - k² ψ̂₁ + f₀² / (g′ H₁) (ψ̂₂ - ψ̂₁) ,
 ```
 
 ```math
-q̂₂ = - k² ψ̂₂ + f₀² / (g′ H₂) * (ψ̂₁ - ψ̂₂) .
+q̂₂ = - k² ψ̂₂ + f₀² / (g′ H₂) (ψ̂₁ - ψ̂₂) .
 ```
 
 (Here, the PV-streamfunction relationship is hard-coded to avoid scalar operations
@@ -967,13 +972,15 @@ function energies(vars, params, grid, sol)
 
   abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
   @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
+  
+  V = grid.Lx * grid.Ly * sum(params.H)
 
   for j = 1:nlayers
-    CUDA.@allowscalar KE[j] = 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j] / sum(params.H)
+    view(KE, j) .= 1 / (2 * V) * parsevalsum(view(abs²∇𝐮h, :, :, j), grid) * params.H[j]
   end
 
   for j = 1:nlayers-1
-    CUDA.@allowscalar PE[j] = 1 / (2 * grid.Lx * grid.Ly * sum(params.H)) * params.f₀^2 / params.g′[j] * parsevalsum(abs2.(vars.ψh[:, :, j+1] .- vars.ψh[:, :, j]), grid)
+    view(PE, j) .= 1 / (2 * V) * params.f₀^2 ./ params.g′[j] .* parsevalsum(abs2.(view(vars.ψh, :, :, j) .- view(vars.ψh, :, :, j+1)), grid)
   end
 
   return KE, PE
@@ -989,14 +996,16 @@ function energies(vars, params::TwoLayerParams, grid, sol)
   abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
   @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
 
+  V = grid.Lx * grid.Ly * sum(params.H)
+
   ψ1h, ψ2h = view(vars.ψh, :, :, 1), view(vars.ψh, :, :, 2)
 
   for j = 1:nlayers
-    CUDA.@allowscalar KE[j] = @views 1 / (2 * grid.Lx * grid.Ly) * parsevalsum(abs²∇𝐮h[:, :, j], grid) * params.H[j] / sum(params.H)
+    view(KE, j) .= 1 / (2 * V) * parsevalsum(view(abs²∇𝐮h, :, :, j), grid) * params.H[j]
   end
 
-  PE = @views 1 / (2 * grid.Lx * grid.Ly * sum(params.H)) * params.f₀^2 / params.g′ * parsevalsum(abs2.(ψ2h .- ψ1h), grid)
-
+  PE = 1 / (2 * V) * params.f₀^2 / params.g′ * parsevalsum(abs2.(ψ1h .- ψ2h), grid)
+  
   return KE, PE
 end
 
@@ -1053,8 +1062,8 @@ function fluxes(vars, params, grid, sol)
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   for j = 1:nlayers-1
-    CUDA.@allowscalar verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
-    CUDA.@allowscalar verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
+    @views verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
+    @views verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
   end
 
   return lateralfluxes, verticalfluxes
@@ -1072,8 +1081,14 @@ function fluxes(vars, params::TwoLayerParams, grid, sol)
 
   @. ∂u∂yh = im * grid.l * vars.uh
   invtransform!(∂u∂y, ∂u∂yh, params)
+  
+  lateralfluxⱼ = vars.q
 
-  lateralfluxes = (sum(@. params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
+  for j in 1:nlayers
+    @. lateralfluxⱼ = params.U * vars.v * ∂u∂y
+    view(lateralfluxes, j) .= sum(view(lateralfluxⱼ, :, :, j))
+  end
+
   @. lateralfluxes *= params.H
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
@@ -1081,7 +1096,7 @@ function fluxes(vars, params::TwoLayerParams, grid, sol)
   ψ₁ = view(vars.ψ, :, :, 1)
   v₂ = view(vars.v, :, :, 2)
 
-  verticalfluxes = sum(@views @. params.f₀^2 / params.g′ * (U₁ - U₂) * v₂ * ψ₁; dims=(1, 2))
+  verticalfluxes = sum(params.f₀^2 / params.g′ * (U₁ .- U₂) .* v₂ .* ψ₁)
   verticalfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
 
   return lateralfluxes, verticalfluxes
@@ -1096,7 +1111,7 @@ function fluxes(vars, params::SingleLayerParams, grid, sol)
   @. ∂u∂yh = im * grid.l * vars.uh
   invtransform!(∂u∂y, ∂u∂yh, params)
 
-  lateralfluxes = (sum(@. params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
+  lateralfluxes = sum(@. params.U * vars.v * ∂u∂y)
   lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly)
 
   return lateralfluxes

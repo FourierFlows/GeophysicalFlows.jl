@@ -1,7 +1,5 @@
 # # [2D decaying turbulence](@id twodnavierstokes_decaying_example)
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/twodnavierstokes_decaying.ipynb).
-#
 # A simulation of decaying two-dimensional turbulence.
 # 
 # ## Install dependencies
@@ -25,7 +23,7 @@ using GeophysicalFlows: peakedisotropicspectrum
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
+nothing #hide
 
 
 # ## Numerical, domain, and simulation parameters
@@ -33,13 +31,13 @@ nothing # hide
 # First, we pick some numerical and physical parameters for our model.
 
 n, L  = 128, 2π             # grid resolution and domain length
-nothing # hide
+nothing #hide
 
 # Then we pick the time-stepper parameters
     dt = 1e-2  # timestep
 nsteps = 4000  # total number of steps
  nsubs = 20    # number of steps between each plot
-nothing # hide
+nothing #hide
 
 
 # ## Problem setup
@@ -49,13 +47,13 @@ nothing # hide
 # stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
 
 prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ny=n, Ly=L, dt, stepper="FilteredRK4")
-nothing # hide
+nothing #hide
 
 # Next we define some shortcuts for convenience.
 sol, clock, vars, grid = prob.sol, prob.clock, prob.vars, prob.grid
 x,  y  = grid.x,  grid.y
 Lx, Ly = grid.Lx, grid.Ly
-nothing # hide
+nothing #hide
 
 
 # ## Setting initial conditions
@@ -65,7 +63,7 @@ seed!(1234)
 k₀, E₀ = 6, 0.5
 ζ₀ = peakedisotropicspectrum(grid, k₀, E₀, mask=prob.timestepper.filter)
 TwoDNavierStokes.set_ζ!(prob, ζ₀)
-nothing # hide
+nothing #hide
 
 # Let's plot the initial vorticity field. Note that when plotting, we decorate the variable 
 # to be plotted with `Array()` to make sure it is brought back on the CPU when `vars` live on 
@@ -91,7 +89,7 @@ fig
 E = Diagnostic(TwoDNavierStokes.energy, prob; nsteps)
 Z = Diagnostic(TwoDNavierStokes.enstrophy, prob; nsteps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-nothing # hide
+nothing #hide
 
 
 # ## Output
@@ -101,12 +99,12 @@ filepath = "."
 plotpath = "./plots_decayingTwoDNavierStokes"
 plotname = "snapshots"
 filename = joinpath(filepath, "decayingTwoDNavierStokes.jld2")
-nothing # hide
+nothing #hide
 
 # Do some basic file management
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
-nothing # hide
+nothing #hide
 
 # And then create Output
 get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
@@ -114,7 +112,7 @@ get_u(prob) = irfft(im * prob.grid.l .* prob.grid.invKrsq .* prob.sol, prob.grid
 
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 saveproblem(out)
-nothing # hide
+nothing #hide
 
 
 # ## Visualizing the simulation
@@ -176,7 +174,7 @@ record(fig, "twodturb.mp4", 0:Int(nsteps/nsubs), framerate = 18) do j
   stepforward!(prob, diags, nsubs)
   TwoDNavierStokes.updatevars!(prob)  
 end
-nothing # hide
+nothing #hide
 
 # ![](twodturb.mp4)
 
@@ -191,7 +189,7 @@ Eh = rfft(E)                         # Fourier transform of energy density
 
 ## compute radial specturm of `Eh`
 kr, Ehr = FourierFlows.radialspectrum(Eh, grid, refinement = 1)
-nothing # hide
+nothing #hide
 
 # and we plot it.
 lines(kr, vec(abs.(Ehr));

@@ -321,7 +321,7 @@ hl3 = lines!(ax, μ * t, E_str[:, 1];
 
 Legend(fig[1, 2], [hl1, hl2, hl3], ["½ xₜ²", "Eₜ (Ito)", "Eₜ (Stratonovich)"])
 
-save("assets/energy_comparison.svg", fig); nothing # hide
+save("assets/energy_comparison.svg", fig); nothing #hide
 ```
 
 ![energy_comparison](assets/energy_comparison.svg)
@@ -378,7 +378,7 @@ hl3 = lines!(ax2, μ * t[1:nsteps-1], dEdt_theory[1:nsteps-1];
 Legend(fig[2, 2], [hl1, hl2, hl3],
                   ["numerical 𝖽⟨E⟩/𝖽t", "⟨work - dissipation⟩", "theoretical 𝖽⟨E⟩/𝖽t"])
 
-save("assets/energy_budgets_Ito.svg", fig); nothing # hide
+save("assets/energy_budgets_Ito.svg", fig); nothing #hide
 ```
 
 ![energy_budgets_Ito](assets/energy_budgets_Ito.svg)
@@ -423,7 +423,7 @@ hl3 = lines!(ax2, μ * t[1:nsteps-1], dEdt_theory[1:nsteps-1];
 Legend(fig[2, 2], [hl1, hl2, hl3],
                   ["numerical 𝖽⟨E⟩/𝖽t", "⟨work - dissipation⟩", "theoretical 𝖽⟨E⟩/𝖽t"])
 
-save("assets/energy_budgets_Stratonovich.svg", fig); nothing # hide
+save("assets/energy_budgets_Stratonovich.svg", fig); nothing #hide
 ```
 
 ![energy_budgets_Stratonovich](assets/energy_budgets_Stratonovich.svg)

@@ -1,7 +1,5 @@
 # # [SingleLayerQG decaying 2D turbulence with and without finite Rossby radius of deformation](@id singlelayerqg_decaying_barotropic_equivalentbarotropic_example)
 #
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/singlelayerqg_decaying_barotropic_equivalentbarotropic.ipynb).
-#
 # We use here the `SingleLayerQG` module to simulate decaying two-dimensional turbulence and
 # investigate how does a finite Rossby radius of deformation affects its evolution.
 #
@@ -27,7 +25,7 @@ using Random: seed!
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
+nothing #hide
 
 
 # ## Numerical, domain, and simulation parameters
@@ -36,13 +34,13 @@ nothing # hide
 
 n, L  = 128, 2π             # grid resolution and domain length
 deformation_radius = 0.35   # the deformation radius
-nothing # hide
+nothing #hide
 
 ## Then we pick the time-stepper parameters
     dt = 1e-2  # timestep
 nsteps = 4000  # total number of steps
  nsubs = 20    # number of steps between each plot
-nothing # hide
+nothing #hide
 
 
 # ## Problem setup
@@ -59,7 +57,7 @@ stepper="FilteredRK4"
 
 prob_bqg = SingleLayerQG.Problem(dev; nx=n, Lx=L, dt, stepper, aliased_fraction=0)
 prob_eqbqg = SingleLayerQG.Problem(dev; nx=n, Lx=L, deformation_radius, dt, stepper, aliased_fraction=0)
-nothing # hide
+nothing #hide
 
 
 # ## Setting initial conditions
@@ -69,7 +67,7 @@ nothing # hide
 seed!(1234)
 k₀, E₀ = 6, 0.5
 ∇²ψ₀ = peakedisotropicspectrum(prob_bqg.grid, k₀, E₀, mask=prob_bqg.timestepper.filter)
-nothing # hide
+nothing #hide
 
 # `SingleLayerQG` allows us to set up the initial ``q`` for each problem via `set_q!()` function.
 # To initialize both `prob_bqg` and `prob_eqbqg` with the same flow, we first use function 
@@ -79,17 +77,17 @@ nothing # hide
 ∇²ψ₀h = rfft(∇²ψ₀)
 ψ₀h = @. 0 * ∇²ψ₀h
 SingleLayerQG.streamfunctionfrompv!(ψ₀h, ∇²ψ₀h, prob_bqg.params, prob_bqg.grid)
-nothing # hide
+nothing #hide
 
 # and then use the streamfunction to compute the corresponding ``q_0`` for each problem,
 q₀_bqg   = irfft(-prob_bqg.grid.Krsq .* ψ₀h, prob_bqg.grid.nx)
 q₀_eqbqg = irfft(-(prob_eqbqg.grid.Krsq .+ 1/prob_eqbqg.params.deformation_radius^2) .* ψ₀h, prob_bqg.grid.nx)
-nothing # hide
+nothing #hide
 
 # Now we can initialize our problems with the same flow.
 SingleLayerQG.set_q!(prob_bqg, q₀_bqg)
 SingleLayerQG.set_q!(prob_eqbqg, q₀_eqbqg)
-nothing # hide
+nothing #hide
 
 
 # Let's plot the initial vorticity field for each problem. Note that when plotting, we decorate 
@@ -164,6 +162,6 @@ record(fig, "singlelayerqg_barotropic_equivalentbarotropic.mp4", 0:Int(nsteps/ns
   ζ_bqg[] = relativevorticity(prob_bqg)
   ζ_eqbqg[] = relativevorticity(prob_eqbqg)
 end
-nothing # hide
+nothing #hide
 
 # ![](singlelayerqg_barotropic_equivalentbarotropic.mp4)
