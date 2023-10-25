@@ -9,4 +9,5 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 [compat]
 CairoMakie = "< 0.10.5"
 CUDA = "1, 2.4.2, 3.0.0 - 3.6.4, 3.7.1, 4"
+Documenter = "0.27"
 Literate = "≥2.9.0"
