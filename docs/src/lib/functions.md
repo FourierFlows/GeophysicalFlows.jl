@@ -1,6 +1,9 @@
 # Functions
 
 ## `GeophysicalFlows`
+```@docs
+GeophysicalFlows.GeophysicalFlows
+```
 
 ### Exported functions
 
