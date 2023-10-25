@@ -31,7 +31,7 @@ nothing #hide
 stepper = "FilteredRK4"  # timestepper
      dt = 0.04           # timestep
  nsteps = 2000           # total number of time-steps
- nsubs  = 20             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
+ nsubs  = 10             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
 nothing #hide
 
 
@@ -201,7 +201,7 @@ startwalltime = time()
 
 frames = 0:round(Int, nsteps / nsubs)
 
-record(fig, "singlelayerqg_betadecay.mp4", frames, framerate = 8) do j
+record(fig, "singlelayerqg_betadecay.mp4", frames, framerate = 12) do j
   if j % round(Int, nsteps/nsubs / 4) == 0
     cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
 
