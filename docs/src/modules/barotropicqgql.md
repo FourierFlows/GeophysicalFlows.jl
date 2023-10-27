@@ -11,7 +11,7 @@ e.g.,
 \phi(x, y, t) = \overline{\phi}(y, t) + \phi'(x, y, t) ,
 ```
 
-where overline above denotes a zonal mean, ``\overline{\phi}(y, t) = \int \phi(x, y, t) \, 𝖽x / L_x``, and prime denotes deviations from the zonal mean. This approximation is used in many process-model studies of zonation, e.g., [Farrell-Ioannou-2003](@citet), [Srinivasan-Young-2012](@citet), [Constantinou-etal-2014](@citet).
+where overline above denotes a zonal mean, ``\overline{\phi}(y, t) = \int \phi(x, y, t) \, 𝖽x / L_x``, and prime denotes deviations from the zonal mean. This approximation is used in many process-model studies of zonation, e.g., [Farrell-Ioannou-2003](@citet), [Srinivasan-Young-2012](@citet), and [Constantinou-etal-2014](@citet).
 
 As in the [SingleLayerQG module](singlelayerqg.md), the flow is obtained through a 
 streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. All flow fields 
