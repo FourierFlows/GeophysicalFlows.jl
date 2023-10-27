@@ -31,7 +31,7 @@ for example in examples
     example_filepath = joinpath(EXAMPLES_DIR, example)
     withenv("JULIA_DEBUG" => "Literate") do
       Literate.markdown(example_filepath, OUTPUT_DIR;
-                        flavor = Literate.DocumenterFlavor(), execute = false)
+                        flavor = Literate.DocumenterFlavor(), execute = true)
     end
   end
 end
@@ -56,11 +56,9 @@ makedocs(
   modules = [GeophysicalFlows],
   plugins = [bib],
    format = format,
-    draft = true,
   doctest = true,
     clean = true,
 checkdocs = :all,
- warnonly = [:footnote, :cross_references],
     pages = Any[
                 "Home" => "index.md",
                 "Installation instructions" => "installation_instructions.md",
