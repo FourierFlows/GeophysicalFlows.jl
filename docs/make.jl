@@ -1,4 +1,4 @@
-using Documenter, Literate
+using Documenter, DocumenterCitations, Literate
 
 using CairoMakie
 # CairoMakie.activate!(type = "svg")
@@ -47,14 +47,18 @@ format = Documenter.HTML(
       canonical = "https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/"
 )
 
+bib_filepath = joinpath(dirname(@__FILE__), "src/references.bib")
+bib = CitationBibliography(bib_filepath, style=:authoryear)
+
 makedocs(
+  authors = "Navid C. Constantinou, Gregory L. Wagner, and contributors",
+ sitename = "GeophysicalFlows.jl",
   modules = [GeophysicalFlows],
+  plugins = [bib],
+   format = format,
   doctest = true,
     clean = true,
 checkdocs = :all,
-   format = format,
-  authors = "Navid C. Constantinou, Gregory L. Wagner, and contributors",
- sitename = "GeophysicalFlows.jl",
     pages = Any[
                 "Home" => "index.md",
                 "Installation instructions" => "installation_instructions.md",
@@ -92,6 +96,7 @@ checkdocs = :all,
                   ],
                 "Stochastic forcing" => "stochastic_forcing.md",
                 "Contributor's guide" => "contributing.md",
+                "References" => "references.md",
                 "Library" => Any[
                   "lib/types.md",
                   "lib/functions.md"

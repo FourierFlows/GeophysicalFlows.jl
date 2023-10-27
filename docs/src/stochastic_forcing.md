@@ -141,7 +141,7 @@ the other hand, the chain rule in Stratonovich calculus coincides with that in n
 This stems from the fact that in the Stratonovich interpretation the white noise process is as 
 a series of colored noise processes with the de-correlation time tending to zero. This made 
 Stratonovich calculus more popular in the physics community. A nice discussion on the differences 
-and similarities between the two calculi is given by [van Kampen](https://doi.org/10.1007/BF01007642).
+and similarities between the two calculi is given by [vanKampen-1981](@citet).
 
 ## A simple Stochastic Differential Equation: the Ornstein--Uhlenbeck process
 
@@ -158,7 +158,7 @@ Note that in differential form (1) is written as:
 ```
 
 Luckily, for (2) we don't need to distinguish between Itô and Stratonovich, since ``g`` is 
-independent of ``x(t)``. But note that oftentimes this is not the case; that ``g`` is independent 
+independent of ``x(t)``. But note that often this is not the case; that ``g`` is independent 
 of ``x(t)`` is only a fortuitous coincident for this particular SDE.
 
 How do we time-step SDE (2) numerically? Let us assume a discretization of time into time-steps
@@ -456,7 +456,7 @@ The forcing ``\xi`` obeys:
 
 that is, the forcing is white in time but spatially correlated; its spatial correlation is 
 prescribed by the function ``Q`` which is, necessarily, homogeneous in all its arguments
-(see discussion by [Constantinou (2015)](http://arxiv.org/abs/1503.07644); Appendix A).
+(see discussion by [Constantinou-2015-phd](@citet); Appendix A).
 
 Equation (6) above describes the vorticity evolution of a two-dimensional fluid ``\nabla^2 \psi`` 
 that is stochastically forced while dissipated by linear drag ``\mu``. The energy of the 

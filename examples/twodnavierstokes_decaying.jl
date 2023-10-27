@@ -1,6 +1,7 @@
 # # [2D decaying turbulence](@id twodnavierstokes_decaying_example)
 #
-# A simulation of decaying two-dimensional turbulence.
+# A simulation of decaying two-dimensional turbulence closely following
+# the paper by [McWilliams-1984](@citet).
 # 
 # ## Install dependencies
 #
@@ -58,7 +59,7 @@ nothing #hide
 
 # ## Setting initial conditions
 
-# Our initial condition tries to reproduce the initial condition used by McWilliams (_JFM_, 1984).
+# Our initial condition tries to reproduce the initial condition used by [McWilliams-1984](@citet).
 seed!(1234)
 k₀, E₀ = 6, 0.5
 ζ₀ = peakedisotropicspectrum(grid, k₀, E₀, mask=prob.timestepper.filter)

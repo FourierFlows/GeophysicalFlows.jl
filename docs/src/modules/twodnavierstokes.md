@@ -94,8 +94,6 @@ Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.TwoDNavie
 - [`examples/twodnavierstokes_decaying.jl`](@ref twodnavierstokes_decaying_example): Simulates decaying two-dimensional
   turbulence reproducing the results by:
 
-  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43.
-
 - [`examples/twodnavierstokes_stochasticforcing.jl`](@ref twodnavierstokes_stochasticforcing_example): Simulate forced-dissipative
   two-dimensional turbulence with isotropic temporally delta-correlated stochastic forcing.
 
