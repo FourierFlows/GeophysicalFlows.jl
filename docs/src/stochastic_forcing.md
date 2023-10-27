@@ -141,7 +141,7 @@ the other hand, the chain rule in Stratonovich calculus coincides with that in n
 This stems from the fact that in the Stratonovich interpretation the white noise process is as 
 a series of colored noise processes with the de-correlation time tending to zero. This made 
 Stratonovich calculus more popular in the physics community. A nice discussion on the differences 
-and similarities between the two calculi is given by [van Kampen](https://doi.org/10.1007/BF01007642).
+and similarities between the two calculi is given by [vanKampen-Nicolaas-1981](@citet).
 
 ## A simple Stochastic Differential Equation: the Ornstein--Uhlenbeck process
 
