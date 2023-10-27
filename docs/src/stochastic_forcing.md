@@ -158,7 +158,7 @@ Note that in differential form (1) is written as:
 ```
 
 Luckily, for (2) we don't need to distinguish between Itô and Stratonovich, since ``g`` is 
-independent of ``x(t)``. But note that oftentimes this is not the case; that ``g`` is independent 
+independent of ``x(t)``. But note that often this is not the case; that ``g`` is independent 
 of ``x(t)`` is only a fortuitous coincident for this particular SDE.
 
 How do we time-step SDE (2) numerically? Let us assume a discretization of time into time-steps
@@ -456,7 +456,7 @@ The forcing ``\xi`` obeys:
 
 that is, the forcing is white in time but spatially correlated; its spatial correlation is 
 prescribed by the function ``Q`` which is, necessarily, homogeneous in all its arguments
-(see discussion by [Constantinou (2015)](http://arxiv.org/abs/1503.07644); Appendix A).
+(see discussion by [Constantinou-2015-phd](@citet); Appendix A).
 
 Equation (6) above describes the vorticity evolution of a two-dimensional fluid ``\nabla^2 \psi`` 
 that is stochastically forced while dissipated by linear drag ``\mu``. The energy of the 
