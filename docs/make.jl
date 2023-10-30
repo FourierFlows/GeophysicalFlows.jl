@@ -127,7 +127,7 @@ end
 
 withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
   deploydocs(       repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
-                versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
+                versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"],
             push_preview = false,
                forcepush = true,
                devbranch = "main"
