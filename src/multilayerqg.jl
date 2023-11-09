@@ -10,7 +10,8 @@ export
   set_q!,
   set_ψ!,
   energies,
-  fluxes
+  fluxes,
+  spectralfluxes
 
 using
   FFTW,
@@ -185,6 +186,10 @@ struct Params{T, Aphys3D, Aphys2D, Atrans4D, Trfft} <: AbstractParams
   # derived params
     "array with the reduced gravity constants for each fluid interface"
         g′ :: Tuple
+    "array of layer interface stretching operators; e.g., [F_{3/2},F_{5/2},...]"
+        F :: Tuple
+    "array of ratios of layer depth to total depth"
+        δ :: Tuple
     "array containing ``x``-gradient of PV due to eta in each fluid layer"
         Qx :: Aphys3D
     "array containing ``y``-gradient of PV due to ``β``, ``U``, and topographic PV in each fluid layer"
@@ -352,10 +357,13 @@ function Params(nlayers::Int, g, f₀, β, ρ, H, U, eta, topographic_pv_gradien
     ρ = reshape(T.(ρ), (1,  1, nlayers))
     H = Tuple(T.(H))
 
-    g′ = T(g) * (ρ[2:nlayers] -   ρ[1:nlayers-1]) ./ ρ[1] # reduced gravity at each interface
+    g′ = T(g) * (ρ[2:nlayers] -   ρ[1:nlayers-1]) / ρ[1] # reduced gravity at each interface
 
     Fm = @. T(f₀^2 / (g′ * H[2:nlayers]))
     Fp = @. T(f₀^2 / (g′ * H[1:nlayers-1]))
+ 
+    F = (f₀^2 ./ (g′ .* sum(H)))
+    δ = H ./ sum(H)
 
     typeofSkl = SArray{Tuple{nlayers, nlayers}, T, 2, nlayers^2} # StaticArrays of type T and dims = (nlayers, nlayers)
 
@@ -376,7 +384,7 @@ function Params(nlayers::Int, g, f₀, β, ρ, H, U, eta, topographic_pv_gradien
     if nlayers==2
       return TwoLayerParams(T(g), T(f₀), T(β), Tuple(T.(ρ)), Tuple(T.(H)), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
     else # if nlayers>2
-      return Params(nlayers, T(g), T(f₀), T(β), Tuple(T.(ρ)), T.(H), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, Tuple(T.(g′)), Qx, Qy, S, S⁻¹, rfftplanlayered)
+      return Params(nlayers, T(g), T(f₀), T(β), Tuple(T.(ρ)), T.(H), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, Tuple(T.(g′)), Tuple(T.(F)), Tuple(T.(δ)), Qx, Qy, S, S⁻¹, rfftplanlayered)
     end
   end
 end
@@ -1118,5 +1126,86 @@ function fluxes(vars, params::SingleLayerParams, grid, sol)
 end
 
 fluxes(prob) = fluxes(prob.vars, prob.params, prob.grid, prob.sol)
+
+"""
+    specfluxes(vars, params, grid, sol)
+    specfluxes(prob)
+Return the lateral, vertical and topographic spectral fluxes. The lateral energy
+fluxes are within each fluid layer, latspecfluxes``_1,2,3``. The vertical eddy
+fluxes at the fluid interfaces are vertspecfluxes``_12,23``, and the spectral topographic
+energy transfer term in the lower layer is topospecflux. Hats indicate
+Fourier transforms in the ``x''-direction, and stars indicate complex
+conjugation. (this description is modified from @apaloczy bc I am lazy)
+
+"""
+
+function spectralfluxes(vars, params, grid, sol)
+  nlayers = numberoflayers(params)
+
+  latspecfluxes, vertspecfluxes, topospecflux = zeros(grid.nkr,nlayers), zeros(grid.nkr,nlayers-1), zeros(grid.nkr,nlayers-1)
+
+  updatevars!(vars, params, grid, sol)
+
+  U₁, U₂, U₃ = view(params.U, :, :, 1), view(params.U, :, :, 2), view(params.U, :, :, 3)
+  u₃, v₃ = view(vars.u, :, :, nlayers), view(vars.v, :, :, nlayers)
+
+  ∂u∂yh = vars.uh           # use vars.uh as scratch variable
+  ∂u∂y  = vars.u            # use vars.u  as scratch variable
+  @. ∂u∂yh = im * grid.l * vars.uh
+  invtransform!(∂u∂y, ∂u∂yh, params)
+
+  ∂u∂yhx = rfft(∂u∂y, 1)       # FFT{∂u∂y} in x-direction
+  ψhx = rfft(vars.ψ, 1)        # FFT{ψ} in x-direction
+  u₃hx = rfft(u₃, 1)           # FFT{u₃} in x-direction
+  u₃hhx = rfft(u₃*params.eta, 1) # FFT{u₃h} in x-direction
+  v₃hhx = rfft(v₃*params.eta, 1) # FFT{v₃h} in x-direction
+  ψ₁hx, ψ₂hx, ψ₃hx = view(ψhx, :, :, 1), view(ψhx, :, :, 2), view(ψhx, :, :, 3)
+
+  # Lateral (barotropic) energy fluxes
+  auxCMh = @. im * grid.kr * params.U * (ψhx*conj(∂u∂yhx) - conj(ψhx)*∂u∂yhx)
+  auxCMh[:, :, 1] *= params.δ[1]
+  auxCMh[:, :, 2] *= params.δ[2]
+  auxCMh[:, :, 3] *= params.δ[3]
+
+  # Vertical (baroclinic) energy fluxes
+  auxCTh = auxCMh[:,:,1:nlayers-1]    # scratch variables
+  @. auxCTh[:,:,1] = im * grid.kr * params.F[1] * (U₁ - U₂) * (conj(ψ₁hx)*ψ₂hx - ψ₁hx*conj(ψ₂hx))  # I've now defined params.F in struct and function
+  @. auxCTh[:,:,2] = im * grid.kr * params.F[2] * (U₂ - U₃) * (ψ₃hx*conj(ψ₂hx) - conj(ψ₃hx)*ψ₂hx)
+
+  # Topographic energy flux in the lower layer (already on the RHS)
+  auxCtopoh = @. conj(u₃hx)*v₃hhx + u₃hx*conj(v₃hhx) + im * grid.kr * (conj(ψ₃hx)*u₃hhx - ψ₃hx*conj(u₃hhx))
+
+  # integrating in y
+  latspecfluxes   = real((sum(auxCMh, dims=2))[:, 1, :]) * grid.dy
+  vertspecfluxes  = real(sum(auxCTh, dims=2)) * grid.dy
+  topospecflux    = real(sum(auxCtopoh, dims=2)) * grid.dy * params.δ[3]
+
+
+  return latspecfluxes, vertspecfluxes, topospecflux
+end
+
+spectralfluxes(prob) = spectralfluxes(prob.vars, prob.params, prob.grid, prob.sol)
+
+
+# """
+#     calc_growth(t, E_in)
+# Estimate the growth rate of instabilities from a least-squares fit to energy
+# histories, where E_in = [KE1 KE2 KE3 PE32 PE52]
+# """
+# function calc_growth(t, E_in)
+#   E_tot = sum(E_in,dims=2)
+#   min_ind,trash = Peaks.findminima(diff(E_tot[:],dims=1))
+#   f = min_ind[end] + 1 # get first time index from the last renormalization cycle
+#   t, KE1_new = t[f:end], E_in[f:end,1]           # construct time series from last section of growth in upper layer
+#   n = size(t)[1]
+#   d = Matrix(reshape(log.(KE1_new), (1, n)))
+#   gm = Matrix(reshape(t, (1, n)))
+#   Gm = Matrix([ones(n, 1) gm'])
+#   GmT = Gm'
+#   mv = inv(GmT*Gm)*(GmT*d')
+#   sigma = mv[2]
+
+#   return sigma
+# end
 
 end # module
