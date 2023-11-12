@@ -84,6 +84,8 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. Parfenyev, V. (2023) Statistical analysis of vortex condensate motion in two-dimensional turbulence. arXiv preprint arXiv:2311.03065, doi:[10.48550/arXiv.2311.03065](https://doi.org/10.48550/arXiv.2311.03065).
+
 1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2023) Stochastic latent transformer: Efficient modelling of stochastically forced zonal jets. arXiv preprint arXiv:2310.16741, doi:[10.48550/arXiv.2310.16741](https://doi.org/10.48550/arXiv.2310.16741).
 
 1. Siegelman, L. and Young, W. R. (2023). Two-dimensional turbulence above topography: Vortices and potential vorticity homogenization. _Proceedings of the National Academy of Sciences_, **120(44)**, e2308018120, doi:[10.1073/pnas.2308018120](https://doi.org/10.1073/pnas.2308018120).
