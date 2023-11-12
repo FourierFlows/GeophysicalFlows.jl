@@ -92,7 +92,7 @@ The bibtex entry for the paper is:
 
 1. Bisits, J. I., Stanley G. J., and Zika, J. D. (2023). Can we accurately quantify a lateral diffusivity using a single tracer release? _Journal of Physical Oceanography_, **53(2)**, 647–659, doi:[10.1175/JPO-D-22-0145.1](https://doi.org/10.1175/JPO-D-22-0145.1).
 
-1. Parfenyev, V. (2022) Profile of a two-dimensional vortex condensate beyond the universal limit. *Phys. Rev. E*, **106**, 025102, doi:[10.1103/PhysRevE.106.025102](https://doi.org/10.1103/PhysRevE.106.025102).
+1. Parfenyev, V. (2022) Profile of a two-dimensional vortex condensate beyond the universal limit. _Phys. Rev. E_, **106**, 025102, doi:[10.1103/PhysRevE.106.025102](https://doi.org/10.1103/PhysRevE.106.025102).
 
 1. Siegelman, L., Young, W. R., and Ingersoll, A. P. (2022). Polar vortex crystals: Emergence and structure _Proceedings of the National Academy of Sciences_, **119(17)**, e2120486119. doi:[10.1073/pnas.2120486119](https://doi.org/10.1073/pnas.2120486119).
 
