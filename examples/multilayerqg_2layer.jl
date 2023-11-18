@@ -43,9 +43,9 @@ L = 2π                   # domain size
 β = 5                    # the y-gradient of planetary PV
  
 nlayers = 2              # number of layers
-f₀, g = 1, 1             # Coriolis parameter and gravitational constant
+f₀ = 1                   # Coriolis parameter
 H = [0.2, 0.8]           # the rest depths of each layer
-ρ = [4.0, 5.0]           # the density of each layer
+b = [1.0, 1.5]           # Boussinesq buoyancy of each layer
  
 U = zeros(nlayers)       # the imposed mean zonal flow in each layer
 U[1] = 1.0
@@ -59,7 +59,7 @@ nothing #hide
 # at every time-step that removes enstrophy at high wavenumbers and, thereby,
 # stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
 
-prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ, U, μ, β,
+prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, b, U, μ, β,
                             dt, stepper, aliased_fraction=0)
 nothing #hide
 
