@@ -2,7 +2,7 @@
 
 ### Basic Equations
 
-This module solves the layered quasi-geostrophic equations on a beta plane of variable fluid 
+This module solves the layered Boussinesq quasi-geostrophic equations on a beta plane of variable fluid 
 depth ``H - h(x, y)``. The flow in each layer is obtained through a streamfunction ``\psi_j`` as 
 ``(u_j, v_j) = (-\partial_y \psi_j, \partial_x \psi_j)``, ``j = 1, \dots, n``, where ``n`` 
 is the number of fluid layers.
@@ -28,8 +28,16 @@ with
 
 ```math
 F_{j+1/2, k} = \frac{f_0^2}{g'_{j+1/2} H_k} \quad \text{and} \quad
-g'_{j+1/2} = g \frac{\rho_{j+1} - \rho_j}{\rho_{j+1}} .
+g'_{j+1/2} = -(b_{j+1} - b_j) .
 ```
+
+where
+
+```math
+b_{j} = -g \frac{\delta \rho_j}{\rho_0}
+```
+
+is the Boussinesq buoyancy in each layer, with ``\rho = \rho_0 + \delta \rho`` the total density, ``\rho_0`` a constant reference density, and ``|\delta \rho| \ll \rho_0`` the perturbation density.
 
 In view of the relationships above, when we convert to Fourier space ``q``'s and ``\psi``'s are 
 related via the matrix equation

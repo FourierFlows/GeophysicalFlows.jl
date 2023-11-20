@@ -45,7 +45,7 @@ L = 2π                   # domain size
 nlayers = 2              # number of layers
 f₀ = 1                   # Coriolis parameter
 H = [0.2, 0.8]           # the rest depths of each layer
-b = [1.0, 1.5]           # Boussinesq buoyancy of each layer
+b = [-1.0, -1.2]         # Boussinesq buoyancy of each layer
  
 U = zeros(nlayers)       # the imposed mean zonal flow in each layer
 U[1] = 1.0
