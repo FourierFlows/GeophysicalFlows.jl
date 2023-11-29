@@ -1147,7 +1147,12 @@ function spectralfluxes(vars, params, grid, sol)
   updatevars!(vars, params, grid, sol)
 
   U₁, U₂, U₃ = view(params.U, :, :, 1), view(params.U, :, :, 2), view(params.U, :, :, 3)
+  u₁, v₁ = view(vars.u, :, :, 1), view(vars.v, :, :, 1)
+  u₂, v₂ = view(vars.u, :, :, 2), view(vars.v, :, :, 2)
   u₃, v₃ = view(vars.u, :, :, nlayers), view(vars.v, :, :, nlayers)
+  q₁ = view(vars.q, :, :, 1)
+  q₂ = view(vars.q, :, :, 2)
+  q₃ = view(vars.q, :, :, nlayers)
 
   ∂u∂yh = vars.uh           # use vars.uh as scratch variable
   ∂u∂y  = vars.u            # use vars.u  as scratch variable
@@ -1157,9 +1162,14 @@ function spectralfluxes(vars, params, grid, sol)
   ∂u∂yhx = rfft(∂u∂y, 1)       # FFT{∂u∂y} in x-direction
   ψhx = rfft(vars.ψ, 1)        # FFT{ψ} in x-direction
   u₃hx = rfft(u₃, 1)           # FFT{u₃} in x-direction
-  u₃hhx = rfft(u₃*params.eta, 1) # FFT{u₃h} in x-direction
-  v₃hhx = rfft(v₃*params.eta, 1) # FFT{v₃h} in x-direction
+  u₃hhx = rfft(u₃ .* params.eta, 1) # FFT{u₃h} in x-direction
+  v₃hhx = rfft(v₃ .* params.eta, 1) # FFT{v₃h} in x-direction
+  hhx = rfft(params.eta, 1)
   ψ₁hx, ψ₂hx, ψ₃hx = view(ψhx, :, :, 1), view(ψhx, :, :, 2), view(ψhx, :, :, 3)
+
+  q₁u₁hx = rfft(q₁ .* u₁, 1)
+  q₂u₂hx = rfft(q₂ .* u₂, 1)
+  q₃u₃hx = rfft(q₃ .* u₃, 1)
 
   # Lateral (barotropic) energy fluxes
   auxCMh = @. im * grid.kr * params.U * (ψhx*conj(∂u∂yhx) - conj(ψhx)*∂u∂yhx)
@@ -1168,20 +1178,32 @@ function spectralfluxes(vars, params, grid, sol)
   auxCMh[:, :, 3] *= params.δ[3]
 
   # Vertical (baroclinic) energy fluxes
-  auxCTh = auxCMh[:,:,1:nlayers-1]    # scratch variables
+  auxCTh = auxCMh[:,:,1:nlayers-1]    # scratch variable
   @. auxCTh[:,:,1] = im * grid.kr * params.F[1] * (U₁ - U₂) * (conj(ψ₁hx)*ψ₂hx - ψ₁hx*conj(ψ₂hx))  # I've now defined params.F in struct and function
   @. auxCTh[:,:,2] = im * grid.kr * params.F[2] * (U₂ - U₃) * (ψ₃hx*conj(ψ₂hx) - conj(ψ₃hx)*ψ₂hx)
 
+  # Nonlinear triad terms
+  auxCNh = auxCMh[:,:,:]    # scratch variable
+  auxCNh[:,:,1] = @. im * grid.kr * (ψ₁hx * conj(q₁u₁hx) - conj(ψ₁hx) * q₁u₁hx)
+  auxCNh[:,:,2] = @. im * grid.kr * (ψ₂hx * conj(q₂u₂hx) - conj(ψ₂hx) * q₂u₂hx)
+  auxCNh[:,:,3] = @. im * grid.kr * (ψ₃hx * conj(q₃u₃hx) - conj(ψ₃hx) * q₃u₃hx)
+
   # Topographic energy flux in the lower layer (already on the RHS)
-  auxCtopoh = @. conj(u₃hx)*v₃hhx + u₃hx*conj(v₃hhx) + im * grid.kr * (conj(ψ₃hx)*u₃hhx - ψ₃hx*conj(u₃hhx))
+  # the prefactor f0/H is already accounted for in definition of eta
+  auxCtopoh = @. (conj(u₃hx)*v₃hhx + u₃hx*conj(v₃hhx) + im * grid.kr * (conj(ψ₃hx)*u₃hhx - ψ₃hx*conj(u₃hhx) + U₃ * (conj(ψ₃hx)*hhx + ψ₃hx*conj(hhx))))  
+  # auxCtopoh = (params.f₀/params.H[end]) * auxCtopoh
 
   # integrating in y
-  latspecfluxes   = real((sum(auxCMh, dims=2))[:, 1, :]) * grid.dy
-  vertspecfluxes  = real(sum(auxCTh, dims=2)) * grid.dy
-  topospecflux    = real(sum(auxCtopoh, dims=2)) * grid.dy * params.δ[3]
+  latspecfluxes     = real((sum(auxCMh, dims=2))[:, 1, :]) * grid.dy
+  vertspecfluxes    = real(sum(auxCTh, dims=2)) * grid.dy
+  topospecflux      = real(sum(auxCtopoh, dims=2)) * grid.dy * params.δ[3]
+  nonlinspecfluxes  = real(sum(auxCNh, dims=2)) * grid.dy
 
+  nonlinspecfluxes[:,:,1] = nonlinspecfluxes[:,:,1] * params.δ[1]
+  nonlinspecfluxes[:,:,2] = nonlinspecfluxes[:,:,2] * params.δ[2]
+  nonlinspecfluxes[:,:,3] = nonlinspecfluxes[:,:,3] * params.δ[3]
 
-  return latspecfluxes, vertspecfluxes, topospecflux
+  return latspecfluxes, vertspecfluxes, topospecflux, nonlinspecfluxes
 end
 
 spectralfluxes(prob) = spectralfluxes(prob.vars, prob.params, prob.grid, prob.sol)
