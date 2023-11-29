@@ -2,7 +2,7 @@
 #
 # A simulation of decaying surface quasi-geostrophic turbulence.
 # We reproduce here the initial value problem for an elliptical 
-# vortex as done by Held et al. 1995, _J. Fluid Mech_.
+# vortex as done by [Held-etal-1995](@citet).
 # 
 # An example of decaying barotropic quasi-geostrophic turbulence over topography.
 #

@@ -1,4 +1,4 @@
-# # [Decaying barotropic QG turbulence over topography](@id singlelayerqg_decaying_topography)
+# # [Decaying barotropic QG turbulence over topography](@id singlelayerqg_decay_topography_example)
 #
 # An example of decaying barotropic quasi-geostrophic turbulence over topography.
 #

@@ -3,7 +3,7 @@
 ### Basic Equations
 
 This module solves the non-dimensional surface quasi-geostrophic (SQG) equation for surface 
-buoyancy ``b_s = b(x, y, z=0)``, as described in Capet et al., 2008. The buoyancy and the fluid 
+buoyancy ``b_s = b(x, y, z=0)``, as described by [Capet-etal-2008](@citet). The buoyancy and the fluid 
 velocity at the surface are related through a streamfunction ``\psi`` via:
 
 ```math
@@ -101,5 +101,3 @@ Other diagnostic include: [`buoyancy_dissipation`](@ref GeophysicalFlows.Surface
 
 - [`examples/surfaceqg_decaying.jl`](@ref surfaceqg_decaying_example): Simulate decaying surface quasi-geostrophic flow 
   with a prescribed initial buoyancy field.
-
-  > Capet, X. et al., (2008). Surface kinetic energy transfer in surface quasi-geostrophic flows. *J. Fluid Mech.*, **604**, 165-174.

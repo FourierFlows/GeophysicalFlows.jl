@@ -1,4 +1,4 @@
-using Documenter, Literate
+using Documenter, DocumenterCitations, Literate
 
 using CairoMakie
 # CairoMakie.activate!(type = "svg")
@@ -47,56 +47,61 @@ format = Documenter.HTML(
       canonical = "https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/"
 )
 
+bib_filepath = joinpath(dirname(@__FILE__), "src/references.bib")
+bib = CitationBibliography(bib_filepath, style=:authoryear)
+
 makedocs(
- modules = [GeophysicalFlows],
- doctest = true,
-   clean = true,
+  authors = "Navid C. Constantinou, Gregory L. Wagner, and contributors",
+ sitename = "GeophysicalFlows.jl",
+  modules = [GeophysicalFlows],
+  plugins = [bib],
+   format = format,
+  doctest = true,
+    clean = true,
 checkdocs = :all,
-  format = format,
- authors = "Navid C. Constantinou, Gregory L. Wagner, and contributors",
-sitename = "GeophysicalFlows.jl",
-   pages = Any[
-            "Home" => "index.md",
-            "Installation instructions" => "installation_instructions.md",
-            "Aliasing" => "aliasing.md",
-            "GPU" => "gpu.md",
-            "Visualize output" => "visualize.md",
-            "Examples" => [
-              "TwoDNavierStokes" => Any[
-                "literated/twodnavierstokes_decaying.md",
-                "literated/twodnavierstokes_stochasticforcing.md",
-                "literated/twodnavierstokes_stochasticforcing_budgets.md",
-                ],
-              "SingleLayerQG" => Any[
-                "literated/singlelayerqg_betadecay.md",
-                "literated/singlelayerqg_betaforced.md",
-                "literated/singlelayerqg_decaying_topography.md",
-                "literated/singlelayerqg_decaying_barotropic_equivalentbarotropic.md"
-                ],
-              "BarotropicQGQL" => Any[
-                "literated/barotropicqgql_betaforced.md",
-                ],
-              "MultiLayerQG" => Any[
-                "literated/multilayerqg_2layer.md"
-                ],
-              "SurfaceQG" => Any[
-                "literated/surfaceqg_decaying.md"
+    pages = Any[
+                "Home" => "index.md",
+                "Installation instructions" => "installation_instructions.md",
+                "Aliasing" => "aliasing.md",
+                "GPU" => "gpu.md",
+                "Visualize output" => "visualize.md",
+                "Examples" => [
+                  "TwoDNavierStokes" => Any[
+                    "literated/twodnavierstokes_decaying.md",
+                    "literated/twodnavierstokes_stochasticforcing.md",
+                    "literated/twodnavierstokes_stochasticforcing_budgets.md",
+                    ],
+                  "SingleLayerQG" => Any[
+                    "literated/singlelayerqg_betadecay.md",
+                    "literated/singlelayerqg_betaforced.md",
+                    "literated/singlelayerqg_decaying_topography.md",
+                    "literated/singlelayerqg_decaying_barotropic_equivalentbarotropic.md"
+                    ],
+                  "BarotropicQGQL" => Any[
+                    "literated/barotropicqgql_betaforced.md",
+                    ],
+                  "MultiLayerQG" => Any[
+                    "literated/multilayerqg_2layer.md"
+                    ],
+                  "SurfaceQG" => Any[
+                    "literated/surfaceqg_decaying.md"
+                    ]
+                  ],
+                "Modules" => Any[
+                  "modules/twodnavierstokes.md",
+                  "modules/singlelayerqg.md",
+                  "modules/barotropicqgql.md",
+                  "modules/multilayerqg.md",
+                  "modules/surfaceqg.md"
+                  ],
+                "Stochastic forcing" => "stochastic_forcing.md",
+                "Contributor's guide" => "contributing.md",
+                "References" => "references.md",
+                "Library" => Any[
+                  "lib/types.md",
+                  "lib/functions.md"
                 ]
-            ],
-            "Modules" => Any[
-              "modules/twodnavierstokes.md",
-              "modules/singlelayerqg.md",
-              "modules/barotropicqgql.md",
-              "modules/multilayerqg.md",
-              "modules/surfaceqg.md"
-            ],
-            "Stochastic forcing" => "stochastic_forcing.md",
-            "Contributor's guide" => "contributing.md",
-            "Library" => Any[
-              "lib/types.md",
-              "lib/functions.md"
-            ]
-           ]
+              ]
 )
 
 @info "Clean up temporary .jld2 and .nc output created by doctests or literated examples..."
@@ -122,7 +127,7 @@ end
 
 withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
   deploydocs(       repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
-                versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
+                versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"],
             push_preview = false,
                forcepush = true,
                devbranch = "main"

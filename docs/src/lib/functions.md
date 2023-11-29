@@ -1,6 +1,9 @@
 # Functions
 
 ## `GeophysicalFlows`
+```@docs
+GeophysicalFlows.GeophysicalFlows
+```
 
 ### Exported functions
 
@@ -22,6 +25,7 @@ GeophysicalFlows.TwoDNavierStokes.energy_work
 GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation_hyperviscosity
 GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation_hypoviscosity
 GeophysicalFlows.TwoDNavierStokes.enstrophy_work
+GeophysicalFlows.TwoDNavierStokes.palinstrophy
 ```
 
 ### Private functions
