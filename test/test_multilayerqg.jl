@@ -656,7 +656,7 @@ function test_mqg_setqsetψ(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler",
   T = eltype(gr)
   
   f1 = @. 2cos(k₀*x) * cos(l₀*y)
-  f2 = @.  cos(k₀*x+π/10) * cos(2l₀*y)
+  f2 = @.  cos(k₀*x + π/10) * cos(2l₀*y)
 
   f = zeros(dev, T, (gr.nx, gr.ny, nlayers))
   view(f, :, :, 1) .= f1
@@ -717,8 +717,7 @@ function test_mqg_set_topographicPV_largescale_gradient(dev::Device=CPU(); dt=0.
                               dt, stepper, aliased_fraction=0)
 
   # Test to see if the internally-computed total bottom Qx and Qy are correct
-
-  g′ = -(b[2] - b[1])
+  g′ = b[1] - b[2]
   F1 = f₀^2 / (H[2] * g′)
   Psi1y, Psi2y = -U[1], -U[2]
 
