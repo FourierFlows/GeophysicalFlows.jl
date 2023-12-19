@@ -28,13 +28,13 @@ with
 
 ```math
 F_{j+1/2, k} = \frac{f_0^2}{g'_{j+1/2} H_k} \quad \text{and} \quad
-g'_{j+1/2} = -(b_{j+1} - b_j) .
+g'_{j+1/2} = b_j - b_{j+1} ,
 ```
 
 where
 
 ```math
-b_{j} = -g \frac{\delta \rho_j}{\rho_0}
+b_{j} = - g \frac{\delta \rho_j}{\rho_0}
 ```
 
 is the Boussinesq buoyancy in each layer, with ``\rho = \rho_0 + \delta \rho`` the total density, ``\rho_0`` a constant reference density, and ``|\delta \rho| \ll \rho_0`` the perturbation density.
