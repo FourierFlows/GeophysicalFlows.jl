@@ -345,7 +345,7 @@ function Params(nlayers::Int, f₀, β, b, H, U, eta, topographic_pv_gradient, �
     b = reshape(T.(b), (1,  1, nlayers))
     H = Tuple(T.(H))
 
-    g′ = -(b[2:nlayers] - b[1:nlayers-1]) # reduced gravity at each interface
+    g′ = b[1:nlayers-1] - b[2:nlayers] # reduced gravity at each interface
 
     Fm = @. T(f₀^2 / (g′ * H[2:nlayers]))
     Fp = @. T(f₀^2 / (g′ * H[1:nlayers-1]))
