@@ -130,11 +130,11 @@ function test_pvtofromstreamfunction_2layer(dev::Device=CPU())
   gr = TwoDGrid(dev; nx=n, Lx=L)
 
   nlayers = 2      # these choice of parameters give the
-  f₀, g = 1, 1     # desired PV-streamfunction relations
+  f₀ = 1           # desired PV-streamfunction relations
   H = [0.2, 0.8]   # q1 = Δψ1 + 25*(ψ2-ψ1), and
-  ρ = [4.0, 5.0]   # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+  b = [-1.0, -1.2] # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, b)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1, ψ2, q1, q2, ψ1x, ψ2x, q1x, q2x, Δψ2, Δq1, Δq2 = constructtestfields_2layer(gr)
@@ -172,13 +172,13 @@ function test_pvtofromstreamfunction_3layer(dev::Device=CPU())
   n, L = 128, 2π
   gr = TwoDGrid(dev; nx=n, Lx=L)
 
-  nlayers = 3            # these choice of parameters give the
-  f₀, g = 1, 1           # desired PV-streamfunction relations
-  H = [0.25, 0.25, 0.5]  # q1 = Δψ1 + 20ψ2 - 20ψ1,
-  ρ = [4.0, 5.0, 6.0]    # q2 = Δψ2 + 20ψ1 - 44ψ2 + 24ψ3,
-                         # q3 = Δψ3        + 12ψ2 - 12ψ3.
+  nlayers = 3                 # these choice of parameters give the
+  f₀ = 1                      # desired PV-streamfunction relations
+  H = [0.25, 0.25, 0.5]       # q1 = Δψ1 + 20ψ2 - 20ψ1,
+  b = [-1.0, -1.2, -1.2-1/6]  # q2 = Δψ2 + 20ψ1 - 44ψ2 + 24ψ3,
+                              # q3 = Δψ3        + 12ψ2 - 12ψ3.
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, b)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ1, ψ2, ψ3, q1, q2, q3, ψ1x, ψ2x, ψ3x, q1x, q2x, q3x, Δq1, Δq2, Δq3, Δψ3 = constructtestfields_3layer(gr)
@@ -237,9 +237,9 @@ function test_mqg_nonlinearadvection_2layers(dt, stepper, dev::Device=CPU())
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   nlayers = 2       # these choice of parameters give the
-  f₀, g = 1, 1      # desired PV-streamfunction relations
+  f₀ = 1            # desired PV-streamfunction relations
   H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
-  ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+  b = [-1.0, -1.2]  # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
   β = 0.35
 
@@ -282,7 +282,7 @@ function test_mqg_nonlinearadvection_2layers(dt, stepper, dev::Device=CPU())
     return nothing
   end
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ, U,
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, H, b, U,
                               eta=η, β, μ, ν, nν, calcFq=calcFq!, stepper, dt)
 
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
@@ -323,11 +323,11 @@ function test_mqg_nonlinearadvection_3layers(dt, stepper, dev::Device=CPU())
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
-  nlayers = 3            # these choice of parameters give the
-  f₀, g = 1, 1           # desired PV-streamfunction relations
-  H = [0.25, 0.25, 0.5]  # q1 = Δψ1 + 20ψ2 - 20ψ1,
-  ρ = [4.0,  5.0,  6.0]  # q2 = Δψ2 + 20ψ1 - 44ψ2 + 24ψ3,
-                         # q3 = Δψ3 + 12ψ2 - 12ψ3.
+  nlayers = 3                # these choice of parameters give the
+  f₀ = 1                     # desired PV-streamfunction relations
+  H = [0.25, 0.25, 0.5]      # q1 = Δψ1 + 20ψ2 - 20ψ1,
+  b = [-1.0, -1.2, -1.2-1/6] # q2 = Δψ2 + 20ψ1 - 44ψ2 + 24ψ3,
+                             # q3 = Δψ3 + 12ψ2 - 12ψ3.
 
   β = 0.35
 
@@ -375,7 +375,7 @@ function test_mqg_nonlinearadvection_3layers(dt, stepper, dev::Device=CPU())
     return nothing
   end
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ, U,
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, H, b, U,
                               eta=η, β, μ, ν, nν, calcFq=calcFq!, stepper, dt)
 
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
@@ -426,9 +426,9 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU();
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   nlayers = 2       # these choice of parameters give the
-  f₀, g = 1, 1      # desired PV-streamfunction relations
+  f₀ = 1            # desired PV-streamfunction relations
   H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
-  ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+  b = [-1.0, -1.2]  # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
   β = 0.35
 
@@ -471,7 +471,7 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU();
     return nothing
   end
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ, U,
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, H, b, U,
                               eta=η, β, μ, ν, nν, calcFq=calcFq!, stepper, dt, linear=true)
 
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
@@ -509,11 +509,11 @@ function test_mqg_energies(dev::Device=CPU();
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
   nlayers = 2
 
-  f₀, g = 1, 1
-  H = [2.5, 7.5] # sum(params.H) = 10
-  ρ = [1.0, 2.0] # Make g′ = 1/2
+  f₀ = 1
+  H = [2.5, 7.5]   # sum(params.H) = 10
+  b = [-1.0, -1.5] # Make g′ = 1/2
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, H, b)
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
@@ -573,13 +573,13 @@ function test_mqg_fluxes(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   nlayers = 2       # these choice of parameters give the
-  f₀, g = 1, 1      # desired PV-streamfunction relations
+  f₀ = 1            # desired PV-streamfunction relations
   H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
-  ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+  b = [-1.0, -1.2]  # q2 = Δψ2 + 25/4*(ψ1-ψ2).
   U = zeros(ny, nlayers)
   U[:, 1] = @. sech(gr.y / 0.2)^2
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, g, H, ρ, U)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx, Ly, f₀, H, b, U)
 
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
@@ -645,18 +645,18 @@ function test_mqg_setqsetψ(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler",
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
   nlayers = 2       # these choice of parameters give the
-  f₀, g = 1, 1      # desired PV-streamfunction relations
+  f₀ = 1            # desired PV-streamfunction relations
   H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
-  ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+  b = [-1.0, -1.2]  # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
-  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx=L, f₀, g, H, ρ)
+  prob = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx=L, f₀, H, b)
 
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   T = eltype(gr)
   
   f1 = @. 2cos(k₀*x) * cos(l₀*y)
-  f2 = @.  cos(k₀*x+π/10) * cos(2l₀*y)
+  f2 = @.  cos(k₀*x + π/10) * cos(2l₀*y)
 
   f = zeros(dev, T, (gr.nx, gr.ny, nlayers))
   view(f, :, :, 1) .= f1
@@ -692,9 +692,9 @@ function test_mqg_set_topographicPV_largescale_gradient(dev::Device=CPU(); dt=0.
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly    # fundamental wavenumbers
 
   nlayers = 2                    # these choice of parameters give the
-  f₀, g = 1, 1                   # desired PV-streamfunction relations
+  f₀ = 1                         # desired PV-streamfunction relations
   H = [0.2, 0.8]                 # q1 = Δψ1 + 25   * (ψ2 - ψ1), and
-  ρ = [4.0, 5.0]                 # q2 = Δψ2 + 25/4 * (ψ1 - ψ2).
+  b = [-1.0, -1.2]               # q2 = Δψ2 + 25/4 * (ψ1 - ψ2).
   U = zeros(nlayers)             # the imposed mean zonal flow in each layer
   U[1] = 1.0
   U[2] = 0.0
@@ -712,13 +712,12 @@ function test_mqg_set_topographicPV_largescale_gradient(dev::Device=CPU(); dt=0.
   eta = f₀ * h / H[2]
 
   prob = MultiLayerQG.Problem(nlayers, dev;
-                              nx, ny, Lx=L, Ly=L, f₀, g, H, ρ, U, μ, β=0, T, eta,
+                              nx, ny, Lx=L, Ly=L, f₀, H, b, U, μ, β=0, T, eta,
                               topographic_pv_gradient = f₀ / H[2] .* (topographic_slope_x, topographic_slope_y),
                               dt, stepper, aliased_fraction=0)
 
   # Test to see if the internally-computed total bottom Qx and Qy are correct
-
-  g′ = g * (ρ[2] - ρ[1]) / ρ[2]
+  g′ = b[1] - b[2]
   F1 = f₀^2 / (H[2] * g′)
   Psi1y, Psi2y = -U[1], -U[2]
 
@@ -742,9 +741,9 @@ function test_mqg_paramsconstructor(dev::Device=CPU(); dt=0.001, stepper="Forwar
   gr = TwoDGrid(dev; nx, Lx=L, ny, Ly=L)
 
   nlayers = 2       # these choice of parameters give the
-  f₀, g = 1, 1      # desired PV-streamfunction relations
+  f₀ = 1            # desired PV-streamfunction relations
   H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
-  ρ = [4.0, 5.0]    # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+  b = [-1.0, -1.2]  # q2 = Δψ2 + 25/4*(ψ1-ψ2).
 
   U1, U2 = 0.1, 0.05
 
@@ -758,8 +757,8 @@ function test_mqg_paramsconstructor(dev::Device=CPU(); dt=0.001, stepper="Forwar
   CUDA.@allowscalar Ufloats[1] = U1
   CUDA.@allowscalar Ufloats[2] = U2
 
-  probUvectors = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx=L, f₀, g, H, ρ, U=Uvectors)
-  probUfloats = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx=L, f₀, g, H, ρ, U=Ufloats)
+  probUvectors = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx=L, f₀, H, b, U=Uvectors)
+  probUfloats = MultiLayerQG.Problem(nlayers, dev; nx, ny, Lx=L, f₀, H, b, U=Ufloats)
 
   return isapprox(probUfloats.params.U, probUvectors.params.U, rtol=rtol_multilayerqg)
 end

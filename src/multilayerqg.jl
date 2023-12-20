@@ -35,10 +35,9 @@ nothingfunction(args...) = nothing
                          Ly = Lx,
                          f₀ = 1.0,
                           β = 0.0,
-                          g = 1.0,
                           U = zeros(nlayers),
                           H = 1/nlayers * ones(nlayers),
-                          ρ = Array{Float64}(1:nlayers),
+                          b = -(1 .+ 1/nlayers * Array{Float64}(0:nlayers-1)),
                         eta = nothing,
     topographic_pv_gradient = (0, 0),
                           μ = 0,
@@ -67,10 +66,9 @@ Keyword arguments
   - `Ly`: Extent of the ``y``-domain.
   - `f₀`: Constant planetary vorticity.
   - `β`: Planetary vorticity ``y``-gradient.
-  - `g`: Gravitational acceleration constant.
   - `U`: The imposed constant zonal flow ``U(y)`` in each fluid layer.
   - `H`: Rest height of each fluid layer.
-  - `ρ`: Density of each fluid layer.
+  - `b`: Boussinesq buoyancy of each fluid layer.
   - `eta`: Periodic component of the topographic potential vorticity.
   - `topographic_pv_gradient`: The ``(x, y)`` components of the topographic PV large-scale gradient.
   - `μ`: Linear bottom drag coefficient.
@@ -92,14 +90,13 @@ function Problem(nlayers::Int,                             # number of fluid lay
                            Lx = 2π,
                            Ly = Lx,
               # Physical parameters
-                           f₀ = 1.0,                       # Coriolis parameter
-                            β = 0.0,                       # y-gradient of Coriolis parameter
-                            g = 1.0,                       # gravitational constant
-                            U = zeros(nlayers),            # imposed zonal flow U(y) in each layer
-                            H = 1/nlayers * ones(nlayers), # rest fluid height of each layer
-                            ρ = Array{Float64}(1:nlayers), # density of each layer
-                          eta = nothing,                   # periodic component of the topographic PV
-      topographic_pv_gradient = (0, 0),                    # tuple with the ``(x, y)`` components of topographic PV large-scale gradient
+                           f₀ = 1.0,                                             # Coriolis parameter
+                            β = 0.0,                                             # y-gradient of Coriolis parameter
+                            U = zeros(nlayers),                                  # imposed zonal flow U(y) in each layer
+                            H = 1/nlayers * ones(nlayers),                       # rest fluid height of each layer
+                            b = -(1 .+ 1/nlayers * Array{Float64}(0:nlayers-1)), # Boussinesq buoyancy of each layer
+                          eta = nothing,                                         # periodic component of the topographic PV
+      topographic_pv_gradient = (0, 0),                                          # tuple with the ``(x, y)`` components of topographic PV large-scale gradient
               # Bottom Drag and/or (hyper)-viscosity
                             μ = 0,
                             ν = 0,
@@ -137,7 +134,7 @@ function Problem(nlayers::Int,                             # number of fluid lay
 
   grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
 
-  params = Params(nlayers, g, f₀, β, ρ, H, U, eta, topographic_pv_gradient, μ, ν, nν, grid; calcFq)
+  params = Params(nlayers, f₀, β, b, H, U, eta, topographic_pv_gradient, μ, ν, nν, grid; calcFq)
 
   vars = calcFq == nothingfunction ? DecayingVars(grid, params) : (stochastic ? StochasticForcedVars(grid, params) : ForcedVars(grid, params))
 
@@ -157,14 +154,12 @@ struct Params{T, Aphys3D, Aphys2D, Atrans4D, Trfft} <: AbstractParams
   # prescribed params
     "number of fluid layers"
    nlayers :: Int
-    "gravitational constant"
-         g :: T
     "constant planetary vorticity"
         f₀ :: T
     "planetary vorticity ``y``-gradient"
          β :: T
-    "array with density of each fluid layer"
-         ρ :: Tuple
+    "array with Boussinesq buoyancy of each fluid layer"
+         b :: Tuple
     "array with rest height of each fluid layer"
          H :: Tuple
     "array with imposed constant zonal flow ``U(y)`` in each fluid layer"
@@ -241,14 +236,12 @@ $(TYPEDFIELDS)
 """
 struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
   # prescribed params
-    "gravitational constant"
-         g :: T
     "constant planetary vorticity"
         f₀ :: T
     "planetary vorticity ``y``-gradient"
          β :: T
-    "array with density of each fluid layer"
-         ρ :: Tuple
+    "array with Boussinesq buoyancy of each fluid layer"
+         b :: Tuple
     "tuple with rest height of each fluid layer"
          H :: Tuple
    "array with imposed constant zonal flow ``U(y)`` in each fluid layer"
@@ -311,7 +304,7 @@ function convert_U_to_U3D(dev, nlayers, grid, U::Number)
   return A(U_3D)
 end
 
-function Params(nlayers::Int, g, f₀, β, ρ, H, U, eta, topographic_pv_gradient, μ, ν, nν, grid::TwoDGrid; calcFq=nothingfunction, effort=FFTW.MEASURE)
+function Params(nlayers::Int, f₀, β, b, H, U, eta, topographic_pv_gradient, μ, ν, nν, grid::TwoDGrid; calcFq=nothingfunction, effort=FFTW.MEASURE)
   dev = grid.device
   T = eltype(grid)
   A = device_array(dev)
@@ -349,10 +342,10 @@ function Params(nlayers::Int, g, f₀, β, ρ, H, U, eta, topographic_pv_gradien
 
   else # if nlayers≥2
 
-    ρ = reshape(T.(ρ), (1,  1, nlayers))
+    b = reshape(T.(b), (1,  1, nlayers))
     H = Tuple(T.(H))
 
-    g′ = T(g) * (ρ[2:nlayers] -   ρ[1:nlayers-1]) ./ ρ[2:nlayers] # reduced gravity at each interface
+    g′ = b[1:nlayers-1] - b[2:nlayers] # reduced gravity at each interface
 
     Fm = @. T(f₀^2 / (g′ * H[2:nlayers]))
     Fp = @. T(f₀^2 / (g′ * H[1:nlayers-1]))
@@ -374,9 +367,9 @@ function Params(nlayers::Int, g, f₀, β, ρ, H, U, eta, topographic_pv_gradien
     CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
     if nlayers==2
-      return TwoLayerParams(T(g), T(f₀), T(β), Tuple(T.(ρ)), Tuple(T.(H)), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
+      return TwoLayerParams(T(f₀), T(β), Tuple(T.(b)), Tuple(T.(H)), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
     else # if nlayers>2
-      return Params(nlayers, T(g), T(f₀), T(β), Tuple(T.(ρ)), T.(H), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, Tuple(T.(g′)), Qx, Qy, S, S⁻¹, rfftplanlayered)
+      return Params(nlayers, T(f₀), T(β), Tuple(T.(b)), T.(H), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, Tuple(T.(g′)), Qx, Qy, S, S⁻¹, rfftplanlayered)
     end
   end
 end

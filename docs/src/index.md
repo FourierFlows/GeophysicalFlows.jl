@@ -84,7 +84,7 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
-1. Drivas, T. D. and Elgindi, T. M. (2023). Singularity formation in the incompressible Euler equation in finite and infinite time. _EMS Surv. Math. Sci._, **10(1)**, 1–100, doi:[10.4171/emss/66](https://doi.org/10.4171/emss/66).
+1. Drivas, T. D. and Elgindi, T. M. (2023). Singularity formation in the incompressible Euler equation in finite and infinite time. _EMS Surveys in Mathematical Sciences_, **10(1)**, 1–100, doi:[10.4171/emss/66](https://doi.org/10.4171/emss/66).
 
 1. Parfenyev, V. (2023) Statistical analysis of vortex condensate motion in two-dimensional turbulence. arXiv preprint arXiv:2311.03065, doi:[10.48550/arXiv.2311.03065](https://doi.org/10.48550/arXiv.2311.03065).
 
