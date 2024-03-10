@@ -81,19 +81,11 @@ nothing #hide
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
 # For that, we call `randn!` to obtain complex numbers whose real and imaginary part
 # are normally-distributed with zero mean and variance 1/2.
-#
-# We ensure that either `Random.randn!` or `CUDA.randn! is called according to the chosen
-# `dev`, then `CUDA.rand()` function is called for random numbers uniformly distributed
-# between 0 and 1.
-random_normal! = dev==CPU() ? Random.randn! :
-                 dev==GPU() ? CUDA.randn! :
-                 error("dev must be CPU() or GPU()")
 
 function calcF!(Fh, sol, t, clock, vars, params, grid)
-  random_normal!(Fh)
+  randn!(Fh)
   @. Fh *= sqrt(forcing_spectrum) / sqrt(clock.dt)
   return nothing
-end
 nothing #hide
 
 
