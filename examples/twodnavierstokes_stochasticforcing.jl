@@ -75,9 +75,9 @@ nothing #hide
 # During that `randn!` is called to produce complex numbers whose real and imaginary part
 # are normally-distributed with zero mean and variance 1/2.
 #
-# We ensure that either `Random.randn!` or `CUDA.randn! is
-# called according to the chosen `dev`, then `CUDA.rand()` function is called for random
-# numbers uniformly distributed between 0 and 1.
+# We ensure that either `Random.randn!` or `CUDA.randn! is called according to the chosen
+# `dev`, then `CUDA.rand()` function is called for random numbers uniformly distributed
+# between 0 and 1.
 random_normal! = dev==CPU() ? Random.randn! :
                  dev==GPU() ? CUDA.randn! :
                  error("dev must be CPU() or GPU()")
