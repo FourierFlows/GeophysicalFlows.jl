@@ -74,7 +74,7 @@ nothing #hide
 
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
-# During that `randn!` is called to produce complex numbers whose real and imaginary part
+# For that, we call `randn!` to obtain complex numbers whose real and imaginary part
 # are normally-distributed with zero mean and variance 1/2.
 #
 # We ensure that either `Random.randn!` or `CUDA.randn! is called according to the chosen
