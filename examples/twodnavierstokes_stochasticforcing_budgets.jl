@@ -81,6 +81,7 @@ function calcF!(Fh, sol, t, clock, vars, params, grid)
   randn!(Fh)
   @. Fh *= sqrt(forcing_spectrum) / sqrt(clock.dt)
   return nothing
+end
 nothing #hide
 
 
