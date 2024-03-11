@@ -72,14 +72,12 @@ nothing #hide
 
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
-# First we make sure that if `dev=GPU()`, then `CUDA.rand()` function is called for random
-# numbers uniformly distributed between 0 and 1.
-random_uniform = dev==CPU() ? rand : CUDA.rand
+# For that, we call `randn!` to obtain complex numbers whose real and imaginary part
+# are normally-distributed with zero mean and variance 1/2.
 
 function calcF!(Fh, sol, t, clock, vars, params, grid)
-  T = eltype(grid)
-  @. Fh = sqrt(forcing_spectrum) * cis(2π * random_uniform(T)) / sqrt(clock.dt)
-  
+  randn!(Fh)
+  @. Fh *= sqrt(forcing_spectrum) / sqrt(clock.dt)
   return nothing
 end
 nothing #hide
