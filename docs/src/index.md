@@ -84,6 +84,10 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. Bischoff, T., and Deck, K. (2024) Unpaired downscaling of fluid flows with diffusion bridges. _Artificial Intelligence for the Earth Systems_, doi:[10.1175/AIES-D-23-0039.1](https://doi.org/10.1175/AIES-D-23-0039.1https://doi.org/10.1175/AIES-D-23-0039.1), in press.
+
+1. Kolokolov, I. V., Lebedev, V. V., and Parfenyev, V. M. (2024) Correlations in a weakly interacting two-dimensional random flow. _Physical Review E_, **109(3)**, 035103, doi:[10.1103/PhysRevE.109.035103](https://doi.org/10.1103/PhysRevE.109.035103).
+
 1. Parfenyev, V. (2024) Statistical analysis of vortex condensate motion in two-dimensional turbulence. _Physics of Fluids_, **36**, 015148, doi:[10.1063/5.0187030](https://doi.org/10.1063/5.0187030).
 
 1. LaCasce, J. H., Palóczy, A., and Trodahl, M. (2024). Vortices over bathymetry. _Journal of Fluid Mechanics_, **979**, A32, doi:[10.1017/jfm.2023.1084](https://doi.org/10.1017/jfm.2023.1084).
@@ -91,8 +95,6 @@ The bibtex entry for the paper is:
 1. Drivas, T. D. and Elgindi, T. M. (2023). Singularity formation in the incompressible Euler equation in finite and infinite time. _EMS Surveys in Mathematical Sciences_, **10(1)**, 1–100, doi:[10.4171/emss/66](https://doi.org/10.4171/emss/66).
 
 1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2023) Stochastic latent transformer: Efficient modelling of stochastically forced zonal jets. arXiv preprint arXiv:2310.16741, doi:[10.48550/arXiv.2310.16741](https://doi.org/10.48550/arXiv.2310.16741).
-
-1. Bischoff, T. and Deck, K. (2023) Unpaired downscaling of fluid flows with diffusion bridges. arXiv preprint arXiv:2305.01822, doi:[10.48550/arXiv.2305.01822](https://doi.org/10.48550/arXiv.2305.01822).
 
 1. Siegelman, L. and Young, W. R. (2023). Two-dimensional turbulence above topography: Vortices and potential vorticity homogenization. _Proceedings of the National Academy of Sciences_, **120(44)**, e2308018120, doi:[10.1073/pnas.2308018120](https://doi.org/10.1073/pnas.2308018120).
 
