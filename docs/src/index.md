@@ -84,6 +84,10 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. Bischoff, T., and Deck, K. (2024) Unpaired downscaling of fluid flows with diffusion bridges. _Artificial Intelligence for the Earth Systems_, doi:[10.1175/AIES-D-23-0039.1](https://doi.org/10.1175/AIES-D-23-0039.1https://doi.org/10.1175/AIES-D-23-0039.1), in press.
+
+1. Kolokolov, I. V., Lebedev, V. V., and Parfenyev, V. M. (2024) Correlations in a weakly interacting two-dimensional random flow. _Physical Review E_, **109(3)**, 035103, doi:[10.1103/PhysRevE.109.035103](https://doi.org/10.1103/PhysRevE.109.035103).
+
 1. Parfenyev, V. (2024) Statistical analysis of vortex condensate motion in two-dimensional turbulence. _Physics of Fluids_, **36**, 015148, doi:[10.1063/5.0187030](https://doi.org/10.1063/5.0187030).
 
 1. LaCasce, J. H., Palóczy, A., and Trodahl, M. (2024). Vortices over bathymetry. _Journal of Fluid Mechanics_, **979**, A32, doi:[10.1017/jfm.2023.1084](https://doi.org/10.1017/jfm.2023.1084).
