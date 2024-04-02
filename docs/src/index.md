@@ -84,6 +84,8 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. Parfenyev, V., Blumenau, M., and Nikitin, I. (2024) Inferring parameters and reconstruction of two-dimensional turbulent flows with physics-informed neural networks. arXiv preprint arXiv:2404.01193, doi:[10.48550/arXiv.2404.01193](https://doi.org/10.48550/arXiv.2404.01193).
+
 1. Bischoff, T., and Deck, K. (2024) Unpaired downscaling of fluid flows with diffusion bridges. _Artificial Intelligence for the Earth Systems_, doi:[10.1175/AIES-D-23-0039.1](https://doi.org/10.1175/AIES-D-23-0039.1), in press.
 
 1. Kolokolov, I. V., Lebedev, V. V., and Parfenyev, V. M. (2024) Correlations in a weakly interacting two-dimensional random flow. _Physical Review E_, **109(3)**, 035103, doi:[10.1103/PhysRevE.109.035103](https://doi.org/10.1103/PhysRevE.109.035103).
