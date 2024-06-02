@@ -84,6 +84,10 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. Shokar, I. J. S., Haynes, P. H. and Kerswell, R. R. (2024) Extending deep learning emulation across parameter regimes to assess stochastically driven spontaneous transition events. In ICLR 2024 Workshop on AI4DifferentialEquations in Science. url: [https://openreview.net/forum?id=7a5gUX4e5q](https://openreview.net/forum?id=7a5gUX4e5q).
+
+1. He, J. and Wang, Y. (2024) Multiple states of two-dimensional turbulence above topography. arXiv preprint arXiv:2405.10826, doi:[10.48550/arXiv.2405.10826](https://doi.org/10.48550/arXiv.2405.10826).
+
 1. Parfenyev, V., Blumenau, M., and Nikitin, I. (2024) Inferring parameters and reconstruction of two-dimensional turbulent flows with physics-informed neural networks. arXiv preprint arXiv:2404.01193, doi:[10.48550/arXiv.2404.01193](https://doi.org/10.48550/arXiv.2404.01193).
 
 1. Bischoff, T., and Deck, K. (2024) Unpaired downscaling of fluid flows with diffusion bridges. _Artificial Intelligence for the Earth Systems_, doi:[10.1175/AIES-D-23-0039.1](https://doi.org/10.1175/AIES-D-23-0039.1), in press.
@@ -96,7 +100,7 @@ The bibtex entry for the paper is:
 
 1. Drivas, T. D. and Elgindi, T. M. (2023). Singularity formation in the incompressible Euler equation in finite and infinite time. _EMS Surveys in Mathematical Sciences_, **10(1)**, 1–100, doi:[10.4171/emss/66](https://doi.org/10.4171/emss/66).
 
-1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2023) Stochastic latent transformer: Efficient modelling of stochastically forced zonal jets. arXiv preprint arXiv:2310.16741, doi:[10.48550/arXiv.2310.16741](https://doi.org/10.48550/arXiv.2310.16741).
+1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2023) Stochastic latent transformer: Efficient modeling of stochastically forced zonal jets. arXiv preprint arXiv:2310.16741, doi:[10.48550/arXiv.2310.16741](https://doi.org/10.48550/arXiv.2310.16741).
 
 1. Siegelman, L. and Young, W. R. (2023). Two-dimensional turbulence above topography: Vortices and potential vorticity homogenization. _Proceedings of the National Academy of Sciences_, **120(44)**, e2308018120, doi:[10.1073/pnas.2308018120](https://doi.org/10.1073/pnas.2308018120).
 
