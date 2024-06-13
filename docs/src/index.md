@@ -90,6 +90,8 @@ The bibtex entry for the paper is:
 
 1. Parfenyev, V., Blumenau, M., and Nikitin, I. (2024) Inferring parameters and reconstruction of two-dimensional turbulent flows with physics-informed neural networks. arXiv preprint arXiv:2404.01193, doi:[10.48550/arXiv.2404.01193](https://doi.org/10.48550/arXiv.2404.01193).
 
+1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2024) Stochastic latent transformer: Efficient modeling of stochastically forced zonal jets. _Journal of Advances in Modeling Earth Systems_, **16**, e2023MS004177, doi:[10.1029/2023MS004177](https://doi.org/10.1029/2023MS004177).
+
 1. Bischoff, T., and Deck, K. (2024) Unpaired downscaling of fluid flows with diffusion bridges. _Artificial Intelligence for the Earth Systems_, doi:[10.1175/AIES-D-23-0039.1](https://doi.org/10.1175/AIES-D-23-0039.1), in press.
 
 1. Kolokolov, I. V., Lebedev, V. V., and Parfenyev, V. M. (2024) Correlations in a weakly interacting two-dimensional random flow. _Physical Review E_, **109(3)**, 035103, doi:[10.1103/PhysRevE.109.035103](https://doi.org/10.1103/PhysRevE.109.035103).
@@ -99,8 +101,6 @@ The bibtex entry for the paper is:
 1. LaCasce, J. H., Palóczy, A., and Trodahl, M. (2024). Vortices over bathymetry. _Journal of Fluid Mechanics_, **979**, A32, doi:[10.1017/jfm.2023.1084](https://doi.org/10.1017/jfm.2023.1084).
 
 1. Drivas, T. D. and Elgindi, T. M. (2023). Singularity formation in the incompressible Euler equation in finite and infinite time. _EMS Surveys in Mathematical Sciences_, **10(1)**, 1–100, doi:[10.4171/emss/66](https://doi.org/10.4171/emss/66).
-
-1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2023) Stochastic latent transformer: Efficient modeling of stochastically forced zonal jets. arXiv preprint arXiv:2310.16741, doi:[10.48550/arXiv.2310.16741](https://doi.org/10.48550/arXiv.2310.16741).
 
 1. Siegelman, L. and Young, W. R. (2023). Two-dimensional turbulence above topography: Vortices and potential vorticity homogenization. _Proceedings of the National Academy of Sciences_, **120(44)**, e2308018120, doi:[10.1073/pnas.2308018120](https://doi.org/10.1073/pnas.2308018120).
 
