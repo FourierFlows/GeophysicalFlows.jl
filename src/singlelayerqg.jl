@@ -37,6 +37,7 @@ nothingfunction(args...) = nothing
                      Ly = Lx,
                       β = 0.0,
      deformation_radius = Inf,
+                      U = 0.0,
                     eta = nothing,
                       ν = 0.0,
                      nν = 1,
@@ -62,6 +63,7 @@ Keyword arguments
   - `Ly`: Extent of the ``y``-domain.
   - `β`: Planetary vorticity ``y``-gradient.
   - `deformation_radius`: Rossby radius of deformation; set `Inf` for purely barotropic.
+  - `U`: Background flow in the ``x``-direction.
   - `eta`: Topographic potential vorticity.
   - `ν`: Small-scale (hyper)-viscosity coefficient.
   - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
@@ -82,6 +84,7 @@ function Problem(dev::Device=CPU();
   # Physical parameters
                    β = 0.0,
   deformation_radius = Inf,
+                   U = 0.0,
                  eta = nothing,
   # Drag and (hyper-)viscosity
                    ν = 0.0,
@@ -103,7 +106,7 @@ function Problem(dev::Device=CPU();
   # topographic PV
   eta === nothing && (eta = zeros(dev, T, (nx, ny)))
 
-  params = deformation_radius == Inf ? BarotropicQGParams(grid, T(β), eta, T(μ), T(ν), nν, calcF) : EquivalentBarotropicQGParams(grid, T(β), T(deformation_radius), eta, T(μ), T(ν), nν, calcF)
+  params = deformation_radius == Inf ? BarotropicQGParams(grid, T(β), T(U), eta, T(μ), T(ν), nν, calcF) : EquivalentBarotropicQGParams(grid, T(β), T(deformation_radius), T(U), eta, T(μ), T(ν), nν, calcF)
 
   vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
@@ -131,6 +134,8 @@ struct Params{T, Aphys, Atrans, ℓ} <: SingleLayerQGParams
                    β :: T
     "Rossby radius of deformation"
   deformation_radius :: ℓ
+    "Background flow in x direction"
+                   U :: T
     "topographic potential vorticity"
                  eta :: Aphys
     "Fourier transform of topographic potential vorticity"
@@ -149,24 +154,24 @@ const BarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractAr
 const EquivalentBarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:AbstractFloat}
 
 """
-    EquivalentBarotropicQGParams(grid, β, deformation_radius, eta, μ, ν, nν, calcF)
+    EquivalentBarotropicQGParams(grid, β, deformation_radius, U, eta, μ, ν, nν, calcF)
 
 Return the parameters for an Equivalent Barotropic QG problem (i.e., with finite Rossby radius of deformation).
 """
-function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, β, deformation_radius, eta, μ, ν, nν::Int, calcF) where {T, A}
+function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, β, deformation_radius, U, eta, μ, ν, nν::Int, calcF) where {T, A}
   eta_on_grid = typeof(eta) <: AbstractArray ? A(eta) : FourierFlows.on_grid(eta, grid)
   etah_on_grid = rfft(eta_on_grid)
 
-  return Params(β, deformation_radius, eta_on_grid, etah_on_grid, μ, ν, nν, calcF)
+  return Params(β, deformation_radius, U, eta_on_grid, etah_on_grid, μ, ν, nν, calcF)
 end
 
 """
-    BarotropicQGParams(grid, β, eta, μ, ν, nν, calcF)
+    BarotropicQGParams(grid, β, U|, eta, μ, ν, nν, calcF)
 
 Return the parameters for a Barotropic QG problem (i.e., with infinite Rossby radius of deformation).
 """
-BarotropicQGParams(grid::AbstractGrid, β, eta, μ, ν, nν::Int, calcF) =
-    EquivalentBarotropicQGParams(grid, β, nothing, eta, μ, ν, nν, calcF)
+BarotropicQGParams(grid::AbstractGrid, β, U, eta, μ, ν, nν::Int, calcF) =
+    EquivalentBarotropicQGParams(grid, β, nothing, U, eta, μ, ν, nν, calcF)
     
 
 # ---------
@@ -177,17 +182,17 @@ BarotropicQGParams(grid::AbstractGrid, β, eta, μ, ν, nν::Int, calcF) =
     Equation(params::BarotropicQGParams, grid)
 
 Return the equation for a barotropic QG problem with `params` and `grid`. Linear operator 
-``L`` includes bottom drag ``μ``, (hyper)-viscosity of order ``n_ν`` with coefficient ``ν`` 
-and the ``β`` term:
+``L`` includes bottom drag ``μ``, (hyper)-viscosity of order ``n_ν`` with coefficient ``ν``, 
+the ``β`` term, and a constant background flow ``U``:
 
 ```math
-L = - μ - ν |𝐤|^{2 n_ν} + i β k_x / |𝐤|² .
+L = - μ - ν |𝐤|^{2 n_ν} + i β k_x / |𝐤|² - i U k_x .
 ```
 
 The nonlinear term is computed via `calcN!` function.
 """
 function Equation(params::BarotropicQGParams, grid::AbstractGrid)
-  L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq
+  L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq - im * params.U * grid.kr
   CUDA.@allowscalar L[1, 1] = 0
   
   return FourierFlows.Equation(L, calcN!, grid)
@@ -198,16 +203,16 @@ end
 
 Return the equation for an equivalent-barotropic QG problem with `params` and `grid`. 
 Linear operator ``L`` includes bottom drag ``μ``, (hyper)-viscosity of order ``n_ν`` with 
-coefficient ``ν`` and the ``β`` term:
+coefficient ``ν``, the ``β`` term and a constant background flow ``U``:
 
 ```math
-L = -μ - ν |𝐤|^{2 n_ν} + i β k_x / (|𝐤|² + 1/ℓ²) .
+L = -μ - ν |𝐤|^{2 n_ν} + i β k_x / (|𝐤|² + 1/ℓ²) - i U k_x .
 ```
 
 The nonlinear term is computed via `calcN!` function.
 """
 function Equation(params::EquivalentBarotropicQGParams, grid::AbstractGrid)
-  L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr / (grid.Krsq + 1 / params.deformation_radius^2)
+  L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr / (grid.Krsq + 1 / params.deformation_radius^2) - im * params.U * grid.kr
   CUDA.@allowscalar L[1, 1] = 0
   
   return FourierFlows.Equation(L, calcN!, grid)
