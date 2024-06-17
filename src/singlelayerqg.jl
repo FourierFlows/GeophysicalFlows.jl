@@ -166,7 +166,7 @@ function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, β, deformation_
 end
 
 """
-    BarotropicQGParams(grid, β, U|, eta, μ, ν, nν, calcF)
+    BarotropicQGParams(grid, β, U, eta, μ, ν, nν, calcF)
 
 Return the parameters for a Barotropic QG problem (i.e., with infinite Rossby radius of deformation).
 """
