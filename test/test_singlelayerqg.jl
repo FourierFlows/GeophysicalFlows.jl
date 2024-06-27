@@ -447,7 +447,7 @@ function test_1layerqg_background_flow(dev::Device=CPU(); n=256, L=10, dt=0.01)
 	prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, dt, U = -1, stepper="FilteredRK4")
 	x, y = gridpoints(prob.grid)
 	
-	q₀ = lambdipole(1,1,prob.grid,center=(1e-10,0))
+	q₀ = lambdipole(1, 1, prob.grid, center=(1e-10, 0))
 	SingleLayerQG.set_q!(prob, q₀)
 	
 	stepforward!(prob, Int(5/dt))
