@@ -452,8 +452,8 @@ function test_1layerqg_background_flow(dev::Device=CPU(); n=256, L=10, dt=0.01)
 	
 	stepforward!(prob, Int(5/dt))
 	
-	_,i₀ = findmax(q₀)
-	_,i₁ = findmax(prob.vars.q)
+	_, i₀ = findmax(q₀)
+	_, i₁ = findmax(prob.vars.q)
 
 	x₀ = prob.grid.x[i₀[1]]		# initial vortex position
 	x₁ = prob.grid.x[i₁[1]]		# final vortex position
