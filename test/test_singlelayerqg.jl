@@ -436,3 +436,27 @@ function test_1layerqg_enstrophy_drag(dev; deformation_radius=2.23)
   SingleLayerQG.enstrophy_drag(prob)
   return nothing
 end
+
+"""
+    test_1layerqg_background_flow(dev; n, L, dt)
+
+Evolves a lamb vortex with a background flow such that the vortex remains stationary.
+"""
+function test_1layerqg_background_flow(dev::Device=CPU(); n=256, L=10, dt=0.01)
+	
+	prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, dt, U = -1, stepper="FilteredRK4")
+	x, y = gridpoints(prob.grid)
+	
+	q₀ = lambdipole(1,1,prob.grid,center=(1e-10,0))
+	SingleLayerQG.set_q!(prob, q₀)
+	
+	stepforward!(prob, Int(5/dt))
+	
+	~,i₀ = findmax(q₀)
+	~,i₁ = findmax(prob.vars.q)
+
+	x₀ = prob.grid.x[i₀[1]]		# initial vortex position
+	x₁ = prob.grid.x[i₁[1]]		# final vortex position
+
+	return isapprox(x₀, x₁, atol=0.2)
+end
