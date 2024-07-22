@@ -331,11 +331,11 @@ end
 """
     calcN_advection!(N, sol, t, clock, vars, params, grid)
 
-Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, q+η)`` in conservative 
-form, i.e., ``- ∂_x[(∂_y ψ)(q+η)] - ∂_y[(∂_x ψ)(q+η)]`` and store it in `N`:
+Calculate the Fourier transform of the advection term, ``- 𝖩(ψ+X, q+η-∂U/∂y)`` in conservative 
+form, i.e., ``- ∂[(u+U)*(q+η-∂U/∂y)]/∂x - ∂[v*(q+η-∂U/∂y)]/∂y`` and store it in `N`:
 
 ```math
-N = - \\widehat{𝖩(ψ, q + η)} = - i k_x \\widehat{u (q + η)} - i k_y \\widehat{v (q + η)} .
+N = - \\widehat{𝖩(ψ + X, q + η - ∂U/∂y)} = - i k_x \\widehat{(u+U) (q + η - ∂U/∂y)} - i k_y \\widehat{v (q + η - ∂U/∂y)} .
 ```
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
@@ -358,12 +358,12 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
 
   else
 
-	Q = params.eta .- real.(ifft(im * grid.l .* fft(U)))          # PV background (η - ∂U/∂y)
+	Uy = real.(ifft(im * grid.l .* fft(params.U)))                # PV background (η - ∂U/∂y)
 
-  	uq_plus_η = vars.u .+ U                                       # use vars.u as scratch variable
-  	@. uq_plus_η *= vars.q + Q                                    # (u + U) * (q + η - ∂U/∂y)
+  	uq_plus_η = vars.u .+ params.U                                # use vars.u as scratch variable
+  	@. uq_plus_η *= vars.q + params.eta .- Uy                     # (u + U) * (q + η - ∂U/∂y)
   	vq_plus_η = vars.v                                            # use vars.v as scratch variable
-  	@. vq_plus_η *= vars.q + Q                                    # v * (q + η - ∂U/∂y)
+  	@. vq_plus_η *= vars.q + params.eta .- Uy                     # v * (q + η - ∂U/∂y)
 
   end
 
