@@ -63,7 +63,7 @@ Keyword arguments
   - `Ly`: Extent of the ``y``-domain.
   - `β`: Planetary vorticity ``y``-gradient.
   - `deformation_radius`: Rossby radius of deformation; set `Inf` for purely barotropic.
-  - `U`: Background flow in the ``x``-direction.
+  - `U`: Background flow in the ``x``-direction (``y``-dependent).
   - `eta`: Topographic potential vorticity.
   - `ν`: Small-scale (hyper)-viscosity coefficient.
   - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
@@ -189,10 +189,10 @@ BarotropicQGParams(grid::AbstractGrid, β, U, eta, μ, ν, nν::Int, calcF) =
 
 Return the equation for a barotropic QG problem with `params` and `grid`. Linear operator 
 ``L`` includes bottom drag ``μ``, (hyper)-viscosity of order ``n_ν`` with coefficient ``ν``, 
-the ``β`` term, and a constant background flow ``U``:
+the ``β`` term, and a constant background flow ``U₀``:
 
 ```math
-L = - μ - ν |𝐤|^{2 n_ν} + i β k_x / |𝐤|² - i U k_x .
+L = - μ - ν |𝐤|^{2 n_ν} + i β k_x / |𝐤|² - i U₀ k_x .
 ```
 
 The nonlinear term is computed via `calcN!` function.
@@ -216,10 +216,10 @@ end
 
 Return the equation for an equivalent-barotropic QG problem with `params` and `grid`. 
 Linear operator ``L`` includes bottom drag ``μ``, (hyper)-viscosity of order ``n_ν`` with 
-coefficient ``ν``, the ``β`` term and a constant background flow ``U``:
+coefficient ``ν``, the ``β`` term and a constant background flow ``U₀``:
 
 ```math
-L = -μ - ν |𝐤|^{2 n_ν} + i β k_x / (|𝐤|² + 1/ℓ²) - i U k_x .
+L = -μ - ν |𝐤|^{2 n_ν} + i β k_x / (|𝐤|² + 1/ℓ²) - i U₀ k_x .
 ```
 
 The nonlinear term is computed via `calcN!` function.
@@ -337,6 +337,8 @@ form, i.e., ``- ∂[(u+U)*(q+η-∂U/∂y)]/∂x - ∂[v*(q+η-∂U/∂y)]/∂y`
 ```math
 N = - \\widehat{𝖩(ψ + X, q + η - ∂U/∂y)} = - i k_x \\widehat{(u+U) (q + η - ∂U/∂y)} - i k_y \\widehat{v (q + η - ∂U/∂y)} .
 ```
+
+Note: here ∂X/∂y = U.
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
 
@@ -383,7 +385,7 @@ end
 Calculate the nonlinear term, that is the advection term and the forcing,
 
 ```math
-N = - \\widehat{𝖩(ψ, q + η)} + F̂ .
+N = - \\widehat{𝖩(ψ + X, q + η - ∂U/∂y)} + F̂ .
 ```
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
