@@ -107,7 +107,7 @@ function Problem(dev::Device=CPU();
   eta === nothing && (eta = zeros(dev, T, (nx, ny)))
 
   if U isa Number
-	U = T(U)
+	U = convert(T, U)
   else
 	U = device_array(dev)(reshape(U,(1, grid.ny)))
   end
