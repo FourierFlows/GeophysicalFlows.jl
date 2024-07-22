@@ -109,7 +109,8 @@ function Problem(dev::Device=CPU();
   if U isa Number
 	U = convert(T, U)
   else
-	U = device_array(dev)(reshape(U,(1, grid.ny)))
+	U = reshape(U, (1, grid.ny)))
+	U = device_array(dev, U)
   end
 
   params = deformation_radius == Inf ? BarotropicQGParams(grid, T(β), U, eta, T(μ), T(ν), nν, calcF) : EquivalentBarotropicQGParams(grid, T(β), T(deformation_radius), U, eta, T(μ), T(ν), nν, calcF)
