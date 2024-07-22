@@ -106,7 +106,13 @@ function Problem(dev::Device=CPU();
   # topographic PV
   eta === nothing && (eta = zeros(dev, T, (nx, ny)))
 
-  params = deformation_radius == Inf ? BarotropicQGParams(grid, T(β), T(U), eta, T(μ), T(ν), nν, calcF) : EquivalentBarotropicQGParams(grid, T(β), T(deformation_radius), T(U), eta, T(μ), T(ν), nν, calcF)
+  if U isa Number
+	U = T(U)
+  else
+	U = device_array(dev)(reshape(U,(1, grid.ny)))
+  end
+
+  params = deformation_radius == Inf ? BarotropicQGParams(grid, T(β), U, eta, T(μ), T(ν), nν, calcF) : EquivalentBarotropicQGParams(grid, T(β), T(deformation_radius), U, eta, T(μ), T(ν), nν, calcF)
 
   vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
@@ -135,7 +141,7 @@ struct Params{T, Aphys, Atrans, ℓ} <: SingleLayerQGParams
     "Rossby radius of deformation"
   deformation_radius :: ℓ
     "Background flow in x direction"
-                   U :: T
+                   U :: Union{T, Aphys}
     "topographic potential vorticity"
                  eta :: Aphys
     "Fourier transform of topographic potential vorticity"
@@ -172,7 +178,7 @@ Return the parameters for a Barotropic QG problem (i.e., with infinite Rossby ra
 """
 BarotropicQGParams(grid::AbstractGrid, β, U, eta, μ, ν, nν::Int, calcF) =
     EquivalentBarotropicQGParams(grid, β, nothing, U, eta, μ, ν, nν, calcF)
-    
+
 
 # ---------
 # Equations
@@ -192,7 +198,14 @@ L = - μ - ν |𝐤|^{2 n_ν} + i β k_x / |𝐤|² - i U k_x .
 The nonlinear term is computed via `calcN!` function.
 """
 function Equation(params::BarotropicQGParams, grid::AbstractGrid)
-  L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq - im * params.U * grid.kr
+  
+  if params.U isa Number
+	U₀ = params.U
+  else
+	U₀ = 0.0
+  end
+
+  L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq - im * U₀ * grid.kr
   CUDA.@allowscalar L[1, 1] = 0
   
   return FourierFlows.Equation(L, calcN!, grid)
@@ -212,7 +225,14 @@ L = -μ - ν |𝐤|^{2 n_ν} + i β k_x / (|𝐤|² + 1/ℓ²) - i U k_x .
 The nonlinear term is computed via `calcN!` function.
 """
 function Equation(params::EquivalentBarotropicQGParams, grid::AbstractGrid)
-  L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr / (grid.Krsq + 1 / params.deformation_radius^2) - im * params.U * grid.kr
+
+  if params.U isa Number
+	U₀ = params.U
+  else
+	U₀ = 0.0
+  end
+
+  L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr / (grid.Krsq + 1 / params.deformation_radius^2) - im * U₀ * grid.kr
   CUDA.@allowscalar L[1, 1] = 0
   
   return FourierFlows.Equation(L, calcN!, grid)
@@ -319,6 +339,7 @@ N = - \\widehat{𝖩(ψ, q + η)} = - i k_x \\widehat{u (q + η)} - i k_y \\wide
 ```
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
+
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
   @. vars.uh = -im * grid.l  * vars.ψh
@@ -328,17 +349,30 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   ldiv!(vars.u, grid.rfftplan, vars.uh)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
 
-  uq_plus_η = vars.u                                            # use vars.u as scratch variable
-  @. uq_plus_η *= vars.q + params.eta                           # u * (q + η)
-  vq_plus_η = vars.v                                            # use vars.v as scratch variable
-  @. vq_plus_η *= vars.q + params.eta                           # v * (q + η)
+  if params.U isa Number
 
-  uq_plus_ηh = vars.uh                                          # use vars.uh as scratch variable
-  mul!(uq_plus_ηh, grid.rfftplan, uq_plus_η)                    # \hat{u * (q + η)}
-  vq_plus_ηh = vars.vh                                          # use vars.vh as scratch variable
-  mul!(vq_plus_ηh, grid.rfftplan, vq_plus_η)                    # \hat{v * (q + η)}
+  	uq_plus_η = vars.u                                            # use vars.u as scratch variable
+  	@. uq_plus_η *= vars.q + params.eta                           # u * (q + η)
+  	vq_plus_η = vars.v                                            # use vars.v as scratch variable
+  	@. vq_plus_η *= vars.q + params.eta                           # v * (q + η)
 
-  @. N = -im * grid.kr * uq_plus_ηh - im * grid.l * vq_plus_ηh  # - ∂[u*(q+η)]/∂x - ∂[v*(q+η)]/∂y
+  else
+
+	Q = params.eta .- real.(ifft(im * grid.l .* fft(U)))          # PV background (η - ∂U/∂y)
+
+  	uq_plus_η = vars.u .+ U                                       # use vars.u as scratch variable
+  	@. uq_plus_η *= vars.q + Q                                    # (u + U) * (q + η - ∂U/∂y)
+  	vq_plus_η = vars.v                                            # use vars.v as scratch variable
+  	@. vq_plus_η *= vars.q + Q                                    # v * (q + η - ∂U/∂y)
+
+  end
+
+  uq_plus_ηh = vars.uh                                                # use vars.uh as scratch variable
+  mul!(uq_plus_ηh, grid.rfftplan, uq_plus_η)                          # \hat{(u + U) * (q + η - ∂U/∂y)}
+  vq_plus_ηh = vars.vh                                                # use vars.vh as scratch variable
+  mul!(vq_plus_ηh, grid.rfftplan, vq_plus_η)                          # \hat{v * (q + η - ∂U/∂y)}
+
+  @. N = -im * grid.kr * uq_plus_ηh - im * grid.l * vq_plus_ηh        # - ∂[(u+U)*(q+η-∂U/∂y)]/∂x - ∂[v*(q+η-∂U/∂y)]/∂y
 
   return nothing
 end
