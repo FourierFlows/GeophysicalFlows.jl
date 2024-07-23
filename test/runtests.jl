@@ -73,6 +73,8 @@ for dev in devices
     @test test_1layerqg_stochasticforcing_energybudget(dev)
     @test test_1layerqg_deterministicforcing_enstrophybudget(dev)
     @test test_1layerqg_stochasticforcing_enstrophybudget(dev)
+    @test test_1layerqg_background_flow_Num(dev)
+    @test test_1layerqg_background_flow_Arr(dev)
     @test SingleLayerQG.nothingfunction() == nothing
     @test_throws ErrorException("not implemented for finite deformation radius") test_1layerqg_energy_dissipation(dev; deformation_radius=2.23)
     @test_throws ErrorException("not implemented for finite deformation radius") test_1layerqg_enstrophy_dissipation(dev; deformation_radius=2.23)
