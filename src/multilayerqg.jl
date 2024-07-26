@@ -18,11 +18,13 @@ using
   LinearAlgebra,
   StaticArrays,
   Reexport,
-  DocStringExtensions
+  DocStringExtensions,
+  KernelAbstractions
 
 @reexport using FourierFlows
 
 using FourierFlows: parsevalsum, parsevalsum2, superzeros, plan_flows_rfft
+using KernelAbstractions.Extras.LoopInfo: @unroll
 
 nothingfunction(args...) = nothing
 
@@ -534,15 +536,51 @@ Compute the inverse Fourier transform of `varh` and store it in `var`.
 invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, varh)
 
 """
+    @kernel function pvfromstreamfunction_kernel!(qh, ψh, params)
+
+Kernel for GPU acceleration of PV from streamfunction calculation, i.e., obtaining the Fourier
+transform of the PV from the streamfunction `ψh` in each layer using `qh = params.S * ψh`.
+"""
+@kernel function pvfromstreamfunction_kernel!(qh, ψh, params)
+    i, j = @index(Global, NTuple)
+    nlayers, S = params.nlayers, params.S
+
+    @unroll for k = 1:nlayers
+
+        @inbounds qh[i, j, k] = 0
+
+        @unroll for m = 1:nlayers
+            @inbounds qh[i, j, k] += S[i, j][k, m] * ψh[i, j, m]
+        end
+    
+    end
+end
+
+"""
     pvfromstreamfunction!(qh, ψh, params, grid)
 
 Obtain the Fourier transform of the PV from the streamfunction `ψh` in each layer using
-`qh = params.S * ψh`.
+`qh = params.S * ψh`. We use a work layout over which the above-defined kernel is launched.
 """
 function pvfromstreamfunction!(qh, ψh, params, grid)
-  for j=1:grid.nl, i=1:grid.nkr
-    CUDA.@allowscalar @views qh[i, j, :] .= params.S[i, j] * ψh[i, j, :]
-  end
+  # Larger workgroups are generally more efficient. For more generality, we could put an if statement that incurs
+  # different behavior when either nkl or nl are less than 16
+  workgroup = 16, 16
+
+  # The worksize determines how many times the kernel is run
+  worksize = grid.nkr, grid.nl
+
+  # This (and its usage below) will ensure the kernel is not run _before_ the data in ψh is available
+  barrier = Event(grid.device)
+
+  # Creates a loop over the specified worksize, using workgroup to organize the computation
+  loop_kernel! = pvfromstreamfunction_kernel!(grid.device, workgroup, worksize)
+
+  # Launch the kernel
+  event = loop_kernel!(qh, ψh, params, dependencies = barrier)
+
+  # This will ensure that no other operations occur until the kernel has finished
+  wait(event)
 
   return nothing
 end
@@ -588,15 +626,51 @@ function pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
 end
 
 """
+    @kernel function streamfunctionfrompv_kernel!(ψh, qh, params)
+
+Kernel for GPU acceleration of streamfunction from PV calculation, i.e., invert the PV to obtain
+the Fourier transform of the streamfunction `ψh` in each layer from `qh` using `ψh = params.S⁻¹ qh`.
+"""
+@kernel function streamfunctionfrompv_kernel!(ψh, qh, params)
+    i, j = @index(Global, NTuple)
+    nlayers, S = params.nlayers, params.S
+
+    @unroll for k = 1:nlayers
+
+        @inbounds ψh[i, j, k] = 0
+
+        @unroll for m = 1:nlayers
+            @inbounds ψh[i, j, k] += S⁻¹[i, j][k, m] * qh[i, j, m]
+        end
+    
+    end
+end
+
+"""
     streamfunctionfrompv!(ψh, qh, params, grid)
 
 Invert the PV to obtain the Fourier transform of the streamfunction `ψh` in each layer from
-`qh` using `ψh = params.S⁻¹ qh`.
+`qh` using `ψh = params.S⁻¹ qh`. We use a work layout over which the above-defined kernel is launched.
 """
 function streamfunctionfrompv!(ψh, qh, params, grid)
-  for j=1:grid.nl, i=1:grid.nkr
-    CUDA.@allowscalar @views ψh[i, j, :] .= params.S⁻¹[i, j] * qh[i, j, :]
-  end
+  # Larger workgroups are generally more efficient. For more generality, we could put an if statement that incurs
+  # different behavior when either nkl or nl are less than 16
+  workgroup = 16, 16
+
+  # The worksize determines how many times the kernel is run
+  worksize = grid.nkr, grid.nl
+
+  # This (and its usage below) will ensure the kernel is not run _before_ the data in qh is available
+  barrier = Event(grid.device)
+
+  # Creates a loop over the specified worksize, using workgroup to organize the computation
+  loop_kernel! = streamfunctionfrompv_kernel!(grid.device, workgroup, worksize)
+
+  # Launch the kernel
+  event = loop_kernel!(ψh, qh, params, dependencies = barrier)
+
+  # This will ensure that no other operations occur until the kernel has finished
+  wait(event)
 
   return nothing
 end
