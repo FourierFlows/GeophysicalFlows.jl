@@ -84,8 +84,6 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
-Matthew Lobo, Stephen M Griffies, Wenda Zhang. Vertical structure of baroclinic instability in a three-layer quasi-geostrophic model over a sloping bottom
-
 1. Lobo, M., Griffies, S. M., and Zhang, W. (2024) Vertical structure of baroclinic instability in a three-layer quasi-geostrophic model over a sloping bottom. _ESS Open Archive_, doi:[10.22541/essoar.172166435.57577370/v1](https://doi.org/10.22541/essoar.172166435.57577370/v1).
 
 1. Pudig, M. and Smith, K. S. (2024) Baroclinic turbulence above rough topography: The vortex gas and topographic turbulence regimes. _ESS Open Archive_, doi:[10.22541/essoar.171995116.60993353/v1](https://doi.org/10.22541/essoar.171995116.60993353/v1).
