@@ -98,7 +98,7 @@ for dev in devices
     @test test_bqgql_advection(0.0005, "ForwardEuler", dev)
     @test test_bqgql_energyenstrophy(dev)
     @test test_bqgql_problemtype(dev, Float32)
-    @test BarotropicQGQL.nothingfunction() == nothing
+    @test BarotropicQGQL.nothingfunction() === nothing
   end
 
   @testset "SurfaceQG" begin
@@ -112,7 +112,7 @@ for dev in devices
     @test test_sqg_problemtype(dev, Float32)
     @test test_sqg_paramsconstructor(dev)
     @test test_sqg_noforcing(dev)
-    @test SurfaceQG.nothingfunction() == nothing
+    @test SurfaceQG.nothingfunction() === nothing
   end
 
   @testset "MultiLayerQG" begin
