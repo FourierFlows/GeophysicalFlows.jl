@@ -136,13 +136,13 @@ The parameters for the `SingleLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
-struct Params{T, Aphys, Atrans, ℓ} <: SingleLayerQGParams
+struct Params{T, Aphys, Atrans, ℓ, TU <: Union{T, Aphys}} <: SingleLayerQGParams
     "planetary vorticity ``y``-gradient"
                    β :: T
     "Rossby radius of deformation"
   deformation_radius :: ℓ
     "Background flow in ``x`` direction"
-                   U :: Union{T, Aphys}
+                   U :: TU
     "topographic potential vorticity"
                  eta :: Aphys
     "Fourier transform of topographic potential vorticity"
@@ -159,6 +159,9 @@ end
 
 const BarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, Nothing}
 const EquivalentBarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:AbstractFloat}
+
+const SingleLayerQGconstantUParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:Any, <:AbstractFloat}
+const SingleLayerQGvaryingUParams  = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:Any, <:AbstractArray}
 
 """
     EquivalentBarotropicQGParams(grid, β, deformation_radius, U, eta, μ, ν, nν, calcF)
@@ -329,16 +332,16 @@ end
 """
     calcN_advection!(N, sol, t, clock, vars, params, grid)
 
-Calculate the Fourier transform of the advection term, ``- 𝖩(ψ+X, q+η-∂U/∂y)`` in conservative 
-form, i.e., ``- ∂[(u+U)*(q+η-∂U/∂y)]/∂x - ∂[v*(q+η-∂U/∂y)]/∂y`` and store it in `N`:
+Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, q+η) - U ∂(q+η)/∂x - v ∂U/∂y`` in conservative 
+form, i.e., ``- ∂[(u + U)(q + η - ∂U/∂y)]/∂x - ∂[v(q + η - ∂U/∂y)]/∂y`` and store it in `N`:
 
 ```math
-N = - \\widehat{𝖩(ψ + X, q + η - ∂U/∂y)} = - i k_x \\widehat{(u+U) (q + η - ∂U/∂y)} - i k_y \\widehat{v (q + η - ∂U/∂y)} .
+N = - \\widehat{𝖩(ψ + Ψ, q + η - ∂U/∂y)} = - i k_x \\widehat{(u+U) (q + η - ∂U/∂y)} - i k_y \\widehat{v (q + η - ∂U/∂y)} .
 ```
 
-Note: here ∂X/∂y = U.
+Note: here ``- ∂Ψ/∂y = U``.
 """
-function calcN_advection!(N, sol, t, clock, vars, params, grid)
+function calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGconstantUParams, grid)
 
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
@@ -349,30 +352,45 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   ldiv!(vars.u, grid.rfftplan, vars.uh)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
 
-  if params.U isa Number
+  uq_plus_η = vars.u                                            # use vars.u as scratch variable
+  @. uq_plus_η *= vars.q + params.eta                           # u * (q + η)
+  vq_plus_η = vars.v                                            # use vars.v as scratch variable
+  @. vq_plus_η *= vars.q + params.eta                           # v * (q + η)
 
-    uq_plus_η = vars.u                                            # use vars.u as scratch variable
-    @. uq_plus_η *= vars.q + params.eta                           # u * (q + η)
-    vq_plus_η = vars.v                                            # use vars.v as scratch variable
-    @. vq_plus_η *= vars.q + params.eta                           # v * (q + η)
+  uq_plus_ηh = vars.uh                                          # use vars.uh as scratch variable
+  mul!(uq_plus_ηh, grid.rfftplan, uq_plus_η)                    # \hat{u * (q + η)}
+  vq_plus_ηh = vars.vh                                          # use vars.vh as scratch variable
+  mul!(vq_plus_ηh, grid.rfftplan, vq_plus_η)                    # \hat{v * (q + η)}
 
-  else
+  @. N = -im * grid.kr * uq_plus_ηh - im * grid.l * vq_plus_ηh  # - ∂[u*(q+η)]/∂x - ∂[v*(q+η)]/∂y
 
-    Uy = real.(ifft(im * grid.l .* fft(params.U)))                # PV background (η - ∂U/∂y)
+  return nothing
+end
 
-    uq_plus_η = vars.u .+ params.U                                # use vars.u as scratch variable
-    @. uq_plus_η *= vars.q + params.eta .- Uy                     # (u + U) * (q + η - ∂U/∂y)
-    vq_plus_η = vars.v                                            # use vars.v as scratch variable
-    @. vq_plus_η *= vars.q + params.eta .- Uy                     # v * (q + η - ∂U/∂y)
+function calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGvaryingUParams, grid)
 
-  end
+  @. vars.qh = sol
+  streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
+  @. vars.uh = -im * grid.l  * vars.ψh
+  @. vars.vh =  im * grid.kr * vars.ψh
 
-  uq_plus_ηh = vars.uh                                            # use vars.uh as scratch variable
-  mul!(uq_plus_ηh, grid.rfftplan, uq_plus_η)                      # \hat{(u + U) * (q + η - ∂U/∂y)}
-  vq_plus_ηh = vars.vh                                            # use vars.vh as scratch variable
-  mul!(vq_plus_ηh, grid.rfftplan, vq_plus_η)                      # \hat{v * (q + η - ∂U/∂y)}
+  ldiv!(vars.q, grid.rfftplan, vars.qh)
+  ldiv!(vars.u, grid.rfftplan, vars.uh)
+  ldiv!(vars.v, grid.rfftplan, vars.vh)
 
-  @. N = -im * grid.kr * uq_plus_ηh - im * grid.l * vq_plus_ηh    # - ∂[(u+U)*(q+η-∂U/∂y)]/∂x - ∂[v*(q+η-∂U/∂y)]/∂y
+  Uy = real.(ifft(im * grid.l .* fft(params.U)))                # PV background (η - ∂U/∂y)
+
+  uq_plus_η = vars.u .+ params.U                                # use vars.u as scratch variable
+  @. uq_plus_η *= vars.q + params.eta .- Uy                     # (u + U) * (q + η - ∂U/∂y)
+  vq_plus_η = vars.v                                            # use vars.v as scratch variable
+  @. vq_plus_η *= vars.q + params.eta .- Uy                     # v * (q + η - ∂U/∂y)
+
+  uq_plus_ηh = vars.uh                                          # use vars.uh as scratch variable
+  mul!(uq_plus_ηh, grid.rfftplan, uq_plus_η)                    # \hat{(u + U) * (q + η - ∂U/∂y)}
+  vq_plus_ηh = vars.vh                                          # use vars.vh as scratch variable
+  mul!(vq_plus_ηh, grid.rfftplan, vq_plus_η)                    # \hat{v * (q + η - ∂U/∂y)}
+
+  @. N = -im * grid.kr * uq_plus_ηh - im * grid.l * vq_plus_ηh  # - ∂[(u+U)*(q+η-∂U/∂y)]/∂x - ∂[v*(q+η-∂U/∂y)]/∂y
 
   return nothing
 end
