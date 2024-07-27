@@ -66,7 +66,7 @@ Keyword arguments
   - `Ly`: Extent of the ``y``-domain.
   - `f₀`: Constant planetary vorticity.
   - `β`: Planetary vorticity ``y``-gradient.
-  - `U`: The imposed constant zonal flow ``U(y)`` in each fluid layer.
+  - `U`: Imposed background constant zonal flow ``U(y)`` in each fluid layer.
   - `H`: Rest height of each fluid layer.
   - `b`: Boussinesq buoyancy of each fluid layer.
   - `eta`: Periodic component of the topographic potential vorticity.
