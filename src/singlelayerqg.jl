@@ -130,17 +130,17 @@ end
 abstract type SingleLayerQGParams <: AbstractParams end
 
 """
-    struct Params{T, Aphys, Atrans, ℓ} <: SingleLayerQGParams
+    struct Params{T, Aphys, Atrans, Tℓ, TU} <: SingleLayerQGParams
 
 The parameters for the `SingleLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
-struct Params{T, Aphys, Atrans, ℓ, TU <: Union{T, Aphys}} <: SingleLayerQGParams
+struct Params{T, Aphys, Atrans, Tℓ, TU <: Union{T, Aphys}} <: SingleLayerQGParams
     "planetary vorticity ``y``-gradient"
                    β :: T
     "Rossby radius of deformation"
-  deformation_radius :: ℓ
+  deformation_radius :: Tℓ
     "Background flow in ``x`` direction"
                    U :: TU
     "topographic potential vorticity"
@@ -157,7 +157,7 @@ struct Params{T, Aphys, Atrans, ℓ, TU <: Union{T, Aphys}} <: SingleLayerQGPara
               calcF! :: Function
 end
 
-const BarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, Nothing}
+const BarotropicQGParams           = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, Nothing}
 const EquivalentBarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:AbstractFloat}
 
 const SingleLayerQGconstantUParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:Any, <:AbstractFloat}
@@ -202,7 +202,6 @@ L = - μ - ν |𝐤|^{2 n_ν} + i β k_x / |𝐤|² - i k_x U .
 The nonlinear term is computed via `calcN!` function.
 """
 function Equation(params::BarotropicQGParams, grid::AbstractGrid)
-  
   L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq
 
   if params.U isa Number
