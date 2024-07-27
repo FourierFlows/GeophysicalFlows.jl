@@ -54,16 +54,16 @@ for dev in devices
   @testset "SingleLayerQG" begin
     include("test_singlelayerqg.jl")
 
-    for deformation_radius in [Inf, 1.23]
-      @test test_1layerqg_rossbywave("ETDRK4", 1e-2, 20, dev, deformation_radius=deformation_radius)
-      @test test_1layerqg_rossbywave("FilteredETDRK4", 1e-2, 20, dev, deformation_radius=deformation_radius)
-      @test test_1layerqg_rossbywave("RK4", 1e-2, 20, dev, deformation_radius=deformation_radius)
-      @test test_1layerqg_rossbywave("FilteredRK4", 1e-2, 20, dev, deformation_radius=deformation_radius)
-      @test test_1layerqg_rossbywave("AB3", 1e-3, 200, dev, deformation_radius=deformation_radius)
-      @test test_1layerqg_rossbywave("FilteredAB3", 1e-3, 200, dev, deformation_radius=deformation_radius)
-      @test test_1layerqg_rossbywave("ForwardEuler", 1e-4, 2000, dev, deformation_radius=deformation_radius)
-      @test test_1layerqg_rossbywave("FilteredForwardEuler", 1e-4, 2000, dev, deformation_radius=deformation_radius)
-      @test test_1layerqg_problemtype(dev, Float32, deformation_radius=deformation_radius)
+    for deformation_radius in (Inf, 1.23), U₀ in (0, 0.3)
+      for (timestepper, dt, nsteps) in zip(("ETDRK4", "FilteredETDRK4", "RK4", "FilteredRK4", "AB3", "FilteredAB3", "ForwardEuler", "FilteredForwardEuler",),
+                                           (1e-2,     1e-2,             1e-2,  1e-2,          1e-3,  1e-3,          1e-4,           1e-4,),
+                                           (20,       20,               20,    20,            200,   200,           2000,           2000,))
+
+        nx = 64
+        @test test_1layerqg_rossbywave(timestepper, dt, nsteps, dev, nx; deformation_radius, U₀)
+        @test test_1layerqg_rossbywave(timestepper, dt, nsteps, dev, nx; deformation_radius, U₀=U₀*zeros(nx))
+      @test test_1layerqg_problemtype(dev, Float32; deformation_radius)
+      end
     end
     @test test_1layerqg_advection(0.0005, "ForwardEuler", dev)
     @test test_streamfunctionfrompv(dev; deformation_radius=1.23)
@@ -73,9 +73,7 @@ for dev in devices
     @test test_1layerqg_stochasticforcing_energybudget(dev)
     @test test_1layerqg_deterministicforcing_enstrophybudget(dev)
     @test test_1layerqg_stochasticforcing_enstrophybudget(dev)
-    @test test_1layerqg_background_flow_Num(dev)
-    @test test_1layerqg_background_flow_Arr(dev)
-    @test SingleLayerQG.nothingfunction() == nothing
+    @test SingleLayerQG.nothingfunction() === nothing
     @test_throws ErrorException("not implemented for finite deformation radius") test_1layerqg_energy_dissipation(dev; deformation_radius=2.23)
     @test_throws ErrorException("not implemented for finite deformation radius") test_1layerqg_enstrophy_dissipation(dev; deformation_radius=2.23)
     @test_throws ErrorException("not implemented for finite deformation radius") test_1layerqg_energy_work(dev; deformation_radius=2.23)

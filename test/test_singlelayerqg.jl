@@ -3,8 +3,7 @@
 
 Evolves a Rossby wave and compares with the analytic solution.
 """
-function test_1layerqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU(); deformation_radius=Inf)
-  nx = 64
+function test_1layerqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU(), nx=64; deformation_radius=Inf, U₀ = 0)
   Lx = 2π
    β = 2.0
    μ = 0.0
@@ -19,15 +18,15 @@ function test_1layerqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU(); deform
     eta(x, y) = 0 * x
   end
 
-  prob = SingleLayerQG.Problem(dev; nx=nx, Lx=Lx, eta=eta, deformation_radius=deformation_radius, β=β, μ=μ, ν=ν, stepper=stepper, dt=dt)
+  prob = SingleLayerQG.Problem(dev; nx=nx, Lx=Lx, eta=eta, deformation_radius=deformation_radius, β=β, U=U₀, μ=μ, ν=ν, stepper=stepper, dt=dt)
   sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
   x, y = gridpoints(grid)
 
   # the Rossby wave initial condition
    ampl = 1e-2
-  kwave = 3 * 2π/grid.Lx
-  lwave = 2 * 2π/grid.Ly
+  kwave = 3 * 2π / grid.Lx
+  lwave = 2 * 2π / grid.Ly
       ω = -params.β * kwave / (kwave^2 + lwave^2 + 1 / deformation_radius^2)
     q₀  = @. ampl * cos(kwave * x) * cos(lwave * y)
     q₀h = rfft(q₀)
@@ -38,7 +37,7 @@ function test_1layerqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU(); deform
   dealias!(sol, grid)
   SingleLayerQG.updatevars!(prob)
 
-  q_theory = @. ampl * cos(kwave * (x - ω / kwave * clock.t)) * cos(lwave * y)
+  q_theory = @. ampl * cos(kwave * (x - (ω / kwave + U₀) * clock.t)) * cos(lwave * y)
 
   return isapprox(q_theory, vars.q, rtol=grid.nx * grid.ny * nsteps * 1e-12)
 end
@@ -435,56 +434,4 @@ function test_1layerqg_enstrophy_drag(dev; deformation_radius=2.23)
   prob = SingleLayerQG.Problem(dev; nx=16, deformation_radius=deformation_radius)
   SingleLayerQG.enstrophy_drag(prob)
   return nothing
-end
-
-"""
-    test_1layerqg_background_flow_Num(dev; n, L, dt)
-
-Evolves a lamb vortex with a background flow such that the vortex remains stationary.
-
-This test uses U as a Number.
-"""
-function test_1layerqg_background_flow_Num(dev::Device=CPU(); n=256, L=10, dt=0.01)
-	
-	prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, dt, U = -1, stepper="FilteredRK4")
-	x, y = gridpoints(prob.grid)
-	
-	q₀ = lambdipole(1, 1, prob.grid, center=(1e-10, 0))
-	SingleLayerQG.set_q!(prob, q₀)
-	
-	stepforward!(prob, Int(5/dt))
-	
-	_, i₀ = findmax(q₀)
-	_, i₁ = findmax(prob.vars.q)
-
-	x₀ = prob.grid.x[i₀[1]]		# initial vortex position
-	x₁ = prob.grid.x[i₁[1]]		# final vortex position
-
-	return isapprox(x₀, x₁, atol=0.2)
-end
-
-"""
-    test_1layerqg_background_flow_Arr(dev; n, L, dt)
-
-Evolves a lamb vortex with a background flow such that the vortex remains stationary.
-
-This test uses U as an Array.
-"""
-function test_1layerqg_background_flow_Arr(dev::Device=CPU(); n=256, L=10, dt=0.01)
-	
-	prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, dt, U = -ones(n), stepper="FilteredRK4")
-	x, y = gridpoints(prob.grid)
-	
-	q₀ = lambdipole(1, 1, prob.grid, center=(1e-10, 0))
-	SingleLayerQG.set_q!(prob, q₀)
-	
-	stepforward!(prob, Int(5/dt))
-	
-	_, i₀ = findmax(q₀)
-	_, i₁ = findmax(prob.vars.q)
-
-	x₀ = prob.grid.x[i₀[1]]		# initial vortex position
-	x₁ = prob.grid.x[i₁[1]]		# final vortex position
-
-	return isapprox(x₀, x₁, atol=0.2)
 end
