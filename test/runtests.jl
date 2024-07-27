@@ -48,7 +48,7 @@ for dev in devices
     @test test_twodnavierstokes_stochasticforcing_enstrophybudget(dev)
     @test test_twodnavierstokes_energyenstrophypalinstrophy(dev)
     @test test_twodnavierstokes_problemtype(dev, Float32)
-    @test TwoDNavierStokes.nothingfunction() == nothing
+    @test TwoDNavierStokes.nothingfunction() === nothing
   end
 
   @testset "SingleLayerQG" begin
@@ -61,7 +61,7 @@ for dev in devices
 
         nx = 64
         @test test_1layerqg_rossbywave(timestepper, dt, nsteps, dev, nx; deformation_radius, U₀)
-        @test test_1layerqg_rossbywave(timestepper, dt, nsteps, dev, nx; deformation_radius, U₀=U₀*zeros(nx))
+        @test test_1layerqg_rossbywave(timestepper, dt, nsteps, dev, nx; deformation_radius, U₀=U₀*zeros(dev, Float64, (nx,)))
       @test test_1layerqg_problemtype(dev, Float32; deformation_radius)
       end
     end
