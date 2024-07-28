@@ -347,7 +347,7 @@ end
 Compute the advection term and stores it in `N`. The imposed zonal flow ``U`` is either
 zero or constant, in which case is incorporated in the linear terms of the equation.
 Thus, the nonlinear terms is ``- 𝖩(ψ, q + η)`` in conservative form, i.e.,
-``- ∂_x[(∂_y ψ)(q+η)] - ∂_y[(∂_x ψ)(q+η)]``:
+``- ∂_x[(∂_y ψ)(q + η)] - ∂_y[(∂_x ψ)(q + η)]``:
 
 ```math
 N = - \\widehat{𝖩(ψ, q + η)} = - i k_x \\widehat{u (q + η)} - i k_y \\widehat{v (q + η)} .
@@ -389,8 +389,7 @@ with ``y`` and therefore is not taken care by the linear term `L` but rather is
 incorporated in the nonlinear term `N`.
 
 ```math
-N = - \\widehat{𝖩(ψ, q)} - \\widehat{U ∂_x Q} - \\widehat{U ∂_x q}
-    + \\widehat{(∂_y ψ)(∂_x Q)} - \\widehat{(∂_x ψ)(∂_y Q)} .
+N = - \\widehat{𝖩(ψ, q + η)} - \\widehat{U ∂_x (q + η)} + \\widehat{(∂_x ψ)(∂_y² U)} .
 ```
 """
 function calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGvaryingUParams, grid)
@@ -438,8 +437,7 @@ end
 Calculate the nonlinear term, that is the advection term and the forcing,
 
 ```math
-N = - \\widehat{𝖩(ψ, q)} - \\widehat{U ∂_x Q} - \\widehat{U ∂_x q}
-    + \\widehat{(∂_y ψ)(∂_x Q)} - \\widehat{(∂_x ψ)(∂_y Q)} + F̂ .
+N = - \\widehat{𝖩(ψ, q + η)} - \\widehat{U ∂_x (q + η)} + \\widehat{(∂_x ψ)(∂_y² U)} + F̂ .
 ```
 """
 function calcN!(N, sol, t, clock, vars, params, grid)

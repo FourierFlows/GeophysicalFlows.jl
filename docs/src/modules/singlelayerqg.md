@@ -55,7 +55,7 @@ The equation is time-stepped forward in Fourier space:
 
 ```math
 \partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q)} - \widehat{U \partial_x Q} - \widehat{U \partial_x q}
-+ \widehat{(\partial_y \psi) \partial_x Q}  - \widehat{(\partial_x \psi)(\partial_y Q)} - \left(\mu + \nu |𝐤|^{2n_\nu} \right) \widehat{q} + \widehat{F} .
++ \widehat{(\partial_y \psi) (\partial_x Q)}  - \widehat{(\partial_x \psi)(\partial_y Q)} - \left(\mu + \nu |𝐤|^{2n_\nu} \right) \widehat{q} + \widehat{F} .
 ```
 
 In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) =
