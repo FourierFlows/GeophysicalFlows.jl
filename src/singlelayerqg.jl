@@ -101,19 +101,15 @@ function Problem(dev::Device=CPU();
 
   # the grid
   grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
-  x, y = gridpoints(grid)
 
   # topographic PV
-  eta === nothing && (eta = zeros(dev, T, (nx, ny)))
+  eta isa Nothing && (eta = zeros(dev, T, (nx, ny)))
 
-  if U isa Number
-    U = convert(T, U)
-  else
-    U = repeat(reshape(U, (1, ny)), outer=(nx, 1)) # convert to 2D
-    U = device_array(dev)(U)
-  end
+  U = U isa Number ? convert(T, U) : U
 
-  params = deformation_radius == Inf ? BarotropicQGParams(grid, T(β), U, eta, T(μ), T(ν), nν, calcF) : EquivalentBarotropicQGParams(grid, T(β), T(deformation_radius), U, eta, T(μ), T(ν), nν, calcF)
+  params = (deformation_radius == Inf ||
+            deformation_radius === nothing) ? BarotropicQGParams(grid, T(β), U, eta, T(μ), T(ν), nν, calcF) :
+                                              EquivalentBarotropicQGParams(grid, T(deformation_radius), T(β), U, eta, T(μ), T(ν), nν, calcF)
 
   vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
@@ -136,7 +132,7 @@ The parameters for the `SingleLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
-struct Params{T, Aphys, Atrans, Tℓ, TU <: Union{T, Aphys}, Aphys2D} <: SingleLayerQGParams
+struct Params{T, Aphys, Atrans, Tℓ, TU <: Union{T, Aphys}} <: SingleLayerQGParams
     "planetary vorticity ``y``-gradient"
                    β :: T
     "Rossby radius of deformation"
@@ -157,32 +153,30 @@ struct Params{T, Aphys, Atrans, Tℓ, TU <: Union{T, Aphys}, Aphys2D} <: SingleL
               calcF! :: Function
   # derived params
     "array containing ``x``-gradient of PV due to eta"
-        Qx :: Aphys2D
+        Qx :: Aphys
     "array containing ``y``-gradient of PV due to ``U`` and topographic PV"
-        Qy :: Aphys2D
+        Qy :: Aphys
 end
 
-const BarotropicQGParams           = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, Nothing}
-const EquivalentBarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:AbstractFloat}
+const BarotropicQGParams           = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:Nothing,       <:Any}
+const EquivalentBarotropicQGParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:AbstractFloat, <:Any}
 
-const SingleLayerQGconstantUParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:Any, <:AbstractFloat}
-const SingleLayerQGvaryingUParams  = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:Any, <:AbstractArray}
+const SingleLayerQGconstantUParams = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:Any,           <:Number}
+const SingleLayerQGvaryingUParams  = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, <:Any,           <:AbstractArray}
 
 """
-    EquivalentBarotropicQGParams(grid, β, deformation_radius, U, eta, μ, ν, nν, calcF)
+    EquivalentBarotropicQGParams(grid, deformation_radius, β, U, eta, μ, ν, nν, calcF)
 
 Return the parameters for an Equivalent Barotropic QG problem (i.e., with finite Rossby radius of deformation).
 """
-function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, β, deformation_radius, U, eta, μ, ν, nν::Int, calcF) where {T, A}
+function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, deformation_radius, β, U, eta, μ, ν, nν::Int, calcF) where {T, A}
 
-  if U isa Number
-    U = convert(T, U)
-  elseif length(U) == grid.ny
+  if U isa AbstractArray && length(U) == grid.ny
     U = repeat(reshape(U, (1, grid.ny)), outer=(grid.nx, 1)) # convert to 2D
     U = A(U)
   end
 
-  eta_on_grid = typeof(eta) <: AbstractArray ? A(eta) : FourierFlows.on_grid(eta, grid)
+  eta_on_grid = eta isa AbstractArray ? A(eta) : FourierFlows.on_grid(eta, grid)
   etah = rfft(eta_on_grid)
 
   Qx = irfft(im * grid.kr .* etah, grid.nx)   # ∂η/∂x
@@ -190,8 +184,8 @@ function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, β, deformation_
 
   if U isa AbstractArray
     Uh = rfft(U)
-    Uyy = irfft(- grid.l.^2 .* Uh, grid.nx)
-    Qy .-= Uyy                      # -∂²U/∂y²
+    Uyy = irfft(- grid.l.^2 .* Uh, grid.nx)   # ∂²U/∂y²
+    Qy .-= Uyy # -∂²U/∂y²
   end
 
   return Params(β, deformation_radius, U, eta_on_grid, etah, μ, ν, nν, calcF, Qx, Qy)
@@ -202,8 +196,11 @@ end
 
 Return the parameters for a Barotropic QG problem (i.e., with infinite Rossby radius of deformation).
 """
-BarotropicQGParams(grid::AbstractGrid, β, U, eta, μ, ν, nν::Int, calcF) =
-    EquivalentBarotropicQGParams(grid, β, nothing, U, eta, μ, ν, nν, calcF)
+function BarotropicQGParams(grid, β, U, eta, μ, ν, nν::Int, calcF)
+    deformation_radius = nothing
+
+    return EquivalentBarotropicQGParams(grid, deformation_radius, β, U, eta, μ, ν, nν, calcF)
+end
 
 
 # ---------
