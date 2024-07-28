@@ -571,7 +571,7 @@ function pvfromstreamfunction!(qh, ψh, params, grid)
 
   # Instantiates the kernel for relevant backend device
   backend = KernelAbstractions.get_backend(qh)
-  kernel! = test_pvfromstreamfunction_kernel!(backend, workgroup, worksize)
+  kernel! = pvfromstreamfunction_kernel!(backend, workgroup, worksize)
 
   # Launch the kernel
   S, nlayers = params.S, params.nlayers
