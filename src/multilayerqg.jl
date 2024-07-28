@@ -541,7 +541,7 @@ invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, v
 Kernel for GPU acceleration of PV from streamfunction calculation, i.e., obtaining the Fourier
 transform of the PV from the streamfunction `ψh` in each layer using `qh = params.S * ψh`.
 """
-@kernel function test_pvfromstreamfunction_kernel!(qh, ψh, S, nlayers)
+@kernel function pvfromstreamfunction_kernel!(qh, ψh, S, nlayers)
   i, j = @index(Global, NTuple)
 
   @unroll for k = 1:nlayers
@@ -561,7 +561,7 @@ end
 Obtain the Fourier transform of the PV from the streamfunction `ψh` in each layer using
 `qh = params.S * ψh`. We use a work layout over which the above-defined kernel is launched.
 """
-function test_pvfromstreamfunction!(qh, ψh, params, grid)
+function pvfromstreamfunction!(qh, ψh, params, grid)
   # Larger workgroups are generally more efficient. For more generality, we could put an 
   # if statement that incurs different behavior when either nkl or nl are less than 16
   workgroup = 16, 16
@@ -575,8 +575,7 @@ function test_pvfromstreamfunction!(qh, ψh, params, grid)
 
   # Launch the kernel
   S, nlayers = params.S, params.nlayers
-  #kernel!(qh, ψh, S, nlayers)
-  kernel!(qh, psih, S, nlayers)
+  kernel!(qh, ψh, S, nlayers)
 
   # This will ensure that no other operations occur until the kernel has finished
   KernelAbstractions.synchronize(backend)
