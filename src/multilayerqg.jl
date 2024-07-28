@@ -803,6 +803,7 @@ function calcN_linearadvection!(N, sol, vars, params, grid)
   @. vars.vh =  im * grid.kr * vars.ψh
 
   invtransform!(vars.u, vars.uh, params)
+
   @. vars.u += params.U                    # add the imposed zonal flow U
   uQx, uQxh = vars.q, vars.uh              # use vars.q and vars.uh as scratch variables
   @. uQx  = vars.u * params.Qx             # (U+u)*∂Q/∂x
