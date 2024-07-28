@@ -757,7 +757,7 @@ function calcN_advection!(N, sol, vars, params, grid)
   @. vars.u += params.U                    # add the imposed zonal flow U
 
   uQx, uQxh = vars.q, vars.uh              # use vars.q and vars.uh as scratch variables
-  @. uQx  = vars.u * params.Qx             # (U+u)*∂Q/∂x
+  @. uQx = vars.u * params.Qx              # (U+u)*∂Q/∂x
   fwdtransform!(uQxh, uQx, params)
   @. N = - uQxh                            # -\hat{(U+u)*∂Q/∂x}
 
