@@ -23,7 +23,7 @@ using
 
 @reexport using FourierFlows
 
-using FourierFlows: parsevalsum, parsevalsum2, superzeros, plan_flows_rfft
+using FourierFlows: parsevalsum, parsevalsum2, superzeros, plan_flows_rfft, CPU, GPU
 using KernelAbstractions.Extras.LoopInfo: @unroll
 
 nothingfunction(args...) = nothing
@@ -536,24 +536,23 @@ Compute the inverse Fourier transform of `varh` and store it in `var`.
 invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, varh)
 
 """
-    @kernel function pvfromstreamfunction_kernel!(qh, ψh, params)
+    @kernel function pvfromstreamfunction_kernel!(qh, ψh, S, nlayers)
 
 Kernel for GPU acceleration of PV from streamfunction calculation, i.e., obtaining the Fourier
 transform of the PV from the streamfunction `ψh` in each layer using `qh = params.S * ψh`.
 """
-@kernel function pvfromstreamfunction_kernel!(qh, ψh, params)
-    i, j = @index(Global, NTuple)
-    nlayers, S = params.nlayers, params.S
+@kernel function pvfromstreamfunction_kernel!(qh, ψh, S, nlayers)
+  i, j = @index(Global, NTuple)
 
-    @unroll for k = 1:nlayers
+  @unroll for k = 1:nlayers
 
-        @inbounds qh[i, j, k] = 0
+      @inbounds qh[i, j, k] = 0
 
-        @unroll for m = 1:nlayers
-            @inbounds qh[i, j, k] += S[i, j][k, m] * ψh[i, j, m]
-        end
-    
-    end
+      @unroll for m = 1:nlayers
+          @inbounds qh[i, j, k] += S[i, j][k, m] * ψh[i, j, m]
+      end
+  
+  end
 end
 
 """
@@ -563,24 +562,23 @@ Obtain the Fourier transform of the PV from the streamfunction `ψh` in each lay
 `qh = params.S * ψh`. We use a work layout over which the above-defined kernel is launched.
 """
 function pvfromstreamfunction!(qh, ψh, params, grid)
-  # Larger workgroups are generally more efficient. For more generality, we could put an if statement that incurs
-  # different behavior when either nkl or nl are less than 16
+  # Larger workgroups are generally more efficient. For more generality, we could put an 
+  # if statement that incurs different behavior when either nkl or nl are less than 16
   workgroup = 16, 16
 
   # The worksize determines how many times the kernel is run
   worksize = grid.nkr, grid.nl
 
-  # This (and its usage below) will ensure the kernel is not run _before_ the data in ψh is available
-  barrier = Event(grid.device)
-
-  # Creates a loop over the specified worksize, using workgroup to organize the computation
-  loop_kernel! = pvfromstreamfunction_kernel!(grid.device, workgroup, worksize)
+  # Instantiates the kernel for relevant backend device
+  backend = KernelAbstractions.get_backend(qh)
+  kernel! = test_pvfromstreamfunction_kernel!(backend, workgroup, worksize)
 
   # Launch the kernel
-  event = loop_kernel!(qh, ψh, params, dependencies = barrier)
+  S, nlayers = params.S, params.nlayers
+  kernel!(qh, ψh, S, nlayers)
 
   # This will ensure that no other operations occur until the kernel has finished
-  wait(grid.device, event)
+  KernelAbstractions.synchronize(backend)
 
   return nothing
 end
@@ -626,14 +624,13 @@ function pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
 end
 
 """
-    @kernel function streamfunctionfrompv_kernel!(ψh, qh, params)
+    @kernel function streamfunctionfrompv_kernel!(ψh, qh, S⁻¹, nlayers)
 
 Kernel for GPU acceleration of streamfunction from PV calculation, i.e., invert the PV to obtain
 the Fourier transform of the streamfunction `ψh` in each layer from `qh` using `ψh = params.S⁻¹ qh`.
 """
-@kernel function streamfunctionfrompv_kernel!(ψh, qh, params)
+@kernel function streamfunctionfrompv_kernel!(ψh, qh, S⁻¹, nlayers)
     i, j = @index(Global, NTuple)
-    nlayers, S = params.nlayers, params.S
 
     @unroll for k = 1:nlayers
 
@@ -653,24 +650,23 @@ Invert the PV to obtain the Fourier transform of the streamfunction `ψh` in eac
 `qh` using `ψh = params.S⁻¹ qh`. We use a work layout over which the above-defined kernel is launched.
 """
 function streamfunctionfrompv!(ψh, qh, params, grid)
-  # Larger workgroups are generally more efficient. For more generality, we could put an if statement that incurs
-  # different behavior when either nkl or nl are less than 16
+# Larger workgroups are generally more efficient. For more generality, we could put an 
+  # if statement that incurs different behavior when either nkl or nl are less than 16
   workgroup = 16, 16
 
   # The worksize determines how many times the kernel is run
   worksize = grid.nkr, grid.nl
 
-  # This (and its usage below) will ensure the kernel is not run _before_ the data in qh is available
-  barrier = Event(grid.device)
-
-  # Creates a loop over the specified worksize, using workgroup to organize the computation
-  loop_kernel! = streamfunctionfrompv_kernel!(grid.device, workgroup, worksize)
+  # Instantiates the kernel for relevant backend device
+  backend = KernelAbstractions.get_backend(ψh)
+  kernel! = streamfunctionfrompv_kernel!(backend, workgroup, worksize)
 
   # Launch the kernel
-  event = loop_kernel!(ψh, qh, params, dependencies = barrier)
+  S⁻¹, nlayers = params.S⁻¹, params.nlayers
+  kernel!(ψh, qh, S⁻¹, nlayers)
 
   # This will ensure that no other operations occur until the kernel has finished
-  wait(grid.device, event)
+  KernelAbstractions.synchronize(backend)
 
   return nothing
 end
