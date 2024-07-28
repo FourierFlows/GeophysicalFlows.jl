@@ -113,16 +113,16 @@ function Problem(nlayers::Int,                             # number of fluid lay
              aliased_fraction = 1/3,
                             T = Float64)
 
-  if dev == GPU() && nlayers > 2
-    @warn """MultiLayerQG module is not optimized on the GPU yet for configurations with
-    3 fluid layers or more!
+  # if dev == GPU() && nlayers > 2
+  #   @warn """MultiLayerQG module is not optimized on the GPU yet for configurations with
+  #   3 fluid layers or more!
 
-    See issues on Github at https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112
-    and https://github.com/FourierFlows/GeophysicalFlows.jl/issues/267.
+  #   See issues on Github at https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112
+  #   and https://github.com/FourierFlows/GeophysicalFlows.jl/issues/267.
 
-    To use MultiLayerQG with 3 fluid layers or more we suggest, for now, to restrict running
-    on CPU."""
-  end
+  #   To use MultiLayerQG with 3 fluid layers or more we suggest, for now, to restrict running
+  #   on CPU."""
+  # end
 
   if nlayers == 1
     @warn """MultiLayerQG module does work for single-layer configuration but may not be as 
@@ -541,7 +541,7 @@ invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, v
 Kernel for GPU acceleration of PV from streamfunction calculation, i.e., obtaining the Fourier
 transform of the PV from the streamfunction `ψh` in each layer using `qh = params.S * ψh`.
 """
-@kernel function pvfromstreamfunction_kernel!(qh, ψh, S, nlayers)
+@kernel function test_pvfromstreamfunction_kernel!(qh, ψh, S, nlayers)
   i, j = @index(Global, NTuple)
 
   @unroll for k = 1:nlayers
@@ -549,7 +549,7 @@ transform of the PV from the streamfunction `ψh` in each layer using `qh = para
       @inbounds qh[i, j, k] = 0
 
       @unroll for m = 1:nlayers
-          @inbounds qh[i, j, k] += S[i, j][k, m] * ψh[i, j, m]
+          @inbounds qh[i, j, k] += S[i, j][k, m] * ψh[i, j, m] + 1 + 2*im
       end
   
   end
@@ -561,7 +561,7 @@ end
 Obtain the Fourier transform of the PV from the streamfunction `ψh` in each layer using
 `qh = params.S * ψh`. We use a work layout over which the above-defined kernel is launched.
 """
-function pvfromstreamfunction!(qh, ψh, params, grid)
+function test_pvfromstreamfunction!(qh, ψh, params, grid)
   # Larger workgroups are generally more efficient. For more generality, we could put an 
   # if statement that incurs different behavior when either nkl or nl are less than 16
   workgroup = 16, 16
@@ -575,7 +575,8 @@ function pvfromstreamfunction!(qh, ψh, params, grid)
 
   # Launch the kernel
   S, nlayers = params.S, params.nlayers
-  kernel!(qh, ψh, S, nlayers)
+  #kernel!(qh, ψh, S, nlayers)
+  kernel!(qh, psih, S, nlayers)
 
   # This will ensure that no other operations occur until the kernel has finished
   KernelAbstractions.synchronize(backend)
