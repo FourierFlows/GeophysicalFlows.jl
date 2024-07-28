@@ -1,5 +1,7 @@
 module SingleLayerQG
 
+using LinearAlgebra
+
 export
   Problem,
   streamfunctionfrompv!,
@@ -372,7 +374,7 @@ function calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGconstantU
 
   @. N = -im * grid.kr * uq_plus_ηh - im * grid.l * vq_plus_ηh  # - ∂[u*(q+η)]/∂x - ∂[v*(q+η)]/∂y
 
-  @. N -= im * grid.kr * params.U * params.etah
+  @. N -= im * grid.kr * params.U * params.etah                 # - \hat{∂(Uη)/∂x}
 
   return nothing
 end
@@ -403,28 +405,27 @@ function calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGvaryingUP
 
   uQx, uQxh = vars.q, vars.uh              # use vars.q and vars.uh as scratch variables
   @. uQx = vars.u * params.Qx              # (U+u)*∂Q/∂x
-
   mul!(uQxh, grid.rfftplan, uQx)
-
   @. N = - uQxh                            # -\hat{(U+u)*∂Q/∂x}
 
   ldiv!(vars.v, grid.rfftplan, vars.vh)
 
   vQy, vQyh = vars.q, vars.vh              # use vars.q and vars.vh as scratch variables
-
   @. vQy = vars.v * params.Qy              # v*∂Q/∂y
   mul!(vQyh, grid.rfftplan, vQy)
   @. N -= vQyh                             # -\hat{v*∂Q/∂y}
 
   ldiv!(vars.q, grid.rfftplan, vars.qh)
 
-  @. vars.u = params.U
-  Uq , Uqh = vars.u , vars.uh              # use vars.u and vars.uh as scratch variables
-  @. Uq *= vars.q                          # U*q
+  uq , vq  = vars.u , vars.v               # use vars.u and vars.v as scratch variables
+  uqh, vqh = vars.uh, vars.vh              # use vars.uh and vars.vh as scratch variables
+  @. uq *= vars.q                          # (U+u)*q
+  @. vq *= vars.q                          # v*q
 
-  mul!(Uqh, grid.rfftplan, Uq)
+  mul!(uqh, grid.rfftplan, uq)
+  mul!(vqh, grid.rfftplan, vq)
 
-  @. N -= im * grid.kr * Uqh               # -\hat{∂[U*q]/∂x}
+  @. N -= im * grid.kr * uqh + im * grid.l * vqh    # -\hat{∂[(U+u)q]/∂x} - \hat{∂[vq]/∂y}
 
   return nothing
 end

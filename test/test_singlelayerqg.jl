@@ -1,3 +1,5 @@
+using LinearAlgebra
+
 """
     test_1layerqg_rossbywave(stepper, dt, nsteps, dev; kwargs...)
 
@@ -265,7 +267,7 @@ forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - ν∇²ζf. 
 to the vorticity equation forced by this Ff is then ζf. (This solution may not
 be realized, at least at long times, if it is unstable.)
 """
-function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1, μ=0.0)
+function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1, μ=0.0, add_background_flow = false)
   n, L  = 128, 2π
   ν, nν = 1e-2, 1
    μ = 0.0
@@ -283,6 +285,16 @@ function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128,
     + 8 * ( cos(x) * cos(3y) * sin(2x) * sin(2y) - 3cos(2x) * cos(2y) * sin(x) * sin(3y) )
     )
 
+  if add_background_flow == true
+    U = @. 0.2 / cosh(2y)^2
+    U = device_array(dev)(U)
+    Uh = rfft(U)
+    Uyy = irfft(- grid.l.^2 .* Uh, grid.nx)   # ∂²U/∂y²
+
+    @. Ff -= (  U * (16cos(2x) * cos(2y) + 20cos(x) * cos(3y))
+              + Uyy * (2cos(2x) * cos(2y) +  2cos(x) * cos(3y)))
+  end
+
   Ffh = rfft(Ff)
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
@@ -290,14 +302,24 @@ function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128,
     return nothing
   end
 
-  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
+  if add_background_flow == false
+    U₀ = 0
+  elseif add_background_flow==true
+    U₀ = U[1, :]
+  end
+
+  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, U = U₀, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
 
   SingleLayerQG.set_q!(prob, qf)
 
   stepforward!(prob, round(Int, nt))
 
   SingleLayerQG.updatevars!(prob)
-  
+
+  println(norm(prob.vars.q))
+  println(norm(qf))
+  println(norm(prob.vars.q - qf))
+
   return isapprox(prob.vars.q, qf, rtol=rtol_singlelayerqg)
 end
 
