@@ -109,7 +109,7 @@ function Problem(dev::Device=CPU();
   if U isa Number
     U = convert(T, U)
   else
-    U = reshape(U, (1, grid.ny))
+    U = repeat(reshape(U, (1, ny)), outer=(nx, 1)) # convert to 2D
     U = device_array(dev)(U)
   end
 
@@ -136,7 +136,7 @@ The parameters for the `SingleLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
-struct Params{T, Aphys, Atrans, Tℓ, TU <: Union{T, Aphys}} <: SingleLayerQGParams
+struct Params{T, Aphys, Atrans, Tℓ, TU <: Union{T, Aphys}, Aphys2D} <: SingleLayerQGParams
     "planetary vorticity ``y``-gradient"
                    β :: T
     "Rossby radius of deformation"
@@ -155,6 +155,11 @@ struct Params{T, Aphys, Atrans, Tℓ, TU <: Union{T, Aphys}} <: SingleLayerQGPar
                   nν :: Int
     "function that calculates the Fourier transform of the forcing, ``F̂``"
               calcF! :: Function
+  # derived params
+    "array containing ``x``-gradient of PV due to eta"
+        Qx :: Aphys2D
+    "array containing ``y``-gradient of PV due to ``U`` and topographic PV"
+        Qy :: Aphys2D
 end
 
 const BarotropicQGParams           = Params{<:AbstractFloat, <:AbstractArray, <:AbstractArray, Nothing}
@@ -169,10 +174,27 @@ const SingleLayerQGvaryingUParams  = Params{<:AbstractFloat, <:AbstractArray, <:
 Return the parameters for an Equivalent Barotropic QG problem (i.e., with finite Rossby radius of deformation).
 """
 function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, β, deformation_radius, U, eta, μ, ν, nν::Int, calcF) where {T, A}
-  eta_on_grid = typeof(eta) <: AbstractArray ? A(eta) : FourierFlows.on_grid(eta, grid)
-  etah_on_grid = rfft(eta_on_grid)
 
-  return Params(β, deformation_radius, U, eta_on_grid, etah_on_grid, μ, ν, nν, calcF)
+  if U isa Number
+    U = convert(T, U)
+  elseif length(U) == grid.ny
+    U = repeat(reshape(U, (1, grid.ny)), outer=(grid.nx, 1)) # convert to 2D
+    U = A(U)
+  end
+
+  eta_on_grid = typeof(eta) <: AbstractArray ? A(eta) : FourierFlows.on_grid(eta, grid)
+  etah = rfft(eta_on_grid)
+
+  Qx = irfft(im * grid.kr .* etah, grid.nx)   # ∂η/∂x
+  Qy = irfft(im * grid.l  .* etah, grid.nx)   # ∂η/∂y
+
+  if U isa AbstractArray
+    Uh = rfft(U)
+    Uyy = irfft(- grid.l.^2 .* Uh, grid.nx)
+    Qy .-= Uyy                      # -∂²U/∂y²
+  end
+
+  return Params(β, deformation_radius, U, eta_on_grid, etah, μ, ν, nν, calcF, Qx, Qy)
 end
 
 """
@@ -190,18 +212,21 @@ BarotropicQGParams(grid::AbstractGrid, β, U, eta, μ, ν, nν::Int, calcF) =
 
 """
     Equation(params::BarotropicQGParams, grid)
+    Equation(params::EquivalentBarotropicQGParams, grid)
 
-Return the equation for a barotropic QG problem with `params` and `grid`. Linear operator 
-``L`` includes bottom drag ``μ``, (hyper)-viscosity of order ``n_ν`` with coefficient ``ν``, 
-the ``β`` term, and a constant background flow ``U``:
+Return the equation for a `SingleLayerQG` problem with `params` and `grid`.
+Linear operator ``L`` includes bottom drag ``μ``, (hyper)-viscosity of order ``n_ν`` with
+coefficient ``ν``, and the ``β`` term. If there is a constant background flow ``U`` that
+does not vary in ``y`` then the linear term ``L`` includes also the mean advection term
+by ``U``, namely ``-i k_x U```. That is:
 
 ```math
-L = - μ - ν |𝐤|^{2 n_ν} + i β k_x / |𝐤|² - i k_x U .
+L = -μ - ν |𝐤|^{2 n_ν} + i β k_x / (|𝐤|² + 1/ℓ²) - i k_x U .
 ```
 
 The nonlinear term is computed via `calcN!` function.
 """
-function Equation(params::BarotropicQGParams, grid::AbstractGrid)
+function Equation(params::BarotropicQGParams, grid)
   L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq
 
   if params.U isa Number
@@ -213,20 +238,7 @@ function Equation(params::BarotropicQGParams, grid::AbstractGrid)
   return FourierFlows.Equation(L, calcN!, grid)
 end
 
-"""
-    Equation(params::EquivalentBarotropicQGParams, grid)
-
-Return the equation for an equivalent-barotropic QG problem with `params` and `grid`. 
-Linear operator ``L`` includes bottom drag ``μ``, (hyper)-viscosity of order ``n_ν`` with 
-coefficient ``ν``, the ``β`` term and a constant background flow ``U``:
-
-```math
-L = -μ - ν |𝐤|^{2 n_ν} + i β k_x / (|𝐤|² + 1/ℓ²) - i k_x U .
-```
-
-The nonlinear term is computed via `calcN!` function.
-"""
-function Equation(params::EquivalentBarotropicQGParams, grid::AbstractGrid)
+function Equation(params::EquivalentBarotropicQGParams, grid)
   L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr / (grid.Krsq + 1 / params.deformation_radius^2)
 
   if params.U isa Number
@@ -329,16 +341,16 @@ end
 # -------
 
 """
-    calcN_advection!(N, sol, t, clock, vars, params, grid)
+    calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGconstantUParams, grid)
 
-Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, q+η) - U ∂(q+η)/∂x - v ∂U/∂y`` in conservative 
-form, i.e., ``- ∂[(u + U)(q + η - ∂U/∂y)]/∂x - ∂[v(q + η - ∂U/∂y)]/∂y`` and store it in `N`:
+Compute the advection term and stores it in `N`. The imposed zonal flow ``U`` is either
+zero or constant, in which case is incorporated in the linear terms of the equation.
+Thus, the nonlinear terms is ``- 𝖩(ψ, q + η)`` in conservative form, i.e.,
+``- ∂_x[(∂_y ψ)(q+η)] - ∂_y[(∂_x ψ)(q+η)]``:
 
 ```math
-N = - \\widehat{𝖩(ψ + Ψ, q + η - ∂U/∂y)} = - i k_x \\widehat{(u+U) (q + η - ∂U/∂y)} - i k_y \\widehat{v (q + η - ∂U/∂y)} .
+N = - \\widehat{𝖩(ψ, q + η)} = - i k_x \\widehat{u (q + η)} - i k_y \\widehat{v (q + η)} .
 ```
-
-Note: here ``- ∂Ψ/∂y = U``.
 """
 function calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGconstantUParams, grid)
 
@@ -363,33 +375,59 @@ function calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGconstantU
 
   @. N = -im * grid.kr * uq_plus_ηh - im * grid.l * vq_plus_ηh  # - ∂[u*(q+η)]/∂x - ∂[v*(q+η)]/∂y
 
+  @. N -= im * grid.kr * params.U * params.etah
+
   return nothing
 end
 
+"""
+    calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGvaryingUParams, grid)
+
+Compute the advection term and stores it in `N`. The imposed zonal flow ``U(y)`` varies
+with ``y`` and therefore is not taken care by the linear term `L` but rather is
+incorporated in the nonlinear term `N`.
+
+```math
+N = - \\widehat{𝖩(ψ, q)} - \\widehat{U ∂_x Q} - \\widehat{U ∂_x q}
+    + \\widehat{(∂_y ψ)(∂_x Q)} - \\widehat{(∂_x ψ)(∂_y Q)} .
+```
+"""
 function calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGvaryingUParams, grid)
 
   @. vars.qh = sol
+
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
+
   @. vars.uh = -im * grid.l  * vars.ψh
   @. vars.vh =  im * grid.kr * vars.ψh
 
-  ldiv!(vars.q, grid.rfftplan, vars.qh)
   ldiv!(vars.u, grid.rfftplan, vars.uh)
+  @. vars.u += params.U                    # add the imposed zonal flow U
+
+  uQx, uQxh = vars.q, vars.uh              # use vars.q and vars.uh as scratch variables
+  @. uQx = vars.u * params.Qx              # (U+u)*∂Q/∂x
+
+  mul!(uQxh, grid.rfftplan, uQx)
+
+  @. N = - uQxh                            # -\hat{(U+u)*∂Q/∂x}
+
   ldiv!(vars.v, grid.rfftplan, vars.vh)
 
-  Uy = real.(ifft(im * grid.l .* fft(params.U)))                # PV background (η - ∂U/∂y)
+  vQy, vQyh = vars.q, vars.vh              # use vars.q and vars.vh as scratch variables
 
-  uq_plus_η = vars.u .+ params.U                                # use vars.u as scratch variable
-  @. uq_plus_η *= vars.q + params.eta .- Uy                     # (u + U) * (q + η - ∂U/∂y)
-  vq_plus_η = vars.v                                            # use vars.v as scratch variable
-  @. vq_plus_η *= vars.q + params.eta .- Uy                     # v * (q + η - ∂U/∂y)
+  @. vQy = vars.v * params.Qy              # v*∂Q/∂y
+  mul!(vQyh, grid.rfftplan, vQy)
+  @. N -= vQyh                             # -\hat{v*∂Q/∂y}
 
-  uq_plus_ηh = vars.uh                                          # use vars.uh as scratch variable
-  mul!(uq_plus_ηh, grid.rfftplan, uq_plus_η)                    # \hat{(u + U) * (q + η - ∂U/∂y)}
-  vq_plus_ηh = vars.vh                                          # use vars.vh as scratch variable
-  mul!(vq_plus_ηh, grid.rfftplan, vq_plus_η)                    # \hat{v * (q + η - ∂U/∂y)}
+  ldiv!(vars.q, grid.rfftplan, vars.qh)
 
-  @. N = -im * grid.kr * uq_plus_ηh - im * grid.l * vq_plus_ηh  # - ∂[(u+U)*(q+η-∂U/∂y)]/∂x - ∂[v*(q+η-∂U/∂y)]/∂y
+  @. vars.u = params.U
+  Uq , Uqh = vars.u , vars.uh              # use vars.u and vars.uh as scratch variables
+  @. Uq *= vars.q                          # U*q
+
+  mul!(Uqh, grid.rfftplan, Uq)
+
+  @. N -= im * grid.kr * Uqh               # -\hat{∂[U*q]/∂x}
 
   return nothing
 end
@@ -400,7 +438,8 @@ end
 Calculate the nonlinear term, that is the advection term and the forcing,
 
 ```math
-N = - \\widehat{𝖩(ψ + X, q + η - ∂U/∂y)} + F̂ .
+N = - \\widehat{𝖩(ψ, q)} - \\widehat{U ∂_x Q} - \\widehat{U ∂_x q}
+    + \\widehat{(∂_y ψ)(∂_x Q)} - \\widehat{(∂_x ψ)(∂_y Q)} + F̂ .
 ```
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
