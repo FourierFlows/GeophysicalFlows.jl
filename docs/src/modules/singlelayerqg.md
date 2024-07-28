@@ -41,13 +41,20 @@ the two-dimensional Jacobian. On the right hand side, ``F(x, y, t)`` is forcing,
 linear drag, and ``\nu`` is hyperviscosity of order ``n_\nu``. Plain old viscosity corresponds 
 to ``n_\nu = 1``.
 
+In the case that the imposed background zonal flow is just a constant, the above simplifies to:
+
+```math
+\partial_t q + \mathsf{J}(\psi, q + \eta) + U \partial_x (q + \eta) + β \partial_x \psi = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] q}_{\textrm{dissipation}} + F ,
+```
+
+and thus the advection of ``q`` can be incorporated in the linear term ``L``.
 
 ### Implementation
 
 The equation is time-stepped forward in Fourier space:
 
 ```math
-\partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q)}  - \widehat{U \partial_x Q} - \widehat{U \partial_x q}
+\partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q)} - \widehat{U \partial_x Q} - \widehat{U \partial_x q}
 + \widehat{(\partial_y \psi) \partial_x Q}  - \widehat{(\partial_x \psi)(\partial_y Q)} - \left(\mu + \nu |𝐤|^{2n_\nu} \right) \widehat{q} + \widehat{F} .
 ```
 
