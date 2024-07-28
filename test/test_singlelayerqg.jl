@@ -257,17 +257,26 @@ function test_1layerqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n
 end
 
 """
-    test_1layerqg_nonlinearadvection(dt, stepper, dev; kwargs...)
+    test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
+                                     add_topography = false,
+                                     add_background_flow = false,
+                                     background_flow_vary_in_y = true)
 
-Tests the advection term in the SingleLayerQG module by timestepping a
+Tests the advection term in the `SingleLayerQG` module by timestepping a
 test problem with timestep dt and timestepper identified by the string stepper.
-The test problem is derived by picking a solution ζf (with associated
-streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
-forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - ν∇²ζf. One solution
-to the vorticity equation forced by this Ff is then ζf. (This solution may not
+The test problem is derived by picking a solution qf (with associated
+streamfunction ψf) for which the advection term J(qf, ζf) is non-zero. Next, a
+forcing Ff is derived according to Ff = ∂qf/∂t + J(ψf, qf) - ν∇²qf. One solution
+to the vorticity equation forced by this Ff is then qf. (This solution may not
 be realized, at least at long times, if it is unstable.)
+
+We can optionally add an imposed mean flow `U(y)` via the kwarg `add_background_flow = true`
+or add topography via kwarg `add_topography = true`.
 """
-function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1, μ=0.0, add_background_flow = false)
+function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
+                                          add_topography = false,
+                                          add_background_flow = false,
+                                          background_flow_vary_in_y = true)
   n, L  = 128, 2π
   ν, nν = 1e-2, 1
    μ = 0.0
@@ -277,23 +286,41 @@ function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128,
   grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
+  if add_topography == true
+    η₀ = 0.4
+  elseif add_topography == false
+    η₀ = 0
+  end
+
+  η(x, y) = η₀ * cos(10x) * cos(10y)
+
   ψf = @. sin(2x) * cos(2y) + 2sin(x) * cos(3y)
   qf = @. -8sin(2x) * cos(2y) - 20sin(x) * cos(3y)
 
-  Ff = @. -(
-    ν*( 64sin(2x) * cos(2y) + 200sin(x) * cos(3y) )
-    + 8 * ( cos(x) * cos(3y) * sin(2x) * sin(2y) - 3cos(2x) * cos(2y) * sin(x) * sin(3y) )
-    )
+  # F = J(ψ, q + η) - ν ∇²q + U ∂(q+η)/∂x - v ∂²U/∂y²
+  # where q = ∇²ψ
+  Ff = @. (- ν * ( 64sin(2x) * cos(2y) + 200sin(x) * cos(3y) )
+           - 8 * (cos(x) * cos(3y) * sin(2x) * sin(2y) - 3cos(2x) * cos(2y) * sin(x) * sin(3y))
+           - 20η₀ * (sin(10x) * cos(10y) * (sin(2x) * sin(2y) + 3sin(x) * sin(3y))
+                     + cos(10x) * sin(10y) * (cos(2x) * cos(2y) + cos(x) * cos(3y))))
 
-  if add_background_flow == true
-    U = @. 0.2 / cosh(2y)^2
+  U_amplitude = 0.2
+
+  U = 0
+  Uyy = 0
+
+  if add_background_flow == true && background_flow_vary_in_y == false
+    U = U_amplitude
+  elseif add_background_flow == true && background_flow_vary_in_y == true
+    U = @. U_amplitude / cosh(2y)^2
     U = device_array(dev)(U)
     Uh = rfft(U)
     Uyy = irfft(- grid.l.^2 .* Uh, grid.nx)   # ∂²U/∂y²
-
-    @. Ff -= (  U * (16cos(2x) * cos(2y) + 20cos(x) * cos(3y))
-              + Uyy * (2cos(2x) * cos(2y) +  2cos(x) * cos(3y)))
   end
+
+  @. Ff += (- U * (16cos(2x) * cos(2y) + 20cos(x) * cos(3y))
+            - Uyy * (2cos(2x) * cos(2y) +  2cos(x) * cos(3y))
+            - η₀ * U * 10sin(10x) * cos(10y))
 
   Ffh = rfft(Ff)
 
@@ -304,11 +331,13 @@ function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128,
 
   if add_background_flow == false
     U₀ = 0
-  elseif add_background_flow==true
+  elseif add_background_flow == true && background_flow_vary_in_y == true
     U₀ = U[1, :]
+  elseif add_background_flow == true && background_flow_vary_in_y == false
+    U₀ = U_amplitude
   end
 
-  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, U = U₀, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
+  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, U = U₀, eta = η, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
 
   SingleLayerQG.set_q!(prob, qf)
 
@@ -320,11 +349,13 @@ function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128,
 end
 
 """
-    test_1layerqg_nonlinearadvection_deformation(dt, stepper, dev; kwargs...)
+    test_1layerqg_nonlinearadvection_deformation(dt, stepper, dev::Device=CPU();
+                                                 deformation_radius=1.23)
 
-Same as `test_1layerqg_advection` but with finite deformation radius.
+Same as `test_1layerqg_nonlinearadvection` but with finite deformation radius.
 """
-function test_1layerqg_nonlinearadvection_deformation(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1, μ=0.0)
+function test_1layerqg_nonlinearadvection_deformation(dt, stepper, dev::Device=CPU();
+                                                      deformation_radius=1.23)
   n, L  = 128, 2π
   ν, nν = 1e-2, 1
    μ = 0.0
@@ -335,16 +366,16 @@ function test_1layerqg_nonlinearadvection_deformation(dt, stepper, dev::Device=C
   k₀, l₀ = 2π / grid.Lx, 2π / grid.Ly # fundamental wavenumbers
   x, y = gridpoints(grid)
 
-  deformation_radius = 1.23
-
   η₀ = 0.4
   η(x, y) = η₀ * cos(10x) * cos(10y)
   ψf = @. sin(2x) * cos(2y) + 2sin(x) * cos(3y)
   qf = @. - (2^2 + 2^2) * sin(2x) * cos(2y) - (1^2 + 3^2) * 2sin(x) * cos(3y) - 1/deformation_radius^2 * ψf
 
-  Ff = @. (- ν*(64sin(2x) * cos(2y) + 200sin(x) * cos(3y)
-                + (8sin(2x) * cos(2y) + 20sin(x) * cos(3y)) / deformation_radius^2)
-           + 4sin(x) * (sin(y) - sin(5y) + 2cos(2x) * (2sin(y) + sin(5y)))
+  # F = J(ψ, q + η) - ν ∇²q
+  # where q = ∇²ψ - ψ/ℓ²
+  Ff = @. (- ν * (64sin(2x) * cos(2y) + 200sin(x) * cos(3y)
+                  + (8sin(2x) * cos(2y) + 20sin(x) * cos(3y)) / deformation_radius^2)
+           - 8 * (cos(x) * cos(3y) * sin(2x) * sin(2y) - 3cos(2x) * cos(2y) * sin(x) * sin(3y))
            - 20η₀ * (cos(10y) * sin(10x) * (sin(2x) * sin(2y) + 3sin(x) * sin(3y))
                      + cos(10x) * sin(10y) * (cos(2x) * cos(2y) + cos(x) * cos(3y))))
 

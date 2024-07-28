@@ -65,8 +65,11 @@ for dev in devices
       end
       @test test_1layerqg_problemtype(dev, Float32; deformation_radius, U=U₀)
     end
-    @test test_1layerqg_nonlinearadvection(0.0005, "ForwardEuler", dev)
-    @test test_1layerqg_nonlinearadvection(0.0005, "ForwardEuler", dev, add_background_flow = true)
+    @test test_1layerqg_nonlinearadvection(0.0005, "ForwardEuler", dev, add_background_flow = false, add_topography = false)
+    @test test_1layerqg_nonlinearadvection(0.0005, "ForwardEuler", dev, add_background_flow = false, add_topography = true)
+    @test test_1layerqg_nonlinearadvection(0.0005, "ForwardEuler", dev, add_background_flow = true, background_flow_vary_in_y = false)
+    @test test_1layerqg_nonlinearadvection(0.0005, "ForwardEuler", dev, add_background_flow = true, background_flow_vary_in_y = false, add_topography = true)
+    @test test_1layerqg_nonlinearadvection(0.0005, "ForwardEuler", dev, add_background_flow = true, background_flow_vary_in_y = true)
     @test test_1layerqg_nonlinearadvection_deformation(0.0005, "ForwardEuler", dev)
     @test test_streamfunctionfrompv(dev; deformation_radius=1.23)
     @test test_1layerqg_energyenstrophy_BarotropicQG(dev)
