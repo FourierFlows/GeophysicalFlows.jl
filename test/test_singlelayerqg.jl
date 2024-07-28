@@ -292,7 +292,8 @@ function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
     η₀ = 0
   end
 
-  η(x, y) = η₀ * cos(10x) * cos(10y)
+  η(x, y; η₀ = η₀) = η₀ * cos(10x) * cos(10y)
+  η_array = @. η(x, y; η₀)
 
   ψf = @. sin(2x) * cos(2y) + 2sin(x) * cos(3y)
   qf = @. -8sin(2x) * cos(2y) - 20sin(x) * cos(3y)
@@ -337,7 +338,7 @@ function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
     U₀ = U_amplitude
   end
 
-  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, U = U₀, eta = η, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
+  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, U = U₀, eta = η_array, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
 
   SingleLayerQG.set_q!(prob, qf)
 
