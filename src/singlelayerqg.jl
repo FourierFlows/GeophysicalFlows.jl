@@ -134,7 +134,7 @@ The parameters for the `SingleLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
-struct Params{T, Aphys, Atrans, Tℓ, TU <: Union{T, Aphys}} <: SingleLayerQGParams
+struct Params{T, Aphys, Atrans, Tℓ, TU} <: SingleLayerQGParams
     "planetary vorticity ``y``-gradient"
                    β :: T
     "Rossby radius of deformation"

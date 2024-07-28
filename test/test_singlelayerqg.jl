@@ -316,10 +316,6 @@ function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128,
 
   SingleLayerQG.updatevars!(prob)
 
-  println(norm(prob.vars.q))
-  println(norm(qf))
-  println(norm(prob.vars.q - qf))
-
   return isapprox(prob.vars.q, qf, rtol=rtol_singlelayerqg)
 end
 
