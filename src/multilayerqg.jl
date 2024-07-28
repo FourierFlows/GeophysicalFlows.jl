@@ -580,7 +580,7 @@ function pvfromstreamfunction!(qh, ψh, params, grid)
   event = loop_kernel!(qh, ψh, params, dependencies = barrier)
 
   # This will ensure that no other operations occur until the kernel has finished
-  wait(event)
+  wait(grid.device, event)
 
   return nothing
 end
@@ -670,7 +670,7 @@ function streamfunctionfrompv!(ψh, qh, params, grid)
   event = loop_kernel!(ψh, qh, params, dependencies = barrier)
 
   # This will ensure that no other operations occur until the kernel has finished
-  wait(event)
+  wait(grid.device, event)
 
   return nothing
 end
