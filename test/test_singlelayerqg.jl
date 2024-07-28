@@ -265,7 +265,7 @@ forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - ν∇²ζf. 
 to the vorticity equation forced by this Ff is then ζf. (This solution may not
 be realized, at least at long times, if it is unstable.)
 """
-function test_1layerqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1, μ=0.0)
+function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1, μ=0.0)
   n, L  = 128, 2π
   ν, nν = 1e-2, 1
    μ = 0.0
@@ -298,6 +298,53 @@ function test_1layerqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, �
 
   SingleLayerQG.updatevars!(prob)
   
+  return isapprox(prob.vars.q, qf, rtol=rtol_singlelayerqg)
+end
+
+"""
+    test_1layerqg_nonlinearadvection_deformation(dt, stepper, dev; kwargs...)
+
+Same as `test_1layerqg_advection` but with finite deformation radius.
+"""
+function test_1layerqg_nonlinearadvection_deformation(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1, μ=0.0)
+  n, L  = 128, 2π
+  ν, nν = 1e-2, 1
+   μ = 0.0
+  tf = 1.0
+  nt = round(Int, tf/dt)
+
+  grid = TwoDGrid(dev; nx=n, Lx=L)
+  k₀, l₀ = 2π / grid.Lx, 2π / grid.Ly # fundamental wavenumbers
+  x, y = gridpoints(grid)
+
+  deformation_radius = 1.23
+
+  η₀ = 0.4
+  η(x, y) = η₀ * cos(10x) * cos(10y)
+  ψf = @. sin(2x) * cos(2y) + 2sin(x) * cos(3y)
+  qf = @. - (2^2 + 2^2) * sin(2x) * cos(2y) - (1^2 + 3^2) * 2sin(x) * cos(3y) - 1/deformation_radius^2 * ψf
+
+  Ff = @. (- ν*(64sin(2x) * cos(2y) + 200sin(x) * cos(3y)
+                + (8sin(2x) * cos(2y) + 20sin(x) * cos(3y)) / deformation_radius^2)
+           + 4sin(x) * (sin(y) - sin(5y) + 2cos(2x) * (2sin(y) + sin(5y)))
+           - 20η₀ * (cos(10y) * sin(10x) * (sin(2x) * sin(2y) + 3sin(x) * sin(3y))
+                     + cos(10x) * sin(10y) * (cos(2x) * cos(2y) + cos(x) * cos(3y))))
+
+  Ffh = rfft(Ff)
+
+  function calcF!(Fh, sol, t, clock, vars, params, grid)
+    Fh .= Ffh
+    return nothing
+  end
+
+  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, eta=η, ν=ν, nν=nν, μ=μ, dt=dt, deformation_radius=deformation_radius, stepper=stepper, calcF=calcF!)
+
+  SingleLayerQG.set_q!(prob, qf)
+
+  stepforward!(prob, round(Int, nt))
+
+  SingleLayerQG.updatevars!(prob)
+
   return isapprox(prob.vars.q, qf, rtol=rtol_singlelayerqg)
 end
 
