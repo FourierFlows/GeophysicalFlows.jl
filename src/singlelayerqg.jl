@@ -190,6 +190,8 @@ function EquivalentBarotropicQGParams(grid::AbstractGrid{T, A}, deformation_radi
     Qy .-= Uyy # -∂²U/∂y²
   end
 
+  # Note: The β-term in Qy is included in the linear term L of Equation.
+
   return Params(β, deformation_radius, U, eta_on_grid, etah, μ, ν, nν, calcF, Qx, Qy)
 end
 
