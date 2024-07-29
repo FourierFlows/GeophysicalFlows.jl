@@ -549,7 +549,7 @@ transform of the PV from the streamfunction `ψh` in each layer using `qh = para
       @inbounds qh[i, j, k] = 0
 
       @unroll for m = 1:nlayers
-          @inbounds qh[i, j, k] += S[i, j][k, m] * ψh[i, j, m] + 1 + 2*im
+          @inbounds qh[i, j, k] += S[i, j][k, m] * ψh[i, j, m]
       end
   
   end
