@@ -66,7 +66,7 @@ Keyword arguments
   - `Ly`: Extent of the ``y``-domain.
   - `f₀`: Constant planetary vorticity.
   - `β`: Planetary vorticity ``y``-gradient.
-  - `U`: The imposed constant zonal flow ``U(y)`` in each fluid layer.
+  - `U`: Imposed background constant zonal flow ``U(y)`` in each fluid layer.
   - `H`: Rest height of each fluid layer.
   - `b`: Boussinesq buoyancy of each fluid layer.
   - `eta`: Periodic component of the topographic potential vorticity.
@@ -757,7 +757,7 @@ function calcN_advection!(N, sol, vars, params, grid)
   @. vars.u += params.U                    # add the imposed zonal flow U
 
   uQx, uQxh = vars.q, vars.uh              # use vars.q and vars.uh as scratch variables
-  @. uQx  = vars.u * params.Qx             # (U+u)*∂Q/∂x
+  @. uQx = vars.u * params.Qx              # (U+u)*∂Q/∂x
   fwdtransform!(uQxh, uQx, params)
   @. N = - uQxh                            # -\hat{(U+u)*∂Q/∂x}
 
@@ -803,6 +803,7 @@ function calcN_linearadvection!(N, sol, vars, params, grid)
   @. vars.vh =  im * grid.kr * vars.ψh
 
   invtransform!(vars.u, vars.uh, params)
+
   @. vars.u += params.U                    # add the imposed zonal flow U
   uQx, uQxh = vars.q, vars.uh              # use vars.q and vars.uh as scratch variables
   @. uQx  = vars.u * params.Qx             # (U+u)*∂Q/∂x

@@ -71,10 +71,14 @@ with
 ```math
 \begin{aligned}
 \partial_y Q_j &\equiv \beta - \partial_y^2 U_j - (1-\delta_{j,1}) F_{j-1/2, j} (U_{j-1} - U_j) - (1 - \delta_{j,n}) F_{j+1/2, j} (U_{j+1} - U_j) + \delta_{j,n} \partial_y \eta , \\
-\partial_x Q_j &\equiv \delta_{j, n} \partial_x \eta .
+\partial_x Q_j & \equiv \delta_{j, n} \partial_x \eta ,
 \end{aligned}
 ```
 
+the background PV gradient components in each layer and with
+``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x b)`` is the 
+two-dimensional Jacobian. On the right hand side, ``\mu`` is linear bottom drag, and ``\nu`` is
+hyperviscosity of order ``n_\nu``. Plain old viscosity corresponds to ``n_\nu = 1``.
 
 ### Implementation
 
