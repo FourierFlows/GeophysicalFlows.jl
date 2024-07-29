@@ -563,8 +563,8 @@ Obtain the Fourier transform of the PV from the streamfunction `ψh` in each lay
 """
 function pvfromstreamfunction!(qh, ψh, params, grid)
   # Larger workgroups are generally more efficient. For more generality, we could put an 
-  # if statement that incurs different behavior when either nkl or nl are less than 16
-  workgroup = 16, 16
+  # if statement that incurs different behavior when either nkl or nl are less than 8
+  workgroup = 8, 8
 
   # The worksize determines how many times the kernel is run
   worksize = grid.nkr, grid.nl
@@ -651,8 +651,8 @@ Invert the PV to obtain the Fourier transform of the streamfunction `ψh` in eac
 """
 function streamfunctionfrompv!(ψh, qh, params, grid)
 # Larger workgroups are generally more efficient. For more generality, we could put an 
-  # if statement that incurs different behavior when either nkl or nl are less than 16
-  workgroup = 16, 16
+  # if statement that incurs different behavior when either nkl or nl are less than 8
+  workgroup = 8, 8
 
   # The worksize determines how many times the kernel is run
   worksize = grid.nkr, grid.nl
