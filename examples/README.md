@@ -1,8 +1,6 @@
 # GeophysicalFlows.jl/examples
 
-
 These are some basic examples of the various modules included in GeophysicalFlows.jl. The best way to go through the examples by browsing them within the package's <a href="https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/">documentation <img src="https://img.shields.io/badge/docs-dev-blue.svg"></a>.
-
 
 ## Run the examples
 
@@ -12,7 +10,7 @@ You can run the examples in an executable environment via [Binder](https://mybin
 Alternatively, you can run these scripts directly using the `.toml` files in this directory.
 To do that, first open julia and activate this directory's project, e.g.,
 ```
-$ julia --project="path/to/examples/directory"
+$ julia --project="path/to/examples"
 ```
 Then instantiate the project in this directory, i.e.,
 ```julia
@@ -20,5 +18,5 @@ Then instantiate the project in this directory, i.e.,
 ```
 to install dependencies. Then run any of the examples by
 ```julia
-include("path/to/examples/directory/example_script.jl")
+include("path/to/examples/example_script.jl")
 ```
