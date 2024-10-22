@@ -19,10 +19,11 @@ jobs:
         arch:
           - x64
         include:
-          # test macOS and Windows with latest Julia only
           - os: macOS-latest
             arch: aarch64
-            version: 1
+            version:
+                - '1.10' # LTS
+                - '1.11'      
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
