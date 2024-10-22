@@ -23,7 +23,7 @@ happens or your code stops working, please open an [issue](https://github.com/Fo
 or start a [discussion](https://github.com/FourierFlows/GeophysicalFlows.jl/discussions). We're 
 more than happy to help with getting your simulations up and running.
 
-!!! warn "Julia 1.6 or newer; Julia 1.10 or newer is strongly encouraged"
+!!! warn "Julia 1.6 or newer required; Julia 1.10 or newer strongly encouraged"
     The latest GeophysicalFlows.jl requires at least Julia v1.6 to run.
     Installing GeophysicalFlows with an older version of Julia will install an older version 
     of GeophysicalFlows.jl (the latest version compatible with your version of Julia).
