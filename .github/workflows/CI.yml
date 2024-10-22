@@ -18,12 +18,22 @@ jobs:
           - windows-latest
         arch:
           - x64
+          include:
+            - os: macOS-latest
+              arch: arm64
+              version: '1.10' # LTS
+        include:
+          - os: macOS-latest
+            arch: arm64
+            version: '1.11'
         include:
           - os: macOS-latest
             arch: aarch64
-            version:
-                - '1.10' # LTS
-                - '1.11'      
+            version: '1.10' # LTS
+        include:
+          - os: macOS-latest
+            arch: aarch64
+            version: '1.11'
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
