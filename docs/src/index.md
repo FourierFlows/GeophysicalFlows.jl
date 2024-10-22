@@ -84,6 +84,8 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. Crowe, M. N. and Sutyrin, G. G. (2024) Symmetry breaking of two-layer eastward propagating dipoles. arXiv preprint arXiv.2410.14402, doi:[10.48550/arXiv.2410.14402](https://doi.org/10.48550/arXiv.2410.14402).
+
 1. Lobo, M., Griffies, S. M., and Zhang, W. (2024) Vertical structure of baroclinic instability in a three-layer quasi-geostrophic model over a sloping bottom. _ESS Open Archive_, doi:[10.22541/essoar.172166435.57577370/v1](https://doi.org/10.22541/essoar.172166435.57577370/v1).
 
 1. Pudig, M. and Smith, K. S. (2024) Baroclinic turbulence above rough topography: The vortex gas and topographic turbulence regimes. _ESS Open Archive_, doi:[10.22541/essoar.171995116.60993353/v1](https://doi.org/10.22541/essoar.171995116.60993353/v1).
@@ -92,7 +94,7 @@ The bibtex entry for the paper is:
 
 1. He, J. and Wang, Y. (2024) Multiple states of two-dimensional turbulence above topography. arXiv preprint arXiv:2405.10826, doi:[10.48550/arXiv.2405.10826](https://doi.org/10.48550/arXiv.2405.10826).
 
-1. Parfenyev, V., Blumenau, M., and Nikitin, I. (2024) Enhancing capabilities of particle image/tracking velocimetry with physics-informed neural networks. arXiv preprint arXiv:2404.01193, doi:[10.48550/arXiv.2404.01193](https://doi.org/10.48550/arXiv.2404.01193).
+1. Parfenyev, V., Blumenau, M., and Nikitin, I. (2024) Inferring parameters and reconstruction of two-dimensional turbulent flows with physics-informed neural networks. _Jetp Lett._, doi:[10.1134/S0021364024602203](https://doi.org/10.1134/S0021364024602203).
 
 1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2024) Stochastic latent transformer: Efficient modeling of stochastically forced zonal jets. _Journal of Advances in Modeling Earth Systems_, **16**, e2023MS004177, doi:[10.1029/2023MS004177](https://doi.org/10.1029/2023MS004177).
 
