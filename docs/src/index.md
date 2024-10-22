@@ -92,7 +92,7 @@ The bibtex entry for the paper is:
 
 1. He, J. and Wang, Y. (2024) Multiple states of two-dimensional turbulence above topography. arXiv preprint arXiv:2405.10826, doi:[10.48550/arXiv.2405.10826](https://doi.org/10.48550/arXiv.2405.10826).
 
-1. Parfenyev, V., Blumenau, M., and Nikitin, I. (2024) Enhancing capabilities of particle image/tracking velocimetry with physics-informed neural networks. arXiv preprint arXiv:2404.01193, doi:[10.48550/arXiv.2404.01193](https://doi.org/10.48550/arXiv.2404.01193).
+1. Parfenyev, V., Blumenau, M., and Nikitin, I. (2024) Inferring parameters and reconstruction of two-dimensional turbulent flows with physics-informed neural networks. _Jetp Lett._, doi:[10.1134/S0021364024602203](https://doi.org/10.1134/S0021364024602203).
 
 1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2024) Stochastic latent transformer: Efficient modeling of stochastically forced zonal jets. _Journal of Advances in Modeling Earth Systems_, **16**, e2023MS004177, doi:[10.1029/2023MS004177](https://doi.org/10.1029/2023MS004177).
 
