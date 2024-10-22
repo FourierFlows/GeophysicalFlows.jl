@@ -43,14 +43,12 @@ To install, use Julia's  built-in package manager (accessed by pressing `]` in t
 
 ```julia
 julia> ]
-(v1.6) pkg> add GeophysicalFlows
-(v1.6) pkg> instantiate
+(v1.10) pkg> add GeophysicalFlows
+(v1.10) pkg> instantiate
 ```
 
-The most recent version of GeophysicalFlows.jl requires Julia v1.6  (the current long-term-release) or later. _We strongly urge you to use this version._
-
-The latest version that is compatible with Julia v1.5 is GeophysicalFlows.jl v0.13.1.
-
+GeophysicalFlows.jl requires Julia v1.6 or later. However, the package has continuous integration testing on
+Julia v1.10 (the current long-term release) and v1.11. _We strongly urge you to use one of these Julia versions._
 
 ## Examples
 
