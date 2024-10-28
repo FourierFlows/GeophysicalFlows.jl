@@ -20,32 +20,49 @@ radius follows is said to obey equivalent-barotropic dynamics. We denote the sum
 vorticity and the vortex stretching contributions to the QGPV with ``q \equiv \nabla^2 \psi - \psi / \ell^2``.
 Also, we denote the topographic PV with ``\eta \equiv f_0 h / H``.
 
-The dynamical variable is ``q``.  Thus, the equation solved by the module is:
+The dynamical variable is ``q``. Including an imposed zonal flow ``U(y)``, the equation of motion is:
 
 ```math
-\partial_t q + \mathsf{J}(\psi, q + \eta) + \beta \partial_x \psi = 
-\underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] q}_{\textrm{dissipation}} + F .
+\partial_t q + \mathsf{J}(\psi, q) + (U - \partial_y\psi) \partial_x Q +  U \partial_x q + (\partial_y Q)(\partial_x \psi) = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] q}_{\textrm{dissipation}} + F ,
 ```
 
-where ``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x b)`` is the 
-two-dimensional Jacobian. On the right hand side, ``F(x, y, t)`` is forcing, ``\mu`` is 
+with
+
+```math
+\begin{aligned}
+\partial_y Q &\equiv \beta - \partial_y^2 U + \partial_y \eta , \\
+\partial_x Q &\equiv \partial_x \eta ,
+\end{aligned}
+```
+
+the background PV gradient components, and with
+``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b) - (\partial_y a)(\partial_x b)``
+the two-dimensional Jacobian. On the right hand side, ``F(x, y, t)`` is forcing, ``\mu`` is 
 linear drag, and ``\nu`` is hyperviscosity of order ``n_\nu``. Plain old viscosity corresponds 
 to ``n_\nu = 1``.
 
+In the case that the imposed background zonal flow is just a constant, the above simplifies to:
+
+```math
+\partial_t q + \mathsf{J}(\psi, q + \eta) + U \partial_x (q + \eta) + β \partial_x \psi = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] q}_{\textrm{dissipation}} + F ,
+```
+
+and thus the advection of ``q`` can be incorporated in the linear term ``L``.
 
 ### Implementation
 
 The equation is time-stepped forward in Fourier space:
 
 ```math
-\partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q + \eta)} + \beta \frac{i k_x}{|𝐤|^2 + 1/\ell^2} \widehat{q} - \left(\mu + \nu |𝐤|^{2n_\nu} \right) \widehat{q} + \widehat{F} .
+\partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q)} - \widehat{U \partial_x Q} - \widehat{U \partial_x q}
++ \widehat{(\partial_y \psi) (\partial_x Q)}  - \widehat{(\partial_x \psi)(\partial_y Q)} - \left(\mu + \nu |𝐤|^{2n_\nu} \right) \widehat{q} + \widehat{F} .
 ```
+
+In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) =
+\partial_y [ (\partial_x f) g] - \partial_x[ (\partial_y f) g]``.
 
 The state variable `sol` is the Fourier transform of the sum of relative vorticity and vortex 
 stretching (when the latter is applicable), [`qh`](@ref GeophysicalFlows.SingleLayerQG.Vars).
-
-The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) =
-\partial_y [ (\partial_x f) g] - \partial_x[ (\partial_y f) g]``.
 
 The linear operator is constructed in `Equation`
 
