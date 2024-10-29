@@ -1,10 +1,12 @@
+using LinearAlgebra
+
 """
     test_1layerqg_rossbywave(stepper, dt, nsteps, dev; kwargs...)
 
 Evolves a Rossby wave and compares with the analytic solution.
 """
-function test_1layerqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU(); deformation_radius=Inf)
-  nx = 64
+function test_1layerqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU(), nx=64; deformation_radius=Inf, U = 0)
+
   Lx = 2π
    β = 2.0
    μ = 0.0
@@ -19,15 +21,15 @@ function test_1layerqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU(); deform
     eta(x, y) = 0 * x
   end
 
-  prob = SingleLayerQG.Problem(dev; nx=nx, Lx=Lx, eta=eta, deformation_radius=deformation_radius, β=β, μ=μ, ν=ν, stepper=stepper, dt=dt)
+  prob = SingleLayerQG.Problem(dev; nx=nx, Lx=Lx, eta=eta, deformation_radius=deformation_radius, β=β, U=U, μ=μ, ν=ν, stepper=stepper, dt=dt)
   sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
 
   x, y = gridpoints(grid)
 
   # the Rossby wave initial condition
    ampl = 1e-2
-  kwave = 3 * 2π/grid.Lx
-  lwave = 2 * 2π/grid.Ly
+  kwave = 3 * 2π / grid.Lx
+  lwave = 2 * 2π / grid.Ly
       ω = -params.β * kwave / (kwave^2 + lwave^2 + 1 / deformation_radius^2)
     q₀  = @. ampl * cos(kwave * x) * cos(lwave * y)
     q₀h = rfft(q₀)
@@ -38,7 +40,7 @@ function test_1layerqg_rossbywave(stepper, dt, nsteps, dev::Device=CPU(); deform
   dealias!(sol, grid)
   SingleLayerQG.updatevars!(prob)
 
-  q_theory = @. ampl * cos(kwave * (x - ω / kwave * clock.t)) * cos(lwave * y)
+  q_theory = @CUDA.allowscalar @. ampl * cos(kwave * (x - (U[1] + ω / kwave) * clock.t)) * cos(lwave * y)
 
   return isapprox(q_theory, vars.q, rtol=grid.nx * grid.ny * nsteps * 1e-12)
 end
@@ -255,17 +257,26 @@ function test_1layerqg_deterministicforcing_enstrophybudget(dev::Device=CPU(); n
 end
 
 """
-    test_1layerqg_nonlinearadvection(dt, stepper, dev; kwargs...)
+    test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
+                                     add_topography = false,
+                                     add_background_flow = false,
+                                     background_flow_vary_in_y = true)
 
-Tests the advection term in the SingleLayerQG module by timestepping a
+Tests the advection term in the `SingleLayerQG` module by timestepping a
 test problem with timestep dt and timestepper identified by the string stepper.
-The test problem is derived by picking a solution ζf (with associated
-streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
-forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - ν∇²ζf. One solution
-to the vorticity equation forced by this Ff is then ζf. (This solution may not
+The test problem is derived by picking a solution qf (with associated
+streamfunction ψf) for which the advection term J(qf, ζf) is non-zero. Next, a
+forcing Ff is derived according to Ff = ∂qf/∂t + J(ψf, qf) - ν∇²qf. One solution
+to the vorticity equation forced by this Ff is then qf. (This solution may not
 be realized, at least at long times, if it is unstable.)
+
+We can optionally add an imposed mean flow `U(y)` via the kwarg `add_background_flow = true`
+or add topography via kwarg `add_topography = true`.
 """
-function test_1layerqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1, μ=0.0)
+function test_1layerqg_nonlinearadvection(dt, stepper, dev::Device=CPU();
+                                          add_topography = false,
+                                          add_background_flow = false,
+                                          background_flow_vary_in_y = true)
   n, L  = 128, 2π
   ν, nν = 1e-2, 1
    μ = 0.0
@@ -275,13 +286,42 @@ function test_1layerqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, �
   grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
+  if add_topography == true
+    η₀ = 0.4
+  elseif add_topography == false
+    η₀ = 0
+  end
+
+  η(x, y, η₀) = η₀ * cos(10x) * cos(10y)
+  η_array = @. η(x, y, η₀)
+
   ψf = @. sin(2x) * cos(2y) + 2sin(x) * cos(3y)
   qf = @. -8sin(2x) * cos(2y) - 20sin(x) * cos(3y)
 
-  Ff = @. -(
-    ν*( 64sin(2x) * cos(2y) + 200sin(x) * cos(3y) )
-    + 8 * ( cos(x) * cos(3y) * sin(2x) * sin(2y) - 3cos(2x) * cos(2y) * sin(x) * sin(3y) )
-    )
+  # F = J(ψ, q + η) - ν ∇²q + U ∂(q+η)/∂x - v ∂²U/∂y²
+  # where q = ∇²ψ
+  Ff = @. (- ν * ( 64sin(2x) * cos(2y) + 200sin(x) * cos(3y) )
+           - 8 * (cos(x) * cos(3y) * sin(2x) * sin(2y) - 3cos(2x) * cos(2y) * sin(x) * sin(3y))
+           - 20η₀ * (sin(10x) * cos(10y) * (sin(2x) * sin(2y) + 3sin(x) * sin(3y))
+                     + cos(10x) * sin(10y) * (cos(2x) * cos(2y) + cos(x) * cos(3y))))
+
+  U_amplitude = 0.2
+
+  U = 0
+  Uyy = 0
+
+  if add_background_flow == true && background_flow_vary_in_y == false
+    U = U_amplitude
+  elseif add_background_flow == true && background_flow_vary_in_y == true
+    U = @. U_amplitude / cosh(2y)^2
+    U = device_array(dev)(U)
+    Uh = rfft(U)
+    Uyy = irfft(- grid.l.^2 .* Uh, grid.nx)   # ∂²U/∂y²
+  end
+
+  @. Ff += (- U * (16cos(2x) * cos(2y) + 20cos(x) * cos(3y))
+            - Uyy * (2cos(2x) * cos(2y) +  2cos(x) * cos(3y))
+            - η₀ * U * 10sin(10x) * cos(10y))
 
   Ffh = rfft(Ff)
 
@@ -290,14 +330,71 @@ function test_1layerqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, �
     return nothing
   end
 
-  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
+  if add_background_flow == false
+    U₀ = 0
+  elseif add_background_flow == true && background_flow_vary_in_y == true
+    U₀ = U[1, :]
+  elseif add_background_flow == true && background_flow_vary_in_y == false
+    U₀ = U_amplitude
+  end
+
+  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, U = U₀, eta = η_array, ν=ν, nν=nν, μ=μ, dt=dt, stepper=stepper, calcF=calcF!)
 
   SingleLayerQG.set_q!(prob, qf)
 
   stepforward!(prob, round(Int, nt))
 
   SingleLayerQG.updatevars!(prob)
-  
+
+  return isapprox(prob.vars.q, qf, rtol=rtol_singlelayerqg)
+end
+
+"""
+    test_1layerqg_nonlinearadvection_deformation(dt, stepper, dev::Device=CPU();
+                                                 deformation_radius=1.23)
+
+Same as `test_1layerqg_nonlinearadvection` but with finite deformation radius.
+"""
+function test_1layerqg_nonlinearadvection_deformation(dt, stepper, dev::Device=CPU();
+                                                      deformation_radius=1.23)
+  n, L  = 128, 2π
+  ν, nν = 1e-2, 1
+   μ = 0.0
+  tf = 1.0
+  nt = round(Int, tf/dt)
+
+  grid = TwoDGrid(dev; nx=n, Lx=L)
+  k₀, l₀ = 2π / grid.Lx, 2π / grid.Ly # fundamental wavenumbers
+  x, y = gridpoints(grid)
+
+  η₀ = 0.4
+  η(x, y) = η₀ * cos(10x) * cos(10y)
+  ψf = @. sin(2x) * cos(2y) + 2sin(x) * cos(3y)
+  qf = @. - (2^2 + 2^2) * sin(2x) * cos(2y) - (1^2 + 3^2) * 2sin(x) * cos(3y) - 1/deformation_radius^2 * ψf
+
+  # F = J(ψ, q + η) - ν ∇²q
+  # where q = ∇²ψ - ψ/ℓ²
+  Ff = @. (- ν * (64sin(2x) * cos(2y) + 200sin(x) * cos(3y)
+                  + (8sin(2x) * cos(2y) + 20sin(x) * cos(3y)) / deformation_radius^2)
+           - 8 * (cos(x) * cos(3y) * sin(2x) * sin(2y) - 3cos(2x) * cos(2y) * sin(x) * sin(3y))
+           - 20η₀ * (cos(10y) * sin(10x) * (sin(2x) * sin(2y) + 3sin(x) * sin(3y))
+                     + cos(10x) * sin(10y) * (cos(2x) * cos(2y) + cos(x) * cos(3y))))
+
+  Ffh = rfft(Ff)
+
+  function calcF!(Fh, sol, t, clock, vars, params, grid)
+    Fh .= Ffh
+    return nothing
+  end
+
+  prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, eta=η, ν=ν, nν=nν, μ=μ, dt=dt, deformation_radius=deformation_radius, stepper=stepper, calcF=calcF!)
+
+  SingleLayerQG.set_q!(prob, qf)
+
+  stepforward!(prob, round(Int, nt))
+
+  SingleLayerQG.updatevars!(prob)
+
   return isapprox(prob.vars.q, qf, rtol=rtol_singlelayerqg)
 end
 
@@ -309,50 +406,59 @@ Tests the energy and enstrophy function for a SingleLayerQG problem.
 function test_1layerqg_energyenstrophy_BarotropicQG(dev::Device=CPU())
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
-  grid = TwoDGrid(dev; nx, Lx, ny, Ly)
-  k₀, l₀ = 2π/Lx, 2π/Ly # fundamental wavenumbers
+
+  prob = SingleLayerQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
+  grid = prob.grid
+
+  k₀, l₀ = 2π / grid.Lx, 2π / grid.Ly # fundamental wavenumbers
   x, y = gridpoints(grid)
 
   energy_calc = 29/9
   enstrophy_calc = 10885/648
 
-  η  = @. cos(10k₀ * x) * cos(10l₀ * y)
+  η(x, y) = cos(10k₀ * x) * cos(10l₀ * y)
   ψ₀ = @. sin(2k₀ * x) * cos(2l₀ * y) + 2sin(k₀ * x) * cos(3l₀ * y)
   q₀ = @. - ((2k₀)^2 + (2l₀)^2) * sin(2k₀ * x) * cos(2l₀ * y) - (k₀^2 + (3l₀)^2) * 2sin(k₀ * x) * cos(3l₀*y)
 
   prob = SingleLayerQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta=η, stepper="ForwardEuler")
   sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+
   SingleLayerQG.set_q!(prob, q₀)
   SingleLayerQG.updatevars!(prob)
 
   energyq₀ = SingleLayerQG.energy(prob)
   enstrophyq₀ = SingleLayerQG.enstrophy(prob)
 
-  return isapprox(energyq₀, energy_calc, rtol=rtol_singlelayerqg) && isapprox(enstrophyq₀, enstrophy_calc, rtol=rtol_singlelayerqg) && SingleLayerQG.potential_energy(prob)==0 &&
-  SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid) == nothing
+  return (isapprox(energyq₀, energy_calc, rtol=rtol_singlelayerqg) &&
+          isapprox(enstrophyq₀, enstrophy_calc, rtol=rtol_singlelayerqg) &&
+          SingleLayerQG.potential_energy(prob)==0 &&
+          SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid) === nothing)
 end
 
 """
-    test_1layerqg_energies_EquivalentBarotropicQG(dev)
+    test_1layerqg_energies_EquivalentBarotropicQG(dev; deformation_radius=1.23)
 
 Tests the kinetic and potential energy for an equivalent barotropic SingleLayerQG problem.
 """
 function test_1layerqg_energies_EquivalentBarotropicQG(dev; deformation_radius=1.23)
   nx, Lx  = 64, 2π
   ny, Ly  = 64, 3π
-  grid = TwoDGrid(dev; nx, Lx, ny, Ly)
-  k₀, l₀ = 2π/Lx, 2π/Ly # fundamental wavenumbers
+
+  prob = SingleLayerQG.Problem(dev; nx, Lx, ny, Ly, deformation_radius, stepper="ForwardEuler")
+  grid = prob.grid
+
+  k₀, l₀ = 2π / grid.Lx, 2π / grid.Ly # fundamental wavenumbers
   x, y = gridpoints(grid)
 
   kinetic_energy_calc = 29/9
   potential_energy_calc = 5/(8*deformation_radius^2)
   energy_calc = kinetic_energy_calc + potential_energy_calc
-  
-  η  = @. cos(10k₀ * x) * cos(10l₀ * y)
+
+  η(x, y) = cos(10k₀ * x) * cos(10l₀ * y)
   ψ₀ = @. sin(2k₀ * x) * cos(2l₀ * y) + 2sin(k₀ * x) * cos(3l₀ * y)
   q₀ = @. - ((2k₀)^2 + (2l₀)^2) * sin(2k₀ * x) * cos(2l₀ * y) - (k₀^2 + (3l₀)^2) * 2sin(k₀ * x) * cos(3l₀*y) - 1/deformation_radius^2 * ψ₀
 
-  prob = SingleLayerQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta=η, deformation_radius=deformation_radius, stepper="ForwardEuler")
+  prob = SingleLayerQG.Problem(dev; nx, Lx, ny, Ly, eta=η, deformation_radius, stepper="ForwardEuler")
   sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
   SingleLayerQG.set_q!(prob, q₀)
   SingleLayerQG.updatevars!(prob)
@@ -361,21 +467,24 @@ function test_1layerqg_energies_EquivalentBarotropicQG(dev; deformation_radius=1
   potential_energyq₀ = SingleLayerQG.potential_energy(prob)
   energyq₀ = SingleLayerQG.energy(prob)
 
-  return isapprox(kinetic_energyq₀, kinetic_energy_calc, rtol=rtol_singlelayerqg) && isapprox(potential_energyq₀, potential_energy_calc, rtol=rtol_singlelayerqg) && isapprox(energyq₀, energy_calc, rtol=rtol_singlelayerqg) &&
-  SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid) == nothing
+  return (isapprox(kinetic_energyq₀, kinetic_energy_calc, rtol=rtol_singlelayerqg) &&
+          isapprox(potential_energyq₀, potential_energy_calc, rtol=rtol_singlelayerqg) &&
+          isapprox(energyq₀, energy_calc, rtol=rtol_singlelayerqg) &&
+          SingleLayerQG.addforcing!(prob.timestepper.N, sol, clock.t, clock, vars, params, grid) === nothing)
 end
 
 """
-    test_1layerqg_problemtype(dev, T; deformation_radius=Inf)
+    test_1layerqg_problemtype(dev, T; deformation_radius=Inf, U=0)
 
-Tests the SingleLayerQG problem constructor for different DataType `T`.
+Test the SingleLayerQG problem constructor for different DataType `T`.
 """
-function test_1layerqg_problemtype(dev, T; deformation_radius=Inf)
-  prob = SingleLayerQG.Problem(dev; T=T, deformation_radius=deformation_radius)
+function test_1layerqg_problemtype(dev, T; deformation_radius=Inf, U=0)
+  prob = SingleLayerQG.Problem(dev; T, deformation_radius, U)
 
   A = device_array(dev)
-  
-  return (typeof(prob.sol)<:A{Complex{T}, 2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T, 2})
+
+  return (typeof(prob.sol)<:A{Complex{T}, 2} && typeof(prob.grid.Lx)==T &&
+          eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T, 2} && typeof(prob.params.U)==T)
 end
 
 function test_streamfunctionfrompv(dev; deformation_radius=1.23)
@@ -395,7 +504,6 @@ function test_streamfunctionfrompv(dev; deformation_radius=1.23)
   SingleLayerQG.set_q!(prob_equivalentbarotropicQG, q_equivalentbarotropic)
   
   SingleLayerQG.streamfunctionfrompv!(prob_barotropicQG.vars.ψh, prob_barotropicQG.vars.qh, prob_barotropicQG.params, prob_barotropicQG.grid)
-  
   SingleLayerQG.streamfunctionfrompv!(prob_equivalentbarotropicQG.vars.ψh, prob_equivalentbarotropicQG.vars.qh, prob_equivalentbarotropicQG.params, prob_equivalentbarotropicQG.grid)
   
   return (prob_barotropicQG.vars.ψ ≈ ψ && prob_equivalentbarotropicQG.vars.ψ ≈ ψ)
