@@ -113,17 +113,6 @@ function Problem(nlayers::Int,                             # number of fluid lay
              aliased_fraction = 1/3,
                             T = Float64)
 
-  # if dev == GPU() && nlayers > 2
-  #   @warn """MultiLayerQG module is not optimized on the GPU yet for configurations with
-  #   3 fluid layers or more!
-
-  #   See issues on Github at https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112
-  #   and https://github.com/FourierFlows/GeophysicalFlows.jl/issues/267.
-
-  #   To use MultiLayerQG with 3 fluid layers or more we suggest, for now, to restrict running
-  #   on CPU."""
-  # end
-
   if nlayers == 1
     @warn """MultiLayerQG module does work for single-layer configuration but may not be as 
     optimized. We suggest using SingleLayerQG module for single-layer QG simulation unless
@@ -536,20 +525,20 @@ Compute the inverse Fourier transform of `varh` and store it in `var`.
 invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, varh)
 
 """
-    @kernel function pvfromstreamfunction_kernel!(qh, ψh, S, nlayers)
+    @kernel function PVinversion_kernel!(a, b, M, nlayers)
 
-Kernel for GPU acceleration of PV from streamfunction calculation, i.e., obtaining the Fourier
-transform of the PV from the streamfunction `ψh` in each layer using `qh = params.S * ψh`.
+Kernel for the PV/stream function inversion step,
+i.e., `qh = params.S * ψh` or `ψh = params.S⁻¹ qh`.
 """
-@kernel function pvfromstreamfunction_kernel!(qh, ψh, S, nlayers)
+@kernel function PVinversion_kernel!(a, b, M, ::Val{nlayers})
   i, j = @index(Global, NTuple)
 
   @unroll for k = 1:nlayers
 
-      @inbounds qh[i, j, k] = 0
+      @inbounds a[i, j, k] = 0
 
       @unroll for m = 1:nlayers
-          @inbounds qh[i, j, k] += S[i, j][k, m] * ψh[i, j, m]
+          @inbounds a[i, j, k] += M[i, j][k, m] * b[i, j, m]
       end
   
   end
@@ -559,7 +548,7 @@ end
     pvfromstreamfunction!(qh, ψh, params, grid)
 
 Obtain the Fourier transform of the PV from the streamfunction `ψh` in each layer using
-`qh = params.S * ψh`. We use a work layout over which the above-defined kernel is launched.
+`qh = params.S * ψh`. We use a work layout over which the PV inversion kernel is launched.
 """
 function pvfromstreamfunction!(qh, ψh, params, grid)
   # Larger workgroups are generally more efficient. For more generality, we could put an 
@@ -571,13 +560,13 @@ function pvfromstreamfunction!(qh, ψh, params, grid)
 
   # Instantiates the kernel for relevant backend device
   backend = KernelAbstractions.get_backend(qh)
-  kernel! = pvfromstreamfunction_kernel!(backend, workgroup, worksize)
+  kernel! = PVinversion_kernel!(backend, workgroup, worksize)
 
   # Launch the kernel
   S, nlayers = params.S, params.nlayers
-  kernel!(qh, ψh, S, nlayers)
+  kernel!(qh, ψh, S, Val(nlayers))
 
-  # This will ensure that no other operations occur until the kernel has finished
+  # Ensure that no other operations occur until the kernel has finished
   KernelAbstractions.synchronize(backend)
 
   return nothing
@@ -624,30 +613,10 @@ function pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
 end
 
 """
-    @kernel function streamfunctionfrompv_kernel!(ψh, qh, S⁻¹, nlayers)
-
-Kernel for GPU acceleration of streamfunction from PV calculation, i.e., invert the PV to obtain
-the Fourier transform of the streamfunction `ψh` in each layer from `qh` using `ψh = params.S⁻¹ qh`.
-"""
-@kernel function streamfunctionfrompv_kernel!(ψh, qh, S⁻¹, nlayers)
-    i, j = @index(Global, NTuple)
-
-    @unroll for k = 1:nlayers
-
-        @inbounds ψh[i, j, k] = 0
-
-        @unroll for m = 1:nlayers
-            @inbounds ψh[i, j, k] += S⁻¹[i, j][k, m] * qh[i, j, m]
-        end
-    
-    end
-end
-
-"""
     streamfunctionfrompv!(ψh, qh, params, grid)
 
 Invert the PV to obtain the Fourier transform of the streamfunction `ψh` in each layer from
-`qh` using `ψh = params.S⁻¹ qh`. We use a work layout over which the above-defined kernel is launched.
+`qh` using `ψh = params.S⁻¹ qh`. We use a work layout over which the PV inversion kernel is launched.
 """
 function streamfunctionfrompv!(ψh, qh, params, grid)
 # Larger workgroups are generally more efficient. For more generality, we could put an 
@@ -659,13 +628,13 @@ function streamfunctionfrompv!(ψh, qh, params, grid)
 
   # Instantiates the kernel for relevant backend device
   backend = KernelAbstractions.get_backend(ψh)
-  kernel! = streamfunctionfrompv_kernel!(backend, workgroup, worksize)
+  kernel! = PVinversion_kernel!(backend, workgroup, worksize)
 
   # Launch the kernel
   S⁻¹, nlayers = params.S⁻¹, params.nlayers
-  kernel!(ψh, qh, S⁻¹, nlayers)
+  kernel!(ψh, qh, S⁻¹, Val(nlayers))
 
-  # This will ensure that no other operations occur until the kernel has finished
+  # Ensure that no other operations occur until the kernel has finished
   KernelAbstractions.synchronize(backend)
 
   return nothing
