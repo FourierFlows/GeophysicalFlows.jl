@@ -530,7 +530,7 @@ invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, v
 Kernel for the PV/stream function inversion step,
 i.e., `qh = params.S * ψh` or `ψh = params.S⁻¹ qh`.
 """
-@kernel function PVinversion_kernel!(a, b, M, ::Val{nlayers})
+@kernel function PVinversion_kernel!(a, b, M, ::Val{nlayers}) where nlayers
   i, j = @index(Global, NTuple)
 
   @unroll for k = 1:nlayers
