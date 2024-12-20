@@ -525,22 +525,24 @@ Compute the inverse Fourier transform of `varh` and store it in `var`.
 invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, varh)
 
 """
-    @kernel function PVinversion_kernel!(a, b, M, nlayers)
+    @kernel function PVinversion_kernel!(a, b, M, ::Val{N}) where N
 
-Kernel for the PV/stream function inversion step,
-i.e., `qh = params.S * ψh` or `ψh = params.S⁻¹ qh`.
+Kernel for the PV/stream function inversion step, i.e., `qh = params.S * ψh` or `ψh = params.S⁻¹ qh`.
+StaticVectors are used to efficiently perform the matrix-vector multiplication.
 """
-@kernel function PVinversion_kernel!(a, b, M, ::Val{nlayers}) where nlayers
+@kernel function PVinversion_kernel!(a, b, M, ::Val{N}) where N
   i, j = @index(Global, NTuple)
 
-  @unroll for k = 1:nlayers
+  b_tuple = ntuple(Val(N)) do n
+      @inbounds b[i, j, n]
+  end
 
-      @inbounds a[i, j, k] = 0
+  T = eltype(a) 
+  b_sv = SVector{N, T}(b_tuple)
+  a_sv = @inbounds M[i, j] * b_sv
 
-      @unroll for m = 1:nlayers
-          @inbounds a[i, j, k] += M[i, j][k, m] * b[i, j, m]
-      end
-  
+  ntuple(Val(N)) do n
+      @inbounds a[i, j, n] = a_sv[n]
   end
 end
 
