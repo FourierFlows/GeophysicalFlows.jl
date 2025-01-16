@@ -84,6 +84,7 @@ GeophysicalFlows.MultiLayerQG.calcNlinear!
 GeophysicalFlows.MultiLayerQG.calcN_advection!
 GeophysicalFlows.MultiLayerQG.calcN_linearadvection!
 GeophysicalFlows.MultiLayerQG.addforcing!
+GeophysicalFlows.MultiLayerQG.PVinversion_kernel!
 ```
 
 
