@@ -28,6 +28,7 @@ nothingfunction(args...) = nothing
                      Lx = 2π,
                      ny = nx,
                      Ly = Lx,
+		      H = Inf,
                       ν = 0,
                      nν = 1,
                      dt = 0.01,
@@ -49,6 +50,7 @@ Keyword arguments
   - `ny`: Number of grid points in ``y``-domain.
   - `Lx`: Extent of the ``x``-domain.
   - `Ly`: Extent of the ``y``-domain.
+  - `H`: Layer depth, set Inf for standard SQG.
   - `ν`: Small-scale (hyper)-viscosity coefficient.
   - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
   - `dt`: Time-step.
@@ -64,6 +66,7 @@ function Problem(dev::Device=CPU();
                 ny = nx,
                 Lx = 2π,
                 Ly = Lx,
+		 H = Inf,
   # Hyper-viscosity parameters
                  ν = 0,
                 nν = 1,
@@ -78,7 +81,9 @@ function Problem(dev::Device=CPU();
 
   grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
 
-  params = Params{T}(ν, nν, calcF)
+  DirNeu = H == Inf ? nothing : @. sqrt(grid.invKrsq) * coth(H / sqrt(grid.invKrsq))
+
+  params = Params{T, Array{T}}(H, ν, nν, calcF, DirNeu)
 
   vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
@@ -93,22 +98,26 @@ end
 # ----------
 
 """
-    Params{T}(ν, nν, calcF!)
+    Params{T, A}(H, ν, nν, calcF!, DirNeu)
 
 A struct containing the parameters for Surface QG dynamics. Included are:
 
 $(TYPEDFIELDS)
 """
-struct Params{T} <: AbstractParams
+struct Params{T, A} <: AbstractParams
+    "layer depth"
+       H :: T
     "buoyancy (hyper)-viscosity coefficient"
        ν :: T
     "buoyancy (hyper)-viscosity order"
       nν :: Int
     "function that calculates the Fourier transform of the forcing, ``F̂``"
   calcF! :: Function
+    "array containing dirichlet-to-neumann operator for buoyancy-streamfunction relation"
+  DirNeu :: Union{A, Nothing}
 end
 
-Params(ν, nν) = Params(ν, nν, nothingfunction)
+Params(ν, nν) = Params(Inf, ν, nν, nothingfunction, nothing)
 
 
 # ---------
@@ -235,8 +244,14 @@ N = - \\widehat{𝖩(ψ, b)} = - i k_x \\widehat{u b} - i k_y \\widehat{v b} .
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.bh = sol
-  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
-  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
+
+  if params.DirNeu isa Nothing
+    @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
+    @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
+  else
+    @. vars.uh =   im * grid.l  * params.DirNeu * sol
+    @. vars.vh = - im * grid.kr * params.DirNeu * sol
+  end
 
   ldiv!(vars.u, grid.rfftplan, vars.uh)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
@@ -312,13 +327,19 @@ end
 Update variables in `vars` with solution in `sol`.
 """
 function updatevars!(prob)
-  vars, grid, sol = prob.vars, prob.grid, prob.sol
+  vars, grid, sol, params = prob.vars, prob.grid, prob.sol, prob.params
   
   dealias!(sol, grid)
   
   @. vars.bh = sol
-  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
-  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
+
+  if params.DirNeu isa Nothing
+    @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
+    @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
+  else
+    @. vars.uh =   im * grid.l  * params.DirNeu * sol
+    @. vars.vh = - im * grid.kr * params.DirNeu * sol
+  end
   
   ldiv!(vars.b, grid.rfftplan, deepcopy(vars.bh))
   ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh))
@@ -351,12 +372,17 @@ Return the domain-averaged surface kinetic energy. Since ``u² + v² = |{\\bf �
 In SQG, this is identical to half the domain-averaged surface buoyancy variance.
 """
 @inline function kinetic_energy(prob)
-  sol, vars, grid = prob.sol, prob.vars, prob.grid
+  sol, vars, grid, params = prob.sol, prob.vars, prob.grid, prob.params
 
   ψh = vars.uh                     # use vars.uh as scratch variable
   kinetic_energyh = vars.bh        # use vars.bh as scratch variable
   
-  @. ψh = sqrt(grid.invKrsq) * sol
+  if params.DirNeu isa Nothing
+    @. ψh = sqrt(grid.invKrsq) * sol
+  else
+    @. ψh = params.DirNeu * sol
+  end
+
   @. kinetic_energyh = 1 / 2 * grid.Krsq * abs2(ψh)
   
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(kinetic_energyh, grid)
