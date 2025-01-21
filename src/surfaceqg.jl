@@ -83,7 +83,7 @@ function Problem(dev::Device=CPU();
 
   DirNeu = H == Inf ? nothing : @. sqrt(grid.invKrsq) * coth(H / sqrt(grid.invKrsq))
 
-  params = Params{T, Array{T}}(H, ν, nν, calcF, DirNeu)
+  params = Params{T}(H, ν, nν, calcF, DirNeu)
 
   vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
@@ -98,13 +98,13 @@ end
 # ----------
 
 """
-    Params{T, A}(H, ν, nν, calcF!, DirNeu)
+    Params{T}(H, ν, nν, calcF!, DirNeu)
 
 A struct containing the parameters for Surface QG dynamics. Included are:
 
 $(TYPEDFIELDS)
 """
-struct Params{T, A} <: AbstractParams
+struct Params{T} <: AbstractParams
     "layer depth"
        H :: T
     "buoyancy (hyper)-viscosity coefficient"
@@ -114,7 +114,7 @@ struct Params{T, A} <: AbstractParams
     "function that calculates the Fourier transform of the forcing, ``F̂``"
   calcF! :: Function
     "array containing dirichlet-to-neumann operator for buoyancy-streamfunction relation"
-  DirNeu :: Union{A, Nothing}
+  DirNeu :: Union{AbstractArray, Nothing}
 end
 
 Params(ν, nν) = Params(Inf, ν, nν, nothingfunction, nothing)
