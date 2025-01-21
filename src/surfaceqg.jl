@@ -4,6 +4,7 @@ export
   Problem,
   set_b!,
   updatevars!,
+  streamfunctionfromb!,
 
   kinetic_energy,
   buoyancy_variance,
@@ -359,6 +360,24 @@ function set_b!(prob, b)
   
   updatevars!(prob)
   
+  return nothing
+end
+
+"""
+    streamfunctionfromb!(ψ, bh, params, grid)
+
+calculate the streamfunction `ψ` from the buoyancy `bh` in Fourier space.
+"""
+function streamfunctionfromb!(ψ, bh, params::Params, grid)
+
+  if params.DirNeu isa Nothing
+    ψh = @. bh * sqrt(grid.invKrsq)
+  else
+    ψh = @. bh * params.DirNeu
+  end
+
+  ldiv!(ψ, grid.rfftplan, deepcopy(ψh))
+
   return nothing
 end
 
