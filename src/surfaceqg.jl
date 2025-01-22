@@ -84,8 +84,7 @@ function Problem(dev::Device=CPU();
 
   DirNeu = H == Inf ? nothing : @. sqrt(grid.invKrsq) * coth(H / sqrt(grid.invKrsq))
 
-  params = H == Inf ? InfiniteDepthSQGParams(H, T(ν), nν, calcF, nothing) :
-                        FiniteDepthSQGParams(T(H), T(ν), nν, calcF, DirNeu)
+  params = Params(grid, T(H), T(ν), nν, calcF, DirNeu)
     
   vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
@@ -102,13 +101,13 @@ end
 abstract type SurfaceQGParams <: AbstractParams end
 
 """
-    struct Params{T, A}(H, ν, nν, calcF!, DirNeu) <: SurfaceQGParams
+    struct Params{T, Atrans}(H, ν, nν, calcF!, DirNeu) <: SurfaceQGParams
 
 A struct containing the parameters for Surface QG dynamics. Included are:
 
 $(TYPEDFIELDS)
 """
-struct Params{T, A} <: SurfaceQGParams
+struct Params{T, Atrans} <: SurfaceQGParams
     "layer depth"
        H :: T
     "buoyancy (hyper)-viscosity coefficient"
@@ -118,14 +117,22 @@ struct Params{T, A} <: SurfaceQGParams
     "function that calculates the Fourier transform of the forcing, ``F̂``"
   calcF! :: Function
     "array containing Dirichlet-to-Neumann operator for buoyancy-streamfunction relation"
-  DirNeu :: A
+  DirNeu :: Atrans
 end
 
 const FiniteDepthSQGParams   = Params{<:AbstractFloat, <:AbstractArray}
 const InfiniteDepthSQGParams = Params{<:AbstractFloat, <:Nothing}
 
-Params(ν, nν) = InfiniteDepthSQGParams(Inf, ν, nν, nothingfunction, nothing)
+Params(ν, nν) = Params(Inf, ν, nν, nothingfunction, nothing)
 
+#"""
+#    FiniteDepthSQGParams(grid, H, ν, nν, calcF, DirNeu)
+#
+#Return the parameters for a finite depth SQG problem.
+#"""
+#function FiniteDepthSQGParams(grid::AbstractGrid{T, A}, H, ν, nν::Int, calcF, DirNeu) where {T, A}
+#  return Params(H, ν, nν::Int, calcF, DirNeu)
+#end
 
 # ---------
 # Equations
