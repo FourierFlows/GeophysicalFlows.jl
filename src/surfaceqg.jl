@@ -84,8 +84,9 @@ function Problem(dev::Device=CPU();
 
   DirNeu = H == Inf ? nothing : @. sqrt(grid.invKrsq) * coth(H / sqrt(grid.invKrsq))
 
-  params = Params{T}(H, ν, nν, calcF, DirNeu)
-
+  params = H == Inf ? InfiniteDepthSQGParams(H, T(ν), nν, calcF, nothing) :
+                        FiniteDepthSQGParams(T(H), T(ν), nν, calcF, DirNeu)
+    
   vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
   equation = Equation(params, grid)
@@ -98,14 +99,16 @@ end
 # Parameters
 # ----------
 
+abstract type SurfaceQGParams <: AbstractParams end
+
 """
-    Params{T}(H, ν, nν, calcF!, DirNeu)
+    struct Params{T, A}(H, ν, nν, calcF!, DirNeu) <: SurfaceQGParams
 
 A struct containing the parameters for Surface QG dynamics. Included are:
 
 $(TYPEDFIELDS)
 """
-struct Params{T} <: AbstractParams
+struct Params{T, A} <: SurfaceQGParams
     "layer depth"
        H :: T
     "buoyancy (hyper)-viscosity coefficient"
@@ -114,11 +117,14 @@ struct Params{T} <: AbstractParams
       nν :: Int
     "function that calculates the Fourier transform of the forcing, ``F̂``"
   calcF! :: Function
-    "array containing dirichlet-to-neumann operator for buoyancy-streamfunction relation"
-  DirNeu :: Union{AbstractArray, Nothing}
+    "array containing Dirichlet-to-Neumann operator for buoyancy-streamfunction relation"
+  DirNeu :: A
 end
 
-Params(ν, nν) = Params(Inf, ν, nν, nothingfunction, nothing)
+const FiniteDepthSQGParams   = Params{<:AbstractFloat, <:AbstractArray}
+const InfiniteDepthSQGParams = Params{<:AbstractFloat, <:Nothing}
+
+Params(ν, nν) = InfiniteDepthSQGParams(Inf, ν, nν, nothingfunction, nothing)
 
 
 # ---------
@@ -139,7 +145,7 @@ Plain old viscocity corresponds to ``n_ν=1``.
 
 The nonlinear term is computed via function `calcN!()`.
 """
-function Equation(params::Params, grid::AbstractGrid)
+function Equation(params::SurfaceQGParams, grid::AbstractGrid)
   L = @. - params.ν * grid.Krsq^params.nν
   CUDA.@allowscalar L[1, 1] = 0
   
@@ -234,7 +240,8 @@ end
 # -------
 
 """
-    calcN_advection!(N, sol, t, clock, vars, params, grid)
+    calcN_advection!(N, sol, t, clock, vars, params::FiniteDepthSQGParams, grid)
+    calcN_advection!(N, sol, t, clock, vars, params::InfiniteDepthSQGParams, grid)
 
 Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, b)`` in conservative 
 form, i.e., ``- ∂_x[(∂_y ψ)b] - ∂_y[(∂_x ψ)b]`` and store it in `N`:
@@ -243,16 +250,33 @@ form, i.e., ``- ∂_x[(∂_y ψ)b] - ∂_y[(∂_x ψ)b]`` and store it in `N`:
 N = - \\widehat{𝖩(ψ, b)} = - i k_x \\widehat{u b} - i k_y \\widehat{v b} .
 ```
 """
-function calcN_advection!(N, sol, t, clock, vars, params, grid)
+function calcN_advection!(N, sol, t, clock, vars, params::FiniteDepthSQGParams, grid)
   @. vars.bh = sol
+  @. vars.uh =   im * grid.l  * params.DirNeu * sol
+  @. vars.vh = - im * grid.kr * params.DirNeu * sol
 
-  if params.DirNeu isa Nothing
-    @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
-    @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
-  else
-    @. vars.uh =   im * grid.l  * params.DirNeu * sol
-    @. vars.vh = - im * grid.kr * params.DirNeu * sol
-  end
+  ldiv!(vars.u, grid.rfftplan, vars.uh)
+  ldiv!(vars.v, grid.rfftplan, vars.vh)
+  ldiv!(vars.b, grid.rfftplan, vars.bh)
+  
+  ub, ubh = vars.u, vars.uh         # use vars.u, vars.uh as scratch variables
+  vb, vbh = vars.v, vars.vh         # use vars.v, vars.vh as scratch variables
+  
+  @. ub *= vars.b                   # u*b
+  @. vb *= vars.b                   # v*b
+
+  mul!(ubh, grid.rfftplan, ub)      # \hat{u*b}
+  mul!(vbh, grid.rfftplan, vb)      # \hat{v*b}
+
+  @. N = - im * grid.kr * ubh - im * grid.l * vbh
+  
+  return nothing
+end
+
+function calcN_advection!(N, sol, t, clock, vars, params::InfiniteDepthSQGParams, grid)
+  @. vars.bh = sol
+  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
+  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
 
   ldiv!(vars.u, grid.rfftplan, vars.uh)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
@@ -323,24 +347,32 @@ end
 # ----------------
 
 """
+    updatevars!(sol, vars, params::FiniteDepthSQGParams, grid)
+    updatevars!(sol, vars, params::InfiniteDepthSQGParams, grid)
     updatevars!(prob)
 
 Update variables in `vars` with solution in `sol`.
 """
-function updatevars!(prob)
-  vars, grid, sol, params = prob.vars, prob.grid, prob.sol, prob.params
-  
+function updatevars!(sol, vars, params::FiniteDepthSQGParams, grid)
   dealias!(sol, grid)
   
   @. vars.bh = sol
+  @. vars.uh =   im * grid.l  * params.DirNeu * sol
+  @. vars.vh = - im * grid.kr * params.DirNeu * sol
+    
+  ldiv!(vars.b, grid.rfftplan, deepcopy(vars.bh))
+  ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh))
+  ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh))
+  
+  return nothing
+end
 
-  if params.DirNeu isa Nothing
-    @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
-    @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
-  else
-    @. vars.uh =   im * grid.l  * params.DirNeu * sol
-    @. vars.vh = - im * grid.kr * params.DirNeu * sol
-  end
+function updatevars!(sol, vars, params::InfiniteDepthSQGParams, grid)
+  dealias!(sol, grid)
+  
+  @. vars.bh = sol
+  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
+  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
   
   ldiv!(vars.b, grid.rfftplan, deepcopy(vars.bh))
   ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh))
@@ -348,6 +380,9 @@ function updatevars!(prob)
   
   return nothing
 end
+
+updatevars!(prob) = updatevars!(prob.sol, prob.vars, prob.params, prob.grid)
+
 
 """
     set_b!(prob, b)
@@ -364,44 +399,53 @@ function set_b!(prob, b)
 end
 
 """
-    streamfunctionfromb!(ψ, bh, params, grid)
+    streamfunctionfromb!(ψ, bh, params::FiniteDepthSQGParams, grid)
+    streamfunctionfromb!(ψ, bh, params::InfiniteDepthSQGParams, grid)
+    streamfunctionfromb!(ψ, prob)
 
-calculate the streamfunction `ψ` from the buoyancy `bh` in Fourier space.
+calculate the streamfunction `ψ` from the buoyancy `bh` in Fourier space, note: `bh = prob.sol`.
 """
-function streamfunctionfromb!(ψ, bh, params::Params, grid)
-
-  if params.DirNeu isa Nothing
-    ψh = @. bh * sqrt(grid.invKrsq)
-  else
-    ψh = @. bh * params.DirNeu
-  end
-
-  ldiv!(ψ, grid.rfftplan, deepcopy(ψh))
-
+function streamfunctionfromb!(ψ, bh, params::FiniteDepthSQGParams, grid)
+  ldiv!(ψ, grid.rfftplan, @. bh * params.DirNeu)
   return nothing
 end
 
+function streamfunctionfromb!(ψ, bh, params::InfiniteDepthSQGParams, grid)
+  ldiv!(ψ, grid.rfftplan, @. bh * sqrt(grid.invKrsq))
+  return nothing
+end
+
+streamfunctionfromb!(ψ, prob) = streamfunctionfromb!(ψ, prob.sol, prob.params, prob.grid)
+
 """
     kinetic_energy(prob)
+    kinetic_energy(sol, vars, params::FiniteDepthSQGParams, grid)
+    kinetic_energy(sol, vars, params::InfiniteDepthSQGParams, grid)
 
 Return the domain-averaged surface kinetic energy. Since ``u² + v² = |{\\bf ∇} ψ|²``, we get
 ```math
 \\int \\frac1{2} |{\\bf ∇} ψ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ψ̂|² .
 ```
-In SQG, this is identical to half the domain-averaged surface buoyancy variance.
+In SQG with infinite depth, this is identical to half the domain-averaged surface buoyancy variance.
 """
-@inline function kinetic_energy(prob)
-  sol, vars, grid, params = prob.sol, prob.vars, prob.grid, prob.params
 
+@inline kinetic_energy(prob) = kinetic_energy(prob.sol, prob.vars, prob.params, prob.grid)
+
+@inline function kinetic_energy(sol, vars, params::FiniteDepthSQGParams, grid)
   ψh = vars.uh                     # use vars.uh as scratch variable
   kinetic_energyh = vars.bh        # use vars.bh as scratch variable
   
-  if params.DirNeu isa Nothing
-    @. ψh = sqrt(grid.invKrsq) * sol
-  else
-    @. ψh = params.DirNeu * sol
-  end
+  @. ψh = params.DirNeu * sol
+  @. kinetic_energyh = 1 / 2 * grid.Krsq * abs2(ψh)
+  
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(kinetic_energyh, grid)
+end
 
+@inline function kinetic_energy(sol, vars, params::InfiniteDepthSQGParams, grid)
+  ψh = vars.uh                     # use vars.uh as scratch variable
+  kinetic_energyh = vars.bh        # use vars.bh as scratch variable
+  
+  @. ψh = sqrt(grid.invKrsq) * sol
   @. kinetic_energyh = 1 / 2 * grid.Krsq * abs2(ψh)
   
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(kinetic_energyh, grid)
@@ -415,7 +459,7 @@ Return the buoyancy variance,
 \\int b² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} |b̂|² .
 ```
 In SQG, this is identical to the velocity variance (i.e., twice the domain-averaged kinetic 
-energy).
+energy in the infinite depth case).
 """
 @inline function buoyancy_variance(prob)
   sol, grid = prob.sol, prob.grid
