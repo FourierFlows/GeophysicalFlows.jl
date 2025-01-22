@@ -84,7 +84,7 @@ function Problem(dev::Device=CPU();
 
   DirNeu = H == Inf ? nothing : @. sqrt(grid.invKrsq) * coth(H / sqrt(grid.invKrsq))
 
-  params = Params(grid, T(H), T(ν), nν, calcF, DirNeu)
+  params = Params(T(H), T(ν), nν, calcF, DirNeu)
     
   vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
@@ -125,14 +125,6 @@ const InfiniteDepthSQGParams = Params{<:AbstractFloat, <:Nothing}
 
 Params(ν, nν) = Params(Inf, ν, nν, nothingfunction, nothing)
 
-#"""
-#    FiniteDepthSQGParams(grid, H, ν, nν, calcF, DirNeu)
-#
-#Return the parameters for a finite depth SQG problem.
-#"""
-#function FiniteDepthSQGParams(grid::AbstractGrid{T, A}, H, ν, nν::Int, calcF, DirNeu) where {T, A}
-#  return Params(H, ν, nν::Int, calcF, DirNeu)
-#end
 
 # ---------
 # Equations
