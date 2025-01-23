@@ -93,6 +93,7 @@ GeophysicalFlows.MultiLayerQG.addforcing!
 
 ```@docs
 GeophysicalFlows.SurfaceQG.Problem
+GeophysicalFlows.streamfunctionfromb!
 GeophysicalFlows.SurfaceQG.buoyancy_dissipation
 GeophysicalFlows.SurfaceQG.buoyancy_work
 ```
