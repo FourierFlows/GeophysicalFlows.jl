@@ -415,6 +415,29 @@ energy in the infinite-depth case).
 end
 
 """
+    total_energy(prob)
+    total_energy(sol, vars, params, grid)
+
+Return the total energy per unit of surface area. Since ``u² + v² + b² = |{\\bf ∇}_3 ψ|²``, we get
+```math
+\\int \\frac1{2} |{\\bf ∇}_3 ψ|² \\frac{𝖽x 𝖽y dz}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤| |ψ̂|² .
+```
+In SQG with infinite depth, this is identical to half the domain-averaged surface buoyancy variance.
+
+PRELIMINARY, NOT TESTED OR CONFIRMED TO BE MATHEMATICALLY CORRECT
+"""
+
+@inline function total_energy(sol, vars, params, grid)
+  total_energyh = vars.bh          # use vars.bh as scratch variable
+
+  @. total_energyh = 1 / 2 * params.ψhfrombh * abs2(sol)
+
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(total_energyh, grid)
+end
+
+@inline total_energy(prob) = total_energy(prob.sol, prob.vars, prob.params, prob.grid)
+
+"""
     buoyancy_dissipation(prob)
 
 Return the domain-averaged dissipation rate of surface buoyancy variance due
