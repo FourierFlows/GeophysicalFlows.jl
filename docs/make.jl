@@ -128,6 +128,7 @@ end
 
 deploydocs(       repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
               versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"],
+         deploy_config = Documenter.GitHubActions(),
           push_preview = true,
              forcepush = true,
              devbranch = "main"
