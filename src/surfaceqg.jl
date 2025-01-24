@@ -99,7 +99,7 @@ end
 abstract type SurfaceQGParams <: AbstractParams end
 
 """
-    struct Params{T, Atrans} <: SurfaceQGParams
+    Params{T, Atrans <: AbstractArray} <: SurfaceQGParams
 
 A struct containing the parameters for Surface QG dynamics. Included are:
 
