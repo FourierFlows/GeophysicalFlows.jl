@@ -379,18 +379,17 @@ Return the domain-averaged surface kinetic energy. Since ``u² + v² = |{\\bf �
 ```
 In SQG with infinite depth, this is identical to half the domain-averaged surface buoyancy variance.
 """
-
-@inline kinetic_energy(prob) = kinetic_energy(prob.sol, prob.vars, prob.params, prob.grid)
-
-@inline function kinetic_energy(sol, vars, params::FiniteDepthSQGParams, grid)
+@inline function kinetic_energy(sol, vars, params, grid)
   ψh = vars.uh                     # use vars.uh as scratch variable
   kinetic_energyh = vars.bh        # use vars.bh as scratch variable
-  
+
   @. ψh = params.ψhfrombh * sol
   @. kinetic_energyh = 1 / 2 * grid.Krsq * abs2(ψh)
-  
+
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(kinetic_energyh, grid)
 end
+
+@inline kinetic_energy(prob) = kinetic_energy(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
     buoyancy_variance(prob)
