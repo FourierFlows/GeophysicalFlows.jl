@@ -77,7 +77,7 @@ nothing #hide
 # Let's plot the initial condition. Note that when plotting, we decorate the variable to be 
 # plotted with `Array()` to make sure it is brought back on the CPU when `vars` live on the GPU.
 
-fig = Figure(resolution = (500, 500))
+fig = Figure(size = (500, 500))
 
 ax = Axis(fig[1, 1], 
           xlabel = "x",
@@ -143,7 +143,7 @@ b² = Observable([Point2f(B.t[1], B.data[1])])
 
 title_b = Observable("buoyancy, t=" * @sprintf("%.2f", clock.t))
 
-fig = Figure(resolution = (900, 600))
+fig = Figure(size = (900, 600))
 
 axb = Axis(fig[1:2, 1];
            xlabel = "x",
@@ -203,7 +203,7 @@ nothing #hide
 
 # Let's see how all flow fields look like at the end of the simulation.
 
-fig = Figure(resolution = (800, 380))
+fig = Figure(size = (800, 380))
 
 axis_kwargs = (xlabel = "x",
                ylabel = "y",

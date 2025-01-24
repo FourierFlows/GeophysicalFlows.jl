@@ -190,7 +190,7 @@ out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 title_ζ = Observable(@sprintf("vorticity, μt = %.2f", μ * clock.t))
 title_ψ = "streamfunction ψ"
 
-fig = Figure(resolution=(1000, 600))
+fig = Figure(size = (1000, 600))
 
 axis_kwargs = (xlabel = "x",
                ylabel = "y",

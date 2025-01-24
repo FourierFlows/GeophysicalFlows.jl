@@ -42,9 +42,10 @@ end
 #####
 
 format = Documenter.HTML(
-  collapselevel = 2,
-     prettyurls = get(ENV, "CI", nothing) == "true",
-      canonical = "https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/"
+   collapselevel = 2,
+      prettyurls = get(ENV, "CI", nothing) == "true",
+  size_threshold = 2^20,
+       canonical = "https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/"
 )
 
 bib_filepath = joinpath(dirname(@__FILE__), "src/references.bib")
@@ -125,11 +126,9 @@ for file in files
     rm(file)
 end
 
-withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
-  deploydocs(       repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
-                versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"],
-            push_preview = false,
-               forcepush = true,
-               devbranch = "main"
-            )
-end
+deploydocs(       repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
+              versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"],
+          push_preview = true,
+              forcepush = true,
+              devbranch = "main"
+          )

@@ -247,7 +247,7 @@ title_q = @lift @sprintf("vorticity, μt = %.2f", μ * t[$n])
 energy    = Observable([Point2f(E_t[1], E_data[1])])
 enstrophy = Observable([Point2f(Z_t[1], Z_data[1])])
 
-fig = Figure(resolution=(1000, 600))
+fig = Figure(size = (1000, 600))
 
 axis_kwargs = (xlabel = "x",
                ylabel = "y",
@@ -288,7 +288,7 @@ heatmap!(axq, x, y, qₙ;
 levels = collect(-0.32:0.04:0.32)
 
 contourf!(axψ, x, y, ψₙ;
-          levels, colormap = :viridis, colorrange = (-0.22, 0.22))
+          levels, colormap = :viridis)
 contour!(axψ, x, y, ψₙ;
          levels, color = :black)
 

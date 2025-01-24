@@ -147,7 +147,7 @@ title_ζ = Observable("vorticity, μ t=" * @sprintf("%.2f", μ * clock.t))
 energy = Observable(Point2f[(μ * E.t[1], E.data[1])])
 enstrophy = Observable(Point2f[(μ * Z.t[1], Z.data[1] / forcing_wavenumber^2)])
 
-fig = Figure(resolution = (800, 360))
+fig = Figure(size = (800, 360))
 
 axζ = Axis(fig[1, 1];
            xlabel = "x",
