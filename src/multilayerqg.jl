@@ -535,7 +535,7 @@ y = M x
 ```
 
 for every wavenumber, where ``y`` and ``x`` are column-vectors of length `nlayers`.
-This is equivalent to `qh = params.S * ψh` or `ψh = params.S⁻¹ qh`.
+This can be used to perform `qh = params.S * ψh` or `ψh = params.S⁻¹ qh`.
 
 StaticVectors are used to efficiently perform the matrix-vector multiplication.
 """
