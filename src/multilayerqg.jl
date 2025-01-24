@@ -37,7 +37,7 @@ nothingfunction(args...) = nothing
                           β = 0.0,
                           U = zeros(nlayers),
                           H = 1/nlayers * ones(nlayers),
-                          b = -(1 .+ 1/nlayers * Array{Float64}(0:nlayers-1)),
+                          b = - (1 .+ 1/nlayers * (0:nlayers-1)),
                         eta = nothing,
     topographic_pv_gradient = (0, 0),
                           μ = 0,
@@ -90,13 +90,13 @@ function Problem(nlayers::Int,                             # number of fluid lay
                            Lx = 2π,
                            Ly = Lx,
               # Physical parameters
-                           f₀ = 1.0,                                             # Coriolis parameter
-                            β = 0.0,                                             # y-gradient of Coriolis parameter
-                            U = zeros(nlayers),                                  # imposed zonal flow U(y) in each layer
-                            H = 1/nlayers * ones(nlayers),                       # rest fluid height of each layer
-                            b = -(1 .+ 1/nlayers * Array{Float64}(0:nlayers-1)), # Boussinesq buoyancy of each layer
-                          eta = nothing,                                         # periodic component of the topographic PV
-      topographic_pv_gradient = (0, 0),                                          # tuple with the ``(x, y)`` components of topographic PV large-scale gradient
+                           f₀ = 1.0,                                # Coriolis parameter
+                            β = 0.0,                                # y-gradient of Coriolis parameter
+                            U = zeros(nlayers),                     # imposed zonal flow U(y) in each layer
+                            H = 1/nlayers * ones(nlayers),          # rest height of each layer
+                            b = - (1 .+ 1/nlayers * (0:nlayers-1)), # Boussinesq buoyancy of each layer
+                          eta = nothing,                            # periodic component of the topographic PV
+      topographic_pv_gradient = (0, 0),                             # tuple with the ``(x, y)`` components of topographic PV large-scale gradient
               # Bottom Drag and/or (hyper)-viscosity
                             μ = 0,
                             ν = 0,
