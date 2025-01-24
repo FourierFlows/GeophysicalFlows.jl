@@ -379,7 +379,7 @@ numberoflayers(::TwoLayerParams) = 2
 Return the linear operator `L` that corresponds to (hyper)-viscosity of order ``n_ν`` with
 coefficient ``ν`` for ``n`` fluid layers.
 ```math
-L_j = - ν |𝐤|^{2 n_ν}, \\ j = 1, ...,n .
+L_j = - ν |𝐤|^{2 n_ν}, \\ j = 1, ..., n .
 ```
 """
 function hyperviscosity(params, grid)
@@ -440,9 +440,9 @@ struct Vars{Aphys, Atrans, F, P} <: AbstractVars
         q :: Aphys
     "streamfunction"
         ψ :: Aphys
-    "x-component of velocity"
+    "``x``-component of velocity"
         u :: Aphys
-    "y-component of velocity"
+    "``y``-component of velocity"
         v :: Aphys
     "Fourier transform of relative vorticity + vortex stretching"
        qh :: Atrans
@@ -525,24 +525,33 @@ Compute the inverse Fourier transform of `varh` and store it in `var`.
 invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, varh)
 
 """
-    @kernel function PVinversion_kernel!(a, b, M, ::Val{N}) where N
+    pv_streamfunction_kernel!(y, M, x, ::Val{N}) where N
 
-Kernel for the PV/stream function inversion step, i.e., `qh = params.S * ψh` or `ψh = params.S⁻¹ qh`.
+Kernel for the PV to streamfunction conversion steps. The kernel performs the
+matrix multiplication
+
+```math
+y = M x
+```
+
+for every wavenumber, where ``y`` and ``x`` are column-vectors of length `nlayers`.
+This is equivalent to `qh = params.S * ψh` or `ψh = params.S⁻¹ qh`.
+
 StaticVectors are used to efficiently perform the matrix-vector multiplication.
 """
-@kernel function PVinversion_kernel!(a, b, M, ::Val{N}) where N
+@kernel function pv_streamfunction_kernel!(y, M, x, ::Val{N}) where N
   i, j = @index(Global, NTuple)
 
-  b_tuple = ntuple(Val(N)) do n
-      @inbounds b[i, j, n]
+  x_tuple = ntuple(Val(N)) do n
+    @inbounds x[i, j, n]
   end
 
-  T = eltype(a) 
-  b_sv = SVector{N, T}(b_tuple)
-  a_sv = @inbounds M[i, j] * b_sv
+  T = eltype(x)
+  x_sv = SVector{N, T}(x_tuple)
+  y_sv = @inbounds M[i, j] * x_sv
 
   ntuple(Val(N)) do n
-      @inbounds a[i, j, n] = a_sv[n]
+    @inbounds y[i, j, n] = y_sv[n]
   end
 end
 
@@ -550,11 +559,14 @@ end
     pvfromstreamfunction!(qh, ψh, params, grid)
 
 Obtain the Fourier transform of the PV from the streamfunction `ψh` in each layer using
-`qh = params.S * ψh`. We use a work layout over which the PV inversion kernel is launched.
+`qh = params.S * ψh`.
+
+The matrix multiplications are done via launching a kernel. We use a work layout over
+which the PV inversion kernel is launched.
 """
 function pvfromstreamfunction!(qh, ψh, params, grid)
-  # Larger workgroups are generally more efficient. For more generality, we could put an 
-  # if statement that incurs different behavior when either nkl or nl are less than 8
+  # Larger workgroups are generally more efficient. For more generality, we could put an
+  # if statement that incurs different behavior when either nkl or nl are less than 8.
   workgroup = 8, 8
 
   # The worksize determines how many times the kernel is run
@@ -562,11 +574,11 @@ function pvfromstreamfunction!(qh, ψh, params, grid)
 
   # Instantiates the kernel for relevant backend device
   backend = KernelAbstractions.get_backend(qh)
-  kernel! = PVinversion_kernel!(backend, workgroup, worksize)
+  kernel! = pv_streamfunction_kernel!(backend, workgroup, worksize)
 
   # Launch the kernel
   S, nlayers = params.S, params.nlayers
-  kernel!(qh, ψh, S, Val(nlayers))
+  kernel!(qh, S, ψh, Val(nlayers))
 
   # Ensure that no other operations occur until the kernel has finished
   KernelAbstractions.synchronize(backend)
@@ -618,11 +630,14 @@ end
     streamfunctionfrompv!(ψh, qh, params, grid)
 
 Invert the PV to obtain the Fourier transform of the streamfunction `ψh` in each layer from
-`qh` using `ψh = params.S⁻¹ qh`. We use a work layout over which the PV inversion kernel is launched.
+`qh` using `ψh = params.S⁻¹ qh`.
+
+The matrix multiplications are done via launching a kernel. We use a work layout over
+which the PV inversion kernel is launched.
 """
 function streamfunctionfrompv!(ψh, qh, params, grid)
-# Larger workgroups are generally more efficient. For more generality, we could put an 
-  # if statement that incurs different behavior when either nkl or nl are less than 8
+  # Larger workgroups are generally more efficient. For more generality, we could put an
+  # if statement that incurs different behavior when either nkl or nl are less than 8.
   workgroup = 8, 8
 
   # The worksize determines how many times the kernel is run
@@ -630,11 +645,11 @@ function streamfunctionfrompv!(ψh, qh, params, grid)
 
   # Instantiates the kernel for relevant backend device
   backend = KernelAbstractions.get_backend(ψh)
-  kernel! = PVinversion_kernel!(backend, workgroup, worksize)
+  kernel! = pv_streamfunction_kernel!(backend, workgroup, worksize)
 
   # Launch the kernel
   S⁻¹, nlayers = params.S⁻¹, params.nlayers
-  kernel!(ψh, qh, S⁻¹, Val(nlayers))
+  kernel!(ψh, S⁻¹, qh, Val(nlayers))
 
   # Ensure that no other operations occur until the kernel has finished
   KernelAbstractions.synchronize(backend)
