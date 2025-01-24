@@ -406,7 +406,7 @@ end
     LinearEquation(params, grid)
 
 Return the equation for a multi-layer quasi-geostrophic problem with `params` and `grid`.
-The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via
+The linear operator ``L`` includes only (hyper)-viscosity and is computed via
 `hyperviscosity(params, grid)`.
 
 The nonlinear term is computed via function `calcNlinear!`.
@@ -421,7 +421,7 @@ end
     Equation(params, grid)
 
 Return the equation for a multi-layer quasi-geostrophic problem with `params` and `grid`.
-The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via
+The linear operator ``L`` includes only (hyper)-viscosity and is computed via
 `hyperviscosity(params, grid)`.
 
 The nonlinear term is computed via function `calcN!`.
