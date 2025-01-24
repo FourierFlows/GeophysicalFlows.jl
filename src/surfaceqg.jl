@@ -99,7 +99,7 @@ end
 abstract type SurfaceQGParams <: AbstractParams end
 
 """
-    struct Params{T, Atrans}(H, ν, nν, calcF!, DirNeu) <: SurfaceQGParams
+    struct Params{T, Atrans} <: SurfaceQGParams
 
 A struct containing the parameters for Surface QG dynamics. Included are:
 
@@ -118,6 +118,11 @@ struct Params{T, Atrans <: AbstractArray} <: SurfaceQGParams
   ψhfrombh :: Atrans
 end
 
+"""
+    Params(H, ν, nν, calcF!, grid::AbstractGrid)
+
+Return Surface QG parameters for given `grid`.
+"""
 function Params(H, ν, nν, calcF!, grid::AbstractGrid)
   ψhfrombh = @. sqrt(grid.invKrsq) * coth(H / sqrt(grid.invKrsq))
   return Params(H, ν, nν, calcF!, ψhfrombh)
