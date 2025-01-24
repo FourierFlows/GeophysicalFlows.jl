@@ -82,7 +82,7 @@ function Problem(dev::Device=CPU();
 
   grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
 
-  params = Params(T(H), T(ν), nν, calcF)
+  params = Params(T(H), T(ν), nν, calcF, grid)
     
   vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
@@ -105,7 +105,7 @@ A struct containing the parameters for Surface QG dynamics. Included are:
 
 $(TYPEDFIELDS)
 """
-struct Params{T, Atrans} <: SurfaceQGParams
+struct Params{T, Atrans <: AbstractArray} <: SurfaceQGParams
     "layer depth"
          H :: T
     "buoyancy (hyper)-viscosity coefficient"
@@ -118,10 +118,12 @@ struct Params{T, Atrans} <: SurfaceQGParams
   ψhfrombh :: Atrans
 end
 
-function Params(H, ν, nν, calcF!)
+function Params(H, ν, nν, calcF!, grid::AbstractGrid)
   ψhfrombh = @. sqrt(grid.invKrsq) * coth(H / sqrt(grid.invKrsq))
   return Params(H, ν, nν, calcF!, ψhfrombh)
 end
+
+Params(ν, nν, grid) = Params(Inf, ν, nν, nothingfunction, grid)
 
 # ---------
 # Equations
@@ -131,7 +133,7 @@ end
     Equation(params, grid)
 
 Return the `equation` for surface QG dynamics with `params` and `grid`. The linear 
-opeartor ``L`` includes (hyper)-viscosity of order ``n_ν`` with coefficient ``ν``,
+operator ``L`` includes (hyper)-viscosity of order ``n_ν`` with coefficient ``ν``,
 
 ```math
 L = - ν |𝐤|^{2 n_ν} .
