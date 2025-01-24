@@ -37,7 +37,7 @@ nothingfunction(args...) = nothing
                           β = 0.0,
                           U = zeros(nlayers),
                           H = 1/nlayers * ones(nlayers),
-                          b = -(1 .+ 1/nlayers * Array{Float64}(0:nlayers-1)),
+                          b = -(1 .+ 1/nlayers * (0:nlayers-1)),
                         eta = nothing,
     topographic_pv_gradient = (0, 0),
                           μ = 0,
@@ -82,7 +82,7 @@ Keyword arguments
   - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
   - `T`: `Float32` or `Float64` (default); floating point type used for `problem` data.
 """
-function Problem(nlayers::Int,                             # number of fluid layers
+function Problem(nlayers::Int,                                     # number of fluid layers
                           dev = CPU();
               # Numerical parameters
                            nx = 128,
@@ -90,13 +90,13 @@ function Problem(nlayers::Int,                             # number of fluid lay
                            Lx = 2π,
                            Ly = Lx,
               # Physical parameters
-                           f₀ = 1.0,                                             # Coriolis parameter
-                            β = 0.0,                                             # y-gradient of Coriolis parameter
-                            U = zeros(nlayers),                                  # imposed zonal flow U(y) in each layer
-                            H = 1/nlayers * ones(nlayers),                       # rest fluid height of each layer
-                            b = -(1 .+ 1/nlayers * Array{Float64}(0:nlayers-1)), # Boussinesq buoyancy of each layer
-                          eta = nothing,                                         # periodic component of the topographic PV
-      topographic_pv_gradient = (0, 0),                                          # tuple with the ``(x, y)`` components of topographic PV large-scale gradient
+                           f₀ = 1.0,                               # Coriolis parameter
+                            β = 0.0,                               # y-gradient of Coriolis parameter
+                            U = zeros(nlayers),                    # imposed zonal flow U(y) in each layer
+                            H = 1/nlayers * ones(nlayers),         # rest height of each layer
+                            b = -(1 .+ 1/nlayers * (0:nlayers-1)), # Boussinesq buoyancy of each layer
+                          eta = nothing,                           # periodic component of the topographic PV
+      topographic_pv_gradient = (0, 0),                            # tuple with the ``(x, y)`` components of topographic PV large-scale gradient
               # Bottom Drag and/or (hyper)-viscosity
                             μ = 0,
                             ν = 0,
@@ -158,9 +158,9 @@ struct Params{T, Aphys3D, Aphys2D, Atrans4D, Trfft} <: AbstractParams
         f₀ :: T
     "planetary vorticity ``y``-gradient"
          β :: T
-    "array with Boussinesq buoyancy of each fluid layer"
+    "tuple with Boussinesq buoyancy of each fluid layer"
          b :: Tuple
-    "array with rest height of each fluid layer"
+    "tuple with rest height of each fluid layer"
          H :: Tuple
     "array with imposed constant zonal flow ``U(y)`` in each fluid layer"
          U :: Aphys3D
@@ -178,7 +178,7 @@ struct Params{T, Aphys3D, Aphys2D, Atrans4D, Trfft} <: AbstractParams
    calcFq! :: Function
 
   # derived params
-    "array with the reduced gravity constants for each fluid interface"
+    "tuple with the reduced gravity constants for each fluid interface"
         g′ :: Tuple
     "array containing ``x``-gradient of PV due to eta in each fluid layer"
         Qx :: Aphys3D
