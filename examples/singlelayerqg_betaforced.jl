@@ -35,7 +35,7 @@ nothing #hide
       n = 128            # 2D resolution: n² grid points
 stepper = "FilteredRK4"  # timestepper
      dt = 0.05           # timestep
- nsteps = 8000          # total number of timesteps
+ nsteps = 8000           # total number of timesteps
  save_substeps = 10      # number of timesteps after which output is saved
  
 nothing #hide
