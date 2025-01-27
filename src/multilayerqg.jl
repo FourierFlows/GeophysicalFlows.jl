@@ -975,12 +975,14 @@ function fluxes(vars, params, grid, sol)
   @. ∂u∂yh = im * grid.l * vars.uh
   invtransform!(∂u∂y, ∂u∂yh, params)
 
-  lateralfluxes = (sum(@. params.H * params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
-  lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
+  V = grid.Lx * grid.Ly * sum(params.H)
+
+  lateralfluxes = params.H .* (sum(@. params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
+  lateralfluxes *= grid.dx * grid.dy / V
 
   for j = 1:nlayers-1
     @views verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
-    @views verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
+    @views verticalfluxes[j] *= grid.dx * grid.dy / V
   end
 
   return lateralfluxes, verticalfluxes
