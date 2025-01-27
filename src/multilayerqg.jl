@@ -913,7 +913,7 @@ function energies(vars, params, grid, sol)
   abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
   @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
   
-  V = grid.Lx * grid.Ly * sum(params.H)
+  V = grid.Lx * grid.Ly * sum(params.H)  # total volume of the fluid
 
   for j = 1:nlayers
     view(KE, j) .= 1 / (2 * V) * parsevalsum(view(abs²∇𝐮h, :, :, j), grid) * params.H[j]
@@ -975,7 +975,7 @@ function fluxes(vars, params, grid, sol)
   @. ∂u∂yh = im * grid.l * vars.uh
   invtransform!(∂u∂y, ∂u∂yh, params)
 
-  V = grid.Lx * grid.Ly * sum(params.H)
+  V = grid.Lx * grid.Ly * sum(params.H)  # total volume of the fluid
 
   lateralfluxes = params.H .* (sum(@. params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
   lateralfluxes *= grid.dx * grid.dy / V
