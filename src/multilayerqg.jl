@@ -981,7 +981,7 @@ function fluxes(vars, params, grid, sol)
   lateralfluxes *= grid.dx * grid.dy / V
 
   for j = 1:nlayers-1
-    view(verticalfluxes, j) = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
+    @views verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
   end
   verticalfluxes *= grid.dx * grid.dy / V
 
