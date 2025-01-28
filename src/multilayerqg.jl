@@ -945,7 +945,7 @@ energies(prob) = energies(prob.vars, prob.params, prob.grid, prob.sol)
 Return the lateral eddy fluxes within each fluid layer, lateralfluxes``_1,...,``lateralfluxes``_n``
 and also the vertical eddy fluxes at each fluid interface,
 verticalfluxes``_{3/2},...,``verticalfluxes``_{n-1/2}``, where ``n`` is the total number of layers in the fluid.
-(When ``n=1``, only the lateral fluxes are returned.)
+(For a single fluid layer, i.e., when ``n=1``, only the lateral fluxes are returned.)
 
 The lateral eddy fluxes within the ``j``-th fluid layer are
 
@@ -963,6 +963,7 @@ v_{j+1} ψ_{j} \\frac{𝖽x 𝖽y}{L_x L_y} , \\ j = 1, ..., n-1.
 ```
 """
 function fluxes(vars, params, grid, sol)
+
   nlayers = numberoflayers(params)
 
   lateralfluxes, verticalfluxes = zeros(nlayers), zeros(nlayers-1)
@@ -980,12 +981,24 @@ function fluxes(vars, params, grid, sol)
   lateralfluxes = params.H .* (sum(@. params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
   lateralfluxes *= grid.dx * grid.dy / V
 
-  for j = 1:nlayers-1
-    @views verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
-  end
+  compute_verticalfluxes!(verticalfluxes, Val(size(sol, 3)), params, vars)
+
   verticalfluxes *= grid.dx * grid.dy / V
 
   return lateralfluxes, verticalfluxes
+end
+
+function compute_verticalfluxes!(verticalfluxes, nlayers::Val{2}, params, vars)
+  @views verticalfluxes .= sum(@views @. params.f₀^2 / params.g′[1] * (params.U[: ,:, 1] - params.U[:, :, 2]) * vars.v[:, :, 2] * vars.ψ[:, :, 1]; dims=(1, 2))
+  return nothing
+end
+
+function compute_verticalfluxes!(verticalfluxes, nlayers, params, vars)
+  nlayers = numberoflayers(params)
+  for j = 1:nlayers-1
+    @views verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
+  end
+  return nothing
 end
 
 function fluxes(vars, params::SingleLayerParams, grid, sol)
