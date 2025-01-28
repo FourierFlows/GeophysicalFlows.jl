@@ -29,7 +29,6 @@ GeophysicalFlows.SingleLayerQG.StochasticForcedVars
 ```@docs
 GeophysicalFlows.MultiLayerQG.Params
 GeophysicalFlows.MultiLayerQG.SingleLayerParams
-GeophysicalFlows.MultiLayerQG.TwoLayerParams
 GeophysicalFlows.MultiLayerQG.Vars
 GeophysicalFlows.MultiLayerQG.DecayingVars
 GeophysicalFlows.MultiLayerQG.ForcedVars

@@ -164,7 +164,7 @@ levelsψ₂, levelsψ₂⁺, levelsψ₂⁻ = compute_levels(maxψ₂)
 
 KE₁ = Observable(Point2f[(μ * E.t[1], E.data[1][1][1])])
 KE₂ = Observable(Point2f[(μ * E.t[1], E.data[1][1][2])])
-PE  = Observable(Point2f[(μ * E.t[1], E.data[1][2])])
+PE  = Observable(Point2f[(μ * E.t[1], E.data[1][2][1])])
 
 fig = Figure(size = (1000, 600))
 
@@ -232,13 +232,13 @@ frames = 0:round(Int, nsteps / nsubs)
 record(fig, "multilayerqg_2layer.mp4", frames, framerate = 18) do j
   if j % (1000 / nsubs) == 0
     cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
-    
+
     log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, KE₁: %.3e, KE₂: %.3e, PE: %.3e, walltime: %.2f min",
                    clock.step, clock.t, cfl, E.data[E.i][1][1], E.data[E.i][1][2], E.data[E.i][2][1], (time()-startwalltime)/60)
 
     println(log)
   end
-  
+
   q₁[] = vars.q[:, :, 1]
   ψ₁[] = vars.ψ[:, :, 1]
   q₂[] = vars.q[:, :, 2]
@@ -249,10 +249,10 @@ record(fig, "multilayerqg_2layer.mp4", frames, framerate = 18) do j
 
   KE₁[] = push!(KE₁[], Point2f(μ * E.t[E.i], E.data[E.i][1][1]))
   KE₂[] = push!(KE₂[], Point2f(μ * E.t[E.i], E.data[E.i][1][2]))
-  PE[]  = push!(PE[] , Point2f(μ * E.t[E.i], E.data[E.i][2]))
+  PE[]  = push!(PE[] , Point2f(μ * E.t[E.i], E.data[E.i][2][1]))
 
   title_KE[] = @sprintf("μ t = %.2f", μ * clock.t)
-  
+
   stepforward!(prob, diags, nsubs)
   MultiLayerQG.updatevars!(prob)
 end
