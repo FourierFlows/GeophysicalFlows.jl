@@ -18,11 +18,13 @@ using
   LinearAlgebra,
   StaticArrays,
   Reexport,
-  DocStringExtensions
+  DocStringExtensions,
+  KernelAbstractions
 
 @reexport using FourierFlows
 
-using FourierFlows: parsevalsum, parsevalsum2, superzeros, plan_flows_rfft
+using FourierFlows: parsevalsum, parsevalsum2, superzeros, plan_flows_rfft, CPU, GPU
+using KernelAbstractions.Extras.LoopInfo: @unroll
 
 nothingfunction(args...) = nothing
 
@@ -110,17 +112,6 @@ function Problem(nlayers::Int,                                     # number of f
               # Float type and dealiasing
              aliased_fraction = 1/3,
                             T = Float64)
-
-  if dev == GPU() && nlayers > 2
-    @warn """MultiLayerQG module is not optimized on the GPU yet for configurations with
-    3 fluid layers or more!
-
-    See issues on Github at https://github.com/FourierFlows/GeophysicalFlows.jl/issues/112
-    and https://github.com/FourierFlows/GeophysicalFlows.jl/issues/267.
-
-    To use MultiLayerQG with 3 fluid layers or more we suggest, for now, to restrict running
-    on CPU."""
-  end
 
   if nlayers == 1
     @warn """MultiLayerQG module does work for single-layer configuration but may not be as 
@@ -227,49 +218,6 @@ struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
   rfftplan :: Trfft
 end
 
-"""
-    struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
-
-The parameters for the a two-layer `MultiLayerQG` problem.
-
-$(TYPEDFIELDS)
-"""
-struct TwoLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
-  # prescribed params
-    "constant planetary vorticity"
-        f₀ :: T
-    "planetary vorticity ``y``-gradient"
-         β :: T
-    "array with Boussinesq buoyancy of each fluid layer"
-         b :: Tuple
-    "tuple with rest height of each fluid layer"
-         H :: Tuple
-   "array with imposed constant zonal flow ``U(y)`` in each fluid layer"
-         U :: Aphys3D
-   "array containing periodic component of the topographic PV"
-       eta :: Aphys2D
-    "tuple containing the ``(x, y)`` components of topographic PV large-scale gradient"
-    topographic_pv_gradient :: Tuple{T, T}
-    "linear bottom drag coefficient"
-         μ :: T
-    "small-scale (hyper)-viscosity coefficient"
-         ν :: T
-    "(hyper)-viscosity order, `nν```≥ 1``"
-        nν :: Int
-    "function that calculates the Fourier transform of the forcing, ``F̂``"
-   calcFq! :: Function
-
-  # derived params
-    "the reduced gravity constants for the fluid interface"
-        g′ :: T
-    "array containing ``x``-gradient of PV due to topographic PV in each fluid layer"
-        Qx :: Aphys3D
-    "array containing ``y``-gradient of PV due to ``β``, ``U``, and topographic PV in each fluid layer"
-        Qy :: Aphys3D
-    "rfft plan for FFTs"
-  rfftplan :: Trfft
-end
-
 function convert_U_to_U3D(dev, nlayers, grid, U::AbstractArray{TU, 1}) where TU
   T = eltype(grid)
 
@@ -366,17 +314,12 @@ function Params(nlayers::Int, f₀, β, b, H, U, eta, topographic_pv_gradient, �
     end
     CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
-    if nlayers==2
-      return TwoLayerParams(T(f₀), T(β), Tuple(T.(b)), Tuple(T.(H)), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, T(g′[1]), Qx, Qy, rfftplanlayered)
-    else # if nlayers>2
-      return Params(nlayers, T(f₀), T(β), Tuple(T.(b)), T.(H), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, Tuple(T.(g′)), Qx, Qy, S, S⁻¹, rfftplanlayered)
-    end
+    return Params(nlayers, T(f₀), T(β), Tuple(T.(b)), T.(H), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, Tuple(T.(g′)), Qx, Qy, S, S⁻¹, rfftplanlayered)
   end
 end
 
 numberoflayers(params) = params.nlayers
 numberoflayers(::SingleLayerParams) = 1
-numberoflayers(::TwoLayerParams) = 2
 
 # ---------
 # Equations
@@ -388,7 +331,7 @@ numberoflayers(::TwoLayerParams) = 2
 Return the linear operator `L` that corresponds to (hyper)-viscosity of order ``n_ν`` with
 coefficient ``ν`` for ``n`` fluid layers.
 ```math
-L_j = - ν |𝐤|^{2 n_ν}, \\ j = 1, ...,n .
+L_j = - ν |𝐤|^{2 n_ν}, \\ j = 1, ..., n .
 ```
 """
 function hyperviscosity(params, grid)
@@ -449,9 +392,9 @@ struct Vars{Aphys, Atrans, F, P} <: AbstractVars
         q :: Aphys
     "streamfunction"
         ψ :: Aphys
-    "x-component of velocity"
+    "``x``-component of velocity"
         u :: Aphys
-    "y-component of velocity"
+    "``y``-component of velocity"
         v :: Aphys
     "Fourier transform of relative vorticity + vortex stretching"
        qh :: Atrans
@@ -534,15 +477,63 @@ Compute the inverse Fourier transform of `varh` and store it in `var`.
 invtransform!(var, varh, params::AbstractParams) = ldiv!(var, params.rfftplan, varh)
 
 """
+    pv_streamfunction_kernel!(y, M, x, ::Val{N}) where N
+
+Kernel for the PV to streamfunction conversion steps. The kernel performs the
+matrix multiplication
+
+```math
+y = M x
+```
+
+for every wavenumber, where ``y`` and ``x`` are column-vectors of length `nlayers`.
+This can be used to perform `qh = params.S * ψh` or `ψh = params.S⁻¹ qh`.
+
+StaticVectors are used to efficiently perform the matrix-vector multiplication.
+"""
+@kernel function pv_streamfunction_kernel!(y, M, x, ::Val{N}) where N
+  i, j = @index(Global, NTuple)
+
+  x_tuple = ntuple(Val(N)) do n
+    @inbounds x[i, j, n]
+  end
+
+  T = eltype(x)
+  x_sv = SVector{N, T}(x_tuple)
+  y_sv = @inbounds M[i, j] * x_sv
+
+  ntuple(Val(N)) do n
+    @inbounds y[i, j, n] = y_sv[n]
+  end
+end
+
+"""
     pvfromstreamfunction!(qh, ψh, params, grid)
 
 Obtain the Fourier transform of the PV from the streamfunction `ψh` in each layer using
 `qh = params.S * ψh`.
+
+The matrix multiplications are done via launching a kernel. We use a work layout over
+which the PV inversion kernel is launched.
 """
 function pvfromstreamfunction!(qh, ψh, params, grid)
-  for j=1:grid.nl, i=1:grid.nkr
-    CUDA.@allowscalar @views qh[i, j, :] .= params.S[i, j] * ψh[i, j, :]
-  end
+  # Larger workgroups are generally more efficient. For more generality, we could put an
+  # if statement that incurs different behavior when either nkl or nl are less than 8.
+  workgroup = 8, 8
+
+  # The worksize determines how many times the kernel is run
+  worksize = grid.nkr, grid.nl
+
+  # Instantiates the kernel for relevant backend device
+  backend = KernelAbstractions.get_backend(qh)
+  kernel! = pv_streamfunction_kernel!(backend, workgroup, worksize)
+
+  # Launch the kernel
+  S, nlayers = params.S, params.nlayers
+  kernel!(qh, S, ψh, Val(nlayers))
+
+  # Ensure that no other operations occur until the kernel has finished
+  KernelAbstractions.synchronize(backend)
 
   return nothing
 end
@@ -560,43 +551,32 @@ function pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
 end
 
 """
-    pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
-
-Obtain the Fourier transform of the PV from the streamfunction `ψh` for the special
-case of a two fluid layer configuration. In this case we have,
-
-```math
-q̂₁ = - k² ψ̂₁ + f₀² / (g′ H₁) (ψ̂₂ - ψ̂₁) ,
-```
-
-```math
-q̂₂ = - k² ψ̂₂ + f₀² / (g′ H₂) (ψ̂₁ - ψ̂₂) .
-```
-
-(Here, the PV-streamfunction relationship is hard-coded to avoid scalar operations
-on the GPU.)
-"""
-function pvfromstreamfunction!(qh, ψh, params::TwoLayerParams, grid)
-  f₀, g′, H₁, H₂ = params.f₀, params.g′, params.H[1], params.H[2]
-
-  ψ1h, ψ2h = view(ψh, :, :, 1), view(ψh, :, :, 2)
-
-  @views @. qh[:, :, 1] = - grid.Krsq * ψ1h + f₀^2 / (g′ * H₁) * (ψ2h - ψ1h)
-  @views @. qh[:, :, 2] = - grid.Krsq * ψ2h + f₀^2 / (g′ * H₂) * (ψ1h - ψ2h)
-
-  return nothing
-end
-
-"""
     streamfunctionfrompv!(ψh, qh, params, grid)
 
 Invert the PV to obtain the Fourier transform of the streamfunction `ψh` in each layer from
 `qh` using `ψh = params.S⁻¹ qh`.
+
+The matrix multiplications are done via launching a kernel. We use a work layout over
+which the PV inversion kernel is launched.
 """
 function streamfunctionfrompv!(ψh, qh, params, grid)
-  for j=1:grid.nl, i=1:grid.nkr
-    CUDA.@allowscalar @views ψh[i, j, :] .= params.S⁻¹[i, j] * qh[i, j, :]
-  end
+  # Larger workgroups are generally more efficient. For more generality, we could put an
+  # if statement that incurs different behavior when either nkl or nl are less than 8.
+  workgroup = 8, 8
+
+  # The worksize determines how many times the kernel is run
+  worksize = grid.nkr, grid.nl
+
+  # Instantiates the kernel for relevant backend device
+  backend = KernelAbstractions.get_backend(ψh)
+  kernel! = pv_streamfunction_kernel!(backend, workgroup, worksize)
+
+  # Launch the kernel
+  S⁻¹, nlayers = params.S⁻¹, params.nlayers
+  kernel!(ψh, S⁻¹, qh, Val(nlayers))
+
+  # Ensure that no other operations occur until the kernel has finished
+  KernelAbstractions.synchronize(backend)
 
   return nothing
 end
@@ -609,40 +589,6 @@ case of a single fluid layer configuration. In this case, ``ψ̂ = - k⁻² q̂`
 """
 function streamfunctionfrompv!(ψh, qh, params::SingleLayerParams, grid)
   @. ψh = -grid.invKrsq * qh
-
-  return nothing
-end
-
-"""
-    streamfunctionfrompv!(ψh, qh, params::TwoLayerParams, grid)
-
-Invert the PV to obtain the Fourier transform of the streamfunction `ψh` for the special
-case of a two fluid layer configuration. In this case we have,
-
-```math
-ψ̂₁ = - [k² q̂₁ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
-```
-
-```math
-ψ̂₂ = - [k² q̂₂ + (f₀² / g′) (q̂₁ / H₂ + q̂₂ / H₁)] / Δ ,
-```
-
-where ``Δ = k² [k² + f₀² (H₁ + H₂) / (g′ H₁ H₂)]``.
-
-(Here, the PV-streamfunction relationship is hard-coded to avoid scalar operations
-on the GPU.)
-"""
-function streamfunctionfrompv!(ψh, qh, params::TwoLayerParams, grid)
-  f₀, g′, H₁, H₂ = params.f₀, params.g′, params.H[1], params.H[2]
-
-  q1h, q2h = view(qh, :, :, 1), view(qh, :, :, 2)
-
-  @views @. ψh[:, :, 1] = - grid.Krsq * q1h - f₀^2 / g′ * (q1h / H₂ + q2h / H₁)
-  @views @. ψh[:, :, 2] = - grid.Krsq * q2h - f₀^2 / g′ * (q1h / H₂ + q2h / H₁)
-
-  for j in 1:2
-    @views @. ψh[:, :, j] *= grid.invKrsq / (grid.Krsq + f₀^2 / g′ * (H₁ + H₂) / (H₁ * H₂))
-  end
 
   return nothing
 end
@@ -967,7 +913,7 @@ function energies(vars, params, grid, sol)
   abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
   @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
   
-  V = grid.Lx * grid.Ly * sum(params.H)
+  V = grid.Lx * grid.Ly * sum(params.H)  # total volume of the fluid
 
   for j = 1:nlayers
     view(KE, j) .= 1 / (2 * V) * parsevalsum(view(abs²∇𝐮h, :, :, j), grid) * params.H[j]
@@ -977,29 +923,6 @@ function energies(vars, params, grid, sol)
     view(PE, j) .= 1 / (2 * V) * params.f₀^2 ./ params.g′[j] .* parsevalsum(abs2.(view(vars.ψh, :, :, j) .- view(vars.ψh, :, :, j+1)), grid)
   end
 
-  return KE, PE
-end
-
-function energies(vars, params::TwoLayerParams, grid, sol)
-  nlayers = numberoflayers(params)
-  KE, PE = zeros(nlayers), zeros(nlayers-1)
-
-  @. vars.qh = sol
-  streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
-
-  abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
-  @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
-
-  V = grid.Lx * grid.Ly * sum(params.H)
-
-  ψ1h, ψ2h = view(vars.ψh, :, :, 1), view(vars.ψh, :, :, 2)
-
-  for j = 1:nlayers
-    view(KE, j) .= 1 / (2 * V) * parsevalsum(view(abs²∇𝐮h, :, :, j), grid) * params.H[j]
-  end
-
-  PE = 1 / (2 * V) * params.f₀^2 / params.g′ * parsevalsum(abs2.(ψ1h .- ψ2h), grid)
-  
   return KE, PE
 end
 
@@ -1022,7 +945,7 @@ energies(prob) = energies(prob.vars, prob.params, prob.grid, prob.sol)
 Return the lateral eddy fluxes within each fluid layer, lateralfluxes``_1,...,``lateralfluxes``_n``
 and also the vertical eddy fluxes at each fluid interface,
 verticalfluxes``_{3/2},...,``verticalfluxes``_{n-1/2}``, where ``n`` is the total number of layers in the fluid.
-(When ``n=1``, only the lateral fluxes are returned.)
+(For a single fluid layer, i.e., when ``n=1``, only the lateral fluxes are returned.)
 
 The lateral eddy fluxes within the ``j``-th fluid layer are
 
@@ -1040,6 +963,7 @@ v_{j+1} ψ_{j} \\frac{𝖽x 𝖽y}{L_x L_y} , \\ j = 1, ..., n-1.
 ```
 """
 function fluxes(vars, params, grid, sol)
+
   nlayers = numberoflayers(params)
 
   lateralfluxes, verticalfluxes = zeros(nlayers), zeros(nlayers-1)
@@ -1052,48 +976,43 @@ function fluxes(vars, params, grid, sol)
   @. ∂u∂yh = im * grid.l * vars.uh
   invtransform!(∂u∂y, ∂u∂yh, params)
 
-  lateralfluxes = (sum(@. params.H * params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
-  lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
+  V = grid.Lx * grid.Ly * sum(params.H)  # total volume of the fluid
 
-  for j = 1:nlayers-1
-    @views verticalfluxes[j] = sum(@views @. params.f₀^2 / params.g′[j] * (params.U[: ,:, j] - params.U[:, :, j+1]) * vars.v[:, :, j+1] * vars.ψ[:, :, j]; dims=(1, 2))[1]
-    @views verticalfluxes[j] *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
-  end
+  lateralfluxes = params.H .* (sum(@. params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
+  lateralfluxes *= grid.dx * grid.dy / V
+
+  compute_verticalfluxes!(verticalfluxes, Val(size(sol, 3)), params, vars)
+  verticalfluxes *= grid.dx * grid.dy / V
 
   return lateralfluxes, verticalfluxes
 end
 
-function fluxes(vars, params::TwoLayerParams, grid, sol)
-  nlayers = numberoflayers(params)
+"""
+    compute_verticalfluxes!(verticalfluxes, Val(nlayers), params, vars)
 
-  lateralfluxes, verticalfluxes = zeros(nlayers), zeros(nlayers-1)
-
-  updatevars!(vars, params, grid, sol)
-
-  ∂u∂yh = vars.uh           # use vars.uh as scratch variable
-  ∂u∂y  = vars.u            # use vars.u  as scratch variable
-
-  @. ∂u∂yh = im * grid.l * vars.uh
-  invtransform!(∂u∂y, ∂u∂yh, params)
-  
-  lateralfluxⱼ = vars.q
-
-  for j in 1:nlayers
-    @. lateralfluxⱼ = params.U * vars.v * ∂u∂y
-    view(lateralfluxes, j) .= sum(view(lateralfluxⱼ, :, :, j))
-  end
-
-  @. lateralfluxes *= params.H
-  lateralfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
-
+Compute the vertical fluxes; see [`fluxes`](@ref). Note that we need to scale by
+multiplying with `grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))`.
+"""
+function compute_verticalfluxes!(verticalfluxes, nlayers::Val{2}, params, vars)
   U₁, U₂ = view(params.U, :, :, 1), view(params.U, :, :, 2)
   ψ₁ = view(vars.ψ, :, :, 1)
   v₂ = view(vars.v, :, :, 2)
 
-  verticalfluxes = sum(params.f₀^2 / params.g′ * (U₁ .- U₂) .* v₂ .* ψ₁)
-  verticalfluxes *= grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))
+  verticalfluxes .= sum(@. params.f₀^2 / params.g′[1] * (U₁ .- U₂) * v₂ * ψ₁)
 
-  return lateralfluxes, verticalfluxes
+  return nothing
+end
+
+function compute_verticalfluxes!(verticalfluxes, nlayers, params, vars)
+  nlayers = numberoflayers(params)
+
+  for j = 1:nlayers-1
+    Uⱼ, Uⱼ₊₁ = view(params.U, :, :, j), view(params.U, :, :, j+1)
+    ψⱼ = view(vars.ψ, :, :, j)
+    vⱼ₊₁ = view(vars.v, :, :, j+1)
+    @views verticalfluxes[j] = sum(@. params.f₀^2 / params.g′[j] * (Uⱼ - Uⱼ₊₁) * vⱼ₊₁ * ψⱼ; dims=(1, 2))[1]
+  end
+  return nothing
 end
 
 function fluxes(vars, params::SingleLayerParams, grid, sol)
