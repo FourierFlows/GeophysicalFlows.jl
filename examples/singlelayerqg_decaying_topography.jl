@@ -78,7 +78,7 @@ ax = Axis(fig[1, 1];
           limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
 
 contourf!(ax, x, y, η;
-          levels = collect(-3:0.4:3), colormap = :balance, colorrange = (-3, 3))
+          levels = collect(-3:0.4:3), colormap = :balance)
 
 fig
 
@@ -108,7 +108,7 @@ nothing #hide
 q = Observable(Array(vars.q))
 ψ = Observable(Array(vars.ψ))
 
-fig = Figure(resolution=(800, 380))
+fig = Figure(size = (800, 380))
 
 axis_kwargs = (xlabel = "x",
                ylabel = "y",
@@ -129,7 +129,7 @@ Colorbar(fig[1, 2], hm)
 levels = collect(range(-0.28, stop=0.28, length=11))
 
 hc = contourf!(axψ, x, y, ψ;
-               levels, colormap = :viridis, colorrange = (-0.28, 0.28),
+               levels, colormap = :viridis,
                extendlow = :auto, extendhigh = :auto)
 contour!(axψ, x, y, ψ;
          levels, color = :black)

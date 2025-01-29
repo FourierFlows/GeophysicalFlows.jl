@@ -84,7 +84,7 @@ nothing #hide
 # the variable to be plotted with `Array()` to make sure it is brought back on the CPU when 
 # `vars` live on the GPU.
 
-fig = Figure(resolution = (800, 360))
+fig = Figure(size = (800, 360))
 
 axq = Axis(fig[1, 1];
            xlabel = "x",
@@ -146,7 +146,7 @@ Lx, Ly = grid.Lx, grid.Ly
 title_q = Observable(@sprintf("vorticity, t = %.2f", clock.t))
 title_ψ = "streamfunction ψ"
 
-fig = Figure(resolution=(800, 720))
+fig = Figure(size = (800, 720))
 
 axis_kwargs = (xlabel = "x",
                ylabel = "y",
@@ -180,7 +180,7 @@ heatmap!(axq, x, y, q;
 levels = collect(range(-0.7, stop=0.7, length=20))
 
 contourf!(axψ, x, y, ψ;
-         levels, colormap = :viridis, colorrange = (-0.35, 0.35))
+         levels, colormap = :viridis)
 contour!(axψ, x, y, ψ;
          levels, color = :black)
 
@@ -188,7 +188,7 @@ lines!(axq̄, q̄ₘ, y; linewidth = 3)
 lines!(axq̄, 0y, y; linewidth = 1, linestyle = :dash)
 
 lines!(axū, ūₘ, y; linewidth = 3)
-lines!(axū, 0y, y; lindewidth = 1, linestyle = :dash)
+lines!(axū, 0y, y; linewidth = 1, linestyle = :dash)
 
 fig
 

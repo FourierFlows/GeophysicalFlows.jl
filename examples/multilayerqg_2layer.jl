@@ -166,7 +166,7 @@ KE₁ = Observable(Point2f[(μ * E.t[1], E.data[1][1][1])])
 KE₂ = Observable(Point2f[(μ * E.t[1], E.data[1][1][2])])
 PE  = Observable(Point2f[(μ * E.t[1], E.data[1][2][1])])
 
-fig = Figure(resolution=(1000, 600))
+fig = Figure(size = (1000, 600))
 
 axis_kwargs = (xlabel = "x",
                ylabel = "y",
