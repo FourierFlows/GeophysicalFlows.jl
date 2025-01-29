@@ -126,11 +126,13 @@ for file in files
     rm(file)
 end
 
-deploydocs(
-           repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
-       versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"],
-   push_preview = true,
-  repo_previews = "github.com/FourierFlows/GeophysicalFlows.jl.git",
-      forcepush = true,
-      devbranch = "main"
-)
+withenv("GITHUB_REPOSITORY" => "FourierFlows/GeophysicalFlowsDocumentation") do
+  deploydocs(
+             repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation.git",
+         versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"],
+     push_preview = true,
+    repo_previews = "github.com/FourierFlows/GeophysicalFlows.jl.git",
+        forcepush = true,
+        devbranch = "main"
+  )
+end
