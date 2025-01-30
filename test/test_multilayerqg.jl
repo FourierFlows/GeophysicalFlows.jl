@@ -565,6 +565,9 @@ Tests the lateral and vertical eddy fluxes by constructing a 2-layer problem and
 initializing it with a flow field whose fluxes are known.
 """
 function test_mqg_fluxes(dev::Device=CPU(); nlayers, dt=0.001, stepper="ForwardEuler", n=128, L=2π, μ=0.0, ν=0.0, nν=1)
+
+  if nlayers < 2 || nlayers > 3; error("only works for nlayers = 2 or 3"); end
+  
   nx, ny = 128, 126
   Lx, Ly = 2π, 2π
   gr = TwoDGrid(dev; nx, Lx, ny, Ly)
