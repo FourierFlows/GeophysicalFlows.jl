@@ -105,7 +105,7 @@ end
 x,  y  = prob_bqg.grid.x,  prob_bqg.grid.y
 Lx, Ly = prob_bqg.grid.Lx, prob_bqg.grid.Ly
 
-fig = Figure(resolution=(800, 380))
+fig = Figure(size = (800, 380))
 
 axis_kwargs = (xlabel = "x",
                ylabel = "y",

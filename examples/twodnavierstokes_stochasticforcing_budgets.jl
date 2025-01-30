@@ -165,7 +165,7 @@ end
 # ## Plot
 # Now let's see the final snapshot of the vorticity.
 
-fig = Figure(resolution = (400, 400))
+fig = Figure(size = (400, 400))
 
 ax = Axis(fig[1, 1];
           xlabel = "x",
@@ -205,7 +205,7 @@ residual_Z = dZdt_computed - dZdt_numerical
 
 t = E.t[2:E.i]
 
-fig = Figure(resolution = (800, 1100))
+fig = Figure(size = (800, 1100))
 
 axis_kwargs = (xlabel = "μ t", )
 
