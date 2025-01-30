@@ -564,7 +564,10 @@ end
 Tests the lateral and vertical eddy fluxes by constructing a 2-layer problem and
 initializing it with a flow field whose fluxes are known.
 """
-function test_mqg_fluxes(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=128, L=2π, nlayers=2, μ=0.0, ν=0.0, nν=1)
+function test_mqg_fluxes(dev::Device=CPU(); nlayers, dt=0.001, stepper="ForwardEuler", n=128, L=2π, μ=0.0, ν=0.0, nν=1)
+
+  if nlayers < 2 || nlayers > 3; error("only works for nlayers = 2 or 3"); end
+
   nx, ny = 128, 126
   Lx, Ly = 2π, 2π
   gr = TwoDGrid(dev; nx, Lx, ny, Ly)
@@ -572,10 +575,18 @@ function test_mqg_fluxes(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=
   x, y = gridpoints(gr)
   k₀, l₀ = 2π/gr.Lx, 2π/gr.Ly # fundamental wavenumbers
 
-  nlayers = 2       # these choice of parameters give the
-  f₀ = 1            # desired PV-streamfunction relations
-  H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
-  b = [-1.0, -1.2]  # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+  f₀ = 1
+
+  if nlayers == 2
+    H = [0.2, 0.8]    # q1 = Δψ1 + 25*(ψ2-ψ1), and
+    b = [-1.0, -1.2]  # q2 = Δψ2 + 25/4*(ψ1-ψ2).
+  elseif nlayers == 3
+    # we make a 3-layer problem for which layers 2 and 3 act as one
+    # this way we can check that fluxes for nlayers>2 are still correct
+    H = [0.2, 0.35, 0.45]
+    b = [-1.0, -1.2, -1.2+1e-9]
+  end
+
   U = zeros(ny, nlayers)
   U[:, 1] = @. sech(gr.y / 0.2)^2
 
@@ -583,20 +594,33 @@ function test_mqg_fluxes(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler", n=
 
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
+  x, y = gridpoints(gr)
   ψ1 = @. cos(k₀*x) * cos(l₀*y) + sin(k₀*x)
   ψ2 = @. cos(k₀*x + π/10) * cos(l₀*y)
-  
+
   ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
-  
+
   view(ψ, :, :, 1) .= ψ1
   view(ψ, :, :, 2) .= ψ2
+
+  if nlayers == 3
+    view(ψ, :, :, 3) .= ψ2
+  end
 
   MultiLayerQG.set_ψ!(prob, ψ)
   lateralfluxes, verticalfluxes = MultiLayerQG.fluxes(prob)
 
-  return CUDA.@allowscalar isapprox(lateralfluxes[1], 0.00626267, rtol=1e-6) &&
-         CUDA.@allowscalar isapprox(lateralfluxes[2], 0, atol=1e-12) &&
-         CUDA.@allowscalar isapprox(verticalfluxes[1], -0.196539, rtol=1e-6)
+  testfluxes = CUDA.@allowscalar isapprox(lateralfluxes[1], 0.00626267, rtol=1e-6) &&
+               CUDA.@allowscalar isapprox(lateralfluxes[2], 0, atol=1e-12) &&
+               CUDA.@allowscalar isapprox(verticalfluxes[1], -0.196539, rtol=1e-6)
+
+  if nlayers == 3
+    testfluxes = testfluxes &&
+                 CUDA.@allowscalar isapprox(lateralfluxes[3], 0, atol=1e-12) &&
+                 CUDA.@allowscalar isapprox(verticalfluxes[2], 0, atol=1e-12)
+  end
+
+  return testfluxes
 end
 
 """
