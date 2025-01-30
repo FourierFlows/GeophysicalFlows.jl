@@ -92,7 +92,7 @@ The bibtex entry for the paper is:
 
 1. Shokar, I. J. S., Haynes, P. H. and Kerswell, R. R. (2024) Extending deep learning emulation across parameter regimes to assess stochastically driven spontaneous transition events. In ICLR 2024 Workshop on AI4DifferentialEquations in Science. url: [https://openreview.net/forum?id=7a5gUX4e5q](https://openreview.net/forum?id=7a5gUX4e5q).
 
-1. He, J. and Wang, Y. (2024) Multiple states of two-dimensional turbulence above topography. arXiv preprint arXiv:2405.10826, doi:[10.48550/arXiv.2405.10826](https://doi.org/10.48550/arXiv.2405.10826).
+1. He, J. and Wang, Y. (2024) Multiple states of two-dimensional turbulence above topography. _Journal of Fluid Mechanics_, **994**, R2, doi:[10.1017/jfm.2024.633](https://doi.org/10.1017/jfm.2024.633).
 
 1. Parfenyev, V., Blumenau, M., and Nikitin, I. (2024) Inferring parameters and reconstruction of two-dimensional turbulent flows with physics-informed neural networks. _Jetp Lett._, doi:[10.1134/S0021364024602203](https://doi.org/10.1134/S0021364024602203).
 
