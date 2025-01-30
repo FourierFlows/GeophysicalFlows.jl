@@ -567,7 +567,7 @@ initializing it with a flow field whose fluxes are known.
 function test_mqg_fluxes(dev::Device=CPU(); nlayers, dt=0.001, stepper="ForwardEuler", n=128, L=2π, μ=0.0, ν=0.0, nν=1)
 
   if nlayers < 2 || nlayers > 3; error("only works for nlayers = 2 or 3"); end
-  
+
   nx, ny = 128, 126
   Lx, Ly = 2π, 2π
   gr = TwoDGrid(dev; nx, Lx, ny, Ly)
@@ -599,7 +599,7 @@ function test_mqg_fluxes(dev::Device=CPU(); nlayers, dt=0.001, stepper="ForwardE
   ψ2 = @. cos(k₀*x + π/10) * cos(l₀*y)
 
   ψ = zeros(dev, eltype(gr), (gr.nx, gr.ny, nlayers))
-  
+
   view(ψ, :, :, 1) .= ψ1
   view(ψ, :, :, 2) .= ψ2
 
