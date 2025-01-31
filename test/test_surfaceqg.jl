@@ -3,18 +3,21 @@ function test_sqg_problemtype(dev, T)
 
   A = device_array(dev)
 
-  (typeof(prob.sol)<:A{Complex{T},2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T,2})
+  return (typeof(prob.sol)<:A{Complex{T},2} &&
+          typeof(prob.grid.Lx)==T &&
+          eltype(prob.grid.x)==T &&
+          typeof(prob.vars.u)<:A{T,2})
 end
 
 function test_sqg_stochasticforcedproblemconstructor(dev::Device=CPU())
-  
+
   function calcF!(Fqh, sol, t, clock, vars, params, grid)
     Fqh .= Ffh
     return nothing
   end
-       
+
   prob = SurfaceQG.Problem(dev; calcF=calcF!, stochastic=true)
-  
+
   return typeof(prob.vars.prevsol) == typeof(prob.sol)
 end
 
@@ -63,13 +66,13 @@ function test_sqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
   
   SurfaceQG.updatevars!(prob)
 
-  isapprox(prob.vars.b, bf, rtol=rtol_surfaceqg)
+  return isapprox(prob.vars.b, bf, rtol=rtol_surfaceqg)
 end
 
 function test_sqg_kineticenergy_buoyancyvariance(dev::Device=CPU())
   nx, Lx  = 128, 2π
   ny, Ly  = 128, 3π
-  
+
   grid = TwoDGrid(dev; nx, Lx, ny, Ly)
   x, y = gridpoints(grid)
 
@@ -82,7 +85,7 @@ function test_sqg_kineticenergy_buoyancyvariance(dev::Device=CPU())
 
   prob = SurfaceQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
 
-  sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
+  sol, cl, vr, pr, gr = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
 
   SurfaceQG.set_b!(prob, b₀)
   SurfaceQG.updatevars!(prob)
@@ -90,21 +93,25 @@ function test_sqg_kineticenergy_buoyancyvariance(dev::Device=CPU())
   kinetic_energy_b₀ = SurfaceQG.kinetic_energy(prob)
   buoyancy_variance_b₀ = SurfaceQG.buoyancy_variance(prob)
 
-  params = SurfaceQG.Params(p.ν, p.nν)
+  params = SurfaceQG.Params(pr.ν, pr.nν, gr)
 
   return (isapprox(kinetic_energy_b₀, kinetic_energy_calc, rtol=rtol_surfaceqg) &&
-   isapprox(buoyancy_variance_b₀, buoyancy_variance_calc, rtol=rtol_surfaceqg))
+          isapprox(buoyancy_variance_b₀, buoyancy_variance_calc, rtol=rtol_surfaceqg))
 end
 
 function test_sqg_paramsconstructor(dev::Device=CPU())
   n, L = 128, 2π
   ν, nν = 1e-3, 4
-  
-  prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, stepper="ForwardEuler")
-  
-  params = SurfaceQG.Params(ν, nν)
 
-  return prob.params == params
+  prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, stepper="ForwardEuler")
+
+  params = SurfaceQG.Params(ν, nν, prob.grid)
+
+  return (prob.params.H == params.H &&
+          prob.params.ν == params.ν &&
+          prob.params.nν == params.nν &&
+          prob.params.calcF! == params.calcF! &&
+          prob.params.ψhfrombh == params.ψhfrombh)
 end
 
 function test_sqg_noforcing(dev::Device=CPU())
@@ -154,7 +161,7 @@ function test_sqg_deterministicforcing_buoyancy_variance_budget(dev::Device=CPU(
   diags = [B, D, W]
 
   stepforward!(prob, diags, nt)
-  
+
   SurfaceQG.updatevars!(prob)
 
   dBdt_numerical = (B[3:B.i] - B[1:B.i-2]) / (2 * prob.clock.dt)
@@ -209,6 +216,6 @@ function test_sqg_stochasticforcing_buoyancy_variance_budget(dev::Device=CPU(); 
   dBdt_numerical = (B[2:B.i] - B[1:B.i-1]) / prob.clock.dt
 
   dBdt_computed = W[2:B.i] - D[1:B.i-1]
-  
+
   return isapprox(dBdt_numerical, dBdt_computed, rtol = 1e-4)
 end
