@@ -81,7 +81,7 @@ Keyword arguments
   - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
   - `stochastic`: `true` or `false` (default); boolean denoting whether `calcF` is temporally stochastic.
   - `linear`: `true` or `false` (default); boolean denoting whether the linearized equations of motions are used.
-  - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
+  - `aliased_fraction`: the fraction of high wavenumbers that are zero-ed out by `dealias!()`.
   - `T`: `Float32` or `Float64` (default); floating point type used for `problem` data.
 """
 function Problem(nlayers::Int,                                     # number of fluid layers

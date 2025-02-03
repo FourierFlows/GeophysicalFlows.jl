@@ -66,7 +66,7 @@ Keyword arguments
   - `stepper`: Time-stepping method.
   - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
   - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
-  - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
+  - `aliased_fraction`: the fraction of high wavenumbers that are zero-ed out by `dealias!()`.
   - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
 function Problem(dev::Device=CPU();
