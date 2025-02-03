@@ -261,7 +261,7 @@ abstract type SingleLayerQGVars <: AbstractVars end
 """
     struct Vars{Aphys, Atrans, F, P} <: SingleLayerQGVars
 
-The variables for SingleLayer QG:
+The variables for `SingleLayerQG` problem.
 
 $(FIELDS)
 """
@@ -442,9 +442,9 @@ N = - \\widehat{𝖩(ψ, q + η)} - \\widehat{U ∂_x (q + η)} + \\widehat{(∂
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   dealias!(sol, grid)
-  
+
   calcN_advection!(N, sol, t, clock, vars, params, grid)
-  
+
   addforcing!(N, sol, t, clock, vars, params, grid)
 
   return nothing
@@ -453,7 +453,7 @@ end
 """
     addforcing!(N, sol, t, clock, vars, params, grid)
 
-When the problem includes forcing, calculate the forcing term ``F̂`` and add it to the 
+When the problem includes forcing, calculate the forcing term ``F̂`` and add it to the
 nonlinear term ``N``.
 """
 addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
@@ -501,7 +501,7 @@ Update the variables in `vars` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
   dealias!(sol, grid)
-  
+
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
   @. vars.uh = -im * grid.l  * vars.ψh
@@ -524,7 +524,7 @@ Set the solution of problem, `prob.sol` as the transform of ``q`` and update var
 """
 function set_q!(prob, q)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  
+
   mul!(vars.qh, grid.rfftplan, q)
   @. sol = vars.qh
 
@@ -537,7 +537,7 @@ end
     kinetic_energy(prob)
 
 Return the problem's (`prob`) domain-averaged kinetic energy of the fluid. Since
-``u² + v² = |{\\bf ∇} ψ|²``, the domain-averaged kinetic energy is 
+``u² + v² = |{\\bf ∇} ψ|²``, the domain-averaged kinetic energy is
 
 ```math
 \\int \\frac1{2} |{\\bf ∇} ψ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ψ̂|² .

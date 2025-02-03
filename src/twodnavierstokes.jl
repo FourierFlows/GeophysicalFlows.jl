@@ -107,7 +107,7 @@ end
 """
     struct Params{T} <: AbstractParams
 
-The parameters for a two-dimensional Navier-Stokes problem:
+The parameters for a two-dimensional Navier-Stokes problem.
 
 $(TYPEDFIELDS)
 """
@@ -163,7 +163,7 @@ abstract type TwoDNavierStokesVars <: AbstractVars end
 """
     struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
 
-The variables for two-dimensional Navier-Stokes problem:
+The variables for two-dimensional Navier-Stokes problem.
 
 $(FIELDS)
 """

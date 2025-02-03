@@ -186,7 +186,7 @@ end
 """
     struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
 
-The parameters for the a single-layer `MultiLayerQG` problem.
+The parameters for a single-layer `MultiLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
