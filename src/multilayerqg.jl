@@ -368,7 +368,7 @@ Return the equation for a multi-layer quasi-geostrophic problem with `params` an
 The linear operator ``L`` includes only (hyper)-viscosity and is computed via
 `hyperviscosity(params, grid)`.
 
-The nonlinear term is computed via [`calcN!`](@ref GeophysicalFlows.MultilayerQG.calcN!).
+The nonlinear term is computed via [`calcN!`](@ref GeophysicalFlows.MultiLayerQG.calcN!).
 """
 function Equation(params, grid)
   L = hyperviscosity(params, grid)
