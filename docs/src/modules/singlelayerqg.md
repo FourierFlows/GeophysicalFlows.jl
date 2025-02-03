@@ -2,20 +2,20 @@
 
 ### Basic Equations
 
-This module solves the barotropic or equivalent barotropic quasi-geostrophic vorticity equation 
-on a beta plane of variable fluid depth ``H - h(x, y)``. The flow is obtained through a 
-streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. All flow fields 
-can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
+This module solves the barotropic or equivalent-barotropic quasi-geostrophic vorticity equation
+on a beta plane of variable fluid depth ``H - h(x, y)``. The flow is obtained through a
+streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. All flow fields
+can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here, the QGPV is
 
 ```math
-	\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{\partial_x v
-	- \partial_y u}_{\text{relative vorticity}}
-	\underbrace{ - \frac{1}{\ell^2} \psi}_{\text{vortex stretching}} + 
-	\underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}} ,
+    \underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{\partial_x v
+    - \partial_y u}_{\text{relative vorticity}}
+    \underbrace{ - \frac{1}{\ell^2} \psi}_{\text{vortex stretching}} +
+    \underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}} ,
 ```
 
-where ``\ell`` is the Rossby radius of deformation. Purely barotropic dynamics corresponds to 
-infinite Rossby radius of deformation (``\ell = \infty``), while a flow with a finite Rossby 
+where ``\ell`` is the Rossby radius of deformation. Purely barotropic dynamics corresponds to
+infinite Rossby radius of deformation (``\ell = \infty``), while a flow with a finite Rossby
 radius follows is said to obey equivalent-barotropic dynamics. We denote the sum of the relative
 vorticity and the vortex stretching contributions to the QGPV with ``q \equiv \nabla^2 \psi - \psi / \ell^2``.
 Also, we denote the topographic PV with ``\eta \equiv f_0 h / H``.
@@ -23,31 +23,32 @@ Also, we denote the topographic PV with ``\eta \equiv f_0 h / H``.
 The dynamical variable is ``q``. Including an imposed zonal flow ``U(y)``, the equation of motion is:
 
 ```math
-\partial_t q + \mathsf{J}(\psi, q) + (U - \partial_y\psi) \partial_x Q +  U \partial_x q + (\partial_y Q)(\partial_x \psi) = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] q}_{\textrm{dissipation}} + F ,
+\partial_t q + \mathsf{J}(\psi, q) + (U - \partial_y \psi) \partial_x Q +  U \partial_x q + (\partial_y Q)(\partial_x \psi) = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] q}_{\textrm{dissipation}} + F ,
 ```
 
 with
 
 ```math
 \begin{aligned}
-\partial_y Q &\equiv \beta - \partial_y^2 U + \partial_y \eta , \\
-\partial_x Q &\equiv \partial_x \eta ,
+\partial_y Q & \equiv \beta - \partial_y^2 U + \partial_y \eta , \\
+\partial_x Q & \equiv \partial_x \eta ,
 \end{aligned}
 ```
 
 the background PV gradient components, and with
 ``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b) - (\partial_y a)(\partial_x b)``
-the two-dimensional Jacobian. On the right hand side, ``F(x, y, t)`` is forcing, ``\mu`` is 
-linear drag, and ``\nu`` is hyperviscosity of order ``n_\nu``. Plain old viscosity corresponds 
+the two-dimensional Jacobian. On the right hand side, ``F(x, y, t)`` is forcing, ``\mu`` is
+linear drag, and ``\nu`` is hyperviscosity of order ``n_\nu``. Plain old viscosity corresponds
 to ``n_\nu = 1``.
 
-In the case that the imposed background zonal flow is just a constant, the above simplifies to:
+If the imposed background zonal flow is constant over the whole domain (doesn't depend on ``y``),
+the above simplifies to:
 
 ```math
 \partial_t q + \mathsf{J}(\psi, q + \eta) + U \partial_x (q + \eta) + β \partial_x \psi = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] q}_{\textrm{dissipation}} + F ,
 ```
 
-and thus the advection of ``q`` can be incorporated in the linear term ``L``.
+and thus the mean advection of ``q`` by ``U`` is incorporated in the linear term ``L``.
 
 ### Implementation
 
@@ -55,13 +56,14 @@ The equation is time-stepped forward in Fourier space:
 
 ```math
 \partial_t \widehat{q} = - \widehat{\mathsf{J}(\psi, q)} - \widehat{U \partial_x Q} - \widehat{U \partial_x q}
-+ \widehat{(\partial_y \psi) (\partial_x Q)}  - \widehat{(\partial_x \psi)(\partial_y Q)} - \left(\mu + \nu |𝐤|^{2n_\nu} \right) \widehat{q} + \widehat{F} .
+  + \widehat{(\partial_y \psi) (\partial_x Q)}  - \widehat{(\partial_x \psi)(\partial_y Q)}
+  - \left(\mu + \nu |𝐤|^{2n_\nu} \right) \widehat{q} + \widehat{F} .
 ```
 
-In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) =
-\partial_y [ (\partial_x f) g] - \partial_x[ (\partial_y f) g]``.
+In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) =
+\partial_y [(\partial_x f) g] - \partial_x [(\partial_y f) g]``.
 
-The state variable `sol` is the Fourier transform of the sum of relative vorticity and vortex 
+The state variable `sol` is the Fourier transform of the sum of relative vorticity and vortex
 stretching (when the latter is applicable), [`qh`](@ref GeophysicalFlows.SingleLayerQG.Vars).
 
 The linear operator is constructed in `Equation`
@@ -76,7 +78,7 @@ The nonlinear terms are computed via
 GeophysicalFlows.SingleLayerQG.calcN!
 ```
 
-which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.SingleLayerQG.calcN_advection!) 
+which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.SingleLayerQG.calcN_advection!)
 and [`addforcing!`](@ref GeophysicalFlows.SingleLayerQG.addforcing!).
 
 
@@ -120,8 +122,8 @@ The total energy is:
 GeophysicalFlows.SingleLayerQG.energy
 ```
 
-Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.SingleLayerQG.energy_dissipation), 
-[`energy_drag`](@ref GeophysicalFlows.SingleLayerQG.energy_drag), [`energy_work`](@ref GeophysicalFlows.SingleLayerQG.energy_work), 
+Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.SingleLayerQG.energy_dissipation),
+[`energy_drag`](@ref GeophysicalFlows.SingleLayerQG.energy_drag), [`energy_work`](@ref GeophysicalFlows.SingleLayerQG.energy_work),
 [`enstrophy_dissipation`](@ref GeophysicalFlows.SingleLayerQG.enstrophy_dissipation), and
 [`enstrophy_drag`](@ref GeophysicalFlows.SingleLayerQG.enstrophy_drag), [`enstrophy_work`](@ref GeophysicalFlows.SingleLayerQG.enstrophy_work).
 
