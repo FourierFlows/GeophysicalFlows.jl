@@ -225,7 +225,7 @@ by ``U``, namely ``-i k_x U```. That is:
 L = -μ - ν |𝐤|^{2 n_ν} + i β k_x / (|𝐤|² + 1/ℓ²) - i k_x U .
 ```
 
-The nonlinear term is computed via `calcN!` function.
+The nonlinear term is computed via [`calcN!`](@ref GeophysicalFlows.SingleLayerQG.calcN!).
 """
 function Equation(params::BarotropicQGParams, grid)
   L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq
@@ -344,10 +344,10 @@ end
 """
     calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGconstantUParams, grid)
 
-Compute the advection term and stores it in `N`. The imposed zonal flow ``U`` is either
+Compute the advection term and store it in `N`. The imposed zonal flow ``U`` is either
 zero or constant, in which case is incorporated in the linear terms of the equation.
 Thus, the nonlinear terms is ``- 𝖩(ψ, q + η)`` in conservative form, i.e.,
-``- ∂_x[(∂_y ψ)(q + η)] - ∂_y[(∂_x ψ)(q + η)]``:
+``∂_x[(∂_y ψ)(q + η)] - ∂_y[(∂_x ψ)(q + η)]``:
 
 ```math
 N = - \\widehat{𝖩(ψ, q + η)} = - i k_x \\widehat{u (q + η)} - i k_y \\widehat{v (q + η)} .
@@ -384,7 +384,7 @@ end
 """
     calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGvaryingUParams, grid)
 
-Compute the advection term and stores it in `N`. The imposed zonal flow ``U(y)`` varies
+Compute the advection term and store it in `N`. The imposed zonal flow ``U(y)`` varies
 with ``y`` and therefore is not taken care by the linear term `L` but rather is
 incorporated in the nonlinear term `N`.
 
@@ -547,7 +547,7 @@ Return the problem's (`prob`) domain-averaged kinetic energy of the fluid. Since
 
 function kinetic_energy(sol, vars, params, grid)
   streamfunctionfrompv!(vars.ψh, sol, params, grid)
-  @. vars.uh = sqrt.(grid.Krsq) * vars.ψh      # vars.uh is a dummy variable
+  @. vars.uh = sqrt(grid.Krsq) * vars.ψh      # vars.uh is a dummy variable
 
   return parsevalsum2(vars.uh , grid) / (2 * grid.Lx * grid.Ly)
 end

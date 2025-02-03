@@ -125,9 +125,9 @@ operator ``L`` includes (hyper)-viscosity of order ``n_ν`` with coefficient ``�
 L = - ν |𝐤|^{2 n_ν} .
 ```
 
-Plain old viscosity corresponds to ``n_ν=1``.
+Plain-old viscosity corresponds to ``n_ν=1``.
 
-The nonlinear term is computed via function `calcN!()`.
+The nonlinear term is computed via [`calcN!`](@ref GeophysicalFlows.SurfaceQG.calcN!).
 """
 function Equation(params::Params, grid::AbstractGrid)
   L = @. - params.ν * grid.Krsq^params.nν

@@ -167,7 +167,7 @@ parameters `params` and on `grid`. Linear operator ``L`` includes bottom drag ``
 L = - μ - ν |𝐤|^{2 n_ν} + i β k_x / |𝐤|² .
 ```
 
-Nonlinear term is computed via `calcN!` function.
+Nonlinear term is computed via [`calcN!`](@ref GeophysicalFlows.BarotropicQGQL.calcN!).
 """
 function Equation(params::Params, grid::AbstractGrid)
   L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq

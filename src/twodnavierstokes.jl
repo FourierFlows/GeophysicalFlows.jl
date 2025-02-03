@@ -144,7 +144,7 @@ L = - ν |𝐤|^{2 n_ν} - μ |𝐤|^{2 n_μ} .
 
 Plain-old viscosity corresponds to ``n_ν = 1`` while ``n_μ = 0`` corresponds to linear drag.
 
-The nonlinear term is computed via the function `calcN!`.
+The nonlinear term is computed via [`calcN!`](@ref GeophysicalFlows.TwoDNavierStokes.calcN!).
 """
 function Equation(params::Params, grid::AbstractGrid)
   L = @. - params.ν * grid.Krsq^params.nν - params.μ * grid.Krsq^params.nμ
@@ -244,7 +244,7 @@ end
     calcN_advection!(N, sol, t, clock, vars, params, grid)
 
 Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, ζ)`` in conservative form,
-i.e., ``- ∂_x[(∂_y ψ)ζ] - ∂_y[(∂_x ψ)ζ]`` and store it in `N`:
+i.e., ``∂_x[(∂_y ψ)ζ] - ∂_y[(∂_x ψ)ζ]`` and store it in `N`:
 
 ```math
 N = - \\widehat{𝖩(ψ, ζ)} = - i k_x \\widehat{u ζ} - i k_y \\widehat{v ζ} .
