@@ -2,10 +2,10 @@
 
 ### Basic Equations
 
-This module solves the layered Boussinesq quasi-geostrophic equations on a beta plane of variable fluid 
-depth ``H - h(x, y)``. The flow in each layer is obtained through a streamfunction ``\psi_j`` as 
-``(u_j, v_j) = (-\partial_y \psi_j, \partial_x \psi_j)``, ``j = 1, \dots, n``, where ``n`` 
-is the number of fluid layers.
+This module solves the layered Boussinesq quasi-geostrophic equations on a beta plane of variable-fluid
+depth ``H - h(x, y)``. The flow in each layer is obtained through a streamfunction ``\psi_j`` as
+``(u_j, v_j) = (-\partial_y \psi_j, \partial_x \psi_j)``, ``j = 1, \dots, n``, where ``n``
+is the number of fluid layers, with the bottom-most layer is the ``n``-th layer.
 
 The QGPV in each layer is
 
@@ -13,8 +13,8 @@ The QGPV in each layer is
 \mathrm{QGPV}_j = q_j + \underbrace{f_0 + \beta y}_{\textrm{planetary PV}} + \delta_{j, n} \underbrace{\frac{f_0 h}{H_n}}_{\textrm{topographic PV}}, \quad j = 1, \dots, n .
 ```
 
-where ``q_j`` incorporates the relative vorticity in each layer ``\nabla^2 \psi_j`` and the 
-vortex stretching terms:
+where ``q_j`` incorporates both the relative vorticity in each layer ``\nabla^2 \psi_j`` and the
+vortex stretching terms, i.e.,
 
 ```math
 \begin{aligned}
@@ -37,9 +37,10 @@ where
 b_{j} = - g \frac{\delta \rho_j}{\rho_0}
 ```
 
-is the Boussinesq buoyancy in each layer, with ``\rho = \rho_0 + \delta \rho`` the total density, ``\rho_0`` a constant reference density, and ``|\delta \rho| \ll \rho_0`` the perturbation density.
+is the Boussinesq buoyancy in each layer, with ``\rho = \rho_0 + \delta \rho`` the total density,
+``\rho_0`` a constant reference density, and ``|\delta \rho| \ll \rho_0`` the perturbation density.
 
-In view of the relationships above, when we convert to Fourier space ``q``'s and ``\psi``'s are 
+In view of the relationships above, when we convert to Fourier space the ``q``'s and ``\psi``'s are
 related via the matrix equation
 
 ```math
@@ -70,25 +71,27 @@ with
 
 ```math
 \begin{aligned}
-\partial_y Q_j &\equiv \beta - \partial_y^2 U_j - (1-\delta_{j,1}) F_{j-1/2, j} (U_{j-1} - U_j) - (1 - \delta_{j,n}) F_{j+1/2, j} (U_{j+1} - U_j) + \delta_{j,n} \partial_y \eta , \\
+\partial_y Q_j &\equiv \beta - \partial_y^2 U_j - (1 - \delta_{j, 1}) F_{j-1/2, j} (U_{j-1} - U_j) - (1 - \delta_{j,n}) F_{j+1/2, j} (U_{j+1} - U_j) + \delta_{j, n} \partial_y \eta , \\
 \partial_x Q_j & \equiv \delta_{j, n} \partial_x \eta ,
 \end{aligned}
 ```
 
-the background PV gradient components in each layer and with
-``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x b)`` is the 
+the background PV gradient components in each layer and where
+``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x b)`` is the
 two-dimensional Jacobian. On the right hand side, ``\mu`` is linear bottom drag, and ``\nu`` is
 hyperviscosity of order ``n_\nu``. Plain old viscosity corresponds to ``n_\nu = 1``.
 
 ### Implementation
 
-Matrices ``\mathbb{S}_{𝐤}`` as well as ``\mathbb{S}^{-1}_{𝐤}`` are included in `params` as 
-`params.S` and `params.S⁻¹` respectively. Additionally, the background PV gradients 
-``\partial_x Q`` and ``\partial_y Q`` are also included in the `params` as `params.Qx` and 
-`params.Qy`.
+Matrices ``\mathbb{S}_{𝐤}`` as well as ``\mathbb{S}^{-1}_{𝐤}`` are included in
+[`Params`](@ref GeophysicalFlows.MultiLayerQG.Params) as `S` and `S⁻¹` respectively.
+Additionally, the background PV gradients ``\partial_x Q`` and ``\partial_y Q`` are also
+included in [`Params`](@ref GeophysicalFlows.MultiLayerQG.Params) as `Qx` and `Qy` respectively.
 
-One can get the ``\widehat{\psi}_j`` from ``\widehat{q}_j`` via 
-`streamfunctionfrompv!(psih, qh, params, grid)`, while the inverse, i.e. obtain ``\widehat{q}_j`` from ``\widehat{\psi}_j``, is done via  `pvfromstreamfunction!(qh, psih, params, grid)`.
+One can get the ``\widehat{\psi}_j`` from ``\widehat{q}_j`` via
+[`streamfunctionfrompv!`](@ref GeophysicalFlows.MultiLayerQG.streamfunctionfrompv!). The inverse,
+i.e., to obtain ``\widehat{q}_j`` from ``\widehat{\psi}_j``, is done via
+[`pvfromstreamfunction!`](@ref GeophysicalFlows.MultiLayerQG.pvfromstreamfunction!).
 
 The equations of motion are time-stepped forward in Fourier space:
 
@@ -97,10 +100,10 @@ The equations of motion are time-stepped forward in Fourier space:
 + \widehat{(\partial_y \psi_j) \partial_x Q_j}  - \widehat{(\partial_x \psi_j)(\partial_y Q_j)} + \delta_{j, n} \mu |𝐤|^{2} \widehat{\psi}_n - \nu |𝐤|^{2n_\nu} \widehat{q}_j .
 ```
 
-In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f,g) =
-\partial_y [ (\partial_x f) g] - \partial_x[ (\partial_y f) g]``.
+In doing so the Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) =
+\partial_y [(\partial_x f) g] - \partial_x [(\partial_y f) g]``.
 
-The state variable `sol` consists of the Fourier transforms of ``q_j`` at each layer, i.e., 
+The state variable `sol` consists of the Fourier transforms of ``q_j`` at each layer, i.e.,
 [`qh`](@ref GeophysicalFlows.MultiLayerQG.Vars).
 
 The linear operator is constructed in `Equation`
@@ -116,13 +119,13 @@ The nonlinear terms are computed via
 GeophysicalFlows.MultiLayerQG.calcN!
 ```
 
-which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.MultiLayerQG.calcN_advection!) 
+which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.MultiLayerQG.calcN_advection!)
 and [`addforcing!`](@ref GeophysicalFlows.MultiLayerQG.addforcing!).
 
 !!! tip "Linearized MultiLayerQG dynamics"
     The `MultiLayerQG` module includes also a linearized version of the dynamics about a base
-    flow ``U_j(y)``, ``j = 1, \dots, n``; see [`LinearEquation`](@ref GeophysicalFlows.MultiLayerQG.LinearEquation), 
-    [`calcNlinear!`](@ref GeophysicalFlows.MultiLayerQG.calcNlinear!), and 
+    flow ``U_j(y)``, ``j = 1, \dots, n``; see [`LinearEquation`](@ref GeophysicalFlows.MultiLayerQG.LinearEquation),
+    [`calcNlinear!`](@ref GeophysicalFlows.MultiLayerQG.calcNlinear!), and
     [`calcN_linearadvection!`](@ref GeophysicalFlows.MultiLayerQG.calcN_linearadvection!).
 
 
@@ -131,7 +134,7 @@ and [`addforcing!`](@ref GeophysicalFlows.MultiLayerQG.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.MultiLayerQG.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.MultiLayerQG.Vars).
 
-For the decaying case (no forcing, ``F=0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.MultiLayerQG.DecayingVars). 
+For the decaying case (no forcing, ``F=0``), `vars` can be constructed with [`DecayingVars`](@ref GeophysicalFlows.MultiLayerQG.DecayingVars).
 For the forced case (``F \ne 0``) the `vars` struct is with [`ForcedVars`](@ref GeophysicalFlows.MultiLayerQG.ForcedVars) or [`StochasticForcedVars`](@ref GeophysicalFlows.MultiLayerQG.StochasticForcedVars).
 
 
@@ -145,7 +148,7 @@ GeophysicalFlows.MultiLayerQG.updatevars!
 
 ### Diagnostics
 
-The eddy kinetic energy in each layer and the eddy potential energy that corresponds to each 
+The eddy kinetic energy in each layer and the eddy potential energy that corresponds to each
 fluid interface is computed via `energies`:
 
 ```@docs
