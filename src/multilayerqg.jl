@@ -982,38 +982,15 @@ function fluxes(vars, params, grid, sol)
   lateralfluxes = params.H .* (sum(@. params.U * vars.v * ∂u∂y; dims=(1, 2)))[1, 1, :]
   lateralfluxes *= grid.dx * grid.dy / V
 
-  compute_verticalfluxes!(verticalfluxes, Val(size(sol, 3)), params, vars)
-  verticalfluxes *= grid.dx * grid.dy / V
-
-  return lateralfluxes, verticalfluxes
-end
-
-"""
-    compute_verticalfluxes!(verticalfluxes, Val(nlayers), params, vars)
-
-Compute the vertical fluxes; see [`fluxes`](@ref). Note that we need to scale by
-multiplying with `grid.dx * grid.dy / (grid.Lx * grid.Ly * sum(params.H))`.
-"""
-function compute_verticalfluxes!(verticalfluxes, nlayers::Val{2}, params, vars)
-  U₁, U₂ = view(params.U, :, :, 1), view(params.U, :, :, 2)
-  ψ₁ = view(vars.ψ, :, :, 1)
-  v₂ = view(vars.v, :, :, 2)
-
-  verticalfluxes .= sum(@. params.f₀^2 / params.g′[1] * (U₁ .- U₂) * v₂ * ψ₁)
-
-  return nothing
-end
-
-function compute_verticalfluxes!(verticalfluxes, nlayers, params, vars)
-  nlayers = numberoflayers(params)
-
   for j = 1:nlayers-1
     Uⱼ, Uⱼ₊₁ = view(params.U, :, :, j), view(params.U, :, :, j+1)
     ψⱼ = view(vars.ψ, :, :, j)
     vⱼ₊₁ = view(vars.v, :, :, j+1)
-    @views verticalfluxes[j] = sum(@. params.f₀^2 / params.g′[j] * (Uⱼ - Uⱼ₊₁) * vⱼ₊₁ * ψⱼ; dims=(1, 2))[1]
+    verticalfluxes[j] = sum(@. params.f₀^2 / params.g′[j] * (Uⱼ - Uⱼ₊₁) * vⱼ₊₁ * ψⱼ)
   end
-  return nothing
+  verticalfluxes *= grid.dx * grid.dy / V
+
+  return lateralfluxes, verticalfluxes
 end
 
 function fluxes(vars, params::SingleLayerParams, grid, sol)
