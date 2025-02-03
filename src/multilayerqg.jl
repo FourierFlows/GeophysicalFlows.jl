@@ -114,7 +114,7 @@ function Problem(nlayers::Int,                                     # number of f
                             T = Float64)
 
   if nlayers == 1
-    @warn """MultiLayerQG module does work for single-layer configuration but may not be as 
+    @warn """MultiLayerQG module does work for single-layer configuration but may not be as
     optimized. We suggest using SingleLayerQG module for single-layer QG simulation unless
     you have reasons to use MultiLayerQG in a single-layer configuration, e.g., you want to
     compare solutions with varying number of fluid layers."""
@@ -272,7 +272,7 @@ function Params(nlayers::Int, f₀, β, b, H, U, eta, topographic_pv_gradient, �
   etay = irfft(im * l  .* etah, nx)   # ∂η/∂y
 
   # Add topographic PV large-scale gradient
-  topographic_pv_gradient = T.(topographic_pv_gradient) 
+  topographic_pv_gradient = T.(topographic_pv_gradient)
   @. etax += topographic_pv_gradient[1]
   @. etay += topographic_pv_gradient[2]
 
@@ -349,7 +349,7 @@ end
     LinearEquation(params, grid)
 
 Return the equation for a multi-layer quasi-geostrophic problem with `params` and `grid`.
-The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via
+The linear operator ``L`` includes only (hyper)-viscosity and is computed via
 `hyperviscosity(params, grid)`.
 
 The nonlinear term is computed via function `calcNlinear!`.
@@ -364,7 +364,7 @@ end
     Equation(params, grid)
 
 Return the equation for a multi-layer quasi-geostrophic problem with `params` and `grid`.
-The linear opeartor ``L`` includes only (hyper)-viscosity and is computed via
+The linear operator ``L`` includes only (hyper)-viscosity and is computed via
 `hyperviscosity(params, grid)`.
 
 The nonlinear term is computed via function `calcN!`.
@@ -912,7 +912,7 @@ function energies(vars, params, grid, sol)
 
   abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
   @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
-  
+
   V = grid.Lx * grid.Ly * sum(params.H)  # total volume of the fluid
 
   for j = 1:nlayers
