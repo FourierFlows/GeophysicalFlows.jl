@@ -84,9 +84,9 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
-1. Crowe, M. N. and Sutyrin, G. G. (2024) Symmetry breaking of two-layer eastward propagating dipoles. arXiv preprint arXiv.2410.14402, doi:[10.48550/arXiv.2410.14402](https://doi.org/10.48550/arXiv.2410.14402).
-
 1. Lobo, M., Griffies, S. M., and Zhang, W. (2025) Vertical structure of baroclinic instability in a three-layer quasi-geostrophic model over a sloping bottom. _Journal of Physical Oceanography_, in press, doi:[10.1175/JPO-D-24-0130.1](https://doi.org/10.1175/JPO-D-24-0130.1).
+
+1. Crowe, M. N. and Sutyrin, G. G. (2024) Symmetry breaking of two-layer eastward propagating dipoles. arXiv preprint arXiv.2410.14402, doi:[10.48550/arXiv.2410.14402](https://doi.org/10.48550/arXiv.2410.14402).
 
 1. Pudig, M. and Smith, K. S. (2024) Baroclinic turbulence above rough topography: The vortex gas and topographic turbulence regimes. _ESS Open Archive_, doi:[10.22541/essoar.171995116.60993353/v1](https://doi.org/10.22541/essoar.171995116.60993353/v1).
 
