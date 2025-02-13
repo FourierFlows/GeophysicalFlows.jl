@@ -85,7 +85,6 @@ GeophysicalFlows.MultiLayerQG.calcN_advection!
 GeophysicalFlows.MultiLayerQG.calcN_linearadvection!
 GeophysicalFlows.MultiLayerQG.addforcing!
 GeophysicalFlows.MultiLayerQG.pv_streamfunction_kernel!
-GeophysicalFlows.MultiLayerQG.compute_verticalfluxes!
 ```
 
 
