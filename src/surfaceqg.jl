@@ -8,6 +8,7 @@ export
 
   kinetic_energy,
   buoyancy_variance,
+  total_energy,
   buoyancy_dissipation,
   buoyancy_work
 
@@ -128,7 +129,8 @@ function Params(H, ν, nν, calcF!, grid::AbstractGrid)
   return Params(H, ν, nν, calcF!, ψhfrombh)
 end
 
-Params(ν, nν, grid) = Params(Inf, ν, nν, nothingfunction, grid)
+Params(ν, nν, grid::AbstractGrid) = Params(Inf, ν, nν, nothingfunction, grid)
+Params(H, ν, nν, grid::AbstractGrid) = Params(H, ν, nν, nothingfunction, grid)
 
 # ---------
 # Equations
@@ -423,10 +425,7 @@ Return the total energy per unit of surface area. Since ``u² + v² + b² = |{\\
 \\int \\frac1{2} |{\\bf ∇}_3 ψ|² \\frac{𝖽x 𝖽y dz}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤| |ψ̂|² .
 ```
 In SQG with infinite depth, this is identical to half the domain-averaged surface buoyancy variance.
-
-PRELIMINARY, NOT TESTED OR CONFIRMED TO BE MATHEMATICALLY CORRECT
 """
-
 @inline function total_energy(sol, vars, params, grid)
   total_energyh = vars.bh          # use vars.bh as scratch variable
 

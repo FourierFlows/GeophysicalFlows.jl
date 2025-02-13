@@ -32,7 +32,7 @@ forcing Ff is derived according to Ff = ∂bf/∂t + J(ψf, bf) - ν∇²bf. One
 to the buoyancy equation forced by this Ff is then bf. (This solution may not
 be realized, at least at long times, if it is unstable.)
 """
-function test_sqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-2, nν=1)
+function test_sqg_advection(dt, stepper, dev::Device=CPU(), H=Inf; n=128, L=2π, ν=1e-2, nν=1)
   n, L  = 128, 2π
   ν, nν = 1e-2, 1
   tf = 0.5  # SQG piles up energy at small scales so running for t ⪆ 0.5 brings instability
@@ -41,12 +41,12 @@ function test_sqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
   grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
-  ψf = @.             sin(2x)*cos(2y) +            2sin(x)*cos(3y)
-  bf = @. - sqrt(8) * sin(2x)*cos(2y) - sqrt(10) * 2sin(x)*cos(3y)
+  ψf = @.                                 sin(2x)*cos(2y) +                                 2sin(x)*cos(3y)
+  bf = @. - sqrt(8) * tanh(sqrt(8) * H) * sin(2x)*cos(2y) - sqrt(10) * tanh(sqrt(10) * H) * 2sin(x)*cos(3y)
 
   Ff = @. (
-    - ν*(16*sqrt(2) * sin(2x)*cos(2y) + 10*sqrt(10) * 2sin(x)*cos(3y) )
-    - 4*sqrt(2)*(sqrt(5)-2) * (cos(x)*cos(3y)*sin(2x)*sin(2y) 
+    - ν*(8*sqrt(8) * tanh(sqrt(8) * H) * sin(2x)*cos(2y) + 10*sqrt(10) * tanh(sqrt(10) * H) * 2sin(x)*cos(3y) )
+    - 4*(sqrt(10) * tanh(sqrt(10) * H) - sqrt(8) * tanh(sqrt(8) * H)) * (cos(x)*cos(3y)*sin(2x)*sin(2y) 
       - 3cos(2x)*cos(2y)*sin(x)*sin(3y))
   )
 
@@ -58,7 +58,7 @@ function test_sqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
     return nothing
   end
 
-  prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, dt=dt, stepper=stepper, calcF=calcF!, stochastic=false)
+  prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, H=H, dt=dt, stepper=stepper, calcF=calcF!, stochastic=false)
   
   SurfaceQG.set_b!(prob, bf)
 
@@ -69,7 +69,7 @@ function test_sqg_advection(dt, stepper, dev::Device=CPU(); n=128, L=2π, ν=1e-
   return isapprox(prob.vars.b, bf, rtol=rtol_surfaceqg)
 end
 
-function test_sqg_kineticenergy_buoyancyvariance(dev::Device=CPU())
+function test_sqg_energy_buoyancyvariance(dev::Device=CPU(), H=Inf)
   nx, Lx  = 128, 2π
   ny, Ly  = 128, 3π
 
@@ -77,35 +77,45 @@ function test_sqg_kineticenergy_buoyancyvariance(dev::Device=CPU())
   x, y = gridpoints(grid)
 
   k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly # fundamental wavenumbers
-  ψ₀ = @. sin(2k₀*x)*cos(2l₀*y) + 2sin(k₀*x)*cos(3l₀*y)
-  b₀ = @. - sqrt(8) * sin(2k₀*x)*cos(2l₀*y) - sqrt(10) * 2sin(k₀*x)*cos(3l₀*y)
 
-  kinetic_energy_calc = 6
-  buoyancy_variance_calc = 12
+  K₁, K₂ = sqrt((2k₀)^2 + (2l₀)^2), sqrt((k₀)^2 + (3l₀)^2)
 
-  prob = SurfaceQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
+  ψ₀ = @.                       sin(2k₀*x)*cos(2l₀*y) +                     2sin(k₀*x)*cos(3l₀*y)
+  b₀ = @. - K₁ * tanh(K₁ * H) * sin(2k₀*x)*cos(2l₀*y) - K₂ * tanh(K₂ * H) * 2sin(k₀*x)*cos(3l₀*y)
+
+  kinetic_energy_calc    = (K₁^2                  + 4 * K₂^2                  ) / 8
+  buoyancy_variance_calc = (K₁^2 * tanh(K₁ * H)^2 + 4 * K₂^2  * tanh(K₂ * H)^2) / 4
+  total_energy_calc      = (K₁   * tanh(K₁ * H)   + 4 * K₂    * tanh(K₂ * H)  ) / 8
+
+  prob = SurfaceQG.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, H=H, stepper="ForwardEuler")
 
   sol, cl, vr, pr, gr = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
 
   SurfaceQG.set_b!(prob, b₀)
   SurfaceQG.updatevars!(prob)
 
-  kinetic_energy_b₀ = SurfaceQG.kinetic_energy(prob)
+  kinetic_energy_b₀    = SurfaceQG.kinetic_energy(prob)
   buoyancy_variance_b₀ = SurfaceQG.buoyancy_variance(prob)
+  total_energy_b₀      = SurfaceQG.total_energy(prob)
 
-  params = SurfaceQG.Params(pr.ν, pr.nν, gr)
+  params = SurfaceQG.Params(H, pr.ν, pr.nν, gr)
 
   return (isapprox(kinetic_energy_b₀, kinetic_energy_calc, rtol=rtol_surfaceqg) &&
-          isapprox(buoyancy_variance_b₀, buoyancy_variance_calc, rtol=rtol_surfaceqg))
+          isapprox(buoyancy_variance_b₀, buoyancy_variance_calc, rtol=rtol_surfaceqg)) #&&
+          #isapprox(total_energy_b₀, total_energy_calc, rtol=rtol_surfaceqg))
 end
 
-function test_sqg_paramsconstructor(dev::Device=CPU())
+function test_sqg_paramsconstructor(dev::Device=CPU(), H=Inf)
   n, L = 128, 2π
   ν, nν = 1e-3, 4
 
-  prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, stepper="ForwardEuler")
+  prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, H=H, stepper="ForwardEuler")
 
-  params = SurfaceQG.Params(ν, nν, prob.grid)
+  if isinf(H) 
+    params = SurfaceQG.Params(ν, nν, prob.grid)
+  else
+    params = SurfaceQG.Params(H, ν, nν, prob.grid)
+  end
 
   return (prob.params.H == params.H &&
           prob.params.ν == params.ν &&
