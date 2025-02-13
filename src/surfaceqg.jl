@@ -4,7 +4,7 @@ export
   Problem,
   set_b!,
   updatevars!,
-  streamfunctionfromb!,
+  get_streamfunction,
 
   kinetic_energy,
   buoyancy_variance,
@@ -365,18 +365,17 @@ function set_b!(prob, b)
 end
 
 """
-    streamfunctionfromb!(ψ, bh, params, grid)
-    streamfunctionfromb!(ψ, prob)
+    get_streamfunction(sol, params, grid)
+    get_streamfunction(prob)
 
-Compute the streamfunction `ψ` from the buoyancy `bh` in Fourier space.
-(Note that `bh = prob.sol`.)
+Compute the streamfunction `ψ` from bh
 """
-function streamfunctionfromb!(ψ, bh, params, grid)
-  ldiv!(ψ, grid.rfftplan, @. params.ψhfrombh * bh)
-  return nothing
+function get_streamfunction(sol, params, grid)
+  ψh = @. params.ψhfrombh * sol
+  return irfft(ψh, grid.nx)
 end
 
-streamfunctionfromb!(ψ, prob) = streamfunctionfromb!(ψ, prob.sol, prob.params, prob.grid)
+get_streamfunction(prob) = get_streamfunction(prob.sol, prob.params, prob.grid)
 
 """
     kinetic_energy(prob)
