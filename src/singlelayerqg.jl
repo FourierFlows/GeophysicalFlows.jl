@@ -74,7 +74,7 @@ Keyword arguments
   - `stepper`: Time-stepping method.
   - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
   - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
-  - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
+  - `aliased_fraction`: the fraction of high wavenumbers that are zero-ed out by `dealias!()`.
   - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
 function Problem(dev::Device=CPU();
@@ -225,7 +225,7 @@ by ``U``, namely ``-i k_x U```. That is:
 L = -μ - ν |𝐤|^{2 n_ν} + i β k_x / (|𝐤|² + 1/ℓ²) - i k_x U .
 ```
 
-The nonlinear term is computed via `calcN!` function.
+The nonlinear term is computed via [`calcN!`](@ref GeophysicalFlows.SingleLayerQG.calcN!).
 """
 function Equation(params::BarotropicQGParams, grid)
   L = @. - params.μ - params.ν * grid.Krsq^params.nν + im * params.β * grid.kr * grid.invKrsq
@@ -261,7 +261,7 @@ abstract type SingleLayerQGVars <: AbstractVars end
 """
     struct Vars{Aphys, Atrans, F, P} <: SingleLayerQGVars
 
-The variables for SingleLayer QG:
+The variables for `SingleLayerQG` problem.
 
 $(FIELDS)
 """
@@ -344,10 +344,10 @@ end
 """
     calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGconstantUParams, grid)
 
-Compute the advection term and stores it in `N`. The imposed zonal flow ``U`` is either
+Compute the advection term and store it in `N`. The imposed zonal flow ``U`` is either
 zero or constant, in which case is incorporated in the linear terms of the equation.
 Thus, the nonlinear terms is ``- 𝖩(ψ, q + η)`` in conservative form, i.e.,
-``- ∂_x[(∂_y ψ)(q + η)] - ∂_y[(∂_x ψ)(q + η)]``:
+``∂_x[(∂_y ψ)(q + η)] - ∂_y[(∂_x ψ)(q + η)]``:
 
 ```math
 N = - \\widehat{𝖩(ψ, q + η)} = - i k_x \\widehat{u (q + η)} - i k_y \\widehat{v (q + η)} .
@@ -384,7 +384,7 @@ end
 """
     calcN_advection!(N, sol, t, clock, vars, params::SingleLayerQGvaryingUParams, grid)
 
-Compute the advection term and stores it in `N`. The imposed zonal flow ``U(y)`` varies
+Compute the advection term and store it in `N`. The imposed zonal flow ``U(y)`` varies
 with ``y`` and therefore is not taken care by the linear term `L` but rather is
 incorporated in the nonlinear term `N`.
 
@@ -442,9 +442,9 @@ N = - \\widehat{𝖩(ψ, q + η)} - \\widehat{U ∂_x (q + η)} + \\widehat{(∂
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   dealias!(sol, grid)
-  
+
   calcN_advection!(N, sol, t, clock, vars, params, grid)
-  
+
   addforcing!(N, sol, t, clock, vars, params, grid)
 
   return nothing
@@ -453,7 +453,7 @@ end
 """
     addforcing!(N, sol, t, clock, vars, params, grid)
 
-When the problem includes forcing, calculate the forcing term ``F̂`` and add it to the 
+When the problem includes forcing, calculate the forcing term ``F̂`` and add it to the
 nonlinear term ``N``.
 """
 addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
@@ -501,7 +501,7 @@ Update the variables in `vars` with the solution in `sol`.
 """
 function updatevars!(sol, vars, params, grid)
   dealias!(sol, grid)
-  
+
   @. vars.qh = sol
   streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
   @. vars.uh = -im * grid.l  * vars.ψh
@@ -524,7 +524,7 @@ Set the solution of problem, `prob.sol` as the transform of ``q`` and update var
 """
 function set_q!(prob, q)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
-  
+
   mul!(vars.qh, grid.rfftplan, q)
   @. sol = vars.qh
 
@@ -537,7 +537,7 @@ end
     kinetic_energy(prob)
 
 Return the problem's (`prob`) domain-averaged kinetic energy of the fluid. Since
-``u² + v² = |{\\bf ∇} ψ|²``, the domain-averaged kinetic energy is 
+``u² + v² = |{\\bf ∇} ψ|²``, the domain-averaged kinetic energy is
 
 ```math
 \\int \\frac1{2} |{\\bf ∇} ψ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ψ̂|² .
@@ -547,7 +547,7 @@ Return the problem's (`prob`) domain-averaged kinetic energy of the fluid. Since
 
 function kinetic_energy(sol, vars, params, grid)
   streamfunctionfrompv!(vars.ψh, sol, params, grid)
-  @. vars.uh = sqrt.(grid.Krsq) * vars.ψh      # vars.uh is a dummy variable
+  @. vars.uh = sqrt(grid.Krsq) * vars.ψh      # vars.uh is a dummy variable
 
   return parsevalsum2(vars.uh , grid) / (2 * grid.Lx * grid.Ly)
 end

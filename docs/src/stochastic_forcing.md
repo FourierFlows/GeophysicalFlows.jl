@@ -1,24 +1,24 @@
 # Stochastic Forcing
 
-Forcing terms are implemented in various modules. Forcing can be either deterministic or 
-stochastic (random). For deterministic forcing the implementation is straightforward; for 
+Forcing terms are implemented in various modules. Forcing can be either deterministic or
+stochastic (random). For deterministic forcing the implementation is straightforward; for
 stochastic forcing there are two main train of thoughts: Itô calculus and Stratonovich calculus.
 
-Both stochastic calculi give the same results. But once we decide to use one of the two calculi 
-we have to remain consistent and use that calculus throughout. There can be a lot of confusion 
-and oftentimes confusion stems from mixing the two different stochastic calculi in a single 
+Both stochastic calculi give the same results. But once we decide to use one of the two calculi
+we have to remain consistent and use that calculus throughout. There can be a lot of confusion
+and oftentimes confusion stems from mixing the two different stochastic calculi in a single
 computation instead of using one of the two consistently all along.
 
 !!! note "Itô or Stratonovich in GeophysicalFlows.jl?"
     All modules included in GeophysicalFlows.jl use **Stratonovich calculus**.
-		
-The choice of Stratonovich calculus for GeophysicalFlows.jl was made since this calculus "works 
+
+The choice of Stratonovich calculus for GeophysicalFlows.jl was made since this calculus "works
 the same" with both stochastic and deterministic forcing, i.e., with Stratonovich calculus we
-have the same chain rules for differentiation for stochastic functions as the chain rules we 
-learn in normal-deterministic calculus). Therefore, with the Stratonovich calculus the code 
+have the same chain rules for differentiation for stochastic functions as the chain rules we
+learn in normal-deterministic calculus). Therefore, with the Stratonovich calculus the code
 does not really "care" whether the user implement deterministic or stochastic forcing.
 
-If you are interested in learning more regarding the two stochastic calculi and how they are 
+If you are interested in learning more regarding the two stochastic calculi and how they are
 numerically implemented then read on; otherwise you can skip this section of the documentation.
 
 ## Stochastic Differential Equations (SDEs)
@@ -26,25 +26,25 @@ numerically implemented then read on; otherwise you can skip this section of the
 A differential equation:
 
 ```math
-	\frac{\mathrm{d} x}{\mathrm{d} t} = f(x) , \quad x(t_0) = 0,
+    \frac{\mathrm{d} x}{\mathrm{d} t} = f(x) , \quad x(t_0) = 0,
 ```
 
 can also be equivalently written in an integral form:
 
 ```math
-	x(t) = \int_{t_0}^t f(x(s)) \, \mathrm{d} s.
+    x(t) = \int_{t_0}^t f(x(s)) \, \mathrm{d} s.
 ```
 
 In a similar manner, a stochastic differential equation (SDE),
 
 ```math
-	\mathrm{d} x = f(x) \, \mathrm{d} t + g(x) \, \mathrm{d} W_t , \quad x(t_0) = 0 ,
+    \mathrm{d} x = f(x) \, \mathrm{d} t + g(x) \, \mathrm{d} W_t , \quad x(t_0) = 0 ,
 ```
 
 with ``W_t`` a Brownian motion or Wiener process, can be written in an integral form as:
 
 ```math
-	x(t) = \int_{t_0}^{t} f(x(s)) \, \mathrm{d} s + \int_{t_0}^{t} g(x(s)) \, \mathrm{d} W_s .
+    x(t) = \int_{t_0}^{t} f(x(s)) \, \mathrm{d} s + \int_{t_0}^{t} g(x(s)) \, \mathrm{d} W_s .
 ```
 
 !!! tip "Wiener process"
@@ -56,10 +56,10 @@ with ``W_t`` a Brownian motion or Wiener process, can be written in an integral 
 !!! tip "Notation"
     It's common to use notation ``x_t`` to denote explicit ``t``-dependence of variable ``x``. Not to be confused with the other common usage of subscripts for denoting partial differentiation.
 
-The last integral in the integral representation of a SDE expression above is a stochastic integral 
-(it involves a stochastic differential, `` \mathrm{d} W_t``). There is not a single straight-forward 
-way for computing the value of a stochastic integral. The various ways we can approximate the 
-value of a stochastic integral as a Riemannian sum each lead to a different answer. The two most 
+The last integral in the integral representation of a SDE expression above is a stochastic integral
+(it involves a stochastic differential, `` \mathrm{d} W_t``). There is not a single straight-forward
+way for computing the value of a stochastic integral. The various ways we can approximate the
+value of a stochastic integral as a Riemannian sum each lead to a different answer. The two most
 popular ways for computing such stochastic integrals are:
 
 ```math
@@ -71,20 +71,20 @@ popular ways for computing such stochastic integrals are:
 
 The difference in the two calculi above lies in the point at which we choose to evaluate ``g(x)``:
 we take the start of the time-interval for ``{\color{Green} \text{Itô, } t_j}``, while we use
-the mid-point for ``{\color{Magenta}\text{Stratonovich, } \tfrac{1}{2}(t_j+t_{j+1})}``. In the case the 
+the mid-point for ``{\color{Magenta}\text{Stratonovich, } \tfrac{1}{2}(t_j+t_{j+1})}``. In the case the
 stochastic noise is additive, i.e., its prefactor ``g`` does not depend on the state ``x_t``,
-then the two interpretations coincide. When the noise does depend on the state of the system, 
-i.e., ``g=g(x(t))``, then the two interpretations above give thoroughly different results. This
+then the two interpretations coincide. When the noise does depend on the state of the system,
+i.e., ``g = g(x(t))``, then the two interpretations above give thoroughly different results. This
 happens because the white noise process is not continuous and, therefore, the two interpretations
 of the stochastic integrals above do not converge to the same result.
 
-To overcome this apparent inconsistency, the two choices above come together with different 
+To overcome this apparent inconsistency, the two choices above come together with different
 chain rules, i.e., chain rules that are not necessarily the same as those in plain old calculus.
-Let us see how different choices for computing the stochastic integrals bring about the need 
+Let us see how different choices for computing the stochastic integrals bring about the need
 for different chain rules.
 
 An SDE can be written also in differential form. Because we cannot formally form the derivative
-``\mathrm{d} W / \mathrm{d} t``, since ``W`` is nowhere differentiable, we write an SDE in 
+``\mathrm{d} W / \mathrm{d} t``, since ``W`` is nowhere differentiable, we write an SDE in
 differential form as:
 
 ```math
@@ -94,11 +94,11 @@ differential form as:
 \end{aligned}
 ```
 
-The circle in the term ``{\color{Magenta}g(x_t) \circ \mathrm{d} W_t}`` is used to differentiate 
+The circle in the term ``{\color{Magenta}g(x_t) \circ \mathrm{d} W_t}`` is used to differentiate
 between Itô and Stratonovich calculus.
 
-Let's now assume we perform a variable change ``y = G(x)``. It turns out that according to 
-which interpretation of the stochastic integral one chooses to use, then the following chain 
+Let's now assume we perform a variable change ``y = G(x)``. It turns out that according to
+which interpretation of the stochastic integral one chooses to use, then the following chain
 rule must be used:
 
 ```math
@@ -108,16 +108,16 @@ rule must be used:
 \end{aligned}
 ```
 
-The above are the so-called *stochastic chain rules*. All derivatives of ``G`` are evaluated 
+The above are the so-called *stochastic chain rules*. All derivatives of ``G`` are evaluated
 at ``x_t``. For Stratonovich calculus, the chain rule resembles the usual chain rule one learns
-in calculus; for Itô there exists an additional term, often referred to as the "drift-term": 
+in calculus; for Itô there exists an additional term, often referred to as the "drift-term":
 ``{\color{Green}\tfrac{1}{2} g^2 \, \mathrm{d}^2G / \mathrm{d} x^2}``.
 
-It's easy to see that the extra drift-term in Itô's interpretation of the stochastic integral, 
-is *exactly* equal to the ensemble mean  over forcing realizations of the Stratonovich 
-stochastic integral. That's because the Itô stochastic integral has, by construction, zero 
-ensemble mean since at every instant the noise is multiplied with ``g`` which is  evaluated 
-at a time instance before the action of the noise; ``g`` and ``\mathrm{d} W`` are uncorrelated 
+It's easy to see that the extra drift-term in Itô's interpretation of the stochastic integral,
+is *exactly* equal to the ensemble mean  over forcing realizations of the Stratonovich
+stochastic integral. That's because the Itô stochastic integral has, by construction, zero
+ensemble mean since at every instant the noise is multiplied with ``g`` which is  evaluated
+at a time instance before the action of the noise; ``g`` and ``\mathrm{d} W`` are uncorrelated
 and thus:
 
 ```math
@@ -135,12 +135,12 @@ The above is demonstrated by evaluating the simple stochastic integral:
 \end{aligned}
 ```
 
-SDEs rarely can be solved in closed form; most often numerical solution of SDEs is brought to 
-the rescue. Itô calculus has the advantage that is very easily implemented numerically. On 
-the other hand, the chain rule in Stratonovich calculus coincides with that in normal calculus. 
-This stems from the fact that in the Stratonovich interpretation the white noise process is as 
-a series of colored noise processes with the de-correlation time tending to zero. This made 
-Stratonovich calculus more popular in the physics community. A nice discussion on the differences 
+SDEs rarely can be solved in closed form; most often numerical solution of SDEs is brought to
+the rescue. Itô calculus has the advantage that is very easily implemented numerically. On
+the other hand, the chain rule in Stratonovich calculus coincides with that in normal calculus.
+This stems from the fact that in the Stratonovich interpretation the white noise process is as
+a series of colored noise processes with the de-correlation time tending to zero. This made
+Stratonovich calculus more popular in the physics community. A nice discussion on the differences
 and similarities between the two calculi is given by [vanKampen-1981](@citet).
 
 ## A simple Stochastic Differential Equation: the Ornstein--Uhlenbeck process
@@ -157,25 +157,25 @@ Note that in differential form (1) is written as:
 \mathrm{d} x_t = - \mu x_t \, \mathrm{d} t + \sqrt{\sigma} \, \mathrm{d} W_t . \tag{2}
 ```
 
-Luckily, for (2) we don't need to distinguish between Itô and Stratonovich, since ``g`` is 
-independent of ``x(t)``. But note that often this is not the case; that ``g`` is independent 
+Luckily, for (2) we don't need to distinguish between Itô and Stratonovich, since ``g`` is
+independent of ``x(t)``. But note that often this is not the case; that ``g`` is independent
 of ``x(t)`` is only a fortuitous coincident for this particular SDE.
 
 How do we time-step SDE (2) numerically? Let us assume a discretization of time into time-steps
-of duration ``\tau``, i.e., ``t_j = (j-1) \tau``, ``j=1, 2, \dots``. (What follows is easily 
-generalized to non-uniform time discretizations.) With that in mind, we denote ``x_j \equiv x(t_j)``. 
+of duration ``\tau``, i.e., ``t_j = (j-1) \tau``, ``j=1, 2, \dots``. (What follows is easily
+generalized to non-uniform time discretizations.) With that in mind, we denote ``x_j \equiv x(t_j)``.
 Then the Euler--Mayorama time-stepping scheme for (2) is
 
 ```math
-	x_{j+1} = x_j + (-\mu x_j) \tau + \sqrt{\sigma} (W_{j+1} - W_j) .
+    x_{j+1} = x_j + (-\mu x_j) \tau + \sqrt{\sigma} (W_{j+1} - W_j) .
 ```
 
 Now let us ask the following question: How can we compute the work done by the noise?
 In other words, if we are interested in the evolution of the "energy", defined as
-``E \equiv \tfrac{1}{2} x^2``, then how does the noise term attribute in the growth of ``E``? 
-To answer that we first have to find the SDE that energy ``E`` obeys. But, in doing so, it 
-is important to adopt a single interpretation for computing stochastic integrals as now a 
-transformation of variables is needed. That is, depending on whether we choose to interpret 
+``E \equiv \tfrac{1}{2} x^2``, then how does the noise term attribute in the growth of ``E``?
+To answer that we first have to find the SDE that energy ``E`` obeys. But, in doing so, it
+is important to adopt a single interpretation for computing stochastic integrals as now a
+transformation of variables is needed. That is, depending on whether we choose to interpret
 the stochastic integrals according to Itô or to Stratonovich calculus, ``E`` evolves according
 to:
 
@@ -186,8 +186,8 @@ to:
 \hspace{-3.35em} {\color{Magenta} \text{Stratonovich}} : {\color{Magenta} \mathrm{d} E_t = -2 \mu E_t \mathrm{d} t + x_t \circ \sqrt{\sigma} \mathrm{d} W_t} . \tag{4}
 ```
 
-The term ``-2 \mu E_t`` in both cases is the dissipation of energy by the ``\mu`` term; the 
-rest of the terms involve the noise. How do we compute the work ``P`` done by the noise? 
+The term ``-2 \mu E_t`` in both cases is the dissipation of energy by the ``\mu`` term; the
+rest of the terms involve the noise. How do we compute the work ``P`` done by the noise?
 Well, it follows that:
 
 ```math
@@ -197,17 +197,17 @@ Well, it follows that:
 \end{aligned}
 ```
 
-Now let's assume for a moment that we didn't know the rules for transforming Stratonovich to 
-Itô and we were wondering what is the extra drift term we have to include in the Itô formulations, 
-i.e., the ``\tfrac{1}{2} \sigma`` term. We can compute the Itô's drift-term using the fact that 
-it is exactly equal to ``\langle x_t \circ \sqrt{\sigma} \mathrm{d} W_t \rangle``; and for the 
+Now let's assume for a moment that we didn't know the rules for transforming Stratonovich to
+Itô and we were wondering what is the extra drift term we have to include in the Itô formulations,
+i.e., the ``\tfrac{1}{2} \sigma`` term. We can compute the Itô's drift-term using the fact that
+it is exactly equal to ``\langle x_t \circ \sqrt{\sigma} \mathrm{d} W_t \rangle``; and for the
 latter we can use the "usual" calculus. That is, we rewrite (1) as:
 
 ```math
 \dot{x} = -\mu x + \xi , \tag{5}
 ```
 
-where ``\xi(t)`` is understood to be the "continuous" version of the white-noise process (which 
+where ``\xi(t)`` is understood to be the "continuous" version of the white-noise process (which
 is formally only understood in terms of distributions). The forcing ``\xi`` has the properties:
 
 ```math
@@ -227,20 +227,20 @@ and using this solution we get
 \langle P_t \rangle = \langle x(t) \xi(t) \rangle =  e^{-\mu t} \underbrace{\langle x(0) \xi(t) \rangle}_{=0} + \int_0^t e^{-\mu (t - s)} \langle \xi(t) \xi(s) \rangle \, \mathrm{d} s = \sigma \int_0^t e^{- \mu (t - s)} \delta(t - s) \, \mathrm{d} s = \frac{\sigma}{2} .
 ```
 
-Above we used that ``\int_0^t \delta(t - s) \mathrm{d} s = \tfrac{1}{2}``, which is consistent 
+Above we used that ``\int_0^t \delta(t - s) \mathrm{d} s = \tfrac{1}{2}``, which is consistent
 with the Stratonovich symmetric interpretation of stochastic integrals.
 
 ### Numerical implementation
 
-How do we time-step the equation for ``E``? In the case of Itô's interpretation, (3), we use 
+How do we time-step the equation for ``E``? In the case of Itô's interpretation, (3), we use
 the Euler--Maruyama time-stepping scheme:
 
 ```math
-	E_{j+1} = E_j + \left ( -2 \mu E_j + \frac{\sigma}{2} \right ) \tau + \sqrt{\sigma} x_j (W_{j+1} - W_j).
+    E_{j+1} = E_j + \left ( -2 \mu E_j + \frac{\sigma}{2} \right ) \tau + \sqrt{\sigma} x_j (W_{j+1} - W_j).
 ```
-However, we cannot use Euler--Maruyama for time-stepping the corresponding Stratonovich 
-version of (4), since the Euler--Maruyama scheme involves "Itô"-thinking. To time-step (4) we 
-have to approximate ``g`` in the middle of the time-step. There are many ways to do that, one 
+However, we cannot use Euler--Maruyama for time-stepping the corresponding Stratonovich
+version of (4), since the Euler--Maruyama scheme involves "Itô"-thinking. To time-step (4) we
+have to approximate ``g`` in the middle of the time-step. There are many ways to do that, one
 of which is the, so called, Euler--Heun method:
 
 ```math
@@ -250,9 +250,9 @@ E_{j+1} &= E_j + \left( -2 \mu \frac{E_j + \widetilde{E}_{j + 1}}{2} \right)\tau
 \end{aligned}
 ```
 
-Let's apply not Euler--Maruyama and Euler--Heun schemes to time-step (3) and (4) respectively
-and compare the results with those obtained from time-stepping (2) and computing ``E`` a 
-posteriori. 
+Let's apply the Euler--Maruyama and Euler--Heun schemes to time-step (3) and (4) respectively
+and compare the results with those obtained from time-stepping (2) and computing ``E`` a
+posteriori.
 
 Figure below compares the energy evolution as predicted by:
 - direct computation from the ``x_t`` time-series: ``\tfrac{1}{2} x_t^2``,
@@ -276,7 +276,7 @@ seed!(1234) # for reproducing the same plots
    n_realizations = 1000   # how many forcing realizations
 some_realizations = 20     # used for plotting to illustrate convergence
 
-t = 0:dt:(nsteps-1)*dt 	# time
+t = 0:dt:(nsteps-1)*dt     # time
 
 ΔW = randn(nsteps, n_realizations) * sqrt(dt) # noise
 
@@ -287,19 +287,19 @@ E_str = zeros(size(ΔW))
 E_numerical = zeros(size(ΔW))
 
 for j = 2:nsteps # time step the equations
-	
+
   # time-step dx = - μ x dt + √σ dW
   @. x[j, :] = x[j-1, :] - μ * x[j-1, :] * dt + sqrt(σ) * ΔW[j-1, :]
 
   # time-step dE = (- 2μ E + ½σ) dt + √σ x dW
   @. E_ito[j, :] = E_ito[j-1, :] + (-2μ * E_ito[j-1, :]
-	                   + σ/2) * dt + sqrt(σ) * x[j-1, :] * ΔW[j-1, :]
+                       + σ/2) * dt + sqrt(σ) * x[j-1, :] * ΔW[j-1, :]
 
   # time-step dE = - 2μ E dt + √σ x ∘ dW
   xbar = @. x[j-1, :] - μ * x[j-1, :] * dt + sqrt(σ) * ΔW[j-1, :]
   Ebar = @. E_str[j-1, :] + (-2μ * E_str[j-1, :]) * dt + sqrt(σ) * x[j-1, :] * ΔW[j-1, :]
   @. E_str[j, :] = E_str[j-1, :] + (-2μ * (E_str[j-1, :]
-		+ Ebar) / 2) * dt + sqrt(σ) * (x[j-1, :] + xbar) / 2 * ΔW[j-1, :]
+        + Ebar) / 2) * dt + sqrt(σ) * (x[j-1, :] + xbar) / 2 * ΔW[j-1, :]
 end
 
 # direct computation of E from x
@@ -327,10 +327,10 @@ save("assets/energy_comparison.svg", fig); nothing #hide
 ![energy_comparison](assets/energy_comparison.svg)
 
 Now we can further compute the "energy" budgets, i.e., the work done by the noise versus the
-energy loss by the ``μ`` term, using Itô and Stratonovich formalisms. Figures below show 
+energy loss by the ``μ`` term, using Itô and Stratonovich formalisms. Figures below show
 the ensemble mean energy budgets (using 1000 ensemble members) as computed using Itô and
-Stratonovich calculus. For the energy budget to close we have to be consistent: if we time-step 
-the  energy equation based on Stratonovich calculus then we must compute the work also according 
+Stratonovich calculus. For the energy budget to close we have to be consistent: if we time-step
+the  energy equation based on Stratonovich calculus then we must compute the work also according
 to Stratonovich and vice versa.
 
 ```@example 1
@@ -431,7 +431,7 @@ save("assets/energy_budgets_Stratonovich.svg", fig); nothing #hide
 
 ## A simple Stochastic Partial Differential Equation (SPDE)
 
-We would like now to transfer all the knowledge we got from the previous sections to PDEs. 
+We would like now to transfer all the knowledge we got from the previous sections to PDEs.
 In particular we'll start by focussing on the simple SPDE:
 
 ```math
@@ -444,8 +444,8 @@ with periodic boundary conditions in both ``x`` and ``y``. SPDE (6) is also equi
 \mathrm{d} \nabla^2 \psi_{t}(\bm{x}) = - \mu \nabla^2 \psi_{t} (\bm{x}) \mathrm{d} t + \sqrt{\sigma} \mathrm{d} W_{t} (\bm{x}) .
 ```
 
-The form (6) is the continuous version, similar to (2). In this SPDE, since the forcing is 
-purely additive, i.e., it does not depend on the state of the system, both Itô and Stratonovich 
+The form (6) is the continuous version, similar to (2). In this SPDE, since the forcing is
+purely additive, i.e., it does not depend on the state of the system, both Itô and Stratonovich
 interpretations coincide.
 
 The forcing ``\xi`` obeys:
@@ -454,12 +454,12 @@ The forcing ``\xi`` obeys:
 \langle \xi(\bm{x}, t) \rangle = 0 \quad \text{and} \quad \langle \xi(\bm{x}, t) \xi(\bm{x}', t') \rangle = Q(\bm{x} - \bm{x}') \delta(t - t') ,
 ```
 
-that is, the forcing is white in time but spatially correlated; its spatial correlation is 
+that is, the forcing is white in time but spatially correlated; its spatial correlation is
 prescribed by the function ``Q`` which is, necessarily, homogeneous in all its arguments
 (see discussion by [Constantinou-2015-phd](@citet); Appendix A).
 
-Equation (6) above describes the vorticity evolution of a two-dimensional fluid ``\nabla^2 \psi`` 
-that is stochastically forced while dissipated by linear drag ``\mu``. The energy of the 
+Equation (6) above describes the vorticity evolution of a two-dimensional fluid ``\nabla^2 \psi``
+that is stochastically forced while dissipated by linear drag ``\mu``. The energy of the
 fluid is:
 
 ```math
@@ -467,7 +467,7 @@ E = \tfrac{1}{2} \overline{|\bm{\nabla} \psi|^2}^{x, y} = -\tfrac{1}{2} \overlin
 ```
 
 where the overbar denotes average over ``x`` and ``y`` and an integration-by-parts was carried
-through in the last equality. To obtain the energy equation we multiply (6) with ``-\psi`` and 
+through in the last equality. To obtain the energy equation we multiply (6) with ``-\psi`` and
 average over the whole domain. Thus, the work done by the forcing is given by:
 
 ```math
@@ -476,7 +476,7 @@ P = - \, \overline{\psi \, \xi}^{x, y} ,
 
 but the above is a stochastic integral and it is meaningless without a rule for computing the stochastic integral.
 
-Numerically, the work done by the forcing at the ``j``-th timestep can be obtained 
+Numerically, the work done by the forcing at the ``j``-th timestep can be obtained
 Stratonovich-wise via:
 
 ```math
@@ -493,7 +493,7 @@ P_j = -\, \overline{ \psi(\bm{x}, t_j) \xi(\bm{x}, t_{j+1}) }^{x,y} + \text{drif
 \end{aligned}
 ```
 
-But how much is the Itô drift term in this case? As in the previous section, the drift is 
+But how much is the Itô drift term in this case? As in the previous section, the drift is
 *precisely* the ensemble mean of the Stratonovich work, i.e.:
 
 ```math
@@ -518,15 +518,15 @@ which implies
 \end{aligned}
 ```
 
-Thus, the drift, or in this case the mean energy input rate by the stochastic forcing, is 
-precisely determined from the spatial correlation of the forcing, ``Q``. Let us denote the 
+Thus, the drift, or in this case the mean energy input rate by the stochastic forcing, is
+precisely determined from the spatial correlation of the forcing, ``Q``. Let us denote the
 drift as:
 
 ```math
 \varepsilon \equiv \int \frac{\mathrm{d}^2 \bm{k}}{(2\pi)^2} \frac{\widehat{Q}(\bm{k})}{2 |\bm{k}|^2} . \tag{7}
 ```
 
-Using the above, the work for a single forcing realization at the ``j``-th timestep is numerically 
+Using the above, the work for a single forcing realization at the ``j``-th timestep is numerically
 computed as:
 
 ```math
@@ -545,30 +545,30 @@ and by sampling over various forcing realizations:
 \langle \mathrm{d} P_t \rangle = \frac{\sigma}{2} \mathrm{d} t = \langle \sqrt{\sigma} x_t \circ \mathrm{d} W_t \rangle .
 ```
 
-All modules in GeophysicalFlows.jl use Stratonovich calculus. For example, the domain-averaged 
-energy injected per unit time by the forcing in the `TwoDNavierStokes` module is computed 
+All modules in GeophysicalFlows.jl use Stratonovich calculus. For example, the domain-averaged
+energy injected per unit time by the forcing in the `TwoDNavierStokes` module is computed
 using (9) via the [`energy_work`](@ref GeophysicalFlows.TwoDNavierStokes.energy_work) function.
 
 ## A bit more elaborate SPDE
 
-It turns out everything carries through if in our SPDE above for the 2D vorticity equation we 
+It turns out everything carries through if in our SPDE above for the 2D vorticity equation we
 also include the nonlinear advection terms:
 
 ```math
 \partial_t \nabla^2 \psi(\bm{x}, t) + \mathsf{J}(\psi, \nabla^2 \psi) = - \mu \nabla^2 \psi(\bm{x}, t) + \xi(\bm{x}, t) . \tag{10}
 ```
 
-The nonlinearity does not alter the Itô drift; thus the ensemble mean energy input by the 
-stochastic forcing, remains the same. We can easily verify this from the "formal" solution 
+The nonlinearity does not alter the Itô drift; thus the ensemble mean energy input by the
+stochastic forcing, remains the same. We can easily verify this from the "formal" solution
 of (10):
 
 ```math
 \psi(\bm{x}, t) = e^{- \mu t} \psi(\bm{x}, 0) + \int_0^t e^{- \mu (t - s)} \nabla^{-2} \xi(\bm{x}, s) \, \mathrm{d} s - \int_0^t \nabla^{-2} \mathsf{J} \left ( \psi(\bm{x}, s), \nabla^2 \psi(\bm{x}, s) \right ) \mathrm{d} s .
 ```
 
-When multiplied with ``\xi(\bm{x}, t)`` the last term vanishes since its only non-zero 
-contribution comes from the point ``s = t``, which is of measure zero (in the integrated sense). 
+When multiplied with ``\xi(\bm{x}, t)`` the last term vanishes since its only non-zero
+contribution comes from the point ``s = t``, which is of measure zero (in the integrated sense).
 
-A demonstration of how the energy budgets can be computed when we have stochastic forcing is 
-illustrated in an [example of the TwoDNavierStokes](@ref twodnavierstokes_stochasticforcing_budgets_example) 
+A demonstration of how the energy budgets can be computed when we have stochastic forcing is
+illustrated in an [example of the TwoDNavierStokes](@ref twodnavierstokes_stochasticforcing_budgets_example)
 module.

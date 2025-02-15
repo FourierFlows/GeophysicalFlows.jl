@@ -2,10 +2,10 @@
 
 ### Basic Equations
 
-This module solves the *quasi-linear* quasi-geostrophic barotropic vorticity equation on a beta 
-plane of variable fluid depth ``H - h(x, y)``. Quasi-linear refers to the dynamics that *neglects* 
-the eddy--eddy interactions in the eddy evolution equation after an eddy--mean flow decomposition, 
-e.g., 
+This module solves the *quasi-linear* quasi-geostrophic barotropic vorticity equation on a beta
+plane of variable fluid depth ``H - h(x, y)``. Quasi-linear refers to the dynamics that *neglects*
+the eddy--eddy interactions in the eddy evolution equation after an eddy--mean flow decomposition,
+e.g.,
 
 ```math
 \phi(x, y, t) = \overline{\phi}(y, t) + \phi'(x, y, t) ,
@@ -13,32 +13,32 @@ e.g.,
 
 where overline above denotes a zonal mean, ``\overline{\phi}(y, t) = \int \phi(x, y, t) \, 𝖽x / L_x``, and prime denotes deviations from the zonal mean. This approximation is used in many process-model studies of zonation, e.g., [Farrell-Ioannou-2003](@citet), [Srinivasan-Young-2012](@citet), and [Constantinou-etal-2014](@citet).
 
-As in the [SingleLayerQG module](singlelayerqg.md), the flow is obtained through a 
-streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. All flow fields 
+As in the [SingleLayerQG module](singlelayerqg.md), the flow is obtained through a
+streamfunction ``\psi`` as ``(u, v) = (-\partial_y \psi, \partial_x \psi)``. All flow fields
 can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here, the QGPV is
 
 ```math
 \underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{\partial_x v
-	- \partial_y u}_{\text{relative vorticity}} + \underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}} .
+    - \partial_y u}_{\text{relative vorticity}} + \underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}} .
 ```
 
-The dynamical variable is the component of the vorticity of the flow normal to the plane of 
-motion, ``\zeta \equiv \partial_x v - \partial_y u = \nabla^2 \psi``. Also, we denote the 
-topographic PV with ``\eta \equiv f_0 h / H``. After we apply the eddy-mean flow decomposition 
+The dynamical variable is the component of the vorticity of the flow normal to the plane of
+motion, ``\zeta \equiv \partial_x v - \partial_y u = \nabla^2 \psi``. Also, we denote the
+topographic PV with ``\eta \equiv f_0 h / H``. After we apply the eddy-mean flow decomposition
 above, the QGPV dynamics are:
 
 ```math
 \begin{aligned}
-	\partial_t \overline{\zeta} + \mathsf{J}(\overline{\psi}, \overline{\zeta} + \overline{\eta}) + \overline{\mathsf{J}(\psi', \zeta' + \eta')} & = \underbrace{- \left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
-	\right] \overline{\zeta} }_{\textrm{dissipation}} , \\
-	\partial_t \zeta'  + \mathsf{J}(\psi', \overline{\zeta} + \overline{\eta}) + \mathsf{J}(\overline{\psi}, \zeta' + \eta') + & \underbrace{\mathsf{J}(\psi', \zeta' + \eta') - \overline{\mathsf{J}(\psi', \zeta' + \eta')}}_{\textrm{EENL}} + \beta \partial_x \psi' = \\
-	& = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] \zeta'}_{\textrm{dissipation}} + F .
+    \partial_t \overline{\zeta} + \mathsf{J}(\overline{\psi}, \overline{\zeta} + \overline{\eta}) + \overline{\mathsf{J}(\psi', \zeta' + \eta')} & = \underbrace{- \left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
+    \right] \overline{\zeta} }_{\textrm{dissipation}} , \\
+    \partial_t \zeta'  + \mathsf{J}(\psi', \overline{\zeta} + \overline{\eta}) + \mathsf{J}(\overline{\psi}, \zeta' + \eta') + & \underbrace{\mathsf{J}(\psi', \zeta' + \eta') - \overline{\mathsf{J}(\psi', \zeta' + \eta')}}_{\textrm{EENL}} + \beta \partial_x \psi' = \\
+    & = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] \zeta'}_{\textrm{dissipation}} + F .
 \end{aligned}
 ```
 
-where ``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b) - (\partial_y a)(\partial_x b)``. On 
-the right hand side, ``F(x, y, t)`` is forcing (which is assumed to have zero zonal mean, 
-``\overline{F} = 0``), ``\mu`` is linear drag, and ``\nu`` is hyperviscosity. Plain old 
+where ``\mathsf{J}(a, b) = (\partial_x a)(\partial_y b) - (\partial_y a)(\partial_x b)``. On
+the right hand side, ``F(x, y, t)`` is forcing (which is assumed to have zero zonal mean,
+``\overline{F} = 0``), ``\mu`` is linear drag, and ``\nu`` is hyperviscosity. Plain old
 viscosity corresponds to ``n_{\nu} = 1``.
 
 *Quasi-linear* dynamics **neglects the term eddy-eddy nonlinearity (EENL) term** above.
@@ -54,8 +54,8 @@ The equation is time-stepped forward in Fourier space:
 
 The state variable `sol` is the Fourier transform of vorticity, [`ζh`](@ref GeophysicalFlows.BarotropicQGQL.Vars).
 
-The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) = \partial_y 
-[ (\partial_x f) g] - \partial_x [ (\partial_y f) g]``. The superscript QL on the Jacobian term 
+The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) = \partial_y
+[ (\partial_x f) g] - \partial_x [ (\partial_y f) g]``. The superscript QL on the Jacobian term
 above denotes that triad interactions that correspond to the EENL term are removed.
 
 The linear operator is constructed in `Equation`
@@ -70,7 +70,7 @@ and the nonlinear terms are computed via
 GeophysicalFlows.BarotropicQGQL.calcN!
 ```
 
-which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.BarotropicQGQL.calcN_advection!) 
+which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.BarotropicQGQL.calcN_advection!)
 and [`addforcing!`](@ref GeophysicalFlows.BarotropicQGQL.addforcing!).
 
 
@@ -106,7 +106,7 @@ while the enstrophy via:
 GeophysicalFlows.BarotropicQGQL.enstrophy
 ```
 
-Other diagnostic include: [`dissipation`](@ref GeophysicalFlows.BarotropicQGQL.dissipation), 
+Other diagnostic include: [`dissipation`](@ref GeophysicalFlows.BarotropicQGQL.dissipation),
 [`drag`](@ref GeophysicalFlows.BarotropicQGQL.drag), and [`work`](@ref GeophysicalFlows.BarotropicQGQL.work).
 
 

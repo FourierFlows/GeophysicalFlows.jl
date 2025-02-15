@@ -65,7 +65,7 @@ Keyword arguments
   - `stepper`: Time-stepping method.
   - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
   - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
-  - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
+  - `aliased_fraction`: the fraction of high wavenumbers that are zero-ed out by `dealias!()`.
   - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
 function Problem(dev::Device=CPU();
@@ -107,7 +107,7 @@ end
 """
     struct Params{T} <: AbstractParams
 
-The parameters for a two-dimensional Navier-Stokes problem:
+The parameters for a two-dimensional Navier-Stokes problem.
 
 $(TYPEDFIELDS)
 """
@@ -135,21 +135,21 @@ Params(ν, nν) = Params(ν, nν, typeof(ν)(0), 0, nothingfunction)
     Equation(params, grid)
 
 Return the `equation` for two-dimensional Navier-Stokes with `params` and `grid`. The linear
-operator ``L`` includes (hyper)-viscosity of order ``n_ν`` with coefficient ``ν`` and 
-hypo-viscocity of order ``n_μ`` with coefficient ``μ``,
+operator ``L`` includes (hyper)-viscosity of order ``n_ν`` with coefficient ``ν`` and
+hypo-viscosity of order ``n_μ`` with coefficient ``μ``,
 
 ```math
 L = - ν |𝐤|^{2 n_ν} - μ |𝐤|^{2 n_μ} .
 ```
 
-Plain-old viscocity corresponds to ``n_ν = 1`` while ``n_μ = 0`` corresponds to linear drag.
+Plain-old viscosity corresponds to ``n_ν = 1`` while ``n_μ = 0`` corresponds to linear drag.
 
-The nonlinear term is computed via the function `calcN!`.
+The nonlinear term is computed via [`calcN!`](@ref GeophysicalFlows.TwoDNavierStokes.calcN!).
 """
 function Equation(params::Params, grid::AbstractGrid)
   L = @. - params.ν * grid.Krsq^params.nν - params.μ * grid.Krsq^params.nμ
   CUDA.@allowscalar L[1, 1] = 0
-  
+
   return FourierFlows.Equation(L, calcN!, grid)
 end
 
@@ -163,7 +163,7 @@ abstract type TwoDNavierStokesVars <: AbstractVars end
 """
     struct Vars{Aphys, Atrans, F, P} <: TwoDNavierStokesVars
 
-The variables for two-dimensional Navier-Stokes problem:
+The variables for two-dimensional Navier-Stokes problem.
 
 $(FIELDS)
 """
@@ -201,7 +201,7 @@ function DecayingVars(grid::AbstractGrid)
 
   @devzeros Dev T (grid.nx, grid.ny) ζ u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) ζh uh vh
-  
+
   return Vars(ζ, u, v, ζh, uh, vh, nothing, nothing)
 end
 
@@ -213,10 +213,10 @@ Return the variables for forced two-dimensional Navier-Stokes on `grid`.
 function ForcedVars(grid::AbstractGrid)
   Dev = typeof(grid.device)
   T = eltype(grid)
-  
+
   @devzeros Dev T (grid.nx, grid.ny) ζ u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) ζh uh vh Fh
-  
+
   return Vars(ζ, u, v, ζh, uh, vh, Fh, nothing)
 end
 
@@ -231,7 +231,7 @@ function StochasticForcedVars(grid::AbstractGrid)
 
   @devzeros Dev T (grid.nx, grid.ny) ζ u v
   @devzeros Dev Complex{T} (grid.nkr, grid.nl) ζh uh vh Fh prevsol
-  
+
   return Vars(ζ, u, v, ζh, uh, vh, Fh, prevsol)
 end
 
@@ -243,8 +243,8 @@ end
 """
     calcN_advection!(N, sol, t, clock, vars, params, grid)
 
-Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, ζ)`` in conservative form, 
-i.e., ``- ∂_x[(∂_y ψ)ζ] - ∂_y[(∂_x ψ)ζ]`` and store it in `N`:
+Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, ζ)`` in conservative form,
+i.e., ``∂_x[(∂_y ψ)ζ] - ∂_y[(∂_x ψ)ζ]`` and store it in `N`:
 
 ```math
 N = - \\widehat{𝖩(ψ, ζ)} = - i k_x \\widehat{u ζ} - i k_y \\widehat{v ζ} .
@@ -258,19 +258,19 @@ function calcN_advection!(N, sol, t, clock, vars, params, grid)
   ldiv!(vars.u, grid.rfftplan, vars.uh)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
   ldiv!(vars.ζ, grid.rfftplan, vars.ζh)
-  
+
   uζ = vars.u                  # use vars.u as scratch variable
   @. uζ *= vars.ζ              # u*ζ
   vζ = vars.v                  # use vars.v as scratch variable
   @. vζ *= vars.ζ              # v*ζ
-  
+
   uζh = vars.uh                # use vars.uh as scratch variable
   mul!(uζh, grid.rfftplan, uζ) # \hat{u*ζ}
   vζh = vars.vh                # use vars.vh as scratch variable
   mul!(vζh, grid.rfftplan, vζ) # \hat{v*ζ}
 
   @. N = - im * grid.kr * uζh - im * grid.l * vζh
-  
+
   return nothing
 end
 
@@ -285,11 +285,11 @@ N = - \\widehat{𝖩(ψ, ζ)} + F̂ .
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   dealias!(sol, grid)
-  
+
   calcN_advection!(N, sol, t, clock, vars, params, grid)
-  
+
   addforcing!(N, sol, t, clock, vars, params, grid)
-  
+
   return nothing
 end
 
@@ -303,9 +303,9 @@ addforcing!(N, sol, t, clock, vars::DecayingVars, params, grid) = nothing
 
 function addforcing!(N, sol, t, clock, vars::ForcedVars, params, grid)
   params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
-  
+
   @. N += vars.Fh
-  
+
   return nothing
 end
 function addforcing!(N, sol, t, clock, vars::StochasticForcedVars, params, grid)
@@ -314,7 +314,7 @@ function addforcing!(N, sol, t, clock, vars::StochasticForcedVars, params, grid)
     params.calcF!(vars.Fh, sol, t, clock, vars, params, grid)
   end
   @. N += vars.Fh
-  
+
   return nothing
 end
 
@@ -330,17 +330,17 @@ Update problem's variables in `prob.vars` using the state in `prob.sol`.
 """
 function updatevars!(prob)
   vars, grid, sol = prob.vars, prob.grid, prob.sol
-  
+
   dealias!(sol, grid)
-  
+
   @. vars.ζh = sol
   @. vars.uh =   im * grid.l  * grid.invKrsq * sol
   @. vars.vh = - im * grid.kr * grid.invKrsq * sol
-  
+
   ldiv!(vars.ζ, grid.rfftplan, deepcopy(vars.ζh)) # deepcopy() since inverse real-fft destroys its input
   ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh)) # deepcopy() since inverse real-fft destroys its input
   ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh)) # deepcopy() since inverse real-fft destroys its input
-  
+
   return nothing
 end
 
@@ -351,18 +351,18 @@ Set the solution `sol` as the transform of `ζ` and then update variables in `pr
 """
 function set_ζ!(prob, ζ)
   mul!(prob.sol, prob.grid.rfftplan, ζ)
-  
+
   CUDA.@allowscalar prob.sol[1, 1] = 0 # enforce zero domain average
-  
+
   updatevars!(prob)
-  
+
   return nothing
 end
 
 """
     energy(prob)
 
-Return the domain-averaged kinetic energy. Since ``u² + v² = |{\\bf ∇} ψ|²``, the domain-averaged 
+Return the domain-averaged kinetic energy. Since ``u² + v² = |{\\bf ∇} ψ|²``, the domain-averaged
 kinetic energy is
 
 ```math
@@ -374,7 +374,7 @@ where ``ψ`` is the streamfunction.
 @inline function energy(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
   energyh = vars.uh # use vars.uh as scratch variable
-  
+
   @. energyh = 1 / 2 * grid.invKrsq * abs2(sol)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energyh, grid)
 end
@@ -419,13 +419,13 @@ Return the domain-averaged energy dissipation rate done by the viscous term,
 ```math
 - ξ (-1)^{n_ξ+1} \\int ψ ∇^{2n_ξ} ζ \\frac{𝖽x 𝖽y}{L_x L_y} = - ξ \\sum_{𝐤} |𝐤|^{2(n_ξ-1)} |ζ̂|² ,
 ```
-where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`` and its order 
-``n_ν``, or the hypo-viscocity coefficient ``μ`` and its order ``n_μ``.
+where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`` and its order
+``n_ν``, or the hypo-viscosity coefficient ``μ`` and its order ``n_μ``.
 """
 @inline function energy_dissipation(prob, ξ, nξ)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
   energy_dissipationh = vars.uh # use vars.uh as scratch variable
-  
+
   @. energy_dissipationh = - ξ * grid.Krsq^(nξ - 1) * abs2(sol)
   CUDA.@allowscalar energy_dissipationh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_dissipationh, grid)
@@ -454,13 +454,13 @@ Return the problem's (`prob`) domain-averaged enstrophy dissipation rate done by
 ξ (-1)^{n_ξ+1} \\int ζ ∇^{2n_ξ} ζ \\frac{𝖽x 𝖽y}{L_x L_y} = - ξ \\sum_{𝐤} |𝐤|^{2n_ξ} |ζ̂|² ,
 ```
 
-where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`` and its order 
-``n_ν``, or the hypo-viscocity coefficient ``μ`` and its order ``n_μ``.
+where ``ξ`` and ``nξ`` could be either the (hyper)-viscosity coefficient ``ν`` and its order
+``n_ν``, or the hypo-viscosity coefficient ``μ`` and its order ``n_μ``.
 """
 @inline function enstrophy_dissipation(prob, ξ, nξ)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
   enstrophy_dissipationh = vars.uh # use vars.uh as scratch variable
-  
+
   @. enstrophy_dissipationh = - ξ * grid.Krsq^nξ * abs2(sol)
   CUDA.@allowscalar enstrophy_dissipationh[1, 1] = 0
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_dissipationh, grid)
@@ -495,14 +495,14 @@ where ``ψ`` is the stream flow.
 
 @inline function energy_work(sol, vars::ForcedVars, grid)
   energy_workh = vars.uh # use vars.uh as scratch variable
-  
+
   @. energy_workh = grid.invKrsq * sol * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_workh, grid)
 end
 
 @inline function energy_work(sol, vars::StochasticForcedVars, grid)
   energy_workh = vars.uh # use vars.uh as scratch variable
-  
+
   @. energy_workh = grid.invKrsq * (vars.prevsol + sol) / 2 * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(energy_workh, grid)
 end
@@ -522,7 +522,7 @@ where ``ζ`` is the relative vorticity.
 
 @inline function enstrophy_work(sol, vars::ForcedVars, grid)
   enstrophy_workh = vars.uh # use vars.uh as scratch variable
-  
+
   @. enstrophy_workh = sol * conj(vars.Fh)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(enstrophy_workh, grid)
 end
