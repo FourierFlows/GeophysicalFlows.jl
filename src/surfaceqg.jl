@@ -59,7 +59,7 @@ Keyword arguments
   - `stepper`: Time-stepping method.
   - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
   - `stochastic`: `true` or `false`; boolean denoting whether `calcF` is temporally stochastic.
-  - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
+  - `aliased_fraction`: the fraction of high wavenumbers that are zero-ed out by `dealias!()`.
   - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
 """
 function Problem(dev::Device=CPU();
@@ -84,7 +84,7 @@ function Problem(dev::Device=CPU();
   grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
 
   params = Params(T(H), T(ν), nν, calcF, grid)
-    
+
   vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
   equation = Equation(params, grid)
@@ -102,7 +102,7 @@ abstract type SurfaceQGParams <: AbstractParams end
 """
     Params{T, Atrans <: AbstractArray} <: SurfaceQGParams
 
-A struct containing the parameters for Surface QG dynamics. Included are:
+The parameters for a Surface QG dynamics problem.
 
 $(TYPEDFIELDS)
 """
@@ -139,16 +139,16 @@ Params(H, ν, nν, grid::AbstractGrid) = Params(H, ν, nν, nothingfunction, gri
 """
     Equation(params, grid)
 
-Return the `equation` for surface QG dynamics with `params` and `grid`. The linear 
+Return the `equation` for surface QG dynamics with `params` and `grid`. The linear
 operator ``L`` includes (hyper)-viscosity of order ``n_ν`` with coefficient ``ν``,
 
 ```math
 L = - ν |𝐤|^{2 n_ν} .
 ```
 
-Plain old viscocity corresponds to ``n_ν=1``.
+Plain-old viscosity corresponds to ``n_ν=1``.
 
-The nonlinear term is computed via function `calcN!()`.
+The nonlinear term is computed via [`calcN!`](@ref GeophysicalFlows.SurfaceQG.calcN!).
 """
 function Equation(params::SurfaceQGParams, grid::AbstractGrid)
   L = @. - params.ν * grid.Krsq^params.nν
@@ -165,9 +165,9 @@ end
 abstract type SurfaceQGVars <: AbstractVars end
 
 """
-    Vars{Aphys, Atrans, F, P}(b, u, v, bh, uh, vh, Fh, prevsol)
+    struct Vars{Aphys, Atrans, F, P} <: SurfaceQGVars
 
-The variables for surface QG problem:
+The variables for a surface QG problem.
 
 $(FIELDS)
 """
@@ -247,7 +247,7 @@ end
 """
     calcN_advection!(N, sol, t, clock, vars, params, grid)
 
-Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, b)`` in conservative 
+Calculate the Fourier transform of the advection term, ``- 𝖩(ψ, b)`` in conservative
 form, i.e., ``- ∂_x[(∂_y ψ)b] - ∂_y[(∂_x ψ)b]`` and store it in `N`:
 
 ```math
@@ -299,7 +299,7 @@ end
 """
     addforcing!(N, sol, t, clock, vars, params, grid)
 
-When the problem includes forcing, calculate the forcing term ``F̂`` and add it to the 
+When the problem includes forcing, calculate the forcing term ``F̂`` and add it to the
 nonlinear term ``N``.
 """
 addforcing!(N, sol, t, clock, vars::Vars, params, grid) = nothing
@@ -339,11 +339,10 @@ function updatevars!(sol, vars, params, grid)
   @. vars.bh = sol
   @. vars.uh =   im * grid.l  * params.ψhfrombh * sol
   @. vars.vh = - im * grid.kr * params.ψhfrombh * sol
-
   ldiv!(vars.b, grid.rfftplan, deepcopy(vars.bh))
   ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh))
   ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh))
-  
+
   return nothing
 end
 
@@ -406,7 +405,7 @@ Return the buoyancy variance,
 ```math
 \\int b² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} |b̂|² .
 ```
-In SQG, this is identical to the velocity variance (i.e., twice the domain-averaged kinetic 
+In SQG, this is identical to the velocity variance (i.e., twice the domain-averaged kinetic
 energy in the infinite-depth case).
 """
 @inline function buoyancy_variance(prob)
@@ -449,10 +448,10 @@ In SQG, this is identical to twice the rate of kinetic energy dissipation
 @inline function buoyancy_dissipation(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
   buoyancy_dissipationh = vars.uh         # use vars.uh as scratch variable
-  
+
   @. buoyancy_dissipationh = 2 * params.ν * grid.Krsq^params.nν * abs2(sol)
   CUDA.@allowscalar buoyancy_dissipationh[1, 1] = 0
-  
+
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(buoyancy_dissipationh, grid)
 end
 
@@ -474,7 +473,7 @@ end
 
 @inline function buoyancy_work(sol, vars::StochasticForcedVars, grid)
   buoyancy_workh = vars.uh         # use vars.uh as scratch variable
-  
+
   @. buoyancy_workh =  (vars.prevsol + sol) * conj(vars.Fh) # Stratonovich
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(buoyancy_workh, grid)
 end

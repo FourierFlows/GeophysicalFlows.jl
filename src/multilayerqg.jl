@@ -81,7 +81,7 @@ Keyword arguments
   - `calcF`: Function that calculates the Fourier transform of the forcing, ``F̂``.
   - `stochastic`: `true` or `false` (default); boolean denoting whether `calcF` is temporally stochastic.
   - `linear`: `true` or `false` (default); boolean denoting whether the linearized equations of motions are used.
-  - `aliased_fraction`: the fraction of high-wavenumbers that are zero-ed out by `dealias!()`.
+  - `aliased_fraction`: the fraction of high wavenumbers that are zero-ed out by `dealias!()`.
   - `T`: `Float32` or `Float64` (default); floating point type used for `problem` data.
 """
 function Problem(nlayers::Int,                                     # number of fluid layers
@@ -114,7 +114,7 @@ function Problem(nlayers::Int,                                     # number of f
                             T = Float64)
 
   if nlayers == 1
-    @warn """MultiLayerQG module does work for single-layer configuration but may not be as 
+    @warn """MultiLayerQG module does work for single-layer configuration but may not be as
     optimized. We suggest using SingleLayerQG module for single-layer QG simulation unless
     you have reasons to use MultiLayerQG in a single-layer configuration, e.g., you want to
     compare solutions with varying number of fluid layers."""
@@ -175,9 +175,9 @@ struct Params{T, Aphys3D, Aphys2D, Atrans4D, Trfft} <: AbstractParams
         Qx :: Aphys3D
     "array containing ``y``-gradient of PV due to ``β``, ``U``, and topographic PV in each fluid layer"
         Qy :: Aphys3D
-    "array containing coeffients for getting PV from streamfunction"
+    "array containing coefficients for getting PV from streamfunction"
          S :: Atrans4D
-    "array containing coeffients for inverting PV to streamfunction"
+    "array containing coefficients for inverting PV to streamfunction"
        S⁻¹ :: Atrans4D
     "rfft plan for FFTs"
   rfftplan :: Trfft
@@ -186,7 +186,7 @@ end
 """
     struct SingleLayerParams{T, Aphys3D, Aphys2D, Trfft} <: AbstractParams
 
-The parameters for the a single-layer `MultiLayerQG` problem.
+The parameters for a single-layer `MultiLayerQG` problem.
 
 $(TYPEDFIELDS)
 """
@@ -252,7 +252,8 @@ function convert_U_to_U3D(dev, nlayers, grid, U::Number)
   return A(U_3D)
 end
 
-function Params(nlayers::Int, f₀, β, b, H, U, eta, topographic_pv_gradient, μ, ν, nν, grid::TwoDGrid; calcFq=nothingfunction, effort=FFTW.MEASURE)
+function Params(nlayers::Int, f₀, β, b, H, U, eta, topographic_pv_gradient, μ, ν, nν, grid::TwoDGrid;
+                calcFq=nothingfunction, effort=FFTW.MEASURE)
   dev = grid.device
   T = eltype(grid)
   A = device_array(dev)
@@ -266,13 +267,13 @@ function Params(nlayers::Int, f₀, β, b, H, U, eta, topographic_pv_gradient, �
   Uyy = real.(ifft(-l.^2 .* fft(U)))
   Uyy = CUDA.@allowscalar repeat(Uyy, outer=(nx, 1, 1))
 
-  # Calculate periodic components of the topographic PV gradients.
+  # Calculate the periodic components of the topographic PV gradients
   etah = rfft(A(eta))
   etax = irfft(im * kr .* etah, nx)   # ∂η/∂x
   etay = irfft(im * l  .* etah, nx)   # ∂η/∂y
 
-  # Add topographic PV large-scale gradient
-  topographic_pv_gradient = T.(topographic_pv_gradient) 
+  # Add large-scale topographic PV gradient
+  topographic_pv_gradient = T.(topographic_pv_gradient)
   @. etax += topographic_pv_gradient[1]
   @. etay += topographic_pv_gradient[2]
 
@@ -280,7 +281,7 @@ function Params(nlayers::Int, f₀, β, b, H, U, eta, topographic_pv_gradient, �
   @views @. Qx[:, :, nlayers] += etax
 
   Qy = zeros(dev, T, (nx, ny, nlayers))
-  Qy = T(β) .- Uyy  # T(β) is needed to ensure that Qy remains same type as U
+  Qy = T(β) .- Uyy  # T(β) ensures that Qy remains same type as U
   @views @. Qy[:, :, nlayers] += etay
 
   rfftplanlayered = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=effort)
@@ -300,19 +301,19 @@ function Params(nlayers::Int, f₀, β, b, H, U, eta, topographic_pv_gradient, �
 
     typeofSkl = SArray{Tuple{nlayers, nlayers}, T, 2, nlayers^2} # StaticArrays of type T and dims = (nlayers, nlayers)
 
-    S = Array{typeofSkl, 2}(undef, (nkr, nl))
+    S = Array{typeofSkl, 2}(undef, (nkr, nl))    # Array of StaticArrays
     calcS!(S, Fp, Fm, nlayers, grid)
 
-    S⁻¹ = Array{typeofSkl, 2}(undef, (nkr, nl))
+    S⁻¹ = Array{typeofSkl, 2}(undef, (nkr, nl))  # Array of StaticArrays
     calcS⁻¹!(S⁻¹, Fp, Fm, nlayers, grid)
 
-    S, S⁻¹, Fp, Fm  = A(S), A(S⁻¹), A(Fp), A(Fm)     # convert to appropriate ArrayType
+    S, S⁻¹ = A(S), A(S⁻¹) # convert to appropriate ArrayType
 
-    CUDA.@allowscalar @views Qy[:, :, 1] = @. Qy[:, :, 1] - Fp[1] * (U[:, :, 2] - U[:, :, 1])
+    @views Qy[:, :, 1] = @. Qy[:, :, 1] - Fp[1] * (U[:, :, 2] - U[:, :, 1])
     for j = 2:nlayers-1
-      CUDA.@allowscalar @views Qy[:, :, j] = @. Qy[:, :, j] - Fp[j] * (U[:, :, j+1] - U[:, :, j]) - Fm[j-1] * (U[:, :, j-1] - U[:, :, j])
+      @views Qy[:, :, j] = @. Qy[:, :, j] - Fp[j] * (U[:, :, j+1] - U[:, :, j]) - Fm[j-1] * (U[:, :, j-1] - U[:, :, j])
     end
-    CUDA.@allowscalar @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
+    @views Qy[:, :, nlayers] = @. Qy[:, :, nlayers] - Fm[nlayers-1] * (U[:, :, nlayers-1] - U[:, :, nlayers])
 
     return Params(nlayers, T(f₀), T(β), Tuple(T.(b)), T.(H), U, eta, topographic_pv_gradient, T(μ), T(ν), nν, calcFq, Tuple(T.(g′)), Qx, Qy, S, S⁻¹, rfftplanlayered)
   end
@@ -352,7 +353,7 @@ Return the equation for a multi-layer quasi-geostrophic problem with `params` an
 The linear operator ``L`` includes only (hyper)-viscosity and is computed via
 `hyperviscosity(params, grid)`.
 
-The nonlinear term is computed via function `calcNlinear!`.
+The nonlinear term is computed via [`calcNlinear!`](@ref).
 """
 function LinearEquation(params, grid)
   L = hyperviscosity(params, grid)
@@ -367,7 +368,7 @@ Return the equation for a multi-layer quasi-geostrophic problem with `params` an
 The linear operator ``L`` includes only (hyper)-viscosity and is computed via
 `hyperviscosity(params, grid)`.
 
-The nonlinear term is computed via function `calcN!`.
+The nonlinear term is computed via [`calcN!`](@ref GeophysicalFlows.MultiLayerQG.calcN!).
 """
 function Equation(params, grid)
   L = hyperviscosity(params, grid)
@@ -514,7 +515,7 @@ Obtain the Fourier transform of the PV from the streamfunction `ψh` in each lay
 `qh = params.S * ψh`.
 
 The matrix multiplications are done via launching a kernel. We use a work layout over
-which the PV inversion kernel is launched.
+which the kernel is launched.
 """
 function pvfromstreamfunction!(qh, ψh, params, grid)
   # Larger workgroups are generally more efficient. For more generality, we could put an
@@ -542,7 +543,7 @@ end
     pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
 
 Obtain the Fourier transform of the PV from the streamfunction `ψh` for the special
-case of a single fluid layer configuration. In this case, ``q̂ = - k² ψ̂``.
+case of a single fluid layer configuration. In this case, ``q̂ = - (k_x² + k_y²) ψ̂``.
 """
 function pvfromstreamfunction!(qh, ψh, params::SingleLayerParams, grid)
   @. qh = -grid.Krsq * ψh
@@ -554,10 +555,10 @@ end
     streamfunctionfrompv!(ψh, qh, params, grid)
 
 Invert the PV to obtain the Fourier transform of the streamfunction `ψh` in each layer from
-`qh` using `ψh = params.S⁻¹ qh`.
+`qh` using `ψh = params.S⁻¹ * qh`.
 
 The matrix multiplications are done via launching a kernel. We use a work layout over
-which the PV inversion kernel is launched.
+which the kernel is launched.
 """
 function streamfunctionfrompv!(ψh, qh, params, grid)
   # Larger workgroups are generally more efficient. For more generality, we could put an
@@ -585,7 +586,7 @@ end
     streamfunctionfrompv!(ψh, qh, params::SingleLayerParams, grid)
 
 Invert the PV to obtain the Fourier transform of the streamfunction `ψh` for the special
-case of a single fluid layer configuration. In this case, ``ψ̂ = - k⁻² q̂``.
+case of a single fluid layer configuration. In this case, ``ψ̂ = - (k_x² + k_y²)⁻¹ q̂``.
 """
 function streamfunctionfrompv!(ψh, qh, params::SingleLayerParams, grid)
   @. ψh = -grid.invKrsq * qh
@@ -684,7 +685,7 @@ end
 """
     calcN_advection!(N, sol, vars, params, grid)
 
-Compute the advection term and stores it in `N`:
+Compute the advection term and store it in `N`:
 
 ```math
 N_j = - \\widehat{𝖩(ψ_j, q_j)} - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
@@ -733,7 +734,7 @@ end
 """
     calcN_linearadvection!(N, sol, vars, params, grid)
 
-Compute the advection term of the linearized equations and stores it in `N`:
+Compute the advection term of the linearized equations and store it in `N`:
 
 ```math
 N_j = - \\widehat{U_j ∂_x Q_j} - \\widehat{U_j ∂_x q_j}
@@ -912,7 +913,7 @@ function energies(vars, params, grid, sol)
 
   abs²∇𝐮h = vars.uh        # use vars.uh as scratch variable
   @. abs²∇𝐮h = grid.Krsq * abs2(vars.ψh)
-  
+
   V = grid.Lx * grid.Ly * sum(params.H)  # total volume of the fluid
 
   for j = 1:nlayers

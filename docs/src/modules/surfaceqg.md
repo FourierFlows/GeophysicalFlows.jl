@@ -2,8 +2,8 @@
 
 ### Basic Equations
 
-This module solves the non-dimensional surface quasi-geostrophic (SQG) equation for surface 
-buoyancy ``b_s = b(x, y, z=0)``, as described by [Capet-etal-2008](@citet). The buoyancy and the fluid 
+This module solves the non-dimensional surface quasi-geostrophic (SQG) equation for surface
+buoyancy ``b_s = b(x, y, z=0)``, as described by [Capet-etal-2008](@citet). The buoyancy and the fluid
 velocity at the surface are related through a streamfunction ``\psi`` via:
 
 ```math
@@ -16,10 +16,10 @@ The SQG model evolves the surface buoyancy,
 \partial_t b_s + \mathsf{J}(\psi, b_s) = \underbrace{-\nu(-1)^{n_\nu} \nabla^{2n_\nu} b_s}_{\textrm{buoyancy diffusion}} + \underbrace{F}_{\textrm{forcing}} .
 ```
 
-Above, ``\mathsf{J}(\psi, b) = (\partial_x \psi)(\partial_y b) - (\partial_y \psi)(\partial_x b)`` 
-is the two-dimensional Jacobian. The evolution of buoyancy is only solved for the surface 
-layer, but ``b_s`` is a function of the vertical gradient of ``\psi``. In the SQG system, the 
-potential vorticity in the interior of the flow is identically zero. That is, relative vorticity 
+Above, ``\mathsf{J}(\psi, b) = (\partial_x \psi)(\partial_y b) - (\partial_y \psi)(\partial_x b)``
+is the two-dimensional Jacobian. The evolution of buoyancy is only solved for the surface
+layer, but ``b_s`` is a function of the vertical gradient of ``\psi``. In the SQG system, the
+potential vorticity in the interior of the flow is identically zero. That is, relative vorticity
 is equal and opposite to the vertical stretching of the buoyancy layers,
 
 ```math
@@ -31,6 +31,7 @@ with the boundary conditions ``b_s = - \partial_z \psi|_{z=0}`` and ``\partial_z
 These equations describe a system where the streamfunction (and hence the dynamics) at all depths is prescribed entirely by the surface buoyancy. By taking the Fourier transform in the horizontal (``x`` and ``y``), the streamfunction-buoyancy relation is:
 
 ```math
+<<<<<<< HEAD
 \widehat{\psi}(k_x, k_y, z, t) = - \frac{\widehat{b_s}}{|𝐤|} \, \frac{\cosh[|𝐤|(z+H)]}{\sinh[|𝐤|H]} ,
 ```
 
@@ -38,6 +39,9 @@ for finite ``H`` and
 
 ```math
 \widehat{\psi}(k_x, k_y, z, t) = - \frac{\widehat{b_s}}{|𝐤|} \, e^{|𝐤|z} , 
+=======
+\widehat{\psi}(k_x, k_y, z, t) = - \frac{\widehat{b_s}}{|𝐤|} \, e^{|𝐤|z} ,
+>>>>>>> upstream/main
 ```
 
 for the case ``H \rightarrow \infty``. Here ``|𝐤| = \sqrt{k_x^2 + k_y^2}`` is the total horizontal wavenumber.
@@ -50,11 +54,11 @@ The buoyancy equation is time-stepped forward in Fourier space:
 \partial_t \widehat{b_s} = - \widehat{\mathsf{J}(\psi, b_s)} - \nu |𝐤|^{2 n_\nu} \widehat{b_s} + \widehat{F} .
 ```
 
-The surface buoyancy is [`b`](@ref GeophysicalFlows.SurfaceQG.Vars). The state variable 
+The surface buoyancy is [`b`](@ref GeophysicalFlows.SurfaceQG.Vars). The state variable
 `sol` is the Fourier transform of the surface buoyancy, [`bh`](@ref GeophysicalFlows.SurfaceQG.Vars).
 
 The Jacobian is computed in the conservative form: ``\mathsf{J}(f, g) =
-\partial_y [ (\partial_x f) g] -\partial_x[ (\partial_y f) g]``.
+\partial_y [(\partial_x f) g] - \partial_x [(\partial_y f) g]``.
 
 The linear operator is constructed in `Equation`
 
@@ -62,13 +66,13 @@ The linear operator is constructed in `Equation`
 GeophysicalFlows.SurfaceQG.Equation
 ```
 
-while the nonlinear terms via 
+while the nonlinear terms via
 
 ```@docs
 GeophysicalFlows.SurfaceQG.calcN!
 ```
 
-which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.SurfaceQG.calcN_advection!) 
+which in turn calls [`calcN_advection!`](@ref GeophysicalFlows.SurfaceQG.calcN_advection!)
 and [`addforcing!`](@ref GeophysicalFlows.SurfaceQG.addforcing!).
 
 
@@ -106,5 +110,5 @@ Other diagnostic include: [`buoyancy_dissipation`](@ref GeophysicalFlows.Surface
 
 ## Examples
 
-- [`examples/surfaceqg_decaying.jl`](@ref surfaceqg_decaying_example): Simulate decaying surface quasi-geostrophic flow 
+- [`examples/surfaceqg_decaying.jl`](@ref surfaceqg_decaying_example): Simulate decaying surface quasi-geostrophic flow
   with a prescribed initial buoyancy field.
