@@ -46,7 +46,7 @@ function test_sqg_advection(dt, stepper, dev::Device=CPU(), H=Inf; n=128, L=2π,
 
   Ff = @. (
     - ν*(8*sqrt(8) * tanh(sqrt(8) * H) * sin(2x)*cos(2y) + 10*sqrt(10) * tanh(sqrt(10) * H) * 2sin(x)*cos(3y) )
-    - 4*(sqrt(10) * tanh(sqrt(10) * H) - sqrt(8) * tanh(sqrt(8) * H)) * (cos(x)*cos(3y)*sin(2x)*sin(2y) 
+    - 4*(sqrt(10) * tanh(sqrt(10) * H) - sqrt(8) * tanh(sqrt(8) * H)) * (cos(x)*cos(3y)*sin(2x)*sin(2y)
       - 3cos(2x)*cos(2y)*sin(x)*sin(3y))
   )
 
@@ -59,11 +59,11 @@ function test_sqg_advection(dt, stepper, dev::Device=CPU(), H=Inf; n=128, L=2π,
   end
 
   prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, H=H, dt=dt, stepper=stepper, calcF=calcF!, stochastic=false)
-  
+
   SurfaceQG.set_b!(prob, bf)
 
   stepforward!(prob, nt)
-  
+
   SurfaceQG.updatevars!(prob)
 
   return isapprox(prob.vars.b, bf, rtol=rtol_surfaceqg)
@@ -80,8 +80,8 @@ function test_sqg_energy_buoyancyvariance(dev::Device=CPU(), H=Inf)
 
   K₁, K₂ = sqrt((2k₀)^2 + (2l₀)^2), sqrt((k₀)^2 + (3l₀)^2)
 
-  ψ₀ = @.                       sin(2k₀*x)*cos(2l₀*y) +                     2sin(k₀*x)*cos(3l₀*y)
-  b₀ = @. - K₁ * tanh(K₁ * H) * sin(2k₀*x)*cos(2l₀*y) - K₂ * tanh(K₂ * H) * 2sin(k₀*x)*cos(3l₀*y)
+  ψ₀ = @.                       sin(2k₀*x) * cos(2l₀*y) +                     2sin(k₀*x) * cos(3l₀*y)
+  b₀ = @. - K₁ * tanh(K₁ * H) * sin(2k₀*x) * cos(2l₀*y) - K₂ * tanh(K₂ * H) * 2sin(k₀*x) * cos(3l₀*y)
 
   kinetic_energy_calc    = (K₁^2                  + 4 * K₂^2                  ) / 8
   buoyancy_variance_calc = (K₁^2 * tanh(K₁ * H)^2 + 4 * K₂^2  * tanh(K₂ * H)^2) / 4
@@ -101,8 +101,8 @@ function test_sqg_energy_buoyancyvariance(dev::Device=CPU(), H=Inf)
   params = SurfaceQG.Params(H, pr.ν, pr.nν, gr)
 
   return (isapprox(kinetic_energy_b₀, kinetic_energy_calc, rtol=rtol_surfaceqg) &&
-          isapprox(buoyancy_variance_b₀, buoyancy_variance_calc, rtol=rtol_surfaceqg)) #&&
-          #isapprox(total_energy_b₀, total_energy_calc, rtol=rtol_surfaceqg))
+          isapprox(buoyancy_variance_b₀, buoyancy_variance_calc, rtol=rtol_surfaceqg) &&
+          isapprox(total_energy_b₀, total_energy_calc, rtol=rtol_surfaceqg))
 end
 
 function test_sqg_paramsconstructor(dev::Device=CPU(), H=Inf)
@@ -111,7 +111,7 @@ function test_sqg_paramsconstructor(dev::Device=CPU(), H=Inf)
 
   prob = SurfaceQG.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, H=H, stepper="ForwardEuler")
 
-  if isinf(H) 
+  if isinf(H)
     params = SurfaceQG.Params(ν, nν, prob.grid)
   else
     params = SurfaceQG.Params(H, ν, nν, prob.grid)
@@ -126,20 +126,20 @@ end
 
 function test_sqg_noforcing(dev::Device=CPU())
   n, L = 16, 2π
-  
+
   prob_unforced = SurfaceQG.Problem(dev; nx=n, Lx=L, stepper="ForwardEuler")
 
   SurfaceQG.addforcing!(prob_unforced.timestepper.N, prob_unforced.sol, prob_unforced.clock.t, prob_unforced.clock, prob_unforced.vars, prob_unforced.params, prob_unforced.grid)
-    
+
   function calcF!(Fh, sol, t, clock, vars, params, grid)
     Fh .= 2 * device_array(dev)(ones(size(sol)))
     return nothing
   end
-  
+
   prob_forced = SurfaceQG.Problem(dev; nx=n, Lx=L, stepper="ForwardEuler", calcF=calcF!)
 
   SurfaceQG.addforcing!(prob_forced.timestepper.N, prob_forced.sol, prob_forced.clock.t, prob_forced.clock, prob_forced.vars, prob_forced.params, prob_forced.grid)
-  
+
   return prob_unforced.timestepper.N == Complex.(device_array(dev)(zeros(size(prob_unforced.sol)))) && prob_forced.timestepper.N == Complex.(2*device_array(dev)(ones(size(prob_unforced.sol))))
 end
 
@@ -199,7 +199,7 @@ function test_sqg_stochasticforcing_buoyancy_variance_budget(dev::Device=CPU(); 
   @. forcing_spectrum = ifelse(Kr < 2π/L, 0, forcing_spectrum)
   εᵇ0 = parsevalsum(forcing_spectrum, grid) / (grid.Lx * grid.Ly)
   forcing_spectrum .= εᵇ / εᵇ0 * forcing_spectrum
-  
+
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
@@ -213,7 +213,7 @@ function test_sqg_stochasticforcing_buoyancy_variance_budget(dev::Device=CPU(); 
     calcF=calcF!, stochastic=true)
 
   SurfaceQG.set_b!(prob, 0*x)
-  
+
   B = Diagnostic(SurfaceQG.buoyancy_variance,    prob, nsteps=nt)
   D = Diagnostic(SurfaceQG.buoyancy_dissipation, prob, nsteps=nt)
   W = Diagnostic(SurfaceQG.buoyancy_work,        prob, nsteps=nt)
