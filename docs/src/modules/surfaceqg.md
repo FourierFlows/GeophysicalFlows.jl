@@ -31,7 +31,7 @@ with the boundary conditions ``b_s = - \partial_z \psi|_{z=0}`` and ``\partial_z
 These equations describe a system where the streamfunction (and hence the dynamics) at all depths is prescribed entirely by the surface buoyancy. By taking the Fourier transform in the horizontal (``x`` and ``y``), the streamfunction-buoyancy relation is:
 
 ```math
-\widehat{\psi}(k_x, k_y, z, t) = - \frac{\widehat{b_s}}{|𝐤|} \, \frac{\cosh[|𝐤|(z+H)]}{\sinh[|𝐤|H]} ,
+\widehat{\psi}(k_x, k_y, z, t) = - \frac{\widehat{b_s}}{|𝐤|} \, \frac{\cosh[|𝐤|(z+H)]}{\sinh(|𝐤|H)} ,
 ```
 
 for finite ``H`` and
@@ -40,7 +40,8 @@ for finite ``H`` and
 \widehat{\psi}(k_x, k_y, z, t) = - \frac{\widehat{b_s}}{|𝐤|} \, e^{|𝐤|z} ,
 ```
 
-for a fluid of infinite depth (``H \rightarrow \infty``). Here, ``|𝐤| = \sqrt{k_x^2 + k_y^2}`` is the total horizontal wavenumber.
+for a fluid of infinite depth (``H \rightarrow \infty``).
+Above, ``|𝐤| = \sqrt{k_x^2 + k_y^2}`` is the total horizontal wavenumber.
 
 ### Implementation
 
