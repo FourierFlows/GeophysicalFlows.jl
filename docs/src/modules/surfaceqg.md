@@ -26,7 +26,7 @@ is equal and opposite to the vertical stretching of the buoyancy layers,
 \underbrace{\left(\partial_x^2 + \partial_y^2 \right) \psi}_{\textrm{relative vorticity}} + \underbrace{\partial_z^2 \psi}_{\textrm{stretching term}} = 0 ,
 ```
 
-with the boundary conditions ``b_s = - \partial_z \psi|_{z=0}`` and ``\partial_z \psi|_{z=-H} = 0`` where ``H`` is the layer depth. In the case of infinite depth, ``H \rightarrow \infty``, the bottom boundary condition becomes ``\psi \rightarrow 0`` as ``z \rightarrow -\infty``. (We take here the oceanographic convention: ``z \le 0``).
+with the boundary conditions ``b_s = - \partial_z \psi|_{z=0}`` and ``\partial_z \psi|_{z=-H} = 0``, where ``H`` is the layer depth. In the case of infinite depth, ``H \rightarrow \infty``, the bottom boundary condition becomes ``\psi \rightarrow 0`` as ``z \rightarrow -\infty``. (We take here the oceanographic convention: ``z \le 0``).
 
 These equations describe a system where the streamfunction (and hence the dynamics) at all depths is prescribed entirely by the surface buoyancy. By taking the Fourier transform in the horizontal (``x`` and ``y``), the streamfunction-buoyancy relation is:
 
@@ -40,7 +40,7 @@ for finite ``H`` and
 \widehat{\psi}(k_x, k_y, z, t) = - \frac{\widehat{b_s}}{|𝐤|} \, e^{|𝐤|z} ,
 ```
 
-for the case ``H \rightarrow \infty``. Here ``|𝐤| = \sqrt{k_x^2 + k_y^2}`` is the total horizontal wavenumber.
+for a fluid of infinite depth (``H \rightarrow \infty``). Here, ``|𝐤| = \sqrt{k_x^2 + k_y^2}`` is the total horizontal wavenumber.
 
 ### Implementation
 

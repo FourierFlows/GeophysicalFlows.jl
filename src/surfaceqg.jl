@@ -52,7 +52,7 @@ Keyword arguments
   - `ny`: Number of grid points in ``y``-domain.
   - `Lx`: Extent of the ``x``-domain.
   - `Ly`: Extent of the ``y``-domain.
-  - `H`: Layer depth, set Inf for standard SQG.
+  - `H`: Layer depth; `Inf` implies standard infinite-depth SQG dynamics.
   - `ν`: Small-scale (hyper)-viscosity coefficient.
   - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
   - `dt`: Time-step.
