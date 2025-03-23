@@ -68,7 +68,7 @@ function Problem(dev::Device=CPU();
                 ny = nx,
                 Lx = 2π,
                 Ly = Lx,
-		             H = Inf,
+                 H = Inf,
   # Hyper-viscosity parameters
                  ν = 0,
                 nν = 1,
@@ -100,7 +100,7 @@ end
 abstract type SurfaceQGParams <: AbstractParams end
 
 """
-    Params{T, Atrans <: AbstractArray} <: SurfaceQGParams
+    struct Params{T, Atrans <: AbstractArray} <: SurfaceQGParams
 
 The parameters for a Surface QG dynamics problem.
 
@@ -367,7 +367,7 @@ end
     get_streamfunction(sol, params, grid)
     get_streamfunction(prob)
 
-Compute the streamfunction `ψ` from bh
+Return the streamfunction `ψ` from `bh`.
 """
 function get_streamfunction(sol, params, grid)
   ψh = @. params.ψhfrombh * sol
@@ -406,7 +406,7 @@ Return the buoyancy variance,
 \\int b² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} |b̂|² .
 ```
 In SQG, this is identical to the velocity variance (i.e., twice the domain-averaged kinetic
-energy in the infinite-depth case).
+energy for infinite-depth SQG).
 """
 @inline function buoyancy_variance(prob)
   sol, grid = prob.sol, prob.grid
@@ -422,7 +422,7 @@ Return the total energy per unit of surface area. Since ``u² + v² + b² = |{\\
 ```math
 \\int \\frac1{2} |{\\bf ∇}_3 ψ|² \\frac{𝖽x 𝖽y dz}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤| |ψ̂|² .
 ```
-In SQG with infinite depth, this is identical to half the domain-averaged surface buoyancy variance.
+For infinite-depth SQG, this is identical to half the domain-averaged surface buoyancy variance.
 """
 @inline function total_energy(sol, vars, params, grid)
   total_energyh = vars.bh          # use vars.bh as scratch variable
@@ -443,7 +443,7 @@ to small scale (hyper)-viscosity,
 2 ν (-1)^{n_ν} \\int b ∇^{2n_ν} b \\frac{𝖽x 𝖽y}{L_x L_y} = - 2 ν \\sum_{𝐤} |𝐤|^{2n_ν} |b̂|² ,
 ```
 where ``ν`` the (hyper)-viscosity coefficient ``ν`` and ``nν`` the (hyper)-viscosity order.
-In SQG, this is identical to twice the rate of kinetic energy dissipation
+For infinite-depth SQG, this is identical to twice the rate of kinetic energy dissipation.
 """
 @inline function buoyancy_dissipation(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
