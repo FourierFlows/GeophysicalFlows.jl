@@ -4,9 +4,11 @@ export
   Problem,
   set_b!,
   updatevars!,
+  get_streamfunction,
 
   kinetic_energy,
   buoyancy_variance,
+  total_energy,
   buoyancy_dissipation,
   buoyancy_work
 
@@ -28,6 +30,7 @@ nothingfunction(args...) = nothing
                      Lx = 2π,
                      ny = nx,
                      Ly = Lx,
+		      H = Inf,
                       ν = 0,
                      nν = 1,
                      dt = 0.01,
@@ -49,6 +52,7 @@ Keyword arguments
   - `ny`: Number of grid points in ``y``-domain.
   - `Lx`: Extent of the ``x``-domain.
   - `Ly`: Extent of the ``y``-domain.
+  - `H`: Layer depth; `Inf` implies standard infinite-depth SQG dynamics.
   - `ν`: Small-scale (hyper)-viscosity coefficient.
   - `nν`: (Hyper)-viscosity order, `nν```≥ 1``.
   - `dt`: Time-step.
@@ -64,6 +68,7 @@ function Problem(dev::Device=CPU();
                 ny = nx,
                 Lx = 2π,
                 Ly = Lx,
+                 H = Inf,
   # Hyper-viscosity parameters
                  ν = 0,
                 nν = 1,
@@ -78,7 +83,7 @@ function Problem(dev::Device=CPU();
 
   grid = TwoDGrid(dev; nx, Lx, ny, Ly, aliased_fraction, T)
 
-  params = Params{T}(ν, nν, calcF)
+  params = Params(T(H), T(ν), nν, calcF, grid)
 
   vars = calcF == nothingfunction ? DecayingVars(grid) : (stochastic ? StochasticForcedVars(grid) : ForcedVars(grid))
 
@@ -92,24 +97,40 @@ end
 # Parameters
 # ----------
 
+abstract type SurfaceQGParams <: AbstractParams end
+
 """
-    struct Params{T} <: AbstractParams
+    struct Params{T, Atrans <: AbstractArray} <: SurfaceQGParams
 
 The parameters for a Surface QG dynamics problem.
 
 $(TYPEDFIELDS)
 """
-struct Params{T} <: AbstractParams
+struct Params{T, Atrans <: AbstractArray} <: SurfaceQGParams
+    "layer depth"
+         H :: T
     "buoyancy (hyper)-viscosity coefficient"
-       ν :: T
+         ν :: T
     "buoyancy (hyper)-viscosity order"
-      nν :: Int
+        nν :: Int
     "function that calculates the Fourier transform of the forcing, ``F̂``"
-  calcF! :: Function
+    calcF! :: Function
+    "array containing Dirichlet-to-Neumann operator for buoyancy-streamfunction relation"
+  ψhfrombh :: Atrans
 end
 
-Params(ν, nν) = Params(ν, nν, nothingfunction)
+"""
+    Params(H, ν, nν, calcF!, grid::AbstractGrid)
 
+Return Surface QG parameters for given `grid`.
+"""
+function Params(H, ν, nν, calcF!, grid::AbstractGrid)
+  ψhfrombh = @. sqrt(grid.invKrsq) * coth(H / sqrt(grid.invKrsq))
+  return Params(H, ν, nν, calcF!, ψhfrombh)
+end
+
+Params(ν, nν, grid::AbstractGrid) = Params(Inf, ν, nν, nothingfunction, grid)
+Params(H, ν, nν, grid::AbstractGrid) = Params(H, ν, nν, nothingfunction, grid)
 
 # ---------
 # Equations
@@ -129,7 +150,7 @@ Plain-old viscosity corresponds to ``n_ν=1``.
 
 The nonlinear term is computed via [`calcN!`](@ref GeophysicalFlows.SurfaceQG.calcN!).
 """
-function Equation(params::Params, grid::AbstractGrid)
+function Equation(params::SurfaceQGParams, grid::AbstractGrid)
   L = @. - params.ν * grid.Krsq^params.nν
   CUDA.@allowscalar L[1, 1] = 0
 
@@ -235,8 +256,8 @@ N = - \\widehat{𝖩(ψ, b)} = - i k_x \\widehat{u b} - i k_y \\widehat{v b} .
 """
 function calcN_advection!(N, sol, t, clock, vars, params, grid)
   @. vars.bh = sol
-  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
-  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
+  @. vars.uh =   im * grid.l  * params.ψhfrombh * sol
+  @. vars.vh = - im * grid.kr * params.ψhfrombh * sol
 
   ldiv!(vars.u, grid.rfftplan, vars.uh)
   ldiv!(vars.v, grid.rfftplan, vars.vh)
@@ -307,25 +328,26 @@ end
 # ----------------
 
 """
+    updatevars!(sol, vars, params, grid)
     updatevars!(prob)
 
 Update variables in `vars` with solution in `sol`.
 """
-function updatevars!(prob)
-  vars, grid, sol = prob.vars, prob.grid, prob.sol
-
+function updatevars!(sol, vars, params, grid)
   dealias!(sol, grid)
 
   @. vars.bh = sol
-  @. vars.uh =   im * grid.l  * sqrt(grid.invKrsq) * sol
-  @. vars.vh = - im * grid.kr * sqrt(grid.invKrsq) * sol
-
+  @. vars.uh =   im * grid.l  * params.ψhfrombh * sol
+  @. vars.vh = - im * grid.kr * params.ψhfrombh * sol
   ldiv!(vars.b, grid.rfftplan, deepcopy(vars.bh))
   ldiv!(vars.u, grid.rfftplan, deepcopy(vars.uh))
   ldiv!(vars.v, grid.rfftplan, deepcopy(vars.vh))
 
   return nothing
 end
+
+updatevars!(prob) = updatevars!(prob.sol, prob.vars, prob.params, prob.grid)
+
 
 """
     set_b!(prob, b)
@@ -342,25 +364,40 @@ function set_b!(prob, b)
 end
 
 """
-    kinetic_energy(prob)
+    get_streamfunction(sol, params, grid)
+    get_streamfunction(prob)
 
-Return the domain-averaged surface kinetic energy. Since ``u² + v² = |{\\bf ∇} ψ|²``, we get
-```math
-\\int \\frac1{2} |{\\bf ∇} ψ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ψ̂|² .
-```
-In SQG, this is identical to half the domain-averaged surface buoyancy variance.
+Return the streamfunction `ψ` from `bh`.
 """
-@inline function kinetic_energy(prob)
-  sol, vars, grid = prob.sol, prob.vars, prob.grid
+function get_streamfunction(sol, params, grid)
+  ψh = @. params.ψhfrombh * sol
+  return irfft(ψh, grid.nx)
+end
 
+get_streamfunction(prob) = get_streamfunction(prob.sol, prob.params, prob.grid)
+
+"""
+    kinetic_energy(prob)
+    kinetic_energy(sol, vars, params, grid)
+
+Return the domain-averaged surface kinetic energy. Since ``u² + v² = |𝛁_h ψ|²``, where
+``𝛁_h`` is the horizontal gradient, we get
+```math
+\\int \\frac1{2} |𝛁_h ψ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ψ̂|² .
+```
+In SQG with infinite depth, this is identical to half the domain-averaged surface buoyancy variance.
+"""
+@inline function kinetic_energy(sol, vars, params, grid)
   ψh = vars.uh                     # use vars.uh as scratch variable
   kinetic_energyh = vars.bh        # use vars.bh as scratch variable
 
-  @. ψh = sqrt(grid.invKrsq) * sol
+  @. ψh = params.ψhfrombh * sol
   @. kinetic_energyh = 1 / 2 * grid.Krsq * abs2(ψh)
 
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(kinetic_energyh, grid)
 end
+
+@inline kinetic_energy(prob) = kinetic_energy(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
     buoyancy_variance(prob)
@@ -370,13 +407,34 @@ Return the buoyancy variance,
 \\int b² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} |b̂|² .
 ```
 In SQG, this is identical to the velocity variance (i.e., twice the domain-averaged kinetic
-energy).
+energy for infinite-depth SQG).
 """
 @inline function buoyancy_variance(prob)
   sol, grid = prob.sol, prob.grid
 
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(abs2.(sol), grid)
 end
+
+"""
+    total_energy(prob)
+    total_energy(sol, vars, params, grid)
+
+Return the total energy per unit of surface area. Since ``u² + v² + b² = |𝛁ψ|²``, with
+``𝛁`` the three-dimensional gradient, we get
+```math
+\\int \\frac1{2} |𝛁ψ|² \\frac{𝖽x 𝖽y 𝖽z}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤| |ψ̂|² .
+```
+For infinite-depth SQG, this is identical to half the domain-averaged surface buoyancy variance.
+"""
+@inline function total_energy(sol, vars, params, grid)
+  total_energyh = vars.bh          # use vars.bh as scratch variable
+
+  @. total_energyh = 1 / 2 * params.ψhfrombh * abs2(sol)
+
+  return 1 / (grid.Lx * grid.Ly) * parsevalsum(total_energyh, grid)
+end
+
+@inline total_energy(prob) = total_energy(prob.sol, prob.vars, prob.params, prob.grid)
 
 """
     buoyancy_dissipation(prob)
@@ -387,7 +445,7 @@ to small scale (hyper)-viscosity,
 2 ν (-1)^{n_ν} \\int b ∇^{2n_ν} b \\frac{𝖽x 𝖽y}{L_x L_y} = - 2 ν \\sum_{𝐤} |𝐤|^{2n_ν} |b̂|² ,
 ```
 where ``ν`` the (hyper)-viscosity coefficient ``ν`` and ``nν`` the (hyper)-viscosity order.
-In SQG, this is identical to twice the rate of kinetic energy dissipation
+For infinite-depth SQG, this is identical to twice the rate of kinetic energy dissipation.
 """
 @inline function buoyancy_dissipation(prob)
   sol, vars, params, grid = prob.sol, prob.vars, prob.params, prob.grid
