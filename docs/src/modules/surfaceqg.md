@@ -98,7 +98,7 @@ Some useful diagnostics are kinetic energy and buoyancy variance.
 ```@docs
 GeophysicalFlows.SurfaceQG.kinetic_energy
 GeophysicalFlows.SurfaceQG.buoyancy_variance
-GeophysicalFlows.SurfaceQG.total_energy
+GeophysicalFlows.SurfaceQG.total_3D_energy
 ```
 
 Other diagnostic include: [`buoyancy_dissipation`](@ref GeophysicalFlows.SurfaceQG.buoyancy_dissipation) and
