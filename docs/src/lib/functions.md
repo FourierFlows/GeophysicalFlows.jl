@@ -94,6 +94,7 @@ GeophysicalFlows.MultiLayerQG.pv_streamfunction_kernel!
 
 ```@docs
 GeophysicalFlows.SurfaceQG.Problem
+GeophysicalFlows.SurfaceQG.get_streamfunction
 GeophysicalFlows.SurfaceQG.buoyancy_dissipation
 GeophysicalFlows.SurfaceQG.buoyancy_work
 ```
