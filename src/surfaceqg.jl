@@ -380,10 +380,10 @@ get_streamfunction(prob) = get_streamfunction(prob.sol, prob.params, prob.grid)
     kinetic_energy(prob)
     kinetic_energy(sol, vars, params, grid)
 
-Return the domain-averaged surface kinetic energy. Since ``u² + v² = |𝛁_h ψ|²``, where
-``𝛁_h`` is the horizontal gradient, we get
+Return the domain-averaged surface kinetic energy. Since ``u² + v² = |{\\bf ∇}_h ψ|²``, where
+``{\\bf ∇}_h`` is the horizontal gradient, we get
 ```math
-\\int \\frac1{2} |𝛁_h ψ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ψ̂|² .
+\\int \\frac1{2} |{\\bf ∇}_h ψ|² \\frac{𝖽x 𝖽y}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤|² |ψ̂|² .
 ```
 In SQG with infinite depth, this is identical to half the domain-averaged surface buoyancy variance.
 """
@@ -420,9 +420,9 @@ end
     total_3D_energy(sol, vars, params, grid)
 
 Return the sum of the surface kinetic energy and the buoyancy variance per unit of surface area.
-Since ``u² + v² + b² = |𝛁ψ|²``, with ``𝛁`` the three-dimensional gradient, we get
+Since ``u² + v² + b² = |{\\bf ∇} ψ|²``, with ``{\\bf ∇}`` the three-dimensional gradient, we get
 ```math
-\\int \\frac1{2} |𝛁ψ|² \\frac{𝖽x 𝖽y 𝖽z}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤| |ψ̂|² .
+\\int \\frac1{2} |{\\bf ∇} ψ|² \\frac{𝖽x 𝖽y 𝖽z}{L_x L_y} = \\sum_{𝐤} \\frac1{2} |𝐤| |ψ̂|² .
 ```
 For infinite-depth SQG, the above identical to half the domain-averaged surface buoyancy variance.
 """
