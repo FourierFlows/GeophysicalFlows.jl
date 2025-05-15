@@ -84,11 +84,13 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. Hess, P., Gelbrecht, M., Schötz, C., Aich, M., Huang, Y., Yang, S., and Boers, N. (2025). Generating time-consistent dynamics with discriminator-guided image diffusion models. arXiv preprint arXiv.2410.14402, doi:[10.48550/arXiv.2505.09089](https://doi.org/10.48550/arXiv.2505.09089).
+
 1. Crowe, M. N., (2025). QGDipoles.jl: A Julia package for calculating dipolar vortex solutions to the Quasi-Geostrophic equations. _Journal of Open Source Software_, **10(108)**, 7767, doi:[10.21105/joss.07767](https://doi.org/10.21105/joss.07767).
 
 1. Lobo, M., Griffies, S. M., and Zhang, W. (2025) Vertical structure of baroclinic instability in a three-layer quasi-geostrophic model over a sloping bottom. _Journal of Physical Oceanography_, in press, doi:[10.1175/JPO-D-24-0130.1](https://doi.org/10.1175/JPO-D-24-0130.1).
 
-1. Crowe, M. N. and Sutyrin, G. G. (2024) Symmetry breaking of two-layer eastward propagating dipoles. arXiv preprint arXiv.2410.14402, doi:[10.48550/arXiv.2410.14402](https://doi.org/10.48550/arXiv.2410.14402).
+1. Crowe, M. N. and Sutyrin, G. G. (2025) Symmetry breaking of two-layer eastward propagating dipoles. _Phys. Fluids_, **37**, 021708, doi:[10.1063/5.0251761](https://doi.org/10.1063/5.0251761).
 
 1. Pudig, M. and Smith, K. S. (2024) Baroclinic turbulence above rough topography: The vortex gas and topographic turbulence regimes. _ESS Open Archive_, doi:[10.22541/essoar.171995116.60993353/v1](https://doi.org/10.22541/essoar.171995116.60993353/v1).
 
