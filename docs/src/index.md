@@ -84,6 +84,8 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. He, J. and Wang, Y. (2025). Minimum-enstrophy and maximum-entropy equilibrium states in two-dimensional topographic turbulence. arXiv preprint arXiv.2507.00691, doi:[10.48550/arXiv.2507.00691](https://doi.org/10.48550/arXiv.2507.00691).
+
 1. Hess, P., Gelbrecht, M., Schötz, C., Aich, M., Huang, Y., Yang, S., and Boers, N. (2025). Generating time-consistent dynamics with discriminator-guided image diffusion models. arXiv preprint arXiv.2410.14402, doi:[10.48550/arXiv.2505.09089](https://doi.org/10.48550/arXiv.2505.09089).
 
 1. Crowe, M. N., (2025). QGDipoles.jl: A Julia package for calculating dipolar vortex solutions to the Quasi-Geostrophic equations. _Journal of Open Source Software_, **10(108)**, 7767, doi:[10.21105/joss.07767](https://doi.org/10.21105/joss.07767).
