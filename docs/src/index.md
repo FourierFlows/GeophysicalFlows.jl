@@ -84,6 +84,8 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. Lobo, M. and Griffies, S. M. (2025) Two-layer quasi-geostrophic waves and turbulence over a meridionally sloping bottom with linear bottom drag. _ESS Open Archive_, doi:[10.22541/essoar.175760447.79218471/v1](https://doi.org/10.22541/essoar.175760447.79218471/v1).
+
 1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2025) Conditioning on PDE Parameters to Generalise Deep Learning Emulation of Stochastic and Chaotic Dynamics. arXiv preprint arXiv.2509.09599, doi:[10.48550/arXiv.2509.09599](https://doi.org/10.48550/arXiv.2509.09599).
 
 1. He, J. and Wang, Y. (2025). Minimum-enstrophy and maximum-entropy equilibrium states in two-dimensional topographic turbulence. arXiv preprint arXiv.2507.00691, doi:[10.48550/arXiv.2507.00691](https://doi.org/10.48550/arXiv.2507.00691).
