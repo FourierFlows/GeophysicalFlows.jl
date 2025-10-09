@@ -84,6 +84,8 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. Wagner, C. M, Lee, A., and Pearson, B. (2025) FluidSF: A Python package for calculating turbulent flow statistics. _Journal of Open Source Software_, **10(114)**, 7873, doi:[10.21105/joss.07873](https://doi.org/10.21105/joss.07873).
+
 1. Lobo, M. and Griffies, S. M. (2025) Two-layer quasi-geostrophic waves and turbulence over a meridionally sloping bottom with linear bottom drag. _ESS Open Archive_, doi:[10.22541/essoar.175760447.79218471/v1](https://doi.org/10.22541/essoar.175760447.79218471/v1).
 
 1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2025) Conditioning on PDE Parameters to Generalise Deep Learning Emulation of Stochastic and Chaotic Dynamics. arXiv preprint arXiv.2509.09599, doi:[10.48550/arXiv.2509.09599](https://doi.org/10.48550/arXiv.2509.09599).
