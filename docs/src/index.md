@@ -84,7 +84,9 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
-1. Sterl, M. F., Palóczy, A., LaCasce, J. H., Baatsen, M. L. J., and Groeskamp, S. (2025) Asymmetric effects of topographic slopes on Lagrangian and Eulerian eddy diffusivities in two-layer QG flow.  _ESS Open Archive_, doi:[10.22541/essoar.176365858.87644610/v1](https://doi.org/10.22541/essoar.176365858.87644610/v1).
+1. Lemasquerier, D. (2025) Emergence and coalescence of zonal jets: A quasilinear Rossby wave-mean flow interaction model. _Physical Review Fluids_, **10**, 124802, doi:[10.1103/pqxy-x728](https://doi.org/10.1103/pqxy-x728)
+
+1. Sterl, M. F., Palóczy, A., LaCasce, J. H., Baatsen, M. L. J., and Groeskamp, S. (2025) Asymmetric effects of topographic slopes on Lagrangian and Eulerian eddy diffusivities in two-layer QG flow. _ESS Open Archive_, doi:[10.22541/essoar.176365858.87644610/v1](https://doi.org/10.22541/essoar.176365858.87644610/v1).
 
 1. Lobo M. (2025) Baroclinic energy cycles in two-layer quasi-geostrophic turbulence. _Journal of Fluid Mechanics_, **1023**, A2, doi:[10.1017/jfm.2025.10824](https://doi.org/10.1017/jfm.2025.10824).
 
