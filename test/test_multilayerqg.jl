@@ -848,7 +848,7 @@ end
 function test_mqg_stochasticforcedproblemconstructor(dev::Device=CPU())
 
   function calcFq!(Fqh, sol, t, clock, vars, params, grid)
-    Fqh .= rand(eltype(prob.sol), size(prob.sol))
+    Fqh .= device_array(dev)(rand(eltype(prob.sol), size(prob.sol)))
     return nothing
   end
 
