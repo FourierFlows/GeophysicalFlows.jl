@@ -69,7 +69,7 @@ function constructtestfields_3layer(gr)
                    1/2 * cos(4k₀*x) * cos(2l₀*y) )
   ψ3 = @. 1e-3 * (       cos(1k₀*x) * cos(3l₀*y) +
                    1/2 * cos(2k₀*x) * cos(2l₀*y) )
- 
+
   Δψ1 = @. 1e-3 * ( - 1/4 * ((2k₀)^2 + (5l₀)^2) * cos(2k₀*x) * cos(5l₀*y) +
                     - 1/3 * ((3k₀)^2 + (3l₀)^2) * cos(3k₀*x) * cos(3l₀*y) )
   Δψ2 = @. 1e-3 * (       - ((3k₀)^2 + (4l₀)^2) * cos(3k₀*x) * cos(4l₀*y) +
@@ -433,7 +433,7 @@ function test_mqg_linearadvection(dt, stepper, dev::Device=CPU();
   β = 0.35
 
   U1, U2 = 0.1, 0.05
-  
+
   u1 = @. 0.5sech(gr.y / (Ly/15))^2; u1 = A(reshape(u1, (1, gr.ny)))
   u2 = @. 0.02cos(3l₀ * gr.y);       u2 = A(reshape(u2, (1, gr.ny)))
 
@@ -678,7 +678,7 @@ function test_mqg_setqsetψ(dev::Device=CPU(); dt=0.001, stepper="ForwardEuler",
   sol, cl, pr, vs, gr = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
   T = eltype(gr)
-  
+
   f1 = @. 2cos(k₀*x) * cos(l₀*y)
   f2 = @.  cos(k₀*x + π/10) * cos(2l₀*y)
 
@@ -725,13 +725,13 @@ function test_mqg_set_topographicPV_largescale_gradient(dev::Device=CPU(); dt=0.
 
   # topographic amplitude
   h₀ = 0.1
-  
+
   # topographic amplitude
   topographic_slope_x, topographic_slope_y = 1e-2, 1e-1
 
   # topography (bumps)
   h = @. h₀ * cos(k₀*x) * cos(l₀*y)
-  
+
   # topographic PV
   eta = f₀ * h / H[2]
 
@@ -747,7 +747,7 @@ function test_mqg_set_topographicPV_largescale_gradient(dev::Device=CPU(); dt=0.
 
   Q2x_analytic = @. f₀ * (topographic_slope_x - h₀ * k₀ * sin(k₀*x) * cos(l₀*y)) / H[2]
   Q2y_analytic = @. f₀ * (topographic_slope_y - h₀ * l₀ * cos(k₀*x) * sin(l₀*y)) / H[2] + F1 * (Psi1y - Psi2y)
-  
+
   return prob.params.topographic_pv_gradient == f₀ / H[2] .* (topographic_slope_x, topographic_slope_y) &&
          isapprox(prob.params.Qx[:, :, 2], Q2x_analytic, rtol=rtol_multilayerqg) &&
          isapprox(prob.params.Qy[:, :, 2], Q2y_analytic, rtol=rtol_multilayerqg)
@@ -847,12 +847,19 @@ end
 
 function test_mqg_stochasticforcedproblemconstructor(dev::Device=CPU())
 
-function calcFq!(Fqh, sol, t, clock, vars, params, grid)
-    Fqh .= Ffh
+  function calcFq!(Fqh, sol, t, clock, vars, params, grid)
+    Fqh .= rand(eltype(prob.sol), size(prob.sol))
     return nothing
   end
 
   prob = MultiLayerQG.Problem(2, dev; calcFq=calcFq!, stochastic=true)
+
+  @test maximum(abs, prob.sol) == 0
+
+  sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
+  GeophysicalFlows.MultiLayerQG.addforcing!(sol, sol, 0, clock, vars, params, grid)
+
+  @test minimum(abs, prob.sol) > 0
 
   return typeof(prob.vars.prevsol)==typeof(prob.sol)
 end
