@@ -198,19 +198,13 @@ heatmap!(axq₁, x, y, q₁; colormap = :balance)
 
 heatmap!(axq₂, x, y, q₂; colormap = :balance)
 
-contourf!(axψ₁, x, y, ψ₁;
-          levels = levelsψ₁, colormap = :viridis, extendlow = :auto, extendhigh = :auto)
- contour!(axψ₁, x, y, ψ₁;
-          levels = levelsψ₁⁺, color=:black)
- contour!(axψ₁, x, y, ψ₁;
-          levels = levelsψ₁⁻, color=:black, linestyle = :dash)
+contourf!(axψ₁, x, y, ψ₁; levels = levelsψ₁, colormap = :viridis, extendlow = :auto, extendhigh = :auto)
+contour!(axψ₁, x, y, ψ₁; levels = levelsψ₁⁺, color=:black)
+contour!(axψ₁, x, y, ψ₁;levels = levelsψ₁⁻, color=:black, linestyle = :dash)
 
-contourf!(axψ₂, x, y, ψ₂;
-          levels = levelsψ₂, colormap = :viridis, extendlow = :auto, extendhigh = :auto)
- contour!(axψ₂, x, y, ψ₂;
-          levels = levelsψ₂⁺, color=:black)
- contour!(axψ₂, x, y, ψ₂;
-          levels = levelsψ₂⁻, color=:black, linestyle = :dash)
+contourf!(axψ₂, x, y, ψ₂; levels = levelsψ₂, colormap = :viridis, extendlow = :auto, extendhigh = :auto)
+contour!(axψ₂, x, y, ψ₂; levels = levelsψ₂⁺, color=:black)
+contour!(axψ₂, x, y, ψ₂; levels = levelsψ₂⁻, color=:black, linestyle = :dash)
 
 ke₁ = lines!(axKE, KE₁; linewidth = 3)
 ke₂ = lines!(axKE, KE₂; linewidth = 3)
