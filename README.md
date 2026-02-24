@@ -48,7 +48,7 @@ julia> ]
 ```
 
 GeophysicalFlows.jl requires Julia v1.6 or later. However, the package has continuous integration testing on
-Julia v1.10 (the current long-term release) and v1.11. _We strongly urge you to use one of these Julia versions._
+Julia v1.10 (the current long-term release), v1.12, and v1.11. _We strongly urge you to use one of these Julia versions._
 
 ## Examples
 
