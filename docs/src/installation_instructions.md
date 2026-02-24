@@ -28,5 +28,5 @@ more than happy to help with getting your simulations up and running.
     Installing GeophysicalFlows with an older version of Julia will install an older version
     of GeophysicalFlows.jl (the latest version compatible with your version of Julia).
 
-    GeophysicalFlows.jl is continuously tested on Julia v1.10 (the current long-term release) and v1.11.
+    GeophysicalFlows.jl is continuously tested on Julia v1.10 (the current long-term release), v1.11, and v1.12.
     _We strongly urge using one of the tested Julia versions._
