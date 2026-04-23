@@ -84,6 +84,8 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. Krishna Priya, V. R., Patil, S. S., Seshasayanan, K., and Lakkaraju, R. (2026) Two-dimensional turbulence over topography of varying roughness. _Journal of Fluid Mechanics_, **1033**, A33, doi:[10.1017/jfm.2026.11455](https://doi.org/10.1017/jfm.2026.11455)
+
 1. Shi, J. and Kang, W. (2026) Polar vortex dynamics on gas giants: Insights from 2D energy cascades, _Proceedings of the National Academy of Sciences_, **123 (4)**, e2500791123, doi:[10.1073/pnas.2500791123](https://doi.org/10.1073/pnas.2500791123)
 
 1. Sterl, M. F., Palóczy, A., LaCasce, J. H., Baatsen, M. L. J., and Groeskamp, S. (2026) Asymmetric effects of topographic slopes on Lagrangian and Eulerian eddy diffusivities in two-layer QG flow, _Journal of Geophysical Research: Oceans_, **131(4)**, e2025JC023770, doi:[10.1029/2025JC023770](https://doi.org/10.1029/2025JC023770).
