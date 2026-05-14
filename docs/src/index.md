@@ -84,6 +84,8 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. He, J. and Wang, Y. (2026). Final states of two-dimensional turbulence above large-scale topography: stationary vortex solutions and barotropic stability. _Physical Review Fluids_, **11**, 054801, doi:[10.1103/skm1-d5fm](https://doi.org/10.1103/skm1-d5fm).
+
 1. Krishna Priya, V. R., Patil, S. S., Seshasayanan, K., and Lakkaraju, R. (2026) Two-dimensional turbulence over topography of varying roughness. _Journal of Fluid Mechanics_, **1033**, A33, doi:[10.1017/jfm.2026.11455](https://doi.org/10.1017/jfm.2026.11455)
 
 1. Shi, J. and Kang, W. (2026) Polar vortex dynamics on gas giants: Insights from 2D energy cascades, _Proceedings of the National Academy of Sciences_, **123 (4)**, e2500791123, doi:[10.1073/pnas.2500791123](https://doi.org/10.1073/pnas.2500791123)
@@ -101,8 +103,6 @@ The bibtex entry for the paper is:
 1. Lobo, M. and Griffies, S. M. (2025) Two-layer quasi-geostrophic waves and turbulence over a meridionally sloping bottom with linear bottom drag. _ESS Open Archive_, doi:[10.22541/essoar.175760447.79218471/v1](https://doi.org/10.22541/essoar.175760447.79218471/v1).
 
 1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2025) Conditioning on PDE Parameters to Generalise Deep Learning Emulation of Stochastic and Chaotic Dynamics. arXiv preprint arXiv.2509.09599, doi:[10.48550/arXiv.2509.09599](https://doi.org/10.48550/arXiv.2509.09599).
-
-1. He, J. and Wang, Y. (2025). Minimum-enstrophy and maximum-entropy equilibrium states in two-dimensional topographic turbulence. arXiv preprint arXiv.2507.00691, doi:[10.48550/arXiv.2507.00691](https://doi.org/10.48550/arXiv.2507.00691).
 
 1. Hess, P., Gelbrecht, M., Schötz, C., Aich, M., Huang, Y., Yang, S., and Boers, N. (2025). Generating time-consistent dynamics with discriminator-guided image diffusion models. arXiv preprint arXiv.2410.14402, doi:[10.48550/arXiv.2505.09089](https://doi.org/10.48550/arXiv.2505.09089).
 
