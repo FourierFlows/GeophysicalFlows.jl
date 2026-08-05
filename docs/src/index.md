@@ -132,6 +132,8 @@ The bibtex entry for the paper is:
 
 1. LaCasce, J. H., Palóczy, A., and Trodahl, M. (2024). Vortices over bathymetry. _Journal of Fluid Mechanics_, **979**, A32, doi:[10.1017/jfm.2023.1084](https://doi.org/10.1017/jfm.2023.1084).
 
+1. Drivas, T. D. and Elgindi, T. M. (2023). Singularity formation in the incompressible Euler equation in finite and infinite time. _EMS Surveys in Mathematical Sciences_, **10**(1), 1–100, doi:[10.4171/emss/66](https://doi.org/10.4171/emss/66).
+
 1. Siegelman, L. and Young, W. R. (2023). Two-dimensional turbulence above topography: vortices and potential vorticity homogenization. _Proceedings of the National Academy of Sciences_, **120**(44), e2308018120, doi:[10.1073/pnas.2308018120](https://doi.org/10.1073/pnas.2308018120).
 
 1. Bisits, J. I., Stanley, G. J., and Zika, J. D. (2023). Can we accurately quantify a lateral diffusivity using a single tracer release? _Journal of Physical Oceanography_, **53**(2), 647–659, doi:[10.1175/JPO-D-22-0145.1](https://doi.org/10.1175/JPO-D-22-0145.1).
