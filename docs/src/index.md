@@ -144,4 +144,6 @@ The bibtex entry for the paper is:
 
 1. Dolce, M. and Drivas, T. D. (2022). On maximally mixed equilibria of two-dimensional perfect fluids. _Archive for Rational Mechanics and Analysis_, **246**, 735–770, doi:[10.1007/s00205-022-01825-w](https://doi.org/10.1007/s00205-022-01825-w).
 
+1. Palóczy, A. and LaCasce, J. H. (2022). Instability of a surface jet over rough topography. _Journal of Physical Oceanography_, **52**(11), 2725–2740, doi:[10.1175/JPO-D-22-0079.1](https://doi.org/10.1175/JPO-D-22-0079.1).
+
 1. Karrasch, D. and Schilling, N. (2020). Fast and robust computation of coherent Lagrangian vortices on very large two-dimensional domains. _The SMAI Journal of Computational Mathematics_, **6**, 101–124, doi:[10.5802/smai-jcm.63](https://doi.org/10.5802/smai-jcm.63).
