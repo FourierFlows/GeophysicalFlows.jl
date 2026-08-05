@@ -142,4 +142,6 @@ The bibtex entry for the paper is:
 
 1. Siegelman, L., Young, W. R., and Ingersoll, A. P. (2022). Polar vortex crystals: emergence and structure. _Proceedings of the National Academy of Sciences_, **119**(17), e2120486119, doi:[10.1073/pnas.2120486119](https://doi.org/10.1073/pnas.2120486119).
 
+1. Dolce, M. and Drivas, T. D. (2022). On maximally mixed equilibria of two-dimensional perfect fluids. _Archive for Rational Mechanics and Analysis_, **246**, 735–770, doi:[10.1007/s00205-022-01825-w](https://doi.org/10.1007/s00205-022-01825-w).
+
 1. Karrasch, D. and Schilling, N. (2020). Fast and robust computation of coherent Lagrangian vortices on very large two-dimensional domains. _The SMAI Journal of Computational Mathematics_, **6**, 101–124, doi:[10.5802/smai-jcm.63](https://doi.org/10.5802/smai-jcm.63).
