@@ -84,6 +84,8 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. Zhang, Z.-A. and Xie, J.-H. (2026). Area and perimeter rules of velocity circulation in two-dimensional turbulence with large-scale absolute equilibrium. arXiv preprint arXiv.2608.05617, doi:[10.48550/arXiv.2608.05617](https://doi.org/10.48550/arXiv.2608.05617).
+
 1. He, J. and Wang, Y. (2026). Final states of two-dimensional turbulence above large-scale topography: stationary vortex solutions and barotropic stability. _Physical Review Fluids_, **11**, 054801, doi:[10.1103/skm1-d5fm](https://doi.org/10.1103/skm1-d5fm).
 
 1. Krishna Priya, V. R., Patil, S. S., Seshasayanan, K., and Lakkaraju, R. (2026). Two-dimensional turbulence over topography of varying roughness. _Journal of Fluid Mechanics_, **1033**, A33, doi:[10.1017/jfm.2026.11455](https://doi.org/10.1017/jfm.2026.11455).
