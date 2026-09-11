@@ -86,7 +86,7 @@ The bibtex entry for the paper is:
 
 1. Armstrong, R., Damle, A., and Otto, S. E. (2026). Estimating hierarchically rank structured covariance matrices. arXiv preprint arXiv.2609.09944, doi:[10.48550/arXiv.2609.09944](https://doi.org/10.48550/arXiv.2609.09944).
 
-1. Lobo, M. and Griffies, S. M. (2026). Forced-dissipative two-layer quasi-geostrophic waves, instability, and turbulence over an aligned sloping bottom. _Journal of Physical Oceanography_, advance online publication, doi:[10.1175/JPO-D-25-0205.1](https://doi.org/10.1175/JPO-D-25-0205.1).
+1. Lobo, M. and Griffies, S. M. (2026). Forced-dissipative two-layer quasi-geostrophic waves, instability, and turbulence over an aligned sloping bottom. _Journal of Physical Oceanography_, In press, doi:[10.1175/JPO-D-25-0205.1](https://doi.org/10.1175/JPO-D-25-0205.1).
 
 1. Zhang, Z.-A. and Xie, J.-H. (2026). Area and perimeter rules of velocity circulation in two-dimensional turbulence with large-scale absolute equilibrium. arXiv preprint arXiv.2608.05617, doi:[10.48550/arXiv.2608.05617](https://doi.org/10.48550/arXiv.2608.05617).
 
