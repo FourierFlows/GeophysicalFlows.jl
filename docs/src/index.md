@@ -84,7 +84,13 @@ The bibtex entry for the paper is:
 
 ## Papers using `GeophysicalFlows.jl`
 
+1. Armstrong, R., Damle, A., and Otto, S. E. (2026). Estimating hierarchically rank structured covariance matrices. arXiv preprint arXiv.2609.09944, doi:[10.48550/arXiv.2609.09944](https://doi.org/10.48550/arXiv.2609.09944).
+
+1. Lobo, M. and Griffies, S. M. (2026). Forced-dissipative two-layer quasi-geostrophic waves, instability, and turbulence over an aligned sloping bottom. _Journal of Physical Oceanography_, advance online publication, doi:[10.1175/JPO-D-25-0205.1](https://doi.org/10.1175/JPO-D-25-0205.1).
+
 1. Zhang, Z.-A. and Xie, J.-H. (2026). Area and perimeter rules of velocity circulation in two-dimensional turbulence with large-scale absolute equilibrium. arXiv preprint arXiv.2608.05617, doi:[10.48550/arXiv.2608.05617](https://doi.org/10.48550/arXiv.2608.05617).
+
+1. Parfenyev, V. (2026). Optimal navigation in two-dimensional flows: control theory and reinforcement learning. _Physical Review E_, **114**, 015104, doi:[10.1103/8gbr-vp2r](https://doi.org/10.1103/8gbr-vp2r).
 
 1. He, J. and Wang, Y. (2026). Final states of two-dimensional turbulence above large-scale topography: stationary vortex solutions and barotropic stability. _Physical Review Fluids_, **11**, 054801, doi:[10.1103/skm1-d5fm](https://doi.org/10.1103/skm1-d5fm).
 
@@ -94,19 +100,17 @@ The bibtex entry for the paper is:
 
 1. Sterl, M. F., Palóczy, A., LaCasce, J. H., Baatsen, M. L. J., and Groeskamp, S. (2026). Asymmetric effects of topographic slopes and bottom friction on Lagrangian and Eulerian eddy diffusivities in two-layer QG flow. _Journal of Geophysical Research: Oceans_, **131**, e2025JC023770, doi:[10.1029/2025JC023770](https://doi.org/10.1029/2025JC023770).
 
-1. Parfenyev, V. (2025). Optimal navigation in two-dimensional regular and turbulent flows. arXiv preprint arXiv.2512.08766, doi:[10.48550/arXiv.2512.08766](https://doi.org/10.48550/arXiv.2512.08766).
-
 1. Lemasquerier, D. (2025). Emergence and coalescence of zonal jets: a quasilinear Rossby wave-mean flow interaction model. _Physical Review Fluids_, **10**, 124802, doi:[10.1103/pqxy-x728](https://doi.org/10.1103/pqxy-x728).
 
 1. Lobo, M. (2025). Baroclinic energy cycles in two-layer quasi-geostrophic turbulence. _Journal of Fluid Mechanics_, **1023**, A2, doi:[10.1017/jfm.2025.10824](https://doi.org/10.1017/jfm.2025.10824).
 
 1. Wagner, C. M., Lee, A., and Pearson, B. (2025). FluidSF: a Python package for calculating turbulent flow statistics. _Journal of Open Source Software_, **10**(114), 7873, doi:[10.21105/joss.07873](https://doi.org/10.21105/joss.07873).
 
-1. Lobo, M. and Griffies, S. M. (2025). Two-layer quasi-geostrophic waves and turbulence over a meridionally sloping bottom with linear bottom drag. _ESS Open Archive_, doi:[10.22541/essoar.175760447.79218471/v1](https://doi.org/10.22541/essoar.175760447.79218471/v1).
-
 1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2025). Conditioning on PDE parameters to generalise deep learning emulation of stochastic and chaotic dynamics. arXiv preprint arXiv.2509.09599, doi:[10.48550/arXiv.2509.09599](https://doi.org/10.48550/arXiv.2509.09599).
 
-1. Hess, P., Gelbrecht, M., Schötz, C., Aich, M., Huang, Y., Yang, S., and Boers, N. (2025). Generating time-consistent dynamics with discriminator-guided image diffusion models. arXiv preprint arXiv.2410.14402, doi:[10.48550/arXiv.2505.09089](https://doi.org/10.48550/arXiv.2505.09089).
+1. Holthuijzen, M. F., Chakraborty, A., Krath, E., and Catanach, T. (2025). Surrogate-based Bayesian calibration methods for chaotic systems: a comparison of traditional and non-traditional approaches. arXiv preprint arXiv.2508.13071, doi:[10.48550/arXiv.2508.13071](https://doi.org/10.48550/arXiv.2508.13071).
+
+1. Hess, P., Gelbrecht, M., Schötz, C., Aich, M., Huang, Y., Yang, S., and Boers, N. (2025). Generating time-consistent dynamics with discriminator-guided image diffusion models. arXiv preprint arXiv.2505.09089, doi:[10.48550/arXiv.2505.09089](https://doi.org/10.48550/arXiv.2505.09089).
 
 1. Krishna Priya, V. R., Patil, S. S., Roy, S., Aditya, K., and Lakkaraju, R. (2025). Probing quasigeostrophic turbulence via complex networks. _Physical Review Fluids_, **10**(5), 054402, doi:[10.1103/PhysRevFluids.10.054402](https://doi.org/10.1103/PhysRevFluids.10.054402).
 
