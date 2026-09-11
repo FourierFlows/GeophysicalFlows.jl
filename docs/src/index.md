@@ -86,6 +86,8 @@ The bibtex entry for the paper is:
 
 1. Zhang, Z.-A. and Xie, J.-H. (2026). Area and perimeter rules of velocity circulation in two-dimensional turbulence with large-scale absolute equilibrium. arXiv preprint arXiv.2608.05617, doi:[10.48550/arXiv.2608.05617](https://doi.org/10.48550/arXiv.2608.05617).
 
+1. Lobo, M. and Griffies, S. M. (2026). Forced-dissipative two-layer quasi-geostrophic waves, instability, and turbulence over an aligned sloping bottom. _Journal of Physical Oceanography_, In press,.doi:[10.1175/JPO-D-25-0205.1](https://doi.org/10.1175/JPO-D-25-0205.1).
+
 1. He, J. and Wang, Y. (2026). Final states of two-dimensional turbulence above large-scale topography: stationary vortex solutions and barotropic stability. _Physical Review Fluids_, **11**, 054801, doi:[10.1103/skm1-d5fm](https://doi.org/10.1103/skm1-d5fm).
 
 1. Krishna Priya, V. R., Patil, S. S., Seshasayanan, K., and Lakkaraju, R. (2026). Two-dimensional turbulence over topography of varying roughness. _Journal of Fluid Mechanics_, **1033**, A33, doi:[10.1017/jfm.2026.11455](https://doi.org/10.1017/jfm.2026.11455).
@@ -101,8 +103,6 @@ The bibtex entry for the paper is:
 1. Lobo, M. (2025). Baroclinic energy cycles in two-layer quasi-geostrophic turbulence. _Journal of Fluid Mechanics_, **1023**, A2, doi:[10.1017/jfm.2025.10824](https://doi.org/10.1017/jfm.2025.10824).
 
 1. Wagner, C. M., Lee, A., and Pearson, B. (2025). FluidSF: a Python package for calculating turbulent flow statistics. _Journal of Open Source Software_, **10**(114), 7873, doi:[10.21105/joss.07873](https://doi.org/10.21105/joss.07873).
-
-1. Lobo, M. and Griffies, S. M. (2025). Two-layer quasi-geostrophic waves and turbulence over a meridionally sloping bottom with linear bottom drag. _ESS Open Archive_, doi:[10.22541/essoar.175760447.79218471/v1](https://doi.org/10.22541/essoar.175760447.79218471/v1).
 
 1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2025). Conditioning on PDE parameters to generalise deep learning emulation of stochastic and chaotic dynamics. arXiv preprint arXiv.2509.09599, doi:[10.48550/arXiv.2509.09599](https://doi.org/10.48550/arXiv.2509.09599).
 
