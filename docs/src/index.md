@@ -88,6 +88,8 @@ The bibtex entry for the paper is:
 
 1. Huang, D. Z. and Stuart, A. M. (2026). Cost-accuracy trade-offs: neural operator vs classical numerical solver. arXiv preprint arXiv.2609.24021, doi:[10.48550/arXiv.2609.24021](https://doi.org/10.48550/arXiv.2609.24021).
 
+1. Armstrong, R., Damle, A., and Otto, S. E. (2026). Estimating hierarchically rank structured covariance matrices. arXiv preprint arXiv.2609.09944, doi:[10.48550/arXiv.2609.09944](https://doi.org/10.48550/arXiv.2609.09944).
+
 1. Zhang, Z.-A. and Xie, J.-H. (2026). Area and perimeter rules of velocity circulation in two-dimensional turbulence with large-scale absolute equilibrium. arXiv preprint arXiv.2608.05617, doi:[10.48550/arXiv.2608.05617](https://doi.org/10.48550/arXiv.2608.05617).
 
 1. Lobo, M. and Griffies, S. M. (2026). Forced-dissipative two-layer quasigeostrophic waves, instability, and turbulence over an aligned sloping bottom. _Journal of Physical Oceanography_, **56**(10), 2289–2310, doi:[10.1175/JPO-D-25-0205.1](https://doi.org/10.1175/JPO-D-25-0205.1).
@@ -109,6 +111,8 @@ The bibtex entry for the paper is:
 1. Wagner, C. M., Lee, A., and Pearson, B. (2025). FluidSF: a Python package for calculating turbulent flow statistics. _Journal of Open Source Software_, **10**(114), 7873, doi:[10.21105/joss.07873](https://doi.org/10.21105/joss.07873).
 
 1. Shokar, I. J. S., Kerswell, R. R., and Haynes, P. H. (2025). Conditioning on PDE parameters to generalise deep learning emulation of stochastic and chaotic dynamics. arXiv preprint arXiv.2509.09599, doi:[10.48550/arXiv.2509.09599](https://doi.org/10.48550/arXiv.2509.09599).
+
+1. Holthuijzen, M. F., Chakraborty, A., Krath, E., and Catanach, T. (2025). Surrogate-based Bayesian calibration methods for chaotic systems: a comparison of traditional and non-traditional approaches. arXiv preprint arXiv.2508.13071, doi:[10.48550/arXiv.2508.13071](https://doi.org/10.48550/arXiv.2508.13071).
 
 1. Hess, P., Gelbrecht, M., Schötz, C., Aich, M., Huang, Y., Yang, S., and Boers, N. (2025). Generating time-consistent dynamics with discriminator-guided image diffusion models. arXiv preprint arXiv.2505.09089, doi:[10.48550/arXiv.2505.09089](https://doi.org/10.48550/arXiv.2505.09089).
 
