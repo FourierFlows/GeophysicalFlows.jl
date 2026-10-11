@@ -233,7 +233,7 @@ Lx, Ly = file["grid/Lx"], file["grid/Ly"]
 close(file)
 
 
-# We create a figure using Makie's [`Observable`](https://makie.juliaplots.org/stable/documentation/nodes/)s
+# We create a figure using Makie's [`Observable`](https://docs.makie.org/stable/explanations/observables)s
 
 n = Observable(1)
 

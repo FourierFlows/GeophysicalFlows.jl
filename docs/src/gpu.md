@@ -1,7 +1,7 @@
 # GPU
 
-GPU-functionality is enabled via `FourierFlows.jl`. For more information on how `FourierFlows.jl`
-handled with GPUs we urge you to the corresponding [`FourierFlows.jl` documentation section ](https://fourierflows.github.io/FourierFlowsDocumentation/stable/gpu/).
+GPU functionality is enabled via `FourierFlows.jl`. For more information on how `FourierFlows.jl`
+handles GPUs, see the corresponding [`FourierFlows.jl` documentation section](https://fourierflows.github.io/FourierFlowsDocumentation/stable/gpu/).
 
 All `GeophysicalFlows.jl` modules can be run on GPU by providing `GPU()` as the device (`dev`) 
 argument in the problem constructors. For example,
@@ -20,6 +20,6 @@ Problem
 
 ## Selecting GPU device
 
-`FourierFlows.jl` can only utilize a single GPU. If your machine has more than one GPU available, 
-then using functionality within `CUDA.jl` package enables you can choose the GPU device that 
-`FourierFlows.jl` should use. The user is referred to the [`CUDA.jl` Documentation](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#Device-Management); in particular, [`CUDA.devices`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.devices) and [`CUDA.CuDevice`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.CuDevice).
+`FourierFlows.jl` can only utilize a single GPU. If your machine has more than one GPU available,
+you can use functionality from the `CUDA.jl` package to choose the GPU device that
+`FourierFlows.jl` should use. See the [`CUDA.jl` Documentation](https://cuda.juliagpu.org/stable/lib/cudadrv/#Device-Management); in particular, [`CUDA.devices`](https://cuda.juliagpu.org/stable/lib/cudadrv/#CUDACore.devices) and [`CUDA.CuDevice`](https://cuda.juliagpu.org/stable/lib/cudadrv/#CUDACore.CuDevice).

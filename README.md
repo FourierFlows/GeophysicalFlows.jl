@@ -89,9 +89,9 @@ For more information on multi-threading users are directed to the [Julia Documen
 
 If your machine has more than one GPU available, then functionality within CUDA.jl package 
 enables the user to choose the GPU device that FourierFlows.jl should use. The user is referred
-to the [CUDA.jl Documentation](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#Device-Management);
-in particular, [`CUDA.devices`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.devices) 
-and [`CUDA.CuDevice`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.CuDevice). 
+to the [CUDA.jl Documentation](https://cuda.juliagpu.org/stable/lib/cudadrv/#Device-Management);
+in particular, [`CUDA.devices`](https://cuda.juliagpu.org/stable/lib/cudadrv/#CUDACore.devices) 
+and [`CUDA.CuDevice`](https://cuda.juliagpu.org/stable/lib/cudadrv/#CUDACore.CuDevice). 
 The user is also referred to the [GPU section](https://fourierflows.github.io/FourierFlowsDocumentation/stable/gpu/) in the FourierFlows.jl documentation.
 
 

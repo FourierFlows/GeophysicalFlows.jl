@@ -41,6 +41,7 @@ end
 
 format = Documenter.HTML(
    collapselevel = 2,
+       edit_link = "main",
       prettyurls = get(ENV, "CI", nothing) == "true",
   size_threshold = 2^21,
        canonical = "https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/"
