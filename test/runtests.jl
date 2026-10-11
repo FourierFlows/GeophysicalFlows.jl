@@ -54,9 +54,16 @@ for dev in devices
 
   @testset "ShallowWater" begin
     include("test_shallowwater.jl")
-      
-    @test test_swe_problemtype(dev, Float32)
-    @test ShallowWater.nothingfunction() == nothing
+
+    @test test_shallowwater_problemtype(dev, Float32)
+    @test test_shallowwater_problemtype(dev, Float64)
+    @test test_shallowwater_inertiagravitywave(dev)
+    @test test_shallowwater_lakeatrest(dev)
+    @test test_shallowwater_conservation(dev)
+    @test test_shallowwater_deterministicforcing_mass(dev)
+    @test test_shallowwater_viscosity(dev)
+    @test test_shallowwater_stochasticforcedvars(dev)
+    @test ShallowWater.nothingfunction() === nothing
   end
 
   @testset "SingleLayerQG" begin

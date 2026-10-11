@@ -26,6 +26,7 @@ include("barotropicqgql.jl")
 @reexport using GeophysicalFlows.SingleLayerQG
 @reexport using GeophysicalFlows.MultiLayerQG
 @reexport using GeophysicalFlows.SurfaceQG
+@reexport using GeophysicalFlows.ShallowWater
 @reexport using GeophysicalFlows.BarotropicQGQL
 
 end # module
