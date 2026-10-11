@@ -32,7 +32,7 @@ nothing #hide
       n = 256                       # 2D resolution = n²
 stepper = "FilteredETDRK4"          # timestepper
      dt = 0.025                     # timestep
-     tf = 45                        # length of time for simulation
+     tf = 40                        # length of time for simulation
  nsteps = round(Int, tf / dt)       # total number of time-steps
   nsubs = 10                        # number of time-steps for plotting (nsteps must be multiple of nsubs)
 nothing #hide
@@ -71,15 +71,16 @@ x, y = grid.x, grid.y
 # ## Setting initial conditions
 #
 # The fluid starts from rest with an elliptical Gaussian bump in the free surface
-# ``\eta = h + b``. The bump has width ``R`` in ``x`` and ``2R`` in ``y``, both comparable
-# to the deformation radius.
+# ``\eta = h + b``. The bump has width ``R_x`` in ``x`` and ``R_y = 2 R_x`` in ``y``, both
+# comparable to the deformation radius.
 
 η₀ = 0.1                           # amplitude of the free surface bump
- R = 1.0                           # width of the free surface bump in x (its width in y is 2R)
+Rx = 1.0                           # width of the free surface bump in x
+Ry = 2Rx                           # width of the free surface bump in y
 
 X, Y = gridpoints(grid)
 
-ηᵢ = @. η₀ * exp(- (X^2 + Y^2/4) / 2R^2)
+ηᵢ = @. η₀ * exp(- (X^2 / 2Rx^2 + Y^2 / 2Ry^2))
 hᵢ = @. H + ηᵢ
 uᵢ = zero(X)
 vᵢ = zero(X)
@@ -216,7 +217,7 @@ fig
 
 # Near the vortex core the flow is in geostrophic balance; farther out the departures
 # from balance are the inertia-gravity waves that are still radiating away. Since the
-# initial bump is twice as wide in ``y`` as in ``x``, the free-surface gradient, and thus
+# initial bump is wider in ``y`` than in ``x`` (``R_y > R_x``), the free-surface gradient, and thus
 # the geostrophic velocity, is weaker and broader along ``x = 0`` than along ``y = 0``.
 
 # Mass is conserved to machine precision and, since there is no explicit dissipation,
