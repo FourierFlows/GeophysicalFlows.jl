@@ -8,10 +8,10 @@
 <!-- Badges -->
 <p align="left">
     <a href="https://buildkite.com/julialang/geophysicalflows-dot-jl">
-        <img alt="Buildkite CPU+GPU build status" src="https://img.shields.io/buildkite/4d921fc17b95341ea5477fb62df0e6d9364b61b154e050a123/master?logo=buildkite&label=Buildkite%20CPU%2BGPU">
+        <img alt="Buildkite CPU+GPU build status" src="https://img.shields.io/buildkite/4d921fc17b95341ea5477fb62df0e6d9364b61b154e050a123/main?logo=buildkite&label=Buildkite%20CPU%2BGPU">
     </a>
-    <a href="https://ci.appveyor.com/project/navidcy/geophysicalflows-jl">
-        <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/geophysicalflows-jl/master?label=Window&logo=appveyor&logoColor=white">
+    <a href="https://github.com/FourierFlows/GeophysicalFlows.jl/actions/workflows/CI.yml">
+        <img alt="CI Status" src="https://github.com/FourierFlows/GeophysicalFlows.jl/actions/workflows/CI.yml/badge.svg">
     </a>
     <a href="https://FourierFlows.github.io/GeophysicalFlowsDocumentation/stable">
         <img alt="stable docs" src="https://img.shields.io/badge/documentation-stable%20release-blue">
@@ -20,7 +20,7 @@
         <img alt="latest docs" src="https://img.shields.io/badge/documentation-in%20development-orange">
     </a>
     <a href="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl">
-        <img src="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl/branch/master/graph/badge.svg" />
+        <img src="https://codecov.io/gh/FourierFlows/GeophysicalFlows.jl/branch/main/graph/badge.svg" />
     </a>
     <a href="https://doi.org/10.5281/zenodo.1463809">
         <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1463809.svg" alt="DOI">
@@ -42,17 +42,13 @@ Geophysical Fluid Dynamics on periodic domains using Fourier-based pseudospectra
 To install, use Julia's  built-in package manager (accessed by pressing `]` in the Julia REPL command prompt) to add the package and also to instantiate/build all the required dependencies
 
 ```julia
-julia>]
-(v1.5) pkg> add GeophysicalFlows
-(v1.5) pkg> instantiate
+julia> ]
+(v1.10) pkg> add GeophysicalFlows
+(v1.10) pkg> instantiate
 ```
 
-The most recent version of GeophysicalFlows.jl requires Julia v1.5 or later.
-
-GeophysicalFlows.jl v0.8.5 is the last version compatible with Julia v1.4.
-
-The latest version that is compatible with Julia v1.0.5 (the current long-term-release) is GeophysicalFlows.jl v0.5.1.
-
+GeophysicalFlows.jl requires Julia v1.6 or later. However, the package has continuous integration testing on
+Julia v1.10 (the current long-term release), v1.11, and v1.12. _We strongly urge you to use one of these Julia versions._
 
 ## Examples
 
@@ -64,14 +60,17 @@ Some animations created with GeophysicalFlows.jl are [online @ youtube].
 
 ## Modules
 
-* `TwoDNavierStokes`: the two-dimensional vorticity equation.
-* `SingleLayerQG`: the barotropic or equivalent-barotropic quasi-geostrophic equation, which 
-  generalizes `TwoDNavierStokes` to cases with topography, Coriolis parameters of the form 
-  `f = f₀ + βy`, and finite Rossby radius of deformation.
-* `MultiLayerQG`: a multi-layer quasi-geostrophic model over topography and with the ability 
-  to impose a zonal flow `U_n(y)` in each layer.
-* `SurfaceQG`: a surface quasi-geostrophic model.
-* `BarotropicQGQL`: the quasi-linear barotropic quasi-geostrophic equation.
+* [`TwoDNavierStokes`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/twodnavierstokes/): the
+  two-dimensional vorticity equation.
+* [`SingleLayerQG`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/singlelayerqg/): the barotropic
+  or equivalent-barotropic quasi-geostrophic equation, which generalizes `TwoDNavierStokes` to cases with topography, Coriolis
+  parameters of the form `f = f₀ + βy`, and finite Rossby radius of deformation.
+* [`MultiLayerQG`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/multilayerqg/): a multi-layer
+  quasi-geostrophic model over topography allowing to impose a zonal flow `U_n(y)` in each layer.
+* [`SurfaceQG`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/surfaceqg/): a surface
+  quasi-geostrophic model.
+* [`BarotropicQGQL`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/barotropicqgql/): the
+  quasi-linear barotropic quasi-geostrophic equation.
 
 
 ## Scalability
@@ -98,9 +97,9 @@ The user is also referred to the [GPU section](https://fourierflows.github.io/Fo
 
 ## Getting help
 
-If you are interested in using GeophysicalFlows.jl or are trying to figure out how to use it, 
-please feel free to ask us questions and get in touch! Check out the 
-[examples](https://github.com/FourierFlows/GeophysicalFlows.jl/tree/master/examples) and 
+Interested in GeophysicalFlows.jl or trying to figure out how to use it? Please feel free to 
+ask us questions and get in touch! Check out the 
+[examples](https://github.com/FourierFlows/GeophysicalFlows.jl/tree/main/examples) and 
 [open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues/new) or 
 [start a discussion](https://github.com/FourierFlows/GeophysicalFlows.jl/discussions/new) 
 if you have any questions, comments, suggestions, etc.
@@ -125,7 +124,7 @@ The bibtex entry for the paper is:
   number = {60},
   pages = {3053},
   author = {Navid C. Constantinou and Gregory LeClaire Wagner and Lia Siegelman and Brodie C. Pearson and André Palóczy},
-  title = {GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs \& GPUs},
+  title = {{GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs \& GPUs}},
   journal = {Journal of Open Source Software}
 }
 ```
@@ -143,8 +142,7 @@ if you'd like to work on a new feature or implement a new module, if you're new 
 and want to find a cool little project or issue to work on that fits your interests! We're more 
 than happy to help along the way.
 
-For more information, check out our [contributor's guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/master/CONTRIBUTING.md).
-
+For more information, check out our [contributors' guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/main/CONTRIBUTING.md).
 
 [FourierFlows.jl]: https://github.com/FourierFlows/FourierFlows.jl
 [documentation]: https://fourierflows.github.io/GeophysicalFlowsDocumentation/dev/

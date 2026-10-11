@@ -1,6 +1,4 @@
-# # Forced-dissipative barotropic QG beta-plane turbulence
-#
-#md # This example can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/singlelayerqg_betaforced.ipynb).
+# # [Forced-dissipative barotropic QG beta-plane turbulence](@id singlelayerqg_betaforced_example)
 #
 # A simulation of forced-dissipative barotropic quasi-geostrophic turbulence on 
 # a beta plane. The dynamics include linear drag and stochastic excitation.
@@ -11,22 +9,25 @@
 
 # ```julia
 # using Pkg
-# pkg"add GeophysicalFlows, Random, Printf, Plots, Statistics"
+# pkg"add GeophysicalFlows, CUDA, JLD2, CairoMakie, Statistics"
 # ```
 
 # ## Let's begin
-# Let's load `GeophysicalFlows.jl` and some other needed packages.
+# Let's load `GeophysicalFlows.jl` and some other packages we need.
 #
-using GeophysicalFlows, Random, Printf, Plots
+using GeophysicalFlows, CUDA, JLD2, CairoMakie, Random, Printf
 
-using FourierFlows: parsevalsum
 using Statistics: mean
+using LinearAlgebra: ldiv!
 
+parsevalsum = FourierFlows.parsevalsum
+record = CairoMakie.record                # disambiguate between CairoMakie.record and CUDA.record
+nothing #hide
 
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
+nothing #hide
 
 
 # ## Numerical parameters and time-stepping parameters
@@ -34,9 +35,10 @@ nothing # hide
       n = 128            # 2D resolution: n² grid points
 stepper = "FilteredRK4"  # timestepper
      dt = 0.05           # timestep
- nsteps = 8000           # total number of time-steps
- nsubs  = 10             # number of time-steps for intermediate logging/plotting (nsteps must be multiple of nsubs)
-nothing # hide
+ nsteps = 8000           # total number of timesteps
+ save_substeps = 10      # number of timesteps after which output is saved
+ 
+nothing #hide
 
 
 # ## Physical parameters
@@ -44,7 +46,7 @@ nothing # hide
 L = 2π        # domain size
 β = 10.0      # planetary PV gradient
 μ = 0.01      # bottom drag
-nothing # hide
+nothing #hide
 
 
 # ## Forcing
@@ -60,49 +62,49 @@ forcing_wavenumber = 14.0 * 2π/L  # the forcing wavenumber, `k_f`, for a spectr
 forcing_bandwidth  = 1.5  * 2π/L  # the width of the forcing spectrum, `δ_f`
 ε = 0.001                         # energy input rate by the forcing
 
-grid = TwoDGrid(dev, n, L)
+grid = TwoDGrid(dev; nx=n, Lx=L)
 
 K = @. sqrt(grid.Krsq)            # a 2D array with the total wavenumber
 
 forcing_spectrum = @. exp(-(K - forcing_wavenumber)^2 / (2 * forcing_bandwidth^2))
+@CUDA.allowscalar forcing_spectrum[grid.Krsq .== 0] .= 0 # ensure forcing has zero domain-average
+
 ε0 = parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
 @. forcing_spectrum *= ε/ε0       # normalize forcing to inject energy at rate ε
-nothing # hide
+nothing #hide
 
 
 # We reset of the random number generator for reproducibility
 if dev==CPU(); Random.seed!(1234); else; CUDA.seed!(1234); end
-nothing # hide
+nothing #hide
 
 
 # Next we construct function `calcF!` that computes a forcing realization every timestep.
-# First we make sure that if `dev=GPU()`, then `CUDA.rand()` function is called for random
-# numbers uniformly distributed between 0 and 1.
-random_uniform = dev==CPU() ? rand : CUDA.rand
+# For that, we call `randn!` to obtain complex numbers whose real and imaginary part
+# are normally-distributed with zero mean and variance 1/2.
 
-function calcF!(Fh, sol, t, clock, vars, params, grid) 
-  Fh .= sqrt.(forcing_spectrum) .* exp.(2π * im * random_uniform(eltype(grid), size(sol))) ./ sqrt(clock.dt)
-
-  @CUDA.allowscalar Fh[1, 1] = 0 # make sure forcing has zero domain-average
-
+function calcF!(Fh, sol, t, clock, vars, params, grid)
+  randn!(Fh)
+  @. Fh *= sqrt(forcing_spectrum) / sqrt(clock.dt)
   return nothing
 end
-nothing # hide
+nothing #hide
 
 
 # ## Problem setup
-# We initialize a `Problem` by providing a set of keyword arguments. Not providing
-# a viscosity coefficient ν leads to the module's default value: ν=0. In this
-# example numerical instability due to accumulation of enstrophy in high wavenumbers
-# is taken care with the `FilteredTimestepper` we picked. 
-prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β=β, μ=μ, dt=dt, stepper=stepper, 
+# We initialize a `Problem` by providing a set of keyword arguments.
+# We use `stepper = "FilteredRK4"`. Filtered timesteppers apply a wavenumber-filter 
+# at every time-step that removes enstrophy at high wavenumbers and, thereby,
+# stabilize the problem, despite that we use the default viscosity coefficient `ν=0`.
+prob = SingleLayerQG.Problem(dev; nx=n, Lx=L, β, μ, dt, stepper,
                              calcF=calcF!, stochastic=true)
-nothing # hide
+nothing #hide
 
 # Let's define some shortcuts.
 sol, clock, vars, params, grid = prob.sol, prob.clock, prob.vars, prob.params, prob.grid
-x, y = grid.x, grid.y
-nothing # hide
+x,  y  = grid.x,  grid.y
+Lx, Ly = grid.Lx, grid.Ly
+nothing #hide
 
 
 # First let's see how a forcing realization looks like. Note that when plotting, we decorate 
@@ -110,33 +112,34 @@ nothing # hide
 # `vars` live on the GPU.
 calcF!(vars.Fh, sol, 0.0, clock, vars, params, grid)
 
-heatmap(x, y, Array(irfft(vars.Fh, grid.nx)'),
-     aspectratio = 1,
-               c = :balance,
-            clim = (-8, 8),
-           xlims = (-grid.Lx/2, grid.Lx/2),
-           ylims = (-grid.Ly/2, grid.Ly/2),
-          xticks = -3:3,
-          yticks = -3:3,
+fig = Figure()
+
+ax = Axis(fig[1, 1], 
           xlabel = "x",
           ylabel = "y",
-           title = "a forcing realization",
-      framestyle = :box)
-      
+          aspect = 1,
+          title = "a forcing realization",
+          limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+
+heatmap!(ax, x, y, Array(irfft(vars.Fh, grid.nx));
+         colormap = :balance, colorrange = (-8, 8))
+
+fig
+
 
 # ## Setting initial conditions
 
 # Our initial condition is simply fluid at rest.
-SingleLayerQG.set_q!(prob, ArrayType(dev)(zeros(grid.nx, grid.ny)))
+SingleLayerQG.set_q!(prob, device_array(dev)(zeros(grid.nx, grid.ny)))
 
 
 # ## Diagnostics
 
 # Create Diagnostic -- `energy` and `enstrophy` are functions imported at the top.
-E = Diagnostic(SingleLayerQG.energy, prob; nsteps=nsteps)
-Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps=nsteps)
+E = Diagnostic(SingleLayerQG.energy, prob; nsteps, freq=save_substeps)
+Z = Diagnostic(SingleLayerQG.enstrophy, prob; nsteps, freq=save_substeps)
 diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-nothing # hide
+nothing #hide
 
 
 # ## Output
@@ -145,107 +148,37 @@ nothing # hide
 filepath = "."
 plotpath = "./plots_forcedbetaturb"
 plotname = "snapshots"
-filename = joinpath(filepath, "forcedbetaturb.jld2")
-nothing # hide
+filename = joinpath(filepath, "singlelayerqg_forcedbeta.jld2")
+nothing #hide
 
 # Do some basic file management,
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
-nothing # hide
+nothing #hide
 
 # and then create Output.
-get_sol(prob) = sol # extracts the Fourier-transformed solution
-get_u(prob) = irfft(im * grid.l .* grid.invKrsq .* sol, grid.nx)
-out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
-nothing # hide
+get_sol(prob) = Array(prob.sol) # extracts the Fourier-transformed solution
 
-
-# ## Visualizing the simulation
-
-# We define a function that plots the vorticity and streamfunction fields, their 
-# corresponding zonal mean structure and timeseries of energy and enstrophy.
-
-function plot_output(prob)
-  q = prob.vars.q
-  ψ = prob.vars.ψ
-  q̄ = mean(q, dims=1)'
-  ū = mean(prob.vars.u, dims=1)'
+function get_u(prob)
+  vars, grid, sol = prob.vars, prob.grid, prob.sol
   
-  pq = heatmap(x, y, Array(q'),
-       aspectratio = 1,
-            legend = false,
-                 c = :balance,
-              clim = (-8, 8),
-             xlims = (-grid.Lx/2, grid.Lx/2),
-             ylims = (-grid.Ly/2, grid.Ly/2),
-            xticks = -3:3,
-            yticks = -3:3,
-            xlabel = "x",
-            ylabel = "y",
-             title = "vorticity ∂v/∂x-∂u/∂y",
-        framestyle = :box)
+  @. vars.qh = sol
 
-  pψ = contourf(x, y, Array(ψ'),
-            levels = -0.32:0.04:0.32,
-       aspectratio = 1,
-         linewidth = 1,
-            legend = false,
-              clim = (-0.22, 0.22),
-                 c = :viridis,
-             xlims = (-grid.Lx/2, grid.Lx/2),
-             ylims = (-grid.Ly/2, grid.Ly/2),
-            xticks = -3:3,
-            yticks = -3:3,
-            xlabel = "x",
-            ylabel = "y",
-             title = "streamfunction ψ",
-        framestyle = :box)
+  SingleLayerQG.streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
 
-  pqm = plot(Array(q̄), y,
-            legend = false,
-         linewidth = 2,
-             alpha = 0.7,
-            yticks = -3:3,
-             xlims = (-3, 3),
-            xlabel = "zonal mean q",
-            ylabel = "y")
-  plot!(pqm, 0*y, y, linestyle=:dash, linecolor=:black)
+  ldiv!(vars.u, grid.rfftplan, -im * grid.l .* vars.ψh)
 
-  pum = plot(Array(ū), y,
-            legend = false,
-         linewidth = 2,
-             alpha = 0.7,
-            yticks = -3:3,
-             xlims = (-0.5, 0.5),
-            xlabel = "zonal mean u",
-            ylabel = "y")
-  plot!(pum, 0*y, y, linestyle=:dash, linecolor=:black)
-
-  pE = plot(1,
-             label = "energy",
-         linewidth = 2,
-             alpha = 0.7,
-             xlims = (-0.1, 4.1),
-             ylims = (0, 0.05),
-            xlabel = "μt")
-          
-  pZ = plot(1,
-             label = "enstrophy",
-         linecolor = :red,
-            legend = :bottomright,
-         linewidth = 2,
-             alpha = 0.7,
-             xlims = (-0.1, 4.1),
-             ylims = (0, 2.5),
-            xlabel = "μt")
-
-  l = @layout Plots.grid(2, 3)
-  p = plot(pq, pqm, pE, pψ, pum, pZ, layout=l, size = (1000, 600))
-
-  return p
+  return Array(vars.u)
 end
-nothing # hide
 
+output = Output(prob, filename, (:qh, get_sol), (:u, get_u))
+nothing #hide
+
+# We first save the problem's grid and other parameters so we can use them later.
+saveproblem(output)
+
+# and then call `saveoutput(output)` once to save the initial state.
+saveoutput(output)
 
 # ## Time-stepping the `Problem` forward
 
@@ -253,38 +186,136 @@ nothing # hide
 
 startwalltime = time()
 
-p = plot_output(prob)
-
-anim = @animate for j = 0:Int(nsteps / nsubs)
-  
-  if j % (1000 / nsubs) == 0
+while clock.step <= nsteps
+  if clock.step % 50save_substeps == 0
     cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
   
     log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, walltime: %.2f min", 
     clock.step, clock.t, cfl, E.data[E.i], Z.data[Z.i], (time()-startwalltime)/60)
 
     println(log)
-  end  
-  
-  p[1][1][:z] = Array(vars.q)
-  p[1][:title] = "vorticity, μt="*@sprintf("%.2f", μ * clock.t)
-  p[4][1][:z] = Array(vars.ψ)
-  p[2][1][:x] = Array(mean(vars.q, dims=1)')
-  p[5][1][:x] = Array(mean(vars.u, dims=1)')
-  push!(p[3][1], μ * E.t[E.i], E.data[E.i])
-  push!(p[6][1], μ * Z.t[Z.i], Z.data[Z.i])
-  
-  stepforward!(prob, diags, nsubs)
+  end
+
+  stepforward!(prob, diags, save_substeps)
   SingleLayerQG.updatevars!(prob)
+
+  if clock.step % save_substeps == 0
+    saveoutput(output)
+  end
 end
 
-mp4(anim, "singlelayerqg_betaforced.mp4", fps=18)
+savediagnostic(E, "energy", output.path)
+savediagnostic(Z, "enstrophy", output.path)
 
 
-# ## Save
+# ## Load saved output and visualize
 
-# Finally, we can save, e.g., the last snapshot via
-# ```julia
-# savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), clock.step)
-# savefig(savename)
-# ```
+# We now have output from our simulation saved in `singlelayerqg_forcedbeta.jld2` which 
+# we can load to create a time series for the fields we are interested in.
+
+file = jldopen(output.path)
+
+iterations = parse.(Int, keys(file["snapshots/t"]))
+t = [file["snapshots/t/$i"] for i ∈ iterations]
+
+qh = [file["snapshots/qh/$i"] for i ∈ iterations]
+u  = [file["snapshots/u/$i"] for i ∈ iterations]
+
+E_t = file["diagnostics/energy/t"]
+Z_t = file["diagnostics/enstrophy/t"]
+E_data = file["diagnostics/energy/data"]
+Z_data = file["diagnostics/enstrophy/data"]
+
+x,  y  = file["grid/x"],  file["grid/y"]
+nx, ny = file["grid/nx"], file["grid/ny"]
+Lx, Ly = file["grid/Lx"], file["grid/Ly"]
+
+close(file)
+
+
+# We create a figure using Makie's [`Observable`](https://makie.juliaplots.org/stable/documentation/nodes/)s
+
+n = Observable(1)
+
+qₙ = @lift irfft(qh[$n], nx)
+ψₙ = @lift irfft(- Array(grid.invKrsq) .* qh[$n], nx)
+q̄ₙ = @lift real(ifft(qh[$n][1, :] / ny))
+ūₙ = @lift vec(mean(u[$n], dims=1))
+
+title_q = @lift @sprintf("vorticity, μt = %.2f", μ * t[$n])
+
+energy    = Observable([Point2f(E_t[1], E_data[1])])
+enstrophy = Observable([Point2f(Z_t[1], Z_data[1])])
+
+fig = Figure(size = (1000, 600))
+
+axis_kwargs = (xlabel = "x",
+               ylabel = "y",
+               aspect = 1,
+               limits = ((-Lx/2, Lx/2), (-Ly/2, Ly/2)))
+
+axq = Axis(fig[1, 1]; title = title_q, axis_kwargs...)
+
+axψ = Axis(fig[2, 1]; title = "streamfunction ψ", axis_kwargs...)
+
+axq̄ = Axis(fig[1, 2],
+           xlabel = "zonal mean vorticity",
+           ylabel = "y",
+           aspect = 1,
+           limits = ((-3, 3), (-Ly/2, Ly/2)))
+
+axū = Axis(fig[2, 2],
+           xlabel = "zonal mean u",
+           ylabel = "y",
+           aspect = 1,
+           limits = ((-0.5, 0.5), (-Ly/2, Ly/2)))
+
+axE = Axis(fig[1, 3],
+           xlabel = "μ t",
+           ylabel = "energy",
+           aspect = 1,
+           limits = ((-0.1, 4.1), (0, 0.055)))
+
+axZ = Axis(fig[2, 3],
+           xlabel = "μ t",
+           ylabel = "enstrophy",
+           aspect = 1,
+           limits = ((-0.1, 4.1), (0, 3.1)))
+
+heatmap!(axq, x, y, qₙ;
+         colormap = :balance, colorrange = (-8, 8))
+
+levels = collect(-0.32:0.04:0.32)
+
+contourf!(axψ, x, y, ψₙ;
+          levels, colormap = :viridis)
+contour!(axψ, x, y, ψₙ;
+         levels, color = :black)
+
+lines!(axq̄, q̄ₙ, y; linewidth = 3)
+lines!(axq̄, 0y, y; linewidth = 1, linestyle=:dash)
+
+lines!(axū, ūₙ, y; linewidth = 3)
+lines!(axū, 0y, y; linewidth = 1, linestyle=:dash)
+
+lines!(axE, energy; linewidth = 3)
+lines!(axZ, enstrophy; linewidth = 3, color = :red)
+
+fig
+
+
+# We are now ready to animate all saved output.
+
+frames = 1:length(t)
+record(fig, "singlelayerqg_betaforced.mp4", frames, framerate = 16) do i
+  n[] = i
+
+  energy[]    = push!(energy[],    Point2f(μ * E_t[i], E_data[i]))
+  enstrophy[] = push!(enstrophy[], Point2f(μ * Z_t[i], Z_data[i]))
+end
+nothing #hide
+
+# ![](singlelayerqg_betaforced.mp4)
+
+## we delete the .jld2 file before deploying the docs (takes too much space) #hide
+rm(output.path) #hide

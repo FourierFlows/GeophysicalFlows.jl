@@ -1,6 +1,6 @@
 function test_twodnavierstokes_lambdipole(n, dt, dev::Device=CPU(); L=2π, Ue=1, Re=L/20, ν=0.0, nν=1, ti=L/Ue*0.01, nm=3)
   nt = round(Int, ti/dt)
-  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, dt=dt, stepper="FilteredRK4")
+  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν, nν, dt, stepper="FilteredRK4")
   x, y = gridpoints(prob.grid)
   ζ = prob.vars.ζ
 
@@ -29,12 +29,12 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
   kf, dkf = 12.0, 2.0
   ε = 0.1
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
-  Kr = ArrayType(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
+  Kr = device_array(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
-  forcing_spectrum = ArrayType(dev)(zero(grid.Krsq))
+  forcing_spectrum = device_array(dev)(zero(grid.Krsq))
   @. forcing_spectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
   @. forcing_spectrum = ifelse(grid.Krsq < 2^2, 0, forcing_spectrum)
   @. forcing_spectrum = ifelse(grid.Krsq > 20^2, 0, forcing_spectrum)
@@ -45,7 +45,7 @@ function test_twodnavierstokes_stochasticforcing_energybudget(dev::Device=CPU();
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
-    eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
+    eta = device_array(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(clock.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
     @. Fh = eta * sqrt(forcing_spectrum)
     
@@ -81,12 +81,12 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
   kf, dkf = 12.0, 2.0
   εᶻ = 0.1
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
-  Kr = ArrayType(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
+  Kr = device_array(dev)([CUDA.@allowscalar grid.kr[i] for i=1:grid.nkr, j=1:grid.nl])
 
-  forcing_spectrum = ArrayType(dev)(zero(grid.Krsq))
+  forcing_spectrum = device_array(dev)(zero(grid.Krsq))
   @. forcing_spectrum = exp(-(sqrt(grid.Krsq) - kf)^2 / (2 * dkf^2))
   @. forcing_spectrum = ifelse(grid.Krsq < 2^2, 0, forcing_spectrum)
   @. forcing_spectrum = ifelse(grid.Krsq > 20^2, 0, forcing_spectrum)
@@ -97,11 +97,10 @@ function test_twodnavierstokes_stochasticforcing_enstrophybudget(dev::Device=CPU
   Random.seed!(1234)
 
   function calcF!(Fh, sol, t, cl, v, p, g)
-    eta = ArrayType(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(cl.dt))
+    eta = device_array(dev)(exp.(2π * im * rand(Float64, size(sol))) / sqrt(cl.dt))
     CUDA.@allowscalar eta[1, 1] = 0.0
     @. Fh = eta * sqrt(forcing_spectrum)
-    
-    nothing
+    return nothing
   end
 
   prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
@@ -133,7 +132,7 @@ function test_twodnavierstokes_deterministicforcing_energybudget(dev::Device=CPU
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
@@ -174,7 +173,7 @@ function test_twodnavierstokes_deterministicforcing_enstrophybudget(dev::Device=
   dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   # Forcing = 0.01cos(4x)cos(5y)cos(2t)
@@ -226,7 +225,7 @@ function test_twodnavierstokes_advection(dt, stepper, dev::Device=CPU(); n=128, 
   tf = 1.0
   nt = round(Int, tf/dt)
 
-  grid = TwoDGrid(dev, n, L)
+  grid = TwoDGrid(dev; nx=n, Lx=L)
   x, y = gridpoints(grid)
 
   ψf = @.   sin(2x)*cos(2y) +  2sin(x)*cos(3y)
@@ -246,7 +245,7 @@ function test_twodnavierstokes_advection(dt, stepper, dev::Device=CPU(); n=128, 
     return nothing
   end
 
-  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, stepper=stepper, calcF=calcF!, stochastic=false)
+  prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ν, nν, μ, nμ, dt, stepper, calcF=calcF!, stochastic=false)
   
   TwoDNavierStokes.set_ζ!(prob, ζf)
 
@@ -257,41 +256,70 @@ function test_twodnavierstokes_advection(dt, stepper, dev::Device=CPU(); n=128, 
   isapprox(prob.vars.ζ, ζf, rtol=rtol_twodnavierstokes)
 end
 
-function test_twodnavierstokes_energyenstrophy(dev::Device=CPU())
+function test_twodnavierstokes_energyenstrophypalinstrophy(dev::Device=CPU())
   nx, Lx  = 128, 2π
   ny, Ly  = 126, 3π
   
-  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+  grid = TwoDGrid(dev; nx, Lx, ny, Ly)
   x, y = gridpoints(grid)
 
   k₀, l₀ = 2π/grid.Lx, 2π/grid.Ly # fundamental wavenumbers
-  ψ₀ = @. sin(2k₀*x)*cos(2l₀*y) + 2sin(k₀*x)*cos(3l₀*y)
-  ζ₀ = @. -((2k₀)^2+(2l₀)^2)*sin(2k₀*x)*cos(2l₀*y) - (k₀^2+(3l₀)^2)*2sin(k₀*x)*cos(3l₀*y)
+  ψ₀ = @.                        sin(2k₀ * x) * cos(2l₀ * y) +  2sin(k₀ * x) * cos(3l₀ * y)
+  ζ₀ = @. -((2k₀)^2 + (2l₀)^2) * sin(2k₀ * x) * cos(2l₀ * y) - (k₀^2 + (3l₀)^2) * 2sin(k₀ * x) * cos(3l₀ * y)
 
-  energy_calc = 29/9
-  enstrophy_calc = 2701/162
+  #=
 
-  prob = TwoDNavierStokes.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
+  We can analytically compute the energy, enstrophy, and palinstrophy
+  that corresponds to the above initial condition using Mathematica
+
+    k0 = 2 Pi/Lx; l0 = 2 Pi/Ly;
+
+    psi[x_, y_] = Sin[2 k0 x] Cos[2 l0 y] + 2 Sin[k0 x] Cos[3 l0 y];
+    u[x, y]     = -D[psi[x, y], y];
+    v[x, y]     =  D[psi[x, y], x];
+    zeta[x, y]  =  D[v[x, y], x] - D[u[x, y], y];
+
+    E0 = Integrate[
+        1/2 (u[x, y]^2 + v[x, y]^2), {x, 0, Lx}, {y, 0, Ly}] / (Lx Ly);
+    E0 /. {Lx -> 2 Pi, Ly -> 3 Pi}
+
+    Z0 = Integrate[1/2 zeta[x, y]^2, {x, 0, Lx}, {y, 0, Ly}] / (Lx Ly);
+    Z0 /. {Lx -> 2 Pi, Ly -> 3 Pi}
+
+    P0 = Integrate[
+        1/2 (D[zeta[x, y], x]^2 + D[zeta[x, y], y]^2), {x, 0, Lx}, {y, 0, 
+        Ly}] / (Lx Ly);
+    P0 /. {Lx -> 2 Pi, Ly -> 3 Pi}
+
+  =#
+
+  energy_analytic       = 29/9
+  enstrophy_analytic    = 2701/162
+  palinstrophy_analytic = 126277/1458
+
+  prob = TwoDNavierStokes.Problem(dev; nx, Lx, ny, Ly, stepper="ForwardEuler")
 
   sol, cl, v, p, g = prob.sol, prob.clock, prob.vars, prob.params, prob.grid;
 
   TwoDNavierStokes.set_ζ!(prob, ζ₀)
   TwoDNavierStokes.updatevars!(prob)
 
-  energyζ₀ = TwoDNavierStokes.energy(prob)
-  enstrophyζ₀ = TwoDNavierStokes.enstrophy(prob)
+  energy₀       = TwoDNavierStokes.energy(prob)
+  enstrophy₀    = TwoDNavierStokes.enstrophy(prob)
+  palinstrophy₀ = TwoDNavierStokes.palinstrophy(prob)
 
   params = TwoDNavierStokes.Params(p.ν, p.nν)
 
-  (isapprox(energyζ₀, energy_calc, rtol=rtol_twodnavierstokes) &&
-   isapprox(enstrophyζ₀, enstrophy_calc, rtol=rtol_twodnavierstokes) &&
-   TwoDNavierStokes.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
+  return (isapprox(energy₀, energy_analytic, rtol=rtol_twodnavierstokes) &&
+          isapprox(enstrophy₀, enstrophy_analytic, rtol=rtol_twodnavierstokes) &&
+          isapprox(palinstrophy₀, palinstrophy_analytic, rtol=rtol_twodnavierstokes) &&
+          TwoDNavierStokes.addforcing!(prob.timestepper.N, sol, cl.t, cl, v, p, g)==nothing && p == params)
 end
 
 function test_twodnavierstokes_problemtype(dev, T)
   prob = TwoDNavierStokes.Problem(dev; T=T)
 
-  A = ArrayType(dev)
+  A = device_array(dev)
 
   (typeof(prob.sol)<:A{Complex{T},2} && typeof(prob.grid.Lx)==T && eltype(prob.grid.x)==T && typeof(prob.vars.u)<:A{T,2})
 end

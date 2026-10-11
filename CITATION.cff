@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Constantinou"
+    given-names: "Navid C."
+    orcid: "https://orcid.org/0000-0002-8149-4094"
+  - family-names: "Wagner"
+    given-names: "Gregory LeClaire"
+    orcid: "https://orcid.org/0000-0001-5317-2445"
+  - family-names: "Siegelman"
+    given-names: "Lia"
+    orcid: "https://orcid.org/0000-0003-3330-082X"
+  - family-names: "Pearson"
+    given-names: "Brodie C."
+    orcid: "https://orcid.org/0000-0002-0202-0481"
+  - family-names: "Palóczy"
+    given-names: "André"
+    orcid: "https://orcid.org/0000-0001-8231-8298"
+  title: "GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs & GPUs"
+  journal: "Journal of Open Source Software"
+  doi: "10.21105/joss.03053"
+  volume: 6
+  issue: 60
+  start: 3053
+  year: 2021

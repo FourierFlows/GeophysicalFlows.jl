@@ -1,6 +1,9 @@
 # Functions
 
 ## `GeophysicalFlows`
+```@docs
+GeophysicalFlows.GeophysicalFlows
+```
 
 ### Exported functions
 
@@ -22,6 +25,7 @@ GeophysicalFlows.TwoDNavierStokes.energy_work
 GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation_hyperviscosity
 GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation_hypoviscosity
 GeophysicalFlows.TwoDNavierStokes.enstrophy_work
+GeophysicalFlows.TwoDNavierStokes.palinstrophy
 ```
 
 ### Private functions
@@ -74,10 +78,13 @@ GeophysicalFlows.MultiLayerQG.pvfromstreamfunction!
 
 ```@docs
 GeophysicalFlows.MultiLayerQG.LinearEquation
+GeophysicalFlows.MultiLayerQG.calcS!
+GeophysicalFlows.MultiLayerQG.calcS⁻¹!
 GeophysicalFlows.MultiLayerQG.calcNlinear!
 GeophysicalFlows.MultiLayerQG.calcN_advection!
 GeophysicalFlows.MultiLayerQG.calcN_linearadvection!
 GeophysicalFlows.MultiLayerQG.addforcing!
+GeophysicalFlows.MultiLayerQG.pv_streamfunction_kernel!
 ```
 
 
@@ -87,6 +94,7 @@ GeophysicalFlows.MultiLayerQG.addforcing!
 
 ```@docs
 GeophysicalFlows.SurfaceQG.Problem
+GeophysicalFlows.SurfaceQG.get_streamfunction
 GeophysicalFlows.SurfaceQG.buoyancy_dissipation
 GeophysicalFlows.SurfaceQG.buoyancy_work
 ```

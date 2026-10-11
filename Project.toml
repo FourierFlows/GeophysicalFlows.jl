@@ -1,8 +1,8 @@
 name = "GeophysicalFlows"
 uuid = "44ee3b1c-bc02-53fa-8355-8e347616e15e"
 license = "MIT"
-authors = ["Navid C. Constantinou <navidcy@gmail.com>", "Gregory L. Wagner <wagner.greg@gmail.com>", "and co-contributors"]
-version = "0.12.2"
+authors = ["Navid C. Constantinou <navidcy@users.noreply.github.com>", "Gregory L. Wagner <glwagner@users.noreply.github.com>", "and contributors"]
+version = "0.16.5"
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
@@ -10,6 +10,7 @@ DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 FourierFlows = "2aec4490-903f-5c70-9b11-9bed06a700e1"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
@@ -18,19 +19,24 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
-CUDA = "^1, ^2.4.2, ^3.0"
-DocStringExtensions = "^0.8"
-FFTW = "^1"
-FourierFlows = "^0.6.17"
-JLD2 = "^0.1, ^0.2, ^0.3, ^0.4"
-Reexport = "^0.2, ^1"
-SpecialFunctions = "^0.10, ^1"
-StaticArrays = "^0.12, ^1"
-julia = "^1.5"
+CUDA = "1, 2.4.2, 3.0.0 - 3.6.4, 3.7.1, 4, =5.8.5, 5.9.1"
+DocStringExtensions = "0.8, 0.9"
+FFTW = "1"
+FourierFlows = "0.10.5"
+JLD2 = "0.1, 0.2, 0.3, 0.4, 0.5, 0.6"
+KernelAbstractions = "0.9"
+LinearAlgebra = "1.6"
+Random = "1.6"
+Reexport = "0.2, 1"
+SpecialFunctions = "0.10, 1, 2"
+StaticArrays = "0.12, 1"
+Statistics = "1.6"
+julia = "1.6"
 
 [extras]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "Coverage"]
+test = ["Test", "Coverage", "BenchmarkTools"]
