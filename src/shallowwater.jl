@@ -139,12 +139,10 @@ function Params(grid::AbstractGrid, f, g, b, ν, nν, calcF)
 
   b === nothing && (b = zeros(grid.device, T, (grid.nx, grid.ny)))
 
-  bh = zeros(grid.device, Complex{T}, (grid.nkr, grid.nl))
-  mul!(bh, grid.rfftplan, A{T}(b))
+  # remove high-wavenumbers from bathytmetry
+  bh = rfft(A{T}(b))
   dealias!(bh, grid)
-
-  b = A{T}(undef, (grid.nx, grid.ny))
-  ldiv!(b, grid.rfftplan, deepcopy(bh)) # deepcopy() since inverse real-fft destroys its input
+  b = irfft(bh, grid.nx)
 
   return Params(f, g, b, bh, ν, nν, calcF)
 end
