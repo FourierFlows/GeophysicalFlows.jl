@@ -22,6 +22,7 @@ examples = [
   "barotropicqgql_betaforced.jl",
   "multilayerqg_2layer.jl",
   "surfaceqg_decaying.jl",
+  "shallowwater_geostrophicadjustment.jl",
 ]
 
 for example in examples
@@ -84,6 +85,9 @@ checkdocs = :all,
                       ],
                     "SurfaceQG" => Any[
                       "literated/surfaceqg_decaying.md"
+                      ],
+                    "ShallowWater" => Any[
+                      "literated/shallowwater_geostrophicadjustment.md"
                       ]
                     ],
                   "Modules" => Any[
