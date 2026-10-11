@@ -16,7 +16,7 @@ can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here, the
 
 where ``\ell`` is the Rossby radius of deformation. Purely barotropic dynamics corresponds to
 infinite Rossby radius of deformation (``\ell = \infty``), while a flow with a finite Rossby
-radius follows is said to obey equivalent-barotropic dynamics. We denote the sum of the relative
+radius is said to obey equivalent-barotropic dynamics. We denote the sum of the relative
 vorticity and the vortex stretching contributions to the QGPV with ``q \equiv \nabla^2 \psi - \psi / \ell^2``.
 Also, we denote the topographic PV with ``\eta \equiv f_0 h / H``.
 
@@ -87,7 +87,7 @@ and [`addforcing!`](@ref GeophysicalFlows.SingleLayerQG.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.SingleLayerQG.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.SingleLayerQG.Vars).
 
-For the decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.SingleLayerQG.Vars).
+For the decaying case (no forcing, ``F = 0``), variables are constructed with [`DecayingVars`](@ref GeophysicalFlows.SingleLayerQG.DecayingVars).
 For the forced case (``F \ne 0``) variables are constructed with either [`ForcedVars`](@ref GeophysicalFlows.SingleLayerQG.ForcedVars)
 or [`StochasticForcedVars`](@ref GeophysicalFlows.SingleLayerQG.StochasticForcedVars).
 
@@ -122,10 +122,10 @@ The total energy is:
 GeophysicalFlows.SingleLayerQG.energy
 ```
 
-Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.SingleLayerQG.energy_dissipation),
+Other diagnostics include: [`energy_dissipation`](@ref GeophysicalFlows.SingleLayerQG.energy_dissipation),
 [`energy_drag`](@ref GeophysicalFlows.SingleLayerQG.energy_drag), [`energy_work`](@ref GeophysicalFlows.SingleLayerQG.energy_work),
-[`enstrophy_dissipation`](@ref GeophysicalFlows.SingleLayerQG.enstrophy_dissipation), and
-[`enstrophy_drag`](@ref GeophysicalFlows.SingleLayerQG.enstrophy_drag), [`enstrophy_work`](@ref GeophysicalFlows.SingleLayerQG.enstrophy_work).
+[`enstrophy_dissipation`](@ref GeophysicalFlows.SingleLayerQG.enstrophy_dissipation),
+[`enstrophy_drag`](@ref GeophysicalFlows.SingleLayerQG.enstrophy_drag), and [`enstrophy_work`](@ref GeophysicalFlows.SingleLayerQG.enstrophy_work).
 
 
 ## Examples
@@ -137,8 +137,8 @@ Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.SingleLay
   flow on a beta plane demonstrating zonation. The forcing is temporally delta-correlated with isotropic spatial structure with
   power in a narrow annulus in wavenumber space with total wavenumber ``k_f``.
 
-- [`examples/singlelayerqg_decay_topography.jl`](@ref singlelayerqg_decay_topography_example): Simulate two dimensional turbulence
+- [`examples/singlelayerqg_decaying_topography.jl`](@ref singlelayerqg_decay_topography_example): Simulate two dimensional turbulence
   (barotropic quasi-geostrophic flow with ``\beta=0``) above topography.
 
 - [`examples/singlelayerqg_decaying_barotropic_equivalentbarotropic.jl`](@ref singlelayerqg_decaying_barotropic_equivalentbarotropic_example):
-  Simulate two dimensional turbulence (``\beta=0``) with both infinite and finite Rossby radius of deformation and compares the evolution of the two.
+  Simulate two dimensional turbulence (``\beta=0``) with both infinite and finite Rossby radius of deformation and compare the evolution of the two.

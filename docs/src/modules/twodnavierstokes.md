@@ -19,7 +19,7 @@ where ``\mathsf{J}(\psi, \zeta) = (\partial_x \psi)(\partial_y \zeta) - (\partia
 is the two-dimensional Jacobian and ``F(x, y, t)`` is forcing. The Jacobian term is the advection
 of relative vorticity, ``\mathsf{J}(ψ, ζ) = \bm{u \cdot \nabla} \zeta``. Both ``ν`` and ``μ``
 terms are viscosities; typically the former is chosen to act at small scales (``n_ν ≥ 1``),
-while the latter at large scales (``n_ν ≤ 0``). Plain old viscosity corresponds to ``n_ν=1``
+while the latter at large scales (``n_μ ≤ 0``). Plain old viscosity corresponds to ``n_ν=1``
 while ``n_μ=0`` corresponds to linear drag. Values of ``n_ν ≥ 2`` or ``n_μ ≤ -1`` are referred
 to as hyper- or hypo-viscosities, respectively.
 
@@ -59,7 +59,7 @@ and [`addforcing!`](@ref GeophysicalFlows.TwoDNavierStokes.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.TwoDNavierStokes.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.TwoDNavierStokes.Vars).
 
-For the decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.TwoDNavierStokes.Vars).
+For the decaying case (no forcing, ``F = 0``), variables are constructed with [`DecayingVars`](@ref GeophysicalFlows.TwoDNavierStokes.DecayingVars).
 For the forced case (``F \ne 0``) variables are constructed with either [`ForcedVars`](@ref GeophysicalFlows.TwoDNavierStokes.ForcedVars)
 or [`StochasticForcedVars`](@ref GeophysicalFlows.TwoDNavierStokes.StochasticForcedVars).
 
@@ -83,7 +83,7 @@ GeophysicalFlows.TwoDNavierStokes.energy
 GeophysicalFlows.TwoDNavierStokes.enstrophy
 ```
 
-Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.TwoDNavierStokes.energy_dissipation),
+Other diagnostics include: [`energy_dissipation`](@ref GeophysicalFlows.TwoDNavierStokes.energy_dissipation),
 [`energy_work`](@ref GeophysicalFlows.TwoDNavierStokes.energy_work),
 [`enstrophy_dissipation`](@ref GeophysicalFlows.TwoDNavierStokes.enstrophy_dissipation), and
 [`enstrophy_work`](@ref GeophysicalFlows.TwoDNavierStokes.enstrophy_work).
@@ -91,8 +91,8 @@ Other diagnostic include: [`energy_dissipation`](@ref GeophysicalFlows.TwoDNavie
 
 ## Examples
 
-- [`examples/twodnavierstokes_decaying.jl`](@ref twodnavierstokes_decaying_example): Simulates decaying two-dimensional
-  turbulence reproducing the results by:
+- [`examples/twodnavierstokes_decaying.jl`](@ref twodnavierstokes_decaying_example): Simulate decaying two-dimensional
+  turbulence, closely following the paper by [McWilliams-1984](@citet).
 
 - [`examples/twodnavierstokes_stochasticforcing.jl`](@ref twodnavierstokes_stochasticforcing_example): Simulate forced-dissipative
   two-dimensional turbulence with isotropic temporally delta-correlated stochastic forcing.
