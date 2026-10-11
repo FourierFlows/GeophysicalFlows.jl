@@ -107,6 +107,26 @@ GeophysicalFlows.SurfaceQG.addforcing!
 ```
 
 
+## `ShallowWater`
+
+### Exported functions
+
+```@docs
+GeophysicalFlows.ShallowWater.Problem
+GeophysicalFlows.ShallowWater.mass
+GeophysicalFlows.ShallowWater.kinetic_energy
+GeophysicalFlows.ShallowWater.potential_energy
+GeophysicalFlows.ShallowWater.energy
+```
+
+### Private functions
+
+```@docs
+GeophysicalFlows.ShallowWater.calcN_advection!
+GeophysicalFlows.ShallowWater.addforcing!
+```
+
+
 ## `BarotropicQGQL`
 
 ### Exported functions
