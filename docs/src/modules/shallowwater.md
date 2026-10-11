@@ -128,4 +128,4 @@ The domain-averaged mass, kinetic energy, potential energy, and total energy are
 ## Examples
 
 - [`examples/shallowwater_geostrophicadjustment.jl`](@ref shallowwater_geostrophicadjustment_example):
-  A simulation of the geostrophic adjustment of a Gaussian bump in the free surface.
+  A simulation of the geostrophic adjustment of an elliptical Gaussian bump in the free surface.
