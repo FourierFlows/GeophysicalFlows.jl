@@ -24,8 +24,8 @@ measured from the rest height of the free surface, ``z = 0``. Thus,
 
 For example, a flat bottom at depth ``H`` corresponds to ``b = -H`` and then, at rest, ``h = H``.
 
-The module evolves the equations in conservative form, using the volume fluxes ``q_u = h u``
-and ``q_v = h v`` and the depth ``h`` as variables:
+The module evolves the equations in conservative form, using the volume fluxes ``q_u \equiv h u``
+and ``q_v \equiv h v`` and the depth ``h`` as variables:
 
 ```math
 \begin{aligned}
