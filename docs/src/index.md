@@ -50,7 +50,7 @@ Examples aim to demonstrate the main functionalities of each module. Have a look
 
 ## Developers
 
-The development of GeophysicalFlows.jl started during the 21st AOFD Meeting 2017 by [Navid C. Constantinou](http://www.navidconstantinou.com)
+The development of GeophysicalFlows.jl started during the 21st AOFD Meeting 2017 by [Navid C. Constantinou](https://www.navidconstantinou.com)
 and [Gregory L. Wagner](https://glwagner.github.io). Since then various people have contributed, including
 [Lia Siegelman](https://scholar.google.com/citations?user=BQJtj6sAAAAJ), [Brodie Pearson](https://brodiepearson.github.io),
 [André Palóczy](https://scholar.google.com/citations?user=o4tYEH8AAAAJ) (see the

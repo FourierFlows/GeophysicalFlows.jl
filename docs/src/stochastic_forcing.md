@@ -2,7 +2,7 @@
 
 Forcing terms are implemented in various modules. Forcing can be either deterministic or
 stochastic (random). For deterministic forcing the implementation is straightforward; for
-stochastic forcing there are two main train of thoughts: Itô calculus and Stratonovich calculus.
+stochastic forcing there are two main schools of thought: Itô calculus and Stratonovich calculus.
 
 Both stochastic calculi give the same results. But once we decide to use one of the two calculi
 we have to remain consistent and use that calculus throughout. There can be a lot of confusion
@@ -15,8 +15,8 @@ computation instead of using one of the two consistently all along.
 The choice of Stratonovich calculus for GeophysicalFlows.jl was made since this calculus "works
 the same" with both stochastic and deterministic forcing, i.e., with Stratonovich calculus we
 have the same chain rules for differentiation for stochastic functions as the chain rules we
-learn in normal-deterministic calculus). Therefore, with the Stratonovich calculus the code
-does not really "care" whether the user implement deterministic or stochastic forcing.
+learn in normal-deterministic calculus. Therefore, with the Stratonovich calculus the code
+does not really "care" whether the user implements deterministic or stochastic forcing.
 
 If you are interested in learning more regarding the two stochastic calculi and how they are
 numerically implemented then read on; otherwise you can skip this section of the documentation.
@@ -59,7 +59,7 @@ with ``W_t`` a Brownian motion or Wiener process, can be written in an integral 
 The last integral in the integral representation of a SDE expression above is a stochastic integral
 (it involves a stochastic differential, `` \mathrm{d} W_t``). There is not a single straight-forward
 way for computing the value of a stochastic integral. The various ways we can approximate the
-value of a stochastic integral as a Riemannian sum each lead to a different answer. The two most
+value of a stochastic integral as a Riemann sum each lead to a different answer. The two most
 popular ways for computing such stochastic integrals are:
 
 ```math
@@ -75,8 +75,9 @@ the mid-point for ``{\color{Magenta}\text{Stratonovich, } \tfrac{1}{2}(t_j+t_{j+
 stochastic noise is additive, i.e., its prefactor ``g`` does not depend on the state ``x_t``,
 then the two interpretations coincide. When the noise does depend on the state of the system,
 i.e., ``g = g(x(t))``, then the two interpretations above give thoroughly different results. This
-happens because the white noise process is not continuous and, therefore, the two interpretations
-of the stochastic integrals above do not converge to the same result.
+happens because the Wiener process, although continuous, is nowhere differentiable and has unbounded
+variation; therefore, the two interpretations of the stochastic integrals above do not converge to
+the same result.
 
 To overcome this apparent inconsistency, the two choices above come together with different
 chain rules, i.e., chain rules that are not necessarily the same as those in plain old calculus.
@@ -136,10 +137,10 @@ The above is demonstrated by evaluating the simple stochastic integral:
 ```
 
 SDEs rarely can be solved in closed form; most often numerical solution of SDEs is brought to
-the rescue. Itô calculus has the advantage that is very easily implemented numerically. On
+the rescue. Itô calculus has the advantage that it is very easily implemented numerically. On
 the other hand, the chain rule in Stratonovich calculus coincides with that in normal calculus.
-This stems from the fact that in the Stratonovich interpretation the white noise process is as
-a series of colored noise processes with the de-correlation time tending to zero. This made
+This stems from the fact that in the Stratonovich interpretation the white noise process is
+understood as the limit of colored noise processes with de-correlation time tending to zero. This makes
 Stratonovich calculus more popular in the physics community. A nice discussion on the differences
 and similarities between the two calculi is given by [vanKampen-1981](@citet).
 
@@ -159,12 +160,12 @@ Note that in differential form (1) is written as:
 
 Luckily, for (2) we don't need to distinguish between Itô and Stratonovich, since ``g`` is
 independent of ``x(t)``. But note that often this is not the case; that ``g`` is independent
-of ``x(t)`` is only a fortuitous coincident for this particular SDE.
+of ``x(t)`` is only a fortuitous coincidence for this particular SDE.
 
 How do we time-step SDE (2) numerically? Let us assume a discretization of time into time-steps
 of duration ``\tau``, i.e., ``t_j = (j-1) \tau``, ``j=1, 2, \dots``. (What follows is easily
 generalized to non-uniform time discretizations.) With that in mind, we denote ``x_j \equiv x(t_j)``.
-Then the Euler--Mayorama time-stepping scheme for (2) is
+Then the Euler--Maruyama time-stepping scheme for (2) is
 
 ```math
     x_{j+1} = x_j + (-\mu x_j) \tau + \sqrt{\sigma} (W_{j+1} - W_j) .
@@ -172,7 +173,7 @@ Then the Euler--Mayorama time-stepping scheme for (2) is
 
 Now let us ask the following question: How can we compute the work done by the noise?
 In other words, if we are interested in the evolution of the "energy", defined as
-``E \equiv \tfrac{1}{2} x^2``, then how does the noise term attribute in the growth of ``E``?
+``E \equiv \tfrac{1}{2} x^2``, then how does the noise term contribute to the growth of ``E``?
 To answer that we first have to find the SDE that energy ``E`` obeys. But, in doing so, it
 is important to adopt a single interpretation for computing stochastic integrals as now a
 transformation of variables is needed. That is, depending on whether we choose to interpret
@@ -192,8 +193,8 @@ Well, it follows that:
 
 ```math
 \begin{aligned}
-{\color{Green} \text{Itô}} &: {\color{Green} P_t = \tfrac{1}{2} \sigma \mathrm{d} t + \sqrt{\sigma} x_t \mathrm{d} W_t \approx \tfrac{1}{2} \sigma \, \mathrm{d}t + \sqrt{\sigma} x_j (W_{j+1} - W_j)} , \\
-{\color{Magenta} \text{Stratonovich}} &: {\color{Magenta} P_t =  x_t \circ \sqrt{\sigma} \mathrm{d} W_t \approx \sqrt{\sigma} x \left ( \tfrac{1}{2} (t_j + t_{j+1}) \right ) (W_{j+1} - W_j)} .
+{\color{Green} \text{Itô}} &: {\color{Green} \mathrm{d} P_t = \tfrac{1}{2} \sigma \mathrm{d} t + \sqrt{\sigma} x_t \mathrm{d} W_t \approx \tfrac{1}{2} \sigma \, \mathrm{d}t + \sqrt{\sigma} x_j (W_{j+1} - W_j)} , \\
+{\color{Magenta} \text{Stratonovich}} &: {\color{Magenta} \mathrm{d} P_t =  x_t \circ \sqrt{\sigma} \mathrm{d} W_t \approx \sqrt{\sigma} x \left ( \tfrac{1}{2} (t_j + t_{j+1}) \right ) (W_{j+1} - W_j)} .
 \end{aligned}
 ```
 

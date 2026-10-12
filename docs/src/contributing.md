@@ -69,7 +69,7 @@ or by requesting something you think is missing.
   ```
   git clone https://github.com/your-user-name/GeophysicalFlows.jl.git
   ```
-* Navigate to that folder in the terminal or in Anaconda Prompt if you're on Windows.
+* Navigate to that folder in the terminal (or in Git Bash if you're on Windows).
 * Connect your repository to the upstream (main project).
   ```
   git remote add geophysicalflows https://github.com/FourierFlows/GeophysicalFlows.jl.git
@@ -89,7 +89,7 @@ Your development environment is now ready!
 Changes and contributions should be made via GitHub pull requests against the `main` branch.
 
 When you're done making changes, commit the changes you made. Chris Beams has written 
-a [guide](https://chris.beams.io/posts/git-commit/) on how to write good commit messages.
+a [guide](https://chris.beams.io/git-commit) on how to write good commit messages.
 
 When you think your changes are ready to be merged into the main repository,
 push to your fork and [submit a pull request](https://github.com/FourierFlows/GeophysicalFlows.jl/compare/).
@@ -110,7 +110,7 @@ We encourage using [unicode](https://docs.julialang.org/en/v1/manual/unicode-inp
 when writing docstrings, e.g., use `α` instead of `\alpha`. This makes the rendering of the 
 docstrings in the Documentation and in the Julia REPL's `help?>` mode as similar as possible.
 
-You can preview how the Documentation will look like after merging by building the documentation 
+You can preview how the Documentation will look after merging by building the documentation 
 locally. To do that, from the main directory of your local repository call
 
 ```
@@ -122,5 +122,5 @@ and then open `docs/build/index.html` in your favorite browser.
 
 ## Credits
 
-This contributor's guide is heavily based on the [MetPy contributor's guide](https://github.com/Unidata/MetPy/blob/master/CONTRIBUTING.md) 
-and on its "cover" made by [Oceananigans.jl](https://clima.github.io/OceananigansDocumentation/stable/contributing/).
+This contributor's guide is heavily based on the [MetPy contributor's guide](https://github.com/Unidata/MetPy/blob/main/CONTRIBUTING.md) 
+and on its "cover" made by [Oceananigans.jl](https://clima.github.io/OceananigansDocumentation/stable/developer_docs/contributing).

@@ -78,7 +78,7 @@ and [`addforcing!`](@ref GeophysicalFlows.SurfaceQG.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.SurfaceQG.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.SurfaceQG.Vars).
 
-For the decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.SurfaceQG.Vars).
+For the decaying case (no forcing, ``F = 0``), variables are constructed with [`DecayingVars`](@ref GeophysicalFlows.SurfaceQG.DecayingVars).
 For the forced case (``F \ne 0``) variables are constructed with either [`ForcedVars`](@ref GeophysicalFlows.SurfaceQG.ForcedVars)
 or [`StochasticForcedVars`](@ref GeophysicalFlows.SurfaceQG.StochasticForcedVars).
 
@@ -101,7 +101,7 @@ GeophysicalFlows.SurfaceQG.buoyancy_variance
 GeophysicalFlows.SurfaceQG.total_3D_energy
 ```
 
-Other diagnostic include: [`buoyancy_dissipation`](@ref GeophysicalFlows.SurfaceQG.buoyancy_dissipation) and
+Other diagnostics include: [`buoyancy_dissipation`](@ref GeophysicalFlows.SurfaceQG.buoyancy_dissipation) and
 [`buoyancy_work`](@ref GeophysicalFlows.SurfaceQG.buoyancy_work).
 
 

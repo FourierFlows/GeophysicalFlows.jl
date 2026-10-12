@@ -12,8 +12,7 @@ in Fourier space before transforming to physical space to compute nonlinear term
     
     ```julia
     julia> grid = OneDGrid(; nx=64, Lx=2π, aliased_fraction=1/2)
-    
-    julia> OneDimensionalGrid
+    OneDimensionalGrid
              ├─────────── Device: CPU
              ├──────── FloatType: Float64
              ├────────── size Lx: 6.283185307179586
@@ -48,7 +47,7 @@ involve division by the fluid depth ``h`` and thus are not polynomial in the sta
 For such terms, de-aliasing reduces, but does not entirely remove, aliasing errors.
 
 All modules apply de-aliasing by calling, e.g., `dealias!(prob.sol, prob.grid)` both before
-computing any nonlinear terms and also during updating all variable, i.e., within `updatevars!`.
+computing any nonlinear terms and also when updating all variables, i.e., within `updatevars!`.
 
 To disable de-aliasing you need to create a problem with a grid that has been constructed with 
 the keyword `aliased_fraction=0`.

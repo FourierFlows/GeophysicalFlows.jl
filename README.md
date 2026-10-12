@@ -2,7 +2,7 @@
 
 <!-- description -->
 <p>
-  <strong>💨🌏🌊 Geophysical fluid dynamics pseudospectral solvers with Julia and <a href="http://github.com/FourierFlows/FourierFlows.jl">FourierFlows.jl</a>. https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable</strong>
+  <strong>💨🌏🌊 Geophysical fluid dynamics pseudospectral solvers with Julia and <a href="https://github.com/FourierFlows/FourierFlows.jl">FourierFlows.jl</a>. https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable</strong>
 </p>
 
 <!-- Badges -->
@@ -52,8 +52,8 @@ Julia v1.10 (the current long-term release) and v1.13. _We strongly urge you to 
 
 ## Examples
 
-See `examples/` for example scripts. These examples are best viewed by browsing them within 
-the package's [documentation]. 
+See `examples/` for example scripts. These examples are best viewed by browsing them within
+the package's [documentation].
 
 Some animations created with GeophysicalFlows.jl are [online @ youtube].
 
@@ -79,8 +79,8 @@ Some animations created with GeophysicalFlows.jl are [online @ youtube].
 
 For now, GeophysicalFlows.jl is restricted to run on either a single CPU or single GPU. These
 restrictions come from FourierFlows.jl. Multi-threading can enhance performance for the Fourier
-transforms. By default, FourierFlows.jl will use the maximum number of threads available on 
-your machine. You can set the number of threads used by FourierFlows.jl by setting the 
+transforms. By default, FourierFlows.jl will use the maximum number of threads available on
+your machine. You can set the number of threads used by FourierFlows.jl by setting the
 environment variable, e.g.,
 
 ```
@@ -89,27 +89,27 @@ $ export JULIA_NUM_THREADS=4
 
 For more information on multi-threading users are directed to the [Julia Documentation](https://docs.julialang.org/en/v1/manual/multi-threading/).
 
-If your machine has more than one GPU available, then functionality within CUDA.jl package 
+If your machine has more than one GPU available, then functionality within CUDA.jl package
 enables the user to choose the GPU device that FourierFlows.jl should use. The user is referred
-to the [CUDA.jl Documentation](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#Device-Management);
-in particular, [`CUDA.devices`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.devices) 
-and [`CUDA.CuDevice`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.CuDevice). 
+to the [CUDA.jl Documentation](https://cuda.juliagpu.org/stable/lib/cudadrv/#Device-Management);
+in particular, [`CUDA.devices`](https://cuda.juliagpu.org/stable/lib/cudadrv/#CUDACore.devices)
+and [`CUDA.CuDevice`](https://cuda.juliagpu.org/stable/lib/cudadrv/#CUDACore.CuDevice).
 The user is also referred to the [GPU section](https://fourierflows.github.io/FourierFlowsDocumentation/stable/gpu/) in the FourierFlows.jl documentation.
 
 
 ## Getting help
 
-Interested in GeophysicalFlows.jl or trying to figure out how to use it? Please feel free to 
-ask us questions and get in touch! Check out the 
-[examples](https://github.com/FourierFlows/GeophysicalFlows.jl/tree/main/examples) and 
-[open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues/new) or 
-[start a discussion](https://github.com/FourierFlows/GeophysicalFlows.jl/discussions/new) 
+Interested in GeophysicalFlows.jl or trying to figure out how to use it? Please feel free to
+ask us questions and get in touch! Check out the
+[examples](https://github.com/FourierFlows/GeophysicalFlows.jl/tree/main/examples) and
+[open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues/new) or
+[start a discussion](https://github.com/FourierFlows/GeophysicalFlows.jl/discussions/new)
 if you have any questions, comments, suggestions, etc.
 
 
 ## Citing
 
-If you use GeophysicalFlows.jl in research, teaching, or other activities, we would be grateful 
+If you use GeophysicalFlows.jl in research, teaching, or other activities, we would be grateful
 if you could mention GeophysicalFlows.jl and cite our paper in JOSS:
 
 > Constantinou et al., (2021). GeophysicalFlows.jl: Solvers for geophysical fluid dynamics problems in periodic domains on CPUs & GPUs. _Journal of Open Source Software_, **6(60)**, 3053, doi:[10.21105/joss.03053](https://doi.org/10.21105/joss.03053).
@@ -134,14 +134,14 @@ The bibtex entry for the paper is:
 
 ## Contributing
 
-If you're interested in contributing to the development of GeophysicalFlows.jl we are excited 
-to get your help, no matter how big or small a contribution you make! It's always great to have 
+If you're interested in contributing to the development of GeophysicalFlows.jl we are excited
+to get your help, no matter how big or small a contribution you make! It's always great to have
 new people look at the code with fresh eyes: you will see errors that other developers have missed.
 
-Let us know by [open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues/new) 
-or [start a discussion](https://github.com/FourierFlows/GeophysicalFlows.jl/discussions/new) 
-if you'd like to work on a new feature or implement a new module, if you're new to open-source 
-and want to find a cool little project or issue to work on that fits your interests! We're more 
+Let us know by [open an issue](https://github.com/FourierFlows/GeophysicalFlows.jl/issues/new)
+or [start a discussion](https://github.com/FourierFlows/GeophysicalFlows.jl/discussions/new)
+if you'd like to work on a new feature or implement a new module, if you're new to open-source
+and want to find a cool little project or issue to work on that fits your interests! We're more
 than happy to help along the way.
 
 For more information, check out our [contributors' guide](https://github.com/FourierFlows/GeophysicalFlows.jl/blob/main/CONTRIBUTING.md).

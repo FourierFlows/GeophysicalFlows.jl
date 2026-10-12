@@ -31,7 +31,7 @@ above, the QGPV dynamics are:
 \begin{aligned}
     \partial_t \overline{\zeta} + \mathsf{J}(\overline{\psi}, \overline{\zeta} + \overline{\eta}) + \overline{\mathsf{J}(\psi', \zeta' + \eta')} & = \underbrace{- \left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
     \right] \overline{\zeta} }_{\textrm{dissipation}} , \\
-    \partial_t \zeta'  + \mathsf{J}(\psi', \overline{\zeta} + \overline{\eta}) + \mathsf{J}(\overline{\psi}, \zeta' + \eta') + & \underbrace{\mathsf{J}(\psi', \zeta' + \eta') - \overline{\mathsf{J}(\psi', \zeta' + \eta')}}_{\textrm{EENL}} + \beta \partial_x \psi' = \\
+    \partial_t \zeta'  + \mathsf{J}(\psi', \overline{\zeta} + \overline{\eta}) + \mathsf{J}(\overline{\psi}, \zeta' + \eta') + & \underbrace{\mathsf{J}(\psi', \zeta' + \eta') - \overline{\mathsf{J}(\psi', \zeta' + \eta')}}_{\textrm{EENL}} + \beta \partial_x \psi' \\
     & = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu} \right] \zeta'}_{\textrm{dissipation}} + F .
 \end{aligned}
 ```
@@ -41,7 +41,7 @@ the right hand side, ``F(x, y, t)`` is forcing (which is assumed to have zero zo
 ``\overline{F} = 0``), ``\mu`` is linear drag, and ``\nu`` is hyperviscosity. Plain old
 viscosity corresponds to ``n_{\nu} = 1``.
 
-*Quasi-linear* dynamics **neglects the term eddy-eddy nonlinearity (EENL) term** above.
+*Quasi-linear* dynamics **neglects the eddy-eddy nonlinearity (EENL) term** above.
 
 
 ### Implementation
@@ -79,7 +79,7 @@ and [`addforcing!`](@ref GeophysicalFlows.BarotropicQGQL.addforcing!).
 All required parameters are included inside [`Params`](@ref GeophysicalFlows.BarotropicQGQL.Params)
 and all module variables are included inside [`Vars`](@ref GeophysicalFlows.BarotropicQGQL.Vars).
 
-For the decaying case (no forcing, ``F = 0``), variables are constructed with [`Vars`](@ref GeophysicalFlows.BarotropicQGQL.Vars).
+For the decaying case (no forcing, ``F = 0``), variables are constructed with [`DecayingVars`](@ref GeophysicalFlows.BarotropicQGQL.DecayingVars).
 For the forced case (``F \ne 0``) variables are constructed with either [`ForcedVars`](@ref GeophysicalFlows.BarotropicQGQL.ForcedVars)
 or [`StochasticForcedVars`](@ref GeophysicalFlows.BarotropicQGQL.StochasticForcedVars).
 
@@ -106,7 +106,7 @@ while the enstrophy via:
 GeophysicalFlows.BarotropicQGQL.enstrophy
 ```
 
-Other diagnostic include: [`dissipation`](@ref GeophysicalFlows.BarotropicQGQL.dissipation),
+Other diagnostics include: [`dissipation`](@ref GeophysicalFlows.BarotropicQGQL.dissipation),
 [`drag`](@ref GeophysicalFlows.BarotropicQGQL.drag), and [`work`](@ref GeophysicalFlows.BarotropicQGQL.work).
 
 

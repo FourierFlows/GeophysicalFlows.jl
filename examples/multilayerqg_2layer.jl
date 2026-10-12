@@ -129,7 +129,7 @@ nothing #hide
 
 # ## Visualizing the simulation
 
-# We create a figure using Makie's [`Observable`](https://makie.juliaplots.org/stable/documentation/nodes/)s
+# We create a figure using Makie's [`Observable`](https://docs.makie.org/stable/explanations/observables)s
 # that plots the potential vorticity field and the evolution of energy and enstrophy.
 # Note that when plotting, we decorate the variable to be plotted with `Array()` 
 # to make sure it is brought back on the CPU when `vars` live on the GPU.

@@ -42,6 +42,7 @@ end
 
 format = Documenter.HTML(
    collapselevel = 2,
+       edit_link = "main",
       prettyurls = get(ENV, "CI", nothing) == "true",
   size_threshold = 2^21,
        canonical = "https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/"
@@ -59,6 +60,8 @@ makedocs(
   doctest = true,
     clean = true,
 checkdocs = :all,
+linkcheck = true,
+linkcheck_ignore = [r"^https://scholar\.google\.com/"], # Google Scholar returns 403 to automated requests
     pages = Any[
                   "Home" => "index.md",
                   "Installation instructions" => "installation_instructions.md",
@@ -129,27 +132,9 @@ for file in files
     rm(file)
 end
 
-# Replace with below once https://github.com/JuliaDocs/Documenter.jl/pull/2692 is merged and available.
-#  deploydocs(repo = "github.com/FourierFlows/FourierFlows.jl",
-#    deploy_repo = "github.com/FourierFlows/FourierFlowsDocumentation",
-#    devbranch = "main",
-#    forcepush = true,
-#    push_preview = true,
-#    versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"])
-
-if get(ENV, "GITHUB_EVENT_NAME", "") == "pull_request"
-    deploydocs(repo = "github.com/FourierFlows/GeophysicalFlows.jl",
-               repo_previews = "github.com/FourierFlows/GeophysicalFlowsDocumentation",
-               devbranch = "main",
-               forcepush = true,
-               push_preview = true,
-               versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"])
-else
-    repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation"
-    withenv("GITHUB_REPOSITORY" => repo) do
-        deploydocs(; repo,
-                     devbranch = "main",
-                     forcepush = true,
-                     versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"])
-    end
-end
+deploydocs(repo = "github.com/FourierFlows/GeophysicalFlows.jl",
+           deploy_repo = "github.com/FourierFlows/GeophysicalFlowsDocumentation",
+           devbranch = "main",
+           forcepush = true,
+           push_preview = true,
+           versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"])
