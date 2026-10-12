@@ -281,9 +281,9 @@ of the shallow water equations in conservative form and store them in `N`:
 
 ```math
 \\begin{aligned}
-N_{q_u} & = - i k_x \\widehat{h u u} - i k_y \\widehat{h u v} + f \\widehat{q_v} - g \\widehat{h ∂_x η} , \\\\
-N_{q_v} & = - i k_x \\widehat{h u v} - i k_y \\widehat{h v v} - f \\widehat{q_u} - g \\widehat{h ∂_y η} , \\\\
-N_h & = - i k_x \\widehat{q_u} - i k_y \\widehat{q_v} ,
+N_{q_u} & = - i k_x \\widehat{q_u^2 / h}   - i k_y \\widehat{q_u q_v / h} + f \\widehat{q_v} - g \\widehat{h ∂_x η} , \\\\
+N_{q_v} & = - i k_x \\widehat{q_u q_v / h} - i k_y \\widehat{q_v^2 / h}   - f \\widehat{q_u} - g \\widehat{h ∂_y η} , \\\\
+N_h     & = - i k_x \\widehat{q_u}         - i k_y \\widehat{q_v} ,
 \\end{aligned}
 ```
 
