@@ -140,7 +140,7 @@ SDEs rarely can be solved in closed form; most often numerical solution of SDEs 
 the rescue. Itô calculus has the advantage that it is very easily implemented numerically. On
 the other hand, the chain rule in Stratonovich calculus coincides with that in normal calculus.
 This stems from the fact that in the Stratonovich interpretation the white noise process is
-understood as the limit of colored noise processes with de-correlation time tending to zero. This made
+understood as the limit of colored noise processes with de-correlation time tending to zero. This makes
 Stratonovich calculus more popular in the physics community. A nice discussion on the differences
 and similarities between the two calculi is given by [vanKampen-1981](@citet).
 
