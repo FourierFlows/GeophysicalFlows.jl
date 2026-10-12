@@ -61,6 +61,7 @@ makedocs(
     clean = true,
 checkdocs = :all,
 linkcheck = true,
+linkcheck_ignore = [r"^https://scholar\.google\.com/"], # Google Scholar returns 403 to automated requests
     pages = Any[
                   "Home" => "index.md",
                   "Installation instructions" => "installation_instructions.md",

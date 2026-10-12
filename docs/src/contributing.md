@@ -89,7 +89,7 @@ Your development environment is now ready!
 Changes and contributions should be made via GitHub pull requests against the `main` branch.
 
 When you're done making changes, commit the changes you made. Chris Beams has written 
-a [guide](https://chris.beams.io/posts/git-commit/) on how to write good commit messages.
+a [guide](https://chris.beams.io/git-commit) on how to write good commit messages.
 
 When you think your changes are ready to be merged into the main repository,
 push to your fork and [submit a pull request](https://github.com/FourierFlows/GeophysicalFlows.jl/compare/).
