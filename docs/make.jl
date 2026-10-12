@@ -60,6 +60,7 @@ makedocs(
   doctest = true,
     clean = true,
 checkdocs = :all,
+linkcheck = true,
     pages = Any[
                   "Home" => "index.md",
                   "Installation instructions" => "installation_instructions.md",
