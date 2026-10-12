@@ -10,7 +10,8 @@ import # use 'import' rather than 'using' for submodules to keep namespace clean
   GeophysicalFlows.SingleLayerQG,
   GeophysicalFlows.BarotropicQGQL,
   GeophysicalFlows.MultiLayerQG,
-  GeophysicalFlows.SurfaceQG
+  GeophysicalFlows.SurfaceQG,
+  GeophysicalFlows.ShallowWater
 
 using FourierFlows: parsevalsum
 using GeophysicalFlows: lambdipole, peakedisotropicspectrum
@@ -49,6 +50,20 @@ for dev in devices
     @test test_twodnavierstokes_energyenstrophypalinstrophy(dev)
     @test test_twodnavierstokes_problemtype(dev, Float32)
     @test TwoDNavierStokes.nothingfunction() === nothing
+  end
+
+  @testset "ShallowWater" begin
+    include("test_shallowwater.jl")
+
+    @test test_shallowwater_problemtype(dev, Float32)
+    @test test_shallowwater_problemtype(dev, Float64)
+    @test test_shallowwater_inertiagravitywave(dev)
+    @test test_shallowwater_lakeatrest(dev)
+    @test test_shallowwater_conservation(dev)
+    @test test_shallowwater_deterministicforcing_mass(dev)
+    @test test_shallowwater_viscosity(dev)
+    @test test_shallowwater_stochasticforcedvars(dev)
+    @test ShallowWater.nothingfunction() === nothing
   end
 
   @testset "SingleLayerQG" begin

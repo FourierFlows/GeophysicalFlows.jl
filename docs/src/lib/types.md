@@ -47,6 +47,17 @@ GeophysicalFlows.SurfaceQG.StochasticForcedVars
 ```
 
 
+## `ShallowWater`
+
+```@docs
+GeophysicalFlows.ShallowWater.Params
+GeophysicalFlows.ShallowWater.Vars
+GeophysicalFlows.ShallowWater.DecayingVars
+GeophysicalFlows.ShallowWater.ForcedVars
+GeophysicalFlows.ShallowWater.StochasticForcedVars
+```
+
+
 ## `BarotropicQGQL`
 
 ```@docs
