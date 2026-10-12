@@ -19,12 +19,14 @@ include("twodnavierstokes.jl")
 include("singlelayerqg.jl")
 include("multilayerqg.jl")
 include("surfaceqg.jl")
+include("shallowwater.jl")
 include("barotropicqgql.jl")
 
 @reexport using GeophysicalFlows.TwoDNavierStokes
 @reexport using GeophysicalFlows.SingleLayerQG
 @reexport using GeophysicalFlows.MultiLayerQG
 @reexport using GeophysicalFlows.SurfaceQG
+@reexport using GeophysicalFlows.ShallowWater
 @reexport using GeophysicalFlows.BarotropicQGQL
 
 end # module

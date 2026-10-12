@@ -40,8 +40,12 @@ in Fourier space before transforming to physical space to compute nonlinear term
     0.5
     ```
 
-Currently, all nonlinearities in all modules included in GeophysicalFlows.jl modules are quadratic 
-nonlinearities. Therefore, the default `aliased_fraction` of 1/3 is appropriate.
+The nonlinearities in most GeophysicalFlows.jl modules are quadratic, for which the default
+`aliased_fraction` of 1/3 removes aliasing errors exactly.
+
+The exception is the `ShallowWater` module: its momentum fluxes, e.g., ``h u^2 = q_u^2 / h``,
+involve division by the fluid depth ``h`` and thus are not polynomial in the state variables.
+For such terms, de-aliasing reduces, but does not entirely remove, aliasing errors.
 
 All modules apply de-aliasing by calling, e.g., `dealias!(prob.sol, prob.grid)` both before
 computing any nonlinear terms and also during updating all variable, i.e., within `updatevars!`.

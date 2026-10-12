@@ -69,6 +69,8 @@ Some animations created with GeophysicalFlows.jl are [online @ youtube].
   quasi-geostrophic model over topography allowing to impose a zonal flow `U_n(y)` in each layer.
 * [`SurfaceQG`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/surfaceqg/): a surface
   quasi-geostrophic model.
+* [`ShallowWater`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/shallowwater/): the
+  rotating shallow water equations over bathymetry.
 * [`BarotropicQGQL`](https://fourierflows.github.io/GeophysicalFlowsDocumentation/stable/modules/barotropicqgql/): the
   quasi-linear barotropic quasi-geostrophic equation.
 
