@@ -68,8 +68,8 @@ respectively. The equations are time-stepped forward in Fourier space:
 
 ```math
 \begin{aligned}
-\partial_t \widehat{q_u} & = - i k_x \widehat{h u u} - i k_y \widehat{h u v} + f \widehat{q_v} - g \widehat{h \partial_x \eta} - \nu |𝐤|^{2 n_\nu} \widehat{q_u} + \widehat{F_{q_u}} , \\
-\partial_t \widehat{q_v} & = - i k_x \widehat{h u v} - i k_y \widehat{h v v} - f \widehat{q_u} - g \widehat{h \partial_y \eta} - \nu |𝐤|^{2 n_\nu} \widehat{q_v} + \widehat{F_{q_v}} , \\
+\partial_t \widehat{q_u} & = - i k_x \widehat{q_u q_u / h} - i k_y \widehat{q_u q_v / h} + f \widehat{q_v} - g \widehat{h \partial_x \eta} - \nu |𝐤|^{2 n_\nu} \widehat{q_u} + \widehat{F_{q_u}} , \\
+\partial_t \widehat{q_v} & = - i k_x \widehat{q_u q_v / h} - i k_y \widehat{q_v q_v / h} - f \widehat{q_u} - g \widehat{h \partial_y \eta} - \nu |𝐤|^{2 n_\nu} \widehat{q_v} + \widehat{F_{q_v}} , \\
 \partial_t \widehat{h} & = - i k_x \widehat{q_u} - i k_y \widehat{q_v} - \nu |𝐤|^{2 n_\nu} \widehat{h} + \widehat{F_h} .
 \end{aligned}
 ```
